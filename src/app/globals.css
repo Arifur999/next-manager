@@ -80,11 +80,18 @@
   --input: oklch(0.912 0.014 280);
   --ring: oklch(0.525 0.135 277);
 
-  /* Categorical ramp, distinguishable by hue rather than lightness so a
-     series stays readable in greyscale and to colour-blind readers. */
-  --chart-1: oklch(0.525 0.135 277);
-  --chart-2: oklch(0.700 0.110 245);
-  --chart-3: oklch(0.740 0.110 165);
+  /* Chart series colours. These three are validator output, not eyeballed —
+     see scripts/validate-palette in the dataviz workflow. Slots are assigned in
+     this fixed order and never cycled; the order alternates cool/warm so
+     adjacent series never share a hue family.
+     light: CVD ΔE 14.7 (protan), normal-vision 23.8, all-pairs. Orange sits at
+     2.79:1 on white, which is why every chart here ships direct labels and a
+     table view rather than relying on colour alone. */
+  --chart-1: #5341b1;
+  --chart-2: #e38305;
+  --chart-3: #009192;
+  /* Slots 4-5 are decorative tints for stat-tile icon chips only — they never
+     encode data, so they are not part of the validated series palette. */
   --chart-4: oklch(0.760 0.120 55);
   --chart-5: oklch(0.680 0.140 350);
 
@@ -128,9 +135,11 @@
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.680 0.130 278);
 
-  --chart-1: oklch(0.680 0.130 278);
-  --chart-2: oklch(0.720 0.110 245);
-  --chart-3: oklch(0.760 0.110 165);
+  /* Dark is chosen, not flipped: re-stepped from the same hues and validated
+     against the dark card surface. All six checks pass, contrast >= 3:1. */
+  --chart-1: #796eda;
+  --chart-2: #cd7d00;
+  --chart-3: #00a0a1;
   --chart-4: oklch(0.780 0.120 55);
   --chart-5: oklch(0.710 0.140 350);
 
