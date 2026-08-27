@@ -37,12 +37,8 @@ const ProjectDetail = ({ projectId }: { projectId: string }) => {
   })
 
   const { data: credentialsData } = useQuery({
-    queryKey: ["credentials", projectId],
-    queryFn: () => getCredentials(`search=${encodeURIComponent(projectId)}`),
-    // Vault search matches on label/url/username, not on ids, so this would
-    // return nothing useful. Kept disabled rather than removed so the tab can
-    // be wired up properly when the API grows a project filter.
-    enabled: false,
+    queryKey: ["credentials", `project_id=${projectId}`],
+    queryFn: () => getCredentials(`project_id=${projectId}`),
   })
 
   const project = projectData?.data as (IProject & { tasks?: ITask[] }) | undefined
@@ -196,23 +192,47 @@ const ProjectDetail = ({ projectId }: { projectId: string }) => {
         </TabsContent>
 
         <TabsContent value="vault" className="mt-4">
-          <Card className="flex flex-col items-center gap-2 px-6 py-12 text-center">
-            <KeyRound className="size-7 text-muted-foreground" aria-hidden="true" />
-            <p className="text-sm font-medium">
-              {credentials.length > 0
-                ? `${credentials.length} credential(s) on this project`
-                : "Project credentials live in the Vault"}
-            </p>
-            <p className="max-w-sm text-sm text-muted-foreground">
-              Filtering the vault by project needs an API filter that does not exist yet — the
-              search there matches labels and usernames, not ids.
-            </p>
-            <Link
-              href="/admin/dashboard/vault"
-              className="text-sm text-primary underline-offset-4 hover:underline"
-            >
-              Open the Vault
-            </Link>
+          <Card className="gap-0 overflow-hidden p-0">
+            <CardHeader className="flex flex-row items-center justify-between border-b px-5 py-4">
+              <CardTitle className="text-base">Credentials on this project</CardTitle>
+              <Link
+                href="/admin/dashboard/vault"
+                className="text-sm text-primary underline-offset-4 hover:underline"
+              >
+                Open the Vault
+              </Link>
+            </CardHeader>
+
+            {credentials.length === 0 ? (
+              <p className="flex flex-col items-center gap-2 px-6 py-12 text-center text-sm text-muted-foreground">
+                <KeyRound className="size-7" aria-hidden="true" />
+                Nothing stored against this project yet.
+              </p>
+            ) : (
+              <ul className="divide-y">
+                {credentials.map((credential) => (
+                  <li
+                    key={credential.id}
+                    className="flex items-center justify-between gap-3 px-5 py-3.5"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{credential.label}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {credential.username || "no username"}
+                        {credential.url ? ` · ${credential.url}` : ""}
+                      </p>
+                    </div>
+
+                    {/* Masked, and deliberately not revealable from here.
+                        Revealing is logged against a person, so it belongs on
+                        the Vault screen where that consequence is stated. */}
+                    <span className="shrink-0 font-mono text-xs text-muted-foreground">
+                      {credential.password}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </Card>
         </TabsContent>
       </Tabs>

@@ -8,10 +8,18 @@ import { formatBdt, formatUsd } from "@/lib/currency"
 import {
   getClient,
   getClientFinancials,
+  getCredentials,
   getInvoices,
   getPayments,
 } from "@/services/agencio.services"
-import type { IClient, IClientFinancials, IInvoice, IPayment, IProject } from "@/types/agencio.types"
+import type {
+  IClient,
+  IClientFinancials,
+  ICredential,
+  IInvoice,
+  IPayment,
+  IProject,
+} from "@/types/agencio.types"
 import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { ArrowDownLeft, FileText, FolderKanban, TrendingUp } from "lucide-react"
@@ -28,9 +36,9 @@ const ClientDetail = ({ clientId }: { clientId: string }) => {
     queryFn: () => getClientFinancials(clientId),
   })
 
-  // The API filters payments and invoices by search text, not by client id, so
-  // these are filtered here. Fine at this scale; a client with thousands of
-  // rows would need a real server-side filter rather than a bigger page.
+  // Payments and invoices still come back unfiltered - those two endpoints
+  // filter by search text rather than client id - so they are narrowed here.
+  // The vault, which now takes a client_id, is asked for directly.
   const { data: paymentsData } = useQuery({
     queryKey: ["payments", ""],
     queryFn: () => getPayments(),
@@ -38,6 +46,10 @@ const ClientDetail = ({ clientId }: { clientId: string }) => {
   const { data: invoicesData } = useQuery({
     queryKey: ["invoices", ""],
     queryFn: () => getInvoices(),
+  })
+  const { data: credentialsData } = useQuery({
+    queryKey: ["credentials", `client_id=${clientId}`],
+    queryFn: () => getCredentials(`client_id=${clientId}`),
   })
 
   const client = clientData?.data as (IClient & { projects?: IProject[] }) | undefined
@@ -49,6 +61,7 @@ const ClientDetail = ({ clientId }: { clientId: string }) => {
   const invoices = ((invoicesData?.data ?? []) as IInvoice[]).filter(
     (invoice) => invoice.client_id === clientId,
   )
+  const credentials = (credentialsData?.data ?? []) as ICredential[]
 
   if (isLoading && !client) {
     return <Card className="h-64 animate-pulse bg-muted/40" />
@@ -113,6 +126,7 @@ const ClientDetail = ({ clientId }: { clientId: string }) => {
           <TabsTrigger value="projects">Projects</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
           <TabsTrigger value="invoices">Invoices</TabsTrigger>
+          <TabsTrigger value="vault">Vault</TabsTrigger>
           <TabsTrigger value="notes">Notes</TabsTrigger>
         </TabsList>
 
@@ -210,6 +224,40 @@ const ClientDetail = ({ clientId }: { clientId: string }) => {
                         <span className="text-sm tabular-nums">{formatUsd(invoice.total)}</span>
                       </div>
                     </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="vault" className="mt-4">
+          <Card className="gap-0 overflow-hidden p-0">
+            {credentials.length === 0 ? (
+              <p className="px-5 py-12 text-center text-sm text-muted-foreground">
+                Nothing stored against this client yet.
+              </p>
+            ) : (
+              <ul className="divide-y">
+                {credentials.map((credential) => (
+                  <li
+                    key={credential.id}
+                    className="flex items-center justify-between gap-3 px-5 py-3.5"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{credential.label}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {credential.username || "no username"}
+                        {credential.url ? ` · ${credential.url}` : ""}
+                      </p>
+                    </div>
+
+                    {/* Masked here on purpose. Revealing is logged against a
+                        person, so it belongs on the Vault screen where that
+                        consequence is spelled out. */}
+                    <span className="shrink-0 font-mono text-xs text-muted-foreground">
+                      {credential.password}
+                    </span>
                   </li>
                 ))}
               </ul>
