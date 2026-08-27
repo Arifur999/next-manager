@@ -1,5 +1,8 @@
 import ReportsBoard from "@/components/modules/Admin/Reports/ReportsBoard";
 import {
+  getCashFlow,
+  getClientRevenue,
+  getExpenses,
   getMonthlySeries,
   getProfitAndLoss,
   getProjectProfitability,
@@ -21,6 +24,13 @@ const ReportsPage = async () => {
       queryKey: ["report-project-profitability"],
       queryFn: () => getProjectProfitability(),
     }),
+    queryClient.prefetchQuery({ queryKey: ["report-cash-flow"], queryFn: () => getCashFlow() }),
+    queryClient.prefetchQuery({
+      queryKey: ["report-client-revenue"],
+      queryFn: () => getClientRevenue(),
+    }),
+    // Shares its key with the Expenses page, so arriving from there reuses it.
+    queryClient.prefetchQuery({ queryKey: ["expenses", ""], queryFn: () => getExpenses() }),
   ]);
 
   return (

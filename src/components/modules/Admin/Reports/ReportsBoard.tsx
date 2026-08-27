@@ -1,6 +1,7 @@
 "use client"
 
 import MonthlyChart from "@/components/modules/Admin/Reports/MonthlyChart"
+import ReportBreakdowns from "@/components/modules/Admin/Reports/ReportBreakdowns"
 import StatTile from "@/components/shared/StatTile"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt, formatPercent, formatUsd } from "@/lib/currency"
@@ -83,6 +84,8 @@ const ReportsBoard = () => {
       )}
 
       <MonthlyChart data={monthly} />
+
+      <ReportBreakdowns />
 
       <Card className="gap-0 overflow-hidden p-0">
         <CardHeader className="border-b px-5 py-4">
