@@ -1,20 +1,50 @@
 import {
+    ArrowDownLeft,
+    ArrowLeftRight,
+    ChartLine,
+    FileText,
+    FolderKanban,
+    HandCoins,
+    KeyRound,
     LayoutDashboard,
+    ListChecks,
+    Lock,
     LogOut,
+    PiggyBank,
+    Receipt,
+    Scale,
     Settings,
+    Target,
     User,
     Users,
+    UsersRound,
+    Wallet,
     type LucideIcon,
 } from "lucide-react";
 
 // Keeps nav config serializable: the config stores a name, this turns it into a
 // component at render time.
 const ICONS: Record<string, LucideIcon> = {
+    ArrowDownLeft,
+    ArrowLeftRight,
+    ChartLine,
+    FileText,
+    FolderKanban,
+    HandCoins,
+    KeyRound,
     LayoutDashboard,
+    ListChecks,
+    Lock,
     LogOut,
+    PiggyBank,
+    Receipt,
+    Scale,
     Settings,
+    Target,
     User,
     Users,
+    UsersRound,
+    Wallet,
 };
 
 export const getIcon = (name: string): LucideIcon => ICONS[name] ?? LayoutDashboard;

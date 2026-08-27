@@ -1,5 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import DashboardOverview from "@/components/modules/Dashboard/DashboardOverview";
+import { getDashboard } from "@/services/agencio.services";
 import { getUserInfo } from "@/services/auth.services";
+import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -7,33 +9,31 @@ export const metadata: Metadata = {
 };
 
 const AdminDashboardPage = async () => {
-  // Deduped by React cache(), so this costs nothing extra beyond the call the
-  // layout already made in this same request.
+  // Deduped by React cache(), so this costs nothing beyond the call the layout
+  // already made in this same request.
   const user = await getUserInfo();
+
+  const queryClient = new QueryClient();
+  await queryClient.prefetchQuery({
+    queryKey: ["dashboard"],
+    queryFn: () => getDashboard(),
+    staleTime: 1000 * 30,
+  });
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">
-          Welcome back, {user?.full_name ?? "there"}
+          Welcome back, {user?.full_name?.split(" ")[0] ?? "there"}
         </h1>
         <p className="text-sm text-muted-foreground">
-          An overview of your workspace. Modules appear here as they are added.
+          Where the agency stands today — money held, money owed, and what is due.
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Team</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Invite colleagues and set what each of them can do.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <DashboardOverview />
+      </HydrationBoundary>
     </div>
   );
 };

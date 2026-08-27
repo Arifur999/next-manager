@@ -1,4 +1,4 @@
-import { getDefaultDashboardRoute, toRouteOwner, type UserRole } from "./authUtils";
+import { toRouteOwner, type UserRole } from "./authUtils";
 
 export type NavItem = {
     title: string;
@@ -13,41 +13,80 @@ export type NavSection = {
     items: NavItem[];
 };
 
-// Adding a page means adding an entry here, never editing the sidebar component.
-export const getCommonNavItems = (role: UserRole): NavSection[] => {
-    return [
-        {
-            items: [
-                { title: "Dashboard", href: getDefaultDashboardRoute(role), icon: "LayoutDashboard" },
-                { title: "My Profile", href: "/my-profile", icon: "User" },
-            ],
-        },
-        {
-            title: "Settings",
-            items: [{ title: "Change Password", href: "/change-password", icon: "Settings" }],
-        },
-    ];
-};
+/**
+ * The sidebar, as data.
+ *
+ * Adding a page means adding an entry here, never editing the sidebar
+ * component. The sections mirror the product's own shape — CRM, Projects,
+ * Finance, Vault, Team, Settings — so the sidebar and the way people talk about
+ * the app stay the same thing.
+ *
+ * This is only what the sidebar SHOWS. Every route is separately gated by
+ * proxy.ts and by the API's own role checks, so hiding a link is a courtesy
+ * rather than a security boundary.
+ */
 
-export const ownerNavItems: NavSection[] = [
+const OWNER_SECTIONS: NavSection[] = [
+    {
+        items: [{ title: "Dashboard", href: "/admin/dashboard", icon: "LayoutDashboard" }],
+    },
+    {
+        title: "CRM",
+        items: [
+            { title: "Clients", href: "/admin/dashboard/clients", icon: "Users" },
+            { title: "Leads", href: "/admin/dashboard/leads", icon: "Target" },
+        ],
+    },
+    {
+        title: "Work",
+        items: [
+            { title: "Projects", href: "/admin/dashboard/projects", icon: "FolderKanban" },
+            { title: "Tasks", href: "/admin/dashboard/tasks", icon: "ListChecks" },
+        ],
+    },
+    {
+        title: "Finance",
+        items: [
+            { title: "Accounts", href: "/admin/dashboard/accounts", icon: "Wallet" },
+            { title: "Invoices", href: "/admin/dashboard/invoices", icon: "FileText" },
+            { title: "Payments", href: "/admin/dashboard/payments", icon: "ArrowDownLeft" },
+            { title: "Exchange", href: "/admin/dashboard/exchange", icon: "ArrowLeftRight" },
+            { title: "Expenses", href: "/admin/dashboard/expenses", icon: "Receipt" },
+            { title: "Team Payouts", href: "/admin/dashboard/payouts", icon: "HandCoins" },
+            { title: "Withdrawals", href: "/admin/dashboard/withdrawals", icon: "PiggyBank" },
+            { title: "Due Payments", href: "/admin/dashboard/due-payments", icon: "Scale" },
+            { title: "Reports", href: "/admin/dashboard/reports", icon: "ChartLine" },
+        ],
+    },
     {
         title: "Workspace",
         items: [
-            { title: "Team", href: "/admin/dashboard/team-management", icon: "Users" },
+            { title: "Vault", href: "/admin/dashboard/vault", icon: "KeyRound" },
+            { title: "Team", href: "/admin/dashboard/team-management", icon: "UsersRound" },
+            { title: "Settings", href: "/admin/dashboard/settings", icon: "Settings" },
         ],
     },
 ];
 
-export const staffNavItems: NavSection[] = [
+// A member sees their own work and nothing financial.
+const MEMBER_SECTIONS: NavSection[] = [
     {
-        title: "Workspace",
-        items: [],
+        items: [
+            { title: "Dashboard", href: "/dashboard", icon: "LayoutDashboard" },
+            { title: "My Tasks", href: "/dashboard/tasks", icon: "ListChecks" },
+        ],
     },
 ];
 
+const ACCOUNT_SECTION: NavSection = {
+    title: "Account",
+    items: [
+        { title: "My Profile", href: "/my-profile", icon: "User" },
+        { title: "Change Password", href: "/change-password", icon: "Lock" },
+    ],
+};
+
 export const getNavSections = (role: UserRole): NavSection[] => {
-    const roleSections = toRouteOwner(role) === "OWNER" ? ownerNavItems : staffNavItems;
-    return [...getCommonNavItems(role), ...roleSections].filter(
-        (section) => section.items.length > 0,
-    );
+    const base = toRouteOwner(role) === "OWNER" ? OWNER_SECTIONS : MEMBER_SECTIONS;
+    return [...base, ACCOUNT_SECTION];
 };
