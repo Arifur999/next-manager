@@ -164,3 +164,48 @@
     @apply font-sans;
   }
 }
+
+/* Printing an invoice.
+ *
+ * Browser print-to-PDF rather than a server-rendered file: it needs no new
+ * dependency, it always matches what is on screen, and the output is a real
+ * PDF the client can be sent. What it cannot do is attach a PDF to an email
+ * automatically - that is the part a server-side renderer would buy, and it is
+ * not worth a headless browser until somebody actually needs it.
+ *
+ * Everything outside the printable region is removed rather than hidden, so it
+ * does not leave blank pages behind. */
+@media print {
+  body {
+    background: #fff;
+  }
+
+  /* The app shell has no place on a document being sent to a client. */
+  aside,
+  header,
+  [data-print="hide"] {
+    display: none !important;
+  }
+
+  main {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  [data-print="page"] {
+    /* Cards carry shadows and rounded corners that print as grey smears. */
+    box-shadow: none !important;
+    border-color: #ddd !important;
+  }
+
+  /* Backgrounds are dropped by default in print; the few that carry meaning
+     have to ask for it explicitly. */
+  [data-print="keep-color"] {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  a[href]::after {
+    content: "";
+  }
+}

@@ -1,12 +1,14 @@
 "use client"
 
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatUsd } from "@/lib/currency"
-import { getInvoice } from "@/services/agencio.services"
-import type { IInvoice } from "@/types/agencio.types"
+import { getInvoice, getOrganization } from "@/services/agencio.services"
+import type { IInvoice, IOrganization } from "@/types/agencio.types"
 import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
+import { Printer } from "lucide-react"
 import Link from "next/link"
 
 const InvoiceDetail = ({ invoiceId }: { invoiceId: string }) => {
@@ -15,7 +17,13 @@ const InvoiceDetail = ({ invoiceId }: { invoiceId: string }) => {
     queryFn: () => getInvoice(invoiceId),
   })
 
+  const { data: orgData } = useQuery({
+    queryKey: ["organization"],
+    queryFn: () => getOrganization(),
+  })
+
   const invoice = data?.data as IInvoice | undefined
+  const organization = orgData?.data as IOrganization | undefined
 
   if (isLoading && !invoice) {
     return <Card className="h-64 animate-pulse bg-muted/40" />
@@ -26,7 +34,24 @@ const InvoiceDetail = ({ invoiceId }: { invoiceId: string }) => {
   const status = invoice.is_overdue ? "overdue" : invoice.status
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-print="page">
+      {/* Letterhead. Only on the printed copy — on screen the sidebar already
+          says whose agency this is, but a page being sent to a client has to
+          carry it or it is a screenshot rather than a document. */}
+      {organization && (
+        <div className="hidden border-b pb-4 print:block">
+          <p className="text-lg font-semibold">{organization.legal_name || organization.name}</p>
+          <p className="text-sm text-muted-foreground">
+            {[organization.email, organization.phone, organization.website]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+          {organization.address && (
+            <p className="text-sm text-muted-foreground">{organization.address}</p>
+          )}
+        </div>
+      )}
+
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -45,6 +70,17 @@ const InvoiceDetail = ({ invoiceId }: { invoiceId: string }) => {
         </div>
 
         <div className="text-right">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            data-print="hide"
+            className="mb-2"
+            onClick={() => window.print()}
+          >
+            <Printer className="size-3.5" />
+            Print / save as PDF
+          </Button>
           <p className="text-2xl font-semibold tabular-nums">{formatUsd(invoice.total)}</p>
           <p className="text-sm text-muted-foreground tabular-nums">
             {formatUsd(invoice.due_usd ?? 0)} still due
@@ -131,7 +167,7 @@ const InvoiceDetail = ({ invoiceId }: { invoiceId: string }) => {
             </dl>
           </Card>
 
-          <Card className="gap-0 overflow-hidden p-0">
+          <Card className="gap-0 overflow-hidden p-0" data-print="hide">
             <CardHeader className="border-b px-5 py-4">
               <CardTitle className="text-base">Payments against it</CardTitle>
             </CardHeader>
