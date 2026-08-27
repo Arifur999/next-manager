@@ -79,23 +79,29 @@ export const paymentFormZodSchema = z.object({
 
 export type IPaymentFormValues = z.infer<typeof paymentFormZodSchema>
 
-export const exchangeFormZodSchema = z
-    .object({
-        date: isoDate,
-        from_account_id: z.string().min(1, "Choose the USD account"),
-        to_account_id: z.string().min(1, "Choose the BDT account"),
-        amount_usd: positiveAmount("Amount"),
-        // Required, never defaulted from the API: this figure exists to record
-        // what the processor actually paid, and mid-market would be wrong every
-        // single time.
-        rate: positiveAmount("Rate"),
-        fee_usd: optionalNonNegative("Fee"),
-        notes: z.string().optional(),
-    })
-    .refine((values) => Number(values.fee_usd || 0) < Number(values.amount_usd), {
+// The plain object is exported alongside the refined schema so per-field
+// validators can reach `.shape`. Refining returns a wrapper without one, and
+// digging into its internals to get at the original is the kind of thing that
+// breaks silently on a Zod upgrade.
+export const exchangeFormFields = z.object({
+    date: isoDate,
+    from_account_id: z.string().min(1, "Choose the USD account"),
+    to_account_id: z.string().min(1, "Choose the BDT account"),
+    amount_usd: positiveAmount("Amount"),
+    // Required, never defaulted from the API: this figure exists to record what
+    // the processor actually paid, and mid-market would be wrong every time.
+    rate: positiveAmount("Rate"),
+    fee_usd: optionalNonNegative("Fee"),
+    notes: z.string().optional(),
+})
+
+export const exchangeFormZodSchema = exchangeFormFields.refine(
+    (values) => Number(values.fee_usd || 0) < Number(values.amount_usd),
+    {
         message: "The fee cannot be equal to or larger than the amount",
         path: ["fee_usd"],
-    })
+    },
+)
 
 export type IExchangeFormValues = z.infer<typeof exchangeFormZodSchema>
 
