@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { accountFormZodSchema, type IAccountFormValues } from "@/zod/agencio.validation"
+import { accountFormZodSchema, toNumber, type IAccountFormValues } from "@/zod/agencio.validation"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
@@ -35,7 +35,7 @@ const defaultValues: IAccountFormValues = {
   name: "",
   type: "paypal",
   currency: "USD",
-  opening_balance: 0,
+  opening_balance: "",
   notes: "",
 }
 
@@ -65,7 +65,8 @@ const CreateAccountModal = () => {
   const router = useRouter()
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IAccountFormValues) => createAccountAction(values),
+    mutationFn: (values: IAccountFormValues) =>
+      createAccountAction({ ...values, opening_balance: toNumber(values.opening_balance) ?? 0 }),
   })
 
   const form = useForm({
