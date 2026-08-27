@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Naxified Management — Frontend
 
-## Getting Started
+Next.js 16 (App Router) + TypeScript + shadcn/ui + TanStack Query/Form/Table,
+built on the `component → _action → service → httpClient` pattern.
 
-First, run the development server:
+## Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local     # then set the API URL and JWT secret
+npm run dev                    # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`JWT_ACCESS_SECRET` must match the backend's `ACCESS_TOKEN_SECRET` exactly —
+`src/proxy.ts` verifies the access token locally before letting a route render.
+Run the backend (`naxified_backend`) on port 5000 first.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Layout
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+  app/
+    layout.tsx                      fonts, providers, Toaster
+    providers/                      QueryProvider, ThemeProvider
+    (commonLayout)/                 public site
+      page.tsx
+      (auth)/login/{page.tsx,_action.ts}
+    (dashboardLayout)/              sidebar + navbar shell, force-dynamic
+      admin/dashboard/              owner / manager area
+        team-management/{page.tsx,_action.ts,loading.tsx}
+      dashboard/                    staff area
+  components/
+    ui/                             shadcn primitives (generated)
+    shared/                         DataTable, AppField, AppSubmitButton, cells
+    modules/<Domain>/<Feature>/     feature components
+  hooks/                            useRowActionModalState
+  lib/                              httpClient, authUtils, navItem, iconMapper
+  services/<feature>.services.ts    "use server", thin httpClient calls
+  types/  zod/                      one file per domain, kept in sync
+  proxy.ts                          route protection (Next 16 renamed middleware)
+```
 
-## Learn More
+## Adding a feature
 
-To learn more about Next.js, take a look at the following resources:
+1. `src/types/<f>.types.ts` — `I<Name>` matching the API response
+2. `src/zod/<f>.validation.ts` — create + edit schemas, inferred value types
+3. `src/services/<f>.services.ts` — `"use server"`, thin `httpClient` calls
+4. `app/.../<f>-management/_action.ts` — wraps each service, normalizes errors
+5. `components/modules/<Domain>/<Feature>/<f>Columns.tsx`
+6. `…/<Feature>Table.tsx` — `useQuery` + `useRowActionModalState` + `DataTable`
+7. `Create…FormModal`, `Edit…FormModal`, `Delete…ConfirmationDialog`
+8. `page.tsx` (prefetch + `HydrationBoundary`) and `loading.tsx`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Rules that are not optional: a component never imports `httpClient`; every
+action returns `ApiResponse<T> | ApiErrorResponse` and never throws; the
+`page.tsx` prefetch and the table's `useQuery` share one query key; after a
+successful mutation always `toast` → close → `reset` → `invalidateQueries` →
+`router.refresh()`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Scripts
 
-## Deploy on Vercel
+| Command | What it does |
+|---|---|
+| `npm run dev` | dev server |
+| `npm run build` | production build |
+| `npm run start` | serve the production build |
+| `npm run lint` | eslint (Next 16 removed `next lint`) |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Route protection
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`src/lib/authUtils.ts` declares route ownership as data; `src/proxy.ts` resolves
+it in a fixed order — proactive token refresh, signed-in users off the auth
+pages, public routes through, anonymous users to `/login?redirect=…`, then the
+role check. Adding a protected area means adding a pattern to `authUtils`, not
+writing a new check.

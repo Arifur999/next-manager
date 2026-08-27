@@ -124,6 +124,7 @@ const DataTable = <TData,>({
       ]
     : columns;
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table is intentionally used here and React Compiler already skips memoization for this hook.
   const table = useReactTable({
     data,
     columns: tableColumns,
