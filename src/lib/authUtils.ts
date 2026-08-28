@@ -75,7 +75,7 @@ export const AREAS: AreaRule[] = [
     // Delivery: who does what, and when.
     {
         exact: [],
-        pattern: [/^\/admin\/dashboard\/(projects|tasks|team-management)/],
+        pattern: [/^\/admin\/dashboard\/(projects|tasks|team-management|time-approvals)/],
         roles: ["admin", "project_manager"],
     },
 
@@ -86,8 +86,11 @@ export const AREAS: AreaRule[] = [
         roles: ["admin", "sales", "project_manager"],
     },
 
-    // The admin landing page itself.
-    { exact: ["/admin/dashboard"], pattern: [], roles: ["admin"] },
+    // The admin landing page, and anything under /admin that no rule above
+    // claimed. Without this last clause a new page added to /admin/dashboard
+    // matches nothing, and a path matching nothing is treated as public — the
+    // one failure mode here that fails open, and one lint will never catch.
+    { exact: [], pattern: [/^\/admin/], roles: ["admin"] },
 
     // Everything else under /dashboard is the personal area.
     { exact: [], pattern: [/^\/dashboard/], roles: null },

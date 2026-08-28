@@ -32,12 +32,12 @@ const iso = (date: Date) => format(date, "yyyy-MM-dd")
 const weekStart = (offset: number) =>
   startOfWeek(addDays(new Date(), offset * 7), { weekStartsOn: 1 })
 
-const TimesheetBoard = ({ canApprove = false }: { canApprove?: boolean }) => {
+const TimesheetBoard = ({ userId }: { userId: string }) => {
   const [offset, setOffset] = useState(0)
 
   const start = weekStart(offset)
   const end = addDays(start, 6)
-  const range = `from=${iso(start)}&to=${iso(end)}`
+  const range = `from=${iso(start)}&to=${iso(end)}&user_id=${userId}`
 
   const { data: entriesData, isLoading } = useQuery({
     queryKey: ["time-entries", range],
@@ -167,7 +167,6 @@ const TimesheetBoard = ({ canApprove = false }: { canApprove?: boolean }) => {
                   </p>
                   <p className="truncate text-xs text-muted-foreground">
                     {format(new Date(entry.date), "EEE dd MMM")}
-                    {canApprove && entry.user ? ` · ${entry.user.full_name}` : ""}
                     {entry.notes ? ` · ${entry.notes}` : ""}
                   </p>
                 </div>

@@ -72,6 +72,37 @@ for (const [role, { home, denied }] of Object.entries(EXPECT)) {
   }
 }
 
+// Approval is admin + project_manager only, and an unlisted /admin path must
+// fall to admin-only rather than falling open.
+for (const [role, expected] of [
+  ["admin", 200],
+  ["project_manager", 200],
+  ["sales", 307],
+  ["operations", 307],
+]) {
+  const res = await fetch(`${WEB}/admin/dashboard/time-approvals`, {
+    headers: { Cookie: cookies[role] },
+    redirect: "manual",
+  });
+  const ok = res.status === expected;
+  if (!ok) bad += 1;
+  console.log(
+    `${ok ? "OK  " : "FAIL"}  ${role.padEnd(16)} time-approvals -> ${res.status} (want ${expected})`
+  );
+}
+
+// An /admin path no rule names must be refused, not served. This is the
+// fail-open case, so it is asserted rather than assumed.
+const unlisted = await fetch(`${WEB}/admin/dashboard/nothing-here`, {
+  headers: { Cookie: cookies.sales },
+  redirect: "manual",
+});
+const unlistedOk = unlisted.status === 307 || unlisted.status === 308;
+if (!unlistedOk) bad += 1;
+console.log(
+  `${unlistedOk ? "OK  " : "FAIL"}  ${"sales".padEnd(16)} bounced from an unlisted /admin path  (${unlisted.status})`
+);
+
 // The timesheet is shared: every company role logs hours, so no role may be
 // bounced off it. A nav link that redirects is worse than no nav link at all.
 for (const role of Object.keys(EXPECT)) {
