@@ -16,7 +16,10 @@ import type {
     IExpense,
     IExpenseCategory,
     IInvoice,
+    IKpiTarget,
+    ILeadStageEvent,
     ILeadPipeline,
+    IMilestone,
     IMonthlyPoint,
     IOrganization,
     IOwnerWithdrawal,
@@ -374,4 +377,62 @@ export const getCapacities = async () =>
 export const setCapacity = async (userId: string, weeklyHours: number) =>
     wrap("setting capacity", () =>
         httpClient.patch(`/time-entries/capacity/${userId}`, { weekly_hours: weeklyHours })
+    )
+
+// ---------------------------------------------------------------------------
+// Milestones
+// ---------------------------------------------------------------------------
+
+export const getMilestones = async (queryString?: string) =>
+    wrap("fetching milestones", () =>
+        httpClient.get<IMilestone[]>("/milestones", { params: toParams(queryString) })
+    )
+
+export const createMilestone = async (payload: Record<string, unknown>) =>
+    wrap("creating a milestone", () => httpClient.post<IMilestone>("/milestones", payload))
+
+export const updateMilestone = async (id: string, payload: Record<string, unknown>) =>
+    wrap("updating a milestone", () => httpClient.patch<IMilestone>(`/milestones/${id}`, payload))
+
+export const submitMilestone = async (id: string) =>
+    wrap("submitting a milestone", () =>
+        httpClient.post<IMilestone>(`/milestones/${id}/submit`, {})
+    )
+
+export const acceptMilestone = async (id: string) =>
+    wrap("accepting a milestone", () =>
+        httpClient.post<IMilestone>(`/milestones/${id}/accept`, {})
+    )
+
+export const reopenMilestone = async (id: string) =>
+    wrap("reopening a milestone", () =>
+        httpClient.post<IMilestone>(`/milestones/${id}/reopen`, {})
+    )
+
+export const deleteMilestone = async (id: string) =>
+    wrap("deleting a milestone", () =>
+        httpClient.delete<{ message: string }>(`/milestones/${id}`)
+    )
+
+// ---------------------------------------------------------------------------
+// KPI targets
+// ---------------------------------------------------------------------------
+
+export const getKpiTargets = async (queryString?: string) =>
+    wrap("fetching targets", () =>
+        httpClient.get<IKpiTarget[]>("/kpi-targets", { params: toParams(queryString) })
+    )
+
+export const createKpiTarget = async (payload: Record<string, unknown>) =>
+    wrap("setting a target", () => httpClient.post<IKpiTarget>("/kpi-targets", payload))
+
+export const updateKpiTarget = async (id: string, payload: Record<string, unknown>) =>
+    wrap("updating a target", () => httpClient.patch<IKpiTarget>(`/kpi-targets/${id}`, payload))
+
+export const deleteKpiTarget = async (id: string) =>
+    wrap("deleting a target", () => httpClient.delete<{ message: string }>(`/kpi-targets/${id}`))
+
+export const getLeadStageEvents = async (leadId: string) =>
+    wrap("fetching lead history", () =>
+        httpClient.get<ILeadStageEvent[]>(`/leads/${leadId}/stage-events`)
     )

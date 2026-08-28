@@ -413,3 +413,61 @@ export interface ICapacityRow {
     weekly_hours: number;
     is_default: boolean;
 }
+
+/**
+ * A dated promise inside a project.
+ *
+ * `submitted_at` is what on-time delivery is scored on — it is the part the
+ * team controls. `accepted_at` is the client's sign-off; a milestone submitted
+ * on time and never accepted is delivered but not done, which is worth being
+ * able to see separately.
+ */
+export interface IMilestone {
+    id: string;
+    project_id: string;
+    title: string;
+    description: string;
+    due_date: string;
+    submitted_at: string | null;
+    accepted_at: string | null;
+    sort_order: number;
+    created_at: string;
+    project?: Pick<IProject, "id" | "name" | "code">;
+}
+
+export type KpiMetric =
+    | "utilization_pct"
+    | "realization_pct"
+    | "billable_hours"
+    | "revenue_usd"
+    | "gross_margin_pct"
+    | "deals_won"
+    | "deal_value_usd"
+    | "win_rate_pct"
+    | "pipeline_coverage"
+    | "on_time_delivery_pct"
+    | "project_margin_pct";
+
+export type KpiPeriod = "month" | "quarter" | "year";
+
+export interface IKpiTarget {
+    id: string;
+    /** Null means the target belongs to the whole agency, not to one person. */
+    user_id: string | null;
+    metric: KpiMetric;
+    period: KpiPeriod;
+    period_start: string;
+    target_value: number;
+    notes: string;
+    user?: { id: string; full_name: string; email: string };
+}
+
+/** Every stage a lead has been in. `from_stage` is null on the creation event. */
+export interface ILeadStageEvent {
+    id: string;
+    lead_id: string;
+    from_stage: string | null;
+    to_stage: string;
+    changed_by: string | null;
+    changed_at: string;
+}
