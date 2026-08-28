@@ -72,4 +72,16 @@ for (const [role, { home, denied }] of Object.entries(EXPECT)) {
   }
 }
 
+// The timesheet is shared: every company role logs hours, so no role may be
+// bounced off it. A nav link that redirects is worse than no nav link at all.
+for (const role of Object.keys(EXPECT)) {
+  const res = await fetch(`${WEB}/dashboard/timesheet`, {
+    headers: { Cookie: cookies[role] },
+    redirect: "manual",
+  });
+  const ok = res.status === 200;
+  if (!ok) bad += 1;
+  console.log(`${ok ? "OK  " : "FAIL"}  ${role.padEnd(16)} opens /dashboard/timesheet  (${res.status})`);
+}
+
 console.log(`\n${bad === 0 ? "ROLE ROUTING CORRECT" : `${bad} ROUTING PROBLEM(S)`}`);

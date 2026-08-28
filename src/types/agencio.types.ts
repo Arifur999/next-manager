@@ -382,3 +382,34 @@ export interface IAssignmentRow {
     /** Live work only — finished projects would make everyone look busy forever. */
     active_count: number;
 }
+
+export interface ITimeEntry {
+    id: string;
+    user_id: string;
+    project_id: string;
+    task_id: string | null;
+    date: string;
+    hours: number;
+    is_billable: boolean;
+    notes: string;
+    /** Null until a second person signs it off. Only approved time is billable. */
+    approved_at: string | null;
+    approved_by: string | null;
+    user?: { id: string; full_name: string; email: string; avatar_url?: string };
+    project?: Pick<IProject, "id" | "name" | "code">;
+    task?: { id: string; title: string } | null;
+}
+
+export interface ITimeSummary {
+    days: Array<{ date: string; is_billable: boolean; hours: number }>;
+    billable_hours: number;
+    non_billable_hours: number;
+    total_hours: number;
+}
+
+export interface ICapacityRow {
+    user: { id: string; full_name: string; email: string; role: string };
+    /** The denominator every utilization figure divides by. */
+    weekly_hours: number;
+    is_default: boolean;
+}

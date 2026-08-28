@@ -4,6 +4,7 @@ import { httpClient } from "@/lib/axios/httpClient"
 import type {
     IAccount,
     IAssignmentRow,
+    ICapacityRow,
     IClient,
     IClientFinancials,
     ICredential,
@@ -28,6 +29,8 @@ import type {
     IRevealedCredential,
     ITask,
     ITeamPayout,
+    ITimeEntry,
+    ITimeSummary,
 } from "@/types/agencio.types"
 
 /**
@@ -330,4 +333,45 @@ export const assignProjectMember = async (payload: Record<string, unknown>) =>
 export const removeProjectMember = async (id: string) =>
     wrap("removing from project", () =>
         httpClient.delete<{ message: string }>(`/project-members/${id}`)
+    )
+
+// ------------------------------------------------------------- time tracking
+
+export const getTimeEntries = async (queryString?: string) =>
+    wrap("fetching time entries", () =>
+        httpClient.get<ITimeEntry[]>("/time-entries", { params: toParams(queryString) })
+    )
+
+export const getTimeSummary = async (queryString?: string) =>
+    wrap("fetching time summary", () =>
+        httpClient.get<ITimeSummary>("/time-entries/summary", { params: toParams(queryString) })
+    )
+
+export const createTimeEntry = async (payload: Record<string, unknown>) =>
+    wrap("logging time", () => httpClient.post<ITimeEntry>("/time-entries", payload))
+
+export const updateTimeEntry = async (id: string, payload: Record<string, unknown>) =>
+    wrap("updating time entry", () => httpClient.patch<ITimeEntry>(`/time-entries/${id}`, payload))
+
+export const deleteTimeEntry = async (id: string) =>
+    wrap("deleting time entry", () =>
+        httpClient.delete<{ message: string }>(`/time-entries/${id}`)
+    )
+
+export const approveTimeEntry = async (id: string) =>
+    wrap("approving time entry", () =>
+        httpClient.post<ITimeEntry>(`/time-entries/${id}/approve`, {})
+    )
+
+export const unapproveTimeEntry = async (id: string) =>
+    wrap("un-approving time entry", () =>
+        httpClient.post<ITimeEntry>(`/time-entries/${id}/unapprove`, {})
+    )
+
+export const getCapacities = async () =>
+    wrap("fetching capacities", () => httpClient.get<ICapacityRow[]>("/time-entries/capacity"))
+
+export const setCapacity = async (userId: string, weeklyHours: number) =>
+    wrap("setting capacity", () =>
+        httpClient.patch(`/time-entries/capacity/${userId}`, { weekly_hours: weeklyHours })
     )

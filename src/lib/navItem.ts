@@ -46,6 +46,7 @@ const ADMIN_SECTIONS: NavSection[] = [
         items: [
             { title: "Projects", href: "/admin/dashboard/projects", icon: "FolderKanban" },
             { title: "Tasks", href: "/admin/dashboard/tasks", icon: "ListChecks" },
+            { title: "Timesheet", href: "/dashboard/timesheet", icon: "Clock" },
         ],
     },
     {
@@ -94,6 +95,7 @@ const PROJECT_MANAGER_SECTIONS: NavSection[] = [
         items: [
             { title: "Projects", href: "/admin/dashboard/projects", icon: "FolderKanban" },
             { title: "Tasks", href: "/admin/dashboard/tasks", icon: "ListChecks" },
+            { title: "Timesheet", href: "/dashboard/timesheet", icon: "Clock" },
             { title: "Team", href: "/admin/dashboard/team-management", icon: "UsersRound" },
         ],
     },
@@ -110,6 +112,7 @@ const OPERATIONS_SECTIONS: NavSection[] = [
     {
         items: [
             { title: "My Tasks", href: "/dashboard/tasks", icon: "ListChecks" },
+            { title: "Timesheet", href: "/dashboard/timesheet", icon: "Clock" },
             { title: "Overview", href: "/dashboard", icon: "LayoutDashboard" },
         ],
     },
