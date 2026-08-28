@@ -3,6 +3,7 @@
 import { httpClient } from "@/lib/axios/httpClient"
 import type {
     IAccount,
+    IAssignmentRow,
     IClient,
     IClientFinancials,
     ICredential,
@@ -22,6 +23,7 @@ import type {
     IProfitAndLoss,
     IProject,
     IProjectFinancials,
+    IProjectMember,
     IRateSettings,
     IRevealedCredential,
     ITask,
@@ -311,3 +313,21 @@ export const getProjectProfitability = async (queryString?: string) =>
 
 export const getCashFlow = async (queryString?: string) =>
     wrap("fetching cash flow", () => httpClient.get("/reports/cash-flow", { params: toParams(queryString) }))
+
+// ------------------------------------------------------- project assignments
+
+export const getProjectMembers = async (projectId: string) =>
+    wrap("fetching project members", () =>
+        httpClient.get<IProjectMember[]>(`/project-members/${projectId}`)
+    )
+
+export const getAssignmentOverview = async () =>
+    wrap("fetching assignments", () => httpClient.get<IAssignmentRow[]>("/project-members/overview"))
+
+export const assignProjectMember = async (payload: Record<string, unknown>) =>
+    wrap("assigning to project", () => httpClient.post<IProjectMember>("/project-members", payload))
+
+export const removeProjectMember = async (id: string) =>
+    wrap("removing from project", () =>
+        httpClient.delete<{ message: string }>(`/project-members/${id}`)
+    )

@@ -364,3 +364,21 @@ export interface IMonthlyPoint {
     cost_bdt: number;
     profit_bdt: number;
 }
+
+export interface IProjectMember {
+    id: string;
+    role_on_project: string;
+    created_at?: string;
+    user: { id: string; full_name: string; email: string; avatar_url?: string; role: string };
+}
+
+export interface IAssignmentRow {
+    user: { id: string; full_name: string; email: string; avatar_url?: string; role: string };
+    assignments: Array<{
+        id: string;
+        role_on_project: string;
+        project: { id: string; name: string; code: string; status: ProjectStatus };
+    }>;
+    /** Live work only — finished projects would make everyone look busy forever. */
+    active_count: number;
+}

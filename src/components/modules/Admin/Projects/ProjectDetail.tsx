@@ -1,5 +1,6 @@
 "use client"
 
+import ProjectTeamPanel from "@/components/modules/Admin/Projects/ProjectTeamPanel"
 import StatTile from "@/components/shared/StatTile"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -124,6 +125,7 @@ const ProjectDetail = ({ projectId }: { projectId: string }) => {
       <Tabs defaultValue="tasks">
         <TabsList>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          <TabsTrigger value="team">Team</TabsTrigger>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="vault">Vault</TabsTrigger>
         </TabsList>
@@ -164,6 +166,10 @@ const ProjectDetail = ({ projectId }: { projectId: string }) => {
               </ul>
             )}
           </Card>
+        </TabsContent>
+
+        <TabsContent value="team" className="mt-4">
+          <ProjectTeamPanel projectId={projectId} />
         </TabsContent>
 
         <TabsContent value="overview" className="mt-4">
