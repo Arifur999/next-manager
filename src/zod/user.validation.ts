@@ -1,6 +1,18 @@
 import { z } from "zod"
 
-const assignableRoles = ["manager", "staff", "accountant"] as const
+// Mirrors the backend's assignableRoles: super_admin is a platform role and
+// cannot be granted from inside a company. admin CAN be granted - a company
+// may want a second one, and the last-admin guard makes that safe.
+export const ASSIGNABLE_ROLES = ["admin", "sales", "project_manager", "operations"] as const
+
+export const ROLE_LABELS: Record<(typeof ASSIGNABLE_ROLES)[number], string> = {
+  admin: "Admin — finance and company state",
+  sales: "Sales — clients, leads, invoices",
+  project_manager: "Project manager — projects, teams, schedule",
+  operations: "Operations — does the work, logs time",
+}
+
+const assignableRoles = ASSIGNABLE_ROLES
 
 export const createUserFormZodSchema = z.object({
   full_name: z.string().min(1, "Full name is required"),

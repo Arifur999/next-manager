@@ -24,7 +24,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { type IUser } from "@/types/user.types"
-import { editUserFormZodSchema, type IEditUserFormValues } from "@/zod/user.validation"
+import {
+  ASSIGNABLE_ROLES,
+  ROLE_LABELS,
+  editUserFormZodSchema,
+  type IEditUserFormValues,
+} from "@/zod/user.validation"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
@@ -36,14 +41,10 @@ type EditUserFormModalProps = {
   user: IUser | null
 }
 
-const ROLE_OPTIONS = [
-  { value: "manager", label: "Manager" },
-  { value: "accountant", label: "Accountant" },
-  { value: "staff", label: "Staff" },
-]
+const ROLE_OPTIONS = ASSIGNABLE_ROLES.map((value) => ({ value, label: ROLE_LABELS[value] }))
 
 const isAssignableRole = (role: string): role is IEditUserFormValues["role"] =>
-  ROLE_OPTIONS.some((option) => option.value === role)
+  (ASSIGNABLE_ROLES as readonly string[]).includes(role)
 
 const EditUserForm = ({ user, onOpenChange }: { user: IUser; onOpenChange: (open: boolean) => void }) => {
   const queryClient = useQueryClient()
@@ -57,9 +58,9 @@ const EditUserForm = ({ user, onOpenChange }: { user: IUser; onOpenChange: (open
     defaultValues: {
       full_name: user.full_name,
       phone: user.phone ?? "",
-      // An owner row could carry a role this form cannot assign; fall back
+      // A super_admin row would carry a role this form cannot assign; fall back
       // rather than rendering a Select with a value that is not an option.
-      role: isAssignableRole(user.role) ? user.role : "staff",
+      role: isAssignableRole(user.role) ? user.role : "operations",
       is_active: user.is_active,
     } satisfies IEditUserFormValues,
     onSubmit: async ({ value }) => {

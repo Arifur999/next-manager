@@ -1,15 +1,23 @@
-export type UserRole = "SUPER_ADMIN" | "OWNER" | "MANAGER" | "STAFF" | "ACCOUNTANT";
+// Roles live in one place: lib/authUtils.ts, spelled exactly as the API sends
+// them. This file used to declare a second, upper-cased set and a translator
+// between the two - and the two drifted, ending up with STAFF and ACCOUNTANT
+// that the server had never heard of. Re-exporting removes the seam.
+export type { UserRole } from "@/lib/authUtils";
+export { isUserRole, ALL_ROLES } from "@/lib/authUtils";
 
-// The API sends roles lowercase (they are Prisma enum values). This is the
-// single place the two spellings meet.
-export type ApiUserRole = "super_admin" | "owner" | "manager" | "staff" | "accountant";
+import type { UserRole } from "@/lib/authUtils";
+import { isUserRole } from "@/lib/authUtils";
 
-export const toUserRole = (role: ApiUserRole | string | undefined): UserRole | null => {
-    if (!role) return null;
-    const normalized = role.toUpperCase();
-    const known: UserRole[] = ["SUPER_ADMIN", "OWNER", "MANAGER", "STAFF", "ACCOUNTANT"];
-    return known.includes(normalized as UserRole) ? (normalized as UserRole) : null;
-};
+/**
+ * A role off the wire, or null when it is not one we know.
+ *
+ * No case conversion any more - the API value IS the value. It stays a
+ * function rather than a cast because a token minted before a role was renamed
+ * can still carry the old string, and that has to read as "unknown" rather
+ * than crash a layout.
+ */
+export const toUserRole = (role: string | undefined | null): UserRole | null =>
+    isUserRole(role) ? role : null;
 
 export interface IUser {
     id: string;
@@ -17,7 +25,7 @@ export interface IUser {
     full_name: string;
     phone?: string;
     avatar_url?: string;
-    role: ApiUserRole;
+    role: UserRole;
     status?: "pending" | "active" | "suspended";
     is_active: boolean;
     email_verified: boolean;

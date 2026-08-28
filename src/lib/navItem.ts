@@ -1,4 +1,4 @@
-import { toRouteOwner, type UserRole } from "./authUtils";
+import type { UserRole } from "./authUtils";
 
 export type NavItem = {
     title: string;
@@ -14,22 +14,26 @@ export type NavSection = {
 };
 
 /**
- * The sidebar, as data.
+ * The sidebar, as data — one list per role.
  *
  * Adding a page means adding an entry here, never editing the sidebar
- * component. The sections mirror the product's own shape — CRM, Projects,
- * Finance, Vault, Team, Settings — so the sidebar and the way people talk about
- * the app stay the same thing.
+ * component. What each role sees mirrors what `AREAS` in authUtils.ts actually
+ * lets them open, so the nav never offers a link that bounces.
  *
- * This is only what the sidebar SHOWS. Every route is separately gated by
- * proxy.ts and by the API's own role checks, so hiding a link is a courtesy
- * rather than a security boundary.
+ * Hiding a link is a courtesy, not a security boundary: proxy.ts and the API's
+ * own role checks are what actually gate a route.
  */
 
-const OWNER_SECTIONS: NavSection[] = [
-    {
-        items: [{ title: "Dashboard", href: "/admin/dashboard", icon: "LayoutDashboard" }],
-    },
+const ACCOUNT_SECTION: NavSection = {
+    title: "Account",
+    items: [
+        { title: "My Profile", href: "/my-profile", icon: "User" },
+        { title: "Change Password", href: "/change-password", icon: "Lock" },
+    ],
+};
+
+const ADMIN_SECTIONS: NavSection[] = [
+    { items: [{ title: "Dashboard", href: "/admin/dashboard", icon: "LayoutDashboard" }] },
     {
         title: "CRM",
         items: [
@@ -68,25 +72,63 @@ const OWNER_SECTIONS: NavSection[] = [
     },
 ];
 
-// A member sees their own work and nothing financial.
-const MEMBER_SECTIONS: NavSection[] = [
+// Sales lands on the pipeline, not a dashboard: the board IS their dashboard.
+const SALES_SECTIONS: NavSection[] = [
     {
+        title: "Pipeline",
         items: [
-            { title: "Dashboard", href: "/dashboard", icon: "LayoutDashboard" },
-            { title: "My Tasks", href: "/dashboard/tasks", icon: "ListChecks" },
+            { title: "Leads", href: "/admin/dashboard/leads", icon: "Target" },
+            { title: "Clients", href: "/admin/dashboard/clients", icon: "Users" },
+            { title: "Invoices", href: "/admin/dashboard/invoices", icon: "FileText" },
+        ],
+    },
+    {
+        title: "Workspace",
+        items: [{ title: "Vault", href: "/admin/dashboard/vault", icon: "KeyRound" }],
+    },
+];
+
+const PROJECT_MANAGER_SECTIONS: NavSection[] = [
+    {
+        title: "Delivery",
+        items: [
+            { title: "Projects", href: "/admin/dashboard/projects", icon: "FolderKanban" },
+            { title: "Tasks", href: "/admin/dashboard/tasks", icon: "ListChecks" },
+            { title: "Team", href: "/admin/dashboard/team-management", icon: "UsersRound" },
+        ],
+    },
+    {
+        title: "Workspace",
+        items: [
+            { title: "Clients", href: "/admin/dashboard/clients", icon: "Users" },
+            { title: "Vault", href: "/admin/dashboard/vault", icon: "KeyRound" },
         ],
     },
 ];
 
-const ACCOUNT_SECTION: NavSection = {
-    title: "Account",
-    items: [
-        { title: "My Profile", href: "/my-profile", icon: "User" },
-        { title: "Change Password", href: "/change-password", icon: "Lock" },
-    ],
+const OPERATIONS_SECTIONS: NavSection[] = [
+    {
+        items: [
+            { title: "My Tasks", href: "/dashboard/tasks", icon: "ListChecks" },
+            { title: "Overview", href: "/dashboard", icon: "LayoutDashboard" },
+        ],
+    },
+];
+
+// The platform console is its own thing and shares nothing with a company.
+const SUPER_ADMIN_SECTIONS: NavSection[] = [
+    { items: [{ title: "Companies", href: "/platform", icon: "UsersRound" }] },
+];
+
+const BY_ROLE: Record<UserRole, NavSection[]> = {
+    super_admin: SUPER_ADMIN_SECTIONS,
+    admin: ADMIN_SECTIONS,
+    sales: SALES_SECTIONS,
+    project_manager: PROJECT_MANAGER_SECTIONS,
+    operations: OPERATIONS_SECTIONS,
 };
 
-export const getNavSections = (role: UserRole): NavSection[] => {
-    const base = toRouteOwner(role) === "OWNER" ? OWNER_SECTIONS : MEMBER_SECTIONS;
-    return [...base, ACCOUNT_SECTION];
-};
+export const getNavSections = (role: UserRole): NavSection[] => [
+    ...BY_ROLE[role],
+    ACCOUNT_SECTION,
+];

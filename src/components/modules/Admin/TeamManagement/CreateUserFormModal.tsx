@@ -23,7 +23,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { createUserFormZodSchema, type ICreateUserFormValues } from "@/zod/user.validation"
+import {
+  ASSIGNABLE_ROLES,
+  ROLE_LABELS,
+  createUserFormZodSchema,
+  type ICreateUserFormValues,
+} from "@/zod/user.validation"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
@@ -36,14 +41,10 @@ const defaultValues: ICreateUserFormValues = {
   email: "",
   phone: "",
   password: "",
-  role: "staff",
+  role: "operations",
 }
 
-const ROLE_OPTIONS = [
-  { value: "manager", label: "Manager" },
-  { value: "accountant", label: "Accountant" },
-  { value: "staff", label: "Staff" },
-]
+const ROLE_OPTIONS = ASSIGNABLE_ROLES.map((value) => ({ value, label: ROLE_LABELS[value] }))
 
 const CreateUserFormModal = () => {
   const [open, setOpen] = useState(false)

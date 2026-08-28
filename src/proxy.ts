@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+    canRoleReach,
+    getAreaRule,
     getDefaultDashboardRoute,
-    getRouteOwner,
     isAuthRoute,
-    toRouteOwner,
     type UserRole,
 } from "./lib/authUtils";
 import { jwtUtils } from "./lib/jwtUtils";
@@ -40,7 +40,7 @@ export async function proxy(request: NextRequest) {
             ? toUserRole(verified.decoded?.role)
             : null;
 
-        const routeOwner = getRouteOwner(pathname);
+        const area = getAreaRule(pathname);
         const isAuth = isAuthRoute(pathname);
 
         // Rule 0 - proactively refresh a token that is about to expire, so a
@@ -66,7 +66,7 @@ export async function proxy(request: NextRequest) {
         }
 
         // Rule 2 - public route, nothing to check.
-        if (routeOwner === null) {
+        if (area === null) {
             return NextResponse.next();
         }
 
@@ -78,14 +78,14 @@ export async function proxy(request: NextRequest) {
             return NextResponse.redirect(loginUrl);
         }
 
-        // Rule 4 - signed in, and the route belongs to anyone signed in.
-        if (routeOwner === "COMMON") {
+        // Rule 4 - signed in, and the area is open to any signed-in user.
+        if (area.roles === null) {
             return NextResponse.next();
         }
 
-        // Rule 5 - role-owned route: send a mismatched role to its own home
-        // rather than showing a 403 they can do nothing about.
-        if (routeOwner !== toRouteOwner(userRole)) {
+        // Rule 5 - role-gated area: send a role that cannot open it to its own
+        // home rather than showing a 403 they can do nothing about.
+        if (!canRoleReach(pathname, userRole)) {
             return NextResponse.redirect(new URL(getDefaultDashboardRoute(userRole), request.url));
         }
 
