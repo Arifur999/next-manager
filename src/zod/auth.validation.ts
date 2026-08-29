@@ -39,3 +39,22 @@ export const changePasswordFormZodSchema = z.object({
 })
 
 export type IChangePasswordFormValues = z.infer<typeof changePasswordFormZodSchema>
+
+export const forgotPasswordFormZodSchema = z.object({
+  email: z.string().min(1, "Email is required").email("Enter a valid email address"),
+})
+
+export type IForgotPasswordFormValues = z.infer<typeof forgotPasswordFormZodSchema>
+
+export const resetPasswordFormZodSchema = z.object({
+  // Carried from the URL rather than typed. Present here so the payload has
+  // one shape the form and the action both agree on.
+  token: z.string().min(1, "This reset link is incomplete"),
+  new_password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Za-z]/, "Password must contain a letter")
+    .regex(/[0-9]/, "Password must contain a number"),
+})
+
+export type IResetPasswordFormValues = z.infer<typeof resetPasswordFormZodSchema>

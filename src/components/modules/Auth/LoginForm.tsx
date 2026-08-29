@@ -120,6 +120,18 @@ const LoginForm = () => {
             )}
           </form.Field>
 
+          {/* Under the password field, where somebody looks the moment their
+              first attempt fails — not buried at the bottom with the sign-up
+              link, which is a different intention entirely. */}
+          <div className="-mt-2 text-right">
+            <Link
+              href="/forgot-password"
+              className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              Forgot your password?
+            </Link>
+          </div>
+
           <AppSubmitButton isPending={isPending} pendingLabel="Signing in...">
             Sign in
           </AppSubmitButton>
