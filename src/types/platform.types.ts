@@ -62,3 +62,38 @@ export interface IMySubscription {
     subscription: ISubscription | null;
     usage: IUsage;
 }
+
+/**
+ * The operator's own numbers.
+ *
+ * `unprovisioned` is companies with no subscription row at all — the
+ * platform's own loose end, kept out of the status counts because it is not a
+ * state a company chose.
+ */
+export interface IPlatformOverview {
+    companies: {
+        total: number;
+        unprovisioned: number;
+        trialing: number;
+        active: number;
+        past_due: number;
+        suspended: number;
+        cancelled: number;
+    };
+    /** Counts active and past_due. Money owed is still money owed. */
+    mrr_usd: number;
+    ending_soon: Array<{
+        organization: { id: string; name: string; email: string };
+        plan: string;
+        status: SubscriptionStatus;
+        ends_at: string | null;
+    }>;
+    newest: Array<{
+        id: string;
+        name: string;
+        created_at: string;
+        status: SubscriptionStatus | null;
+        plan: string | null;
+        seats: number;
+    }>;
+}

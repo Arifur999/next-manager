@@ -41,6 +41,7 @@ import type { KpiScope } from "@/types/kpi.types"
 import type {
     ICompanyRow,
     IMySubscription,
+    IPlatformOverview,
     IPlan,
     ISubscription,
 } from "@/types/platform.types"
@@ -521,3 +522,11 @@ export const getActivityFilters = async () =>
     wrap("fetching activity filters", () =>
         httpClient.get<IActivityFilters>("/activity/filters")
     )
+
+export const getPlatformOverview = async () =>
+    wrap("fetching platform overview", () =>
+        httpClient.get<IPlatformOverview>("/platform/overview")
+    )
+
+export const createCompany = async (payload: Record<string, unknown>) =>
+    wrap("creating a company", () => httpClient.post("/platform/companies", payload))

@@ -1,7 +1,7 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { createPlan, setSubscription, updatePlan } from "@/services/agencio.services"
+import { createCompany, createPlan, setSubscription, updatePlan } from "@/services/agencio.services"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 import type { IPlan, ISubscription } from "@/types/platform.types"
 
@@ -43,5 +43,17 @@ export const updatePlanAction = async (
         return await updatePlan(id, payload)
     } catch (error: unknown) {
         return { success: false, message: getActionErrorMessage(error, "Could not update the plan") }
+    }
+}
+
+export const createCompanyAction = async (
+    payload: Record<string, unknown>,
+): Promise<ApiResponse<unknown> | ApiErrorResponse> => {
+    try {
+        return await createCompany(payload)
+    } catch (error: unknown) {
+        // "That email already has an account. One address cannot admin two
+        // companies." is the server's wording and says what to change.
+        return { success: false, message: getActionErrorMessage(error, "Could not create the company") }
     }
 }
