@@ -1,5 +1,6 @@
 "use server"
 
+import { httpClient } from "@/lib/axios/httpClient"
 import { deleteCookie } from "@/lib/cookiesUtils"
 import { setTokenInCookies } from "@/lib/tokenUtils"
 import { type IUser } from "@/types/user.types"
@@ -87,3 +88,16 @@ export const logout = async () => {
     await deleteCookie("accessToken")
     await deleteCookie("refreshToken")
 }
+
+/**
+ * Edit your own record.
+ *
+ * Deliberately not updateUser: that one is admin-only and can move a role. The
+ * server keeps a three-field allow-list and refuses anything else, so a payload
+ * that grew an extra key comes back as an error rather than a silent no-op.
+ */
+export const updateMe = async (payload: Record<string, unknown>) =>
+    httpClient.patch<IUser>("/auth/me", payload)
+
+export const changePassword = async (payload: Record<string, unknown>) =>
+    httpClient.post<{ message: string }>("/auth/change-password", payload)

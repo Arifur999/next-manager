@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:routing": "node scripts/role-routing.mjs"
+    "test:routing": "node scripts/role-routing.mjs",
+    "verify": "NEXT_DIST_DIR=.next-check next build"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.3.0",
