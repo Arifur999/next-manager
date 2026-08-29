@@ -151,11 +151,15 @@ const SUPER_ADMIN_SECTIONS: NavSection[] = [
         ],
     },
     {
-        title: "Team",
+        // "Your team", not "Team": everything under here is about the people
+        // who run AGENCIO with you, never about a customer's staff. The entry
+        // below used to read "Invite admin" and was reasonably taken to mean
+        // the admin of an agency - it hands out the run of the platform.
+        title: "Your team",
         items: [
+            { title: "Invite operator", href: "/platform/invite-operator", icon: "User" },
             { title: "Permissions", href: "/platform/permissions", icon: "KeyRound" },
-            { title: "Invite admin", href: "/platform/invite-admin", icon: "User" },
-            { title: "Admin activity", href: "/platform/activity", icon: "History" },
+            { title: "Operator activity", href: "/platform/activity", icon: "History" },
         ],
     },
     {

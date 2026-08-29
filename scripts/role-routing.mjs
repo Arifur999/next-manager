@@ -201,7 +201,7 @@ if (!superEmail || !superPassword) {
     ["/platform/plans", 200],
     ["/platform/finance", 200],
     ["/platform/permissions", 200],
-    ["/platform/invite-admin", 200],
+    ["/platform/invite-operator", 200],
     ["/platform/activity", 200],
     ["/platform/campaigns", 200],
     ["/platform/settings", 200],

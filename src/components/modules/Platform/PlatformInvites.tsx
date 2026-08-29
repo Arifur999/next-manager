@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { getPlatformInvites } from "@/services/agencio.services"
+import Link from "next/link"
 import {
   PLATFORM_PERMISSIONS,
   PLATFORM_PERMISSION_INFO,
@@ -114,9 +115,13 @@ const PlatformInvites = () => {
         <CardHeader className="border-b px-5 py-4">
           <CardTitle className="text-base">Invite an operator</CardTitle>
           <p className="text-sm text-muted-foreground">
-            They choose their own password and land waiting for approval. The link works
-            once, expires in seven days, and only for the address you enter. The link is
-            emailed to them straight away.
+            Somebody who runs AGENCIO with you — not the admin of a customer’s agency,
+            who is created together with their company on the{" "}
+            <Link href="/platform/customers" className="text-primary underline-offset-4 hover:underline">
+              customers screen
+            </Link>
+            . They choose their own password and land waiting for approval; the link is
+            emailed to them, works once, and expires in seven days.
           </p>
         </CardHeader>
 
@@ -124,7 +129,7 @@ const PlatformInvites = () => {
           className="space-y-5 p-5"
           onSubmit={(event) => {
             event.preventDefault()
-            if (!email.trim()) return
+            if (!email.trim() || permissions.length === 0) return
             invite()
           }}
         >
@@ -143,10 +148,11 @@ const PlatformInvites = () => {
           <div className="space-y-2">
             <Label>What they may do</Label>
             <p className="text-xs text-muted-foreground">
-              {/* The default here is full access, and saying so beats letting
-                  somebody discover it after the fact. */}
-              Leave everything unticked and they arrive with full access. Choosing now is
-              better than narrowing later — until you do, they can suspend any customer.
+              {/* This used to grant everything when nothing was ticked, which is
+                  what an untouched form looks like. Now at least one is required
+                  and the server refuses the rest. */}
+              Pick at least one. Choosing now is better than narrowing later — until you
+              do, an operator can suspend any customer you have.
             </p>
 
             <div className="grid gap-2 pt-1 sm:grid-cols-2">
@@ -172,7 +178,7 @@ const PlatformInvites = () => {
             </div>
           </div>
 
-          <Button type="submit" disabled={isPending || !email.trim()}>
+          <Button type="submit" disabled={isPending || !email.trim() || permissions.length === 0}>
             <MailPlus className="size-4" />
             {isPending ? "Sending..." : "Send invite"}
           </Button>
