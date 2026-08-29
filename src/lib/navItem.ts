@@ -141,6 +141,7 @@ const SUPER_ADMIN_SECTIONS: NavSection[] = [
             { title: "All users", href: "/platform/customers", icon: "UsersRound" },
             { title: "Active users", href: "/platform/active-users", icon: "UserCheck" },
             { title: "Plans", href: "/platform/plans", icon: "Wallet" },
+            { title: "Campaigns", href: "/platform/campaigns", icon: "Megaphone" },
         ],
     },
     {

@@ -258,3 +258,39 @@ export interface IPlatformTrend {
     signups: Array<{ month: string; count: number }>;
     revenue_by_plan: Array<{ name: string; companies: number; mrr_usd: number }>;
 }
+
+/**
+ * A notice from the platform to its customers.
+ *
+ * `emailed_count` is null in two different situations that must not be
+ * conflated: no email was asked for, and an email was asked for but we do not
+ * know how many addresses it reached. `send_email` tells them apart.
+ */
+export interface IAnnouncement {
+    id: string;
+    title: string;
+    body: string;
+    audience: "all" | "trialing" | "active";
+    send_email: boolean;
+    /** Null while it is a draft. */
+    published_at: string | null;
+    emailed_count: number | null;
+    created_at: string;
+    updated_at: string;
+    _count?: { reads: number };
+}
+
+/** What the publish call reports back about the mail it tried to send. */
+export interface IPublishResult extends IAnnouncement {
+    email: { attempted: number; delivered: number; reason: string | null } | null;
+}
+
+/** One row in a customer's bell. */
+export interface INotification {
+    id: string;
+    title: string;
+    body: string;
+    published_at: string;
+    /** Null until they open it. */
+    read_at: string | null;
+}

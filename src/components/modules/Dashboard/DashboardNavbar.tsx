@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import NotificationBell from "@/components/modules/Dashboard/NotificationBell";
 import { logout } from "@/services/auth.services";
 import { type IUser } from "@/types/user.types";
 import { LogOut, Moon, Sun, User } from "lucide-react";
@@ -41,6 +42,10 @@ const DashboardNavbar = ({ user }: { user: IUser }) => {
       </p>
 
       <div className="flex items-center gap-2">
+        {/* The platform operator has no company, so nothing is ever addressed
+            to them here - they are the one sending. */}
+        {user.role !== "super_admin" && <NotificationBell />}
+
         <Button
           variant="ghost"
           size="icon"

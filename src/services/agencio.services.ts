@@ -42,8 +42,10 @@ import type {
 } from "@/types/agencio.types"
 import type { KpiScope } from "@/types/kpi.types"
 import type {
+    IAnnouncement,
     ICompanyRow,
     IMySubscription,
+    INotification,
     IPlatformActivity,
     IPlatformExpense,
     IPlatformFinance,
@@ -52,6 +54,7 @@ import type {
     IPlatformInvite,
     IPlatformOverview,
     IPlan,
+    IPublishResult,
     ISubscription,
 } from "@/types/platform.types"
 
@@ -668,4 +671,47 @@ export const createPlatformExpense = async (payload: Record<string, unknown>) =>
 export const deletePlatformExpense = async (id: string) =>
     wrap("removing an expense", () =>
         httpClient.delete<{ message: string }>(`/platform/expenses/${id}`)
+    )
+
+// ---------------------------------------------------------------------------
+// Announcements: the console writes them, the bell reads them
+// ---------------------------------------------------------------------------
+
+export const getAnnouncements = async () =>
+    wrap("fetching announcements", () => httpClient.get<IAnnouncement[]>("/platform/announcements"))
+
+export const createAnnouncement = async (payload: Record<string, unknown>) =>
+    wrap("saving the draft", () =>
+        httpClient.post<IAnnouncement>("/platform/announcements", payload)
+    )
+
+export const updateAnnouncement = async (id: string, payload: Record<string, unknown>) =>
+    wrap("updating the draft", () =>
+        httpClient.patch<IAnnouncement>(`/platform/announcements/${id}`, payload)
+    )
+
+export const publishAnnouncement = async (id: string) =>
+    wrap("publishing", () =>
+        httpClient.post<IPublishResult>(`/platform/announcements/${id}/publish`, {})
+    )
+
+export const deleteAnnouncement = async (id: string) =>
+    wrap("removing the announcement", () =>
+        httpClient.delete<{ id: string }>(`/platform/announcements/${id}`)
+    )
+
+export const getNotifications = async () =>
+    wrap("fetching notifications", () => httpClient.get<INotification[]>("/notifications"))
+
+export const getUnreadCount = async () =>
+    wrap("fetching the unread count", () =>
+        httpClient.get<{ unread: number }>("/notifications/unread-count")
+    )
+
+export const markNotificationRead = async (id: string) =>
+    wrap("marking it read", () => httpClient.post<{ id: string }>(`/notifications/${id}/read`, {}))
+
+export const markAllNotificationsRead = async () =>
+    wrap("marking everything read", () =>
+        httpClient.post<{ marked: number }>("/notifications/read-all", {})
     )
