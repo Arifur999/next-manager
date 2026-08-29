@@ -105,6 +105,15 @@ export interface ILeadPipeline {
 }
 
 export interface IProject {
+    /**
+     * The plan, frozen at kickoff. contract_value_usd moves as the deal
+     * changes; these do not, and the gap between them is the scope-change rate.
+     * baseline_set_at is null when no baseline was ever taken - which is not
+     * the same as one taken at zero.
+     */
+    baseline_hours?: number;
+    baseline_value_usd?: number;
+    baseline_set_at?: string | null;
     id: string;
     client_id: string;
     name: string;

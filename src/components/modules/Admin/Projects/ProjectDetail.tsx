@@ -1,5 +1,6 @@
 "use client"
 
+import ProjectBaselineCard from "@/components/modules/Admin/Projects/ProjectBaselineCard"
 import ProjectMilestonePanel from "@/components/modules/Admin/Projects/ProjectMilestonePanel"
 import ProjectTeamPanel from "@/components/modules/Admin/Projects/ProjectTeamPanel"
 import StatTile from "@/components/shared/StatTile"
@@ -170,7 +171,8 @@ const ProjectDetail = ({ projectId }: { projectId: string }) => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="milestones" className="mt-4">
+        <TabsContent value="milestones" className="mt-4 space-y-4">
+          <ProjectBaselineCard projectId={projectId} />
           <ProjectMilestonePanel projectId={projectId} />
         </TabsContent>
 

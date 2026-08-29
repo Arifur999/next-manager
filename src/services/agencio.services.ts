@@ -457,3 +457,15 @@ export const getKpi = async <T>(scope: KpiScope, queryString?: string) =>
     wrap(`fetching ${scope} KPIs`, () =>
         httpClient.get<T>(`/kpi/${scope}`, { params: toParams(queryString) })
     )
+
+/**
+ * Freeze the plan a project is measured against.
+ *
+ * Separate from updateProject on purpose — the contract value is meant to move
+ * and the baseline is not, and one endpoint for both would let the baseline
+ * drift on every save.
+ */
+export const setProjectBaseline = async (projectId: string, payload: Record<string, unknown>) =>
+    wrap("setting the baseline", () =>
+        httpClient.post<IProject>(`/projects/${projectId}/baseline`, payload)
+    )

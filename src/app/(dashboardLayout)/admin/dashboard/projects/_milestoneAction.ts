@@ -6,10 +6,11 @@ import {
     createMilestone,
     deleteMilestone,
     reopenMilestone,
+    setProjectBaseline,
     submitMilestone,
     updateMilestone,
 } from "@/services/agencio.services"
-import type { IMilestone } from "@/types/agencio.types"
+import type { IMilestone, IProject } from "@/types/agencio.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 type MilestoneResult = ApiResponse<IMilestone> | ApiErrorResponse
@@ -79,5 +80,20 @@ export const deleteMilestoneAction = async (
         return await deleteMilestone(id)
     } catch (error: unknown) {
         return { success: false, message: getActionErrorMessage(error, "Failed to delete") }
+    }
+}
+
+export const setBaselineAction = async (
+    projectId: string,
+    payload: Record<string, unknown>,
+): Promise<ApiResponse<IProject> | ApiErrorResponse> => {
+    if (!projectId) return { success: false, message: "Invalid project id" }
+
+    try {
+        return await setProjectBaseline(projectId, payload)
+    } catch (error: unknown) {
+        // The 409 on a second baseline explains what replacing it costs. That
+        // sentence is the entire safeguard, so it is passed through intact.
+        return { success: false, message: getActionErrorMessage(error, "Failed to set the baseline") }
     }
 }
