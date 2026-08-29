@@ -44,6 +44,9 @@ import type { KpiScope } from "@/types/kpi.types"
 import type {
     ICompanyRow,
     IMySubscription,
+    IPlatformActivity,
+    IPlatformAdmin,
+    IPlatformInvite,
     IPlatformOverview,
     IPlan,
     ISubscription,
@@ -588,4 +591,47 @@ export const createClientLink = async (payload: Record<string, unknown>) =>
 export const deleteClientLink = async (id: string) =>
     wrap("removing a link", () =>
         httpClient.delete<{ message: string }>(`/client-links/${id}`)
+    )
+
+// ---------------------------------------------------------------------------
+// The platform team
+// ---------------------------------------------------------------------------
+
+export const getPlatformAdmins = async () =>
+    wrap("fetching platform admins", () =>
+        httpClient.get<IPlatformAdmin[]>("/platform/admins")
+    )
+
+export const setAdminPermissions = async (id: string, permissions: string[]) =>
+    wrap("updating access", () =>
+        httpClient.patch<IPlatformAdmin>(`/platform/admins/${id}/permissions`, { permissions })
+    )
+
+export const approvePlatformAdmin = async (id: string) =>
+    wrap("approving an operator", () => httpClient.post(`/platform/admins/${id}/approve`, {}))
+
+export const removePlatformAdmin = async (id: string) =>
+    wrap("removing an operator", () =>
+        httpClient.delete<{ message: string }>(`/platform/admins/${id}`)
+    )
+
+/** Returns `join_url` — the only time the token is readable. */
+export const createPlatformInvite = async (payload: Record<string, unknown>) =>
+    wrap("inviting an operator", () =>
+        httpClient.post<{ invite: IPlatformInvite; join_url: string }>("/platform/invites", payload)
+    )
+
+export const getPlatformInvites = async () =>
+    wrap("fetching platform invites", () =>
+        httpClient.get<IPlatformInvite[]>("/platform/invites")
+    )
+
+export const revokePlatformInvite = async (id: string) =>
+    wrap("revoking an invite", () =>
+        httpClient.delete<{ message: string }>(`/platform/invites/${id}`)
+    )
+
+export const getPlatformActivity = async (queryString?: string) =>
+    wrap("fetching platform activity", () =>
+        httpClient.get<IPlatformActivity[]>("/platform/activity", { params: toParams(queryString) })
     )

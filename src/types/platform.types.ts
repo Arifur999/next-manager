@@ -97,3 +97,104 @@ export interface IPlatformOverview {
         seats: number;
     }>;
 }
+
+/**
+ * A platform operator.
+ *
+ * An **empty** `permissions` array means full access, not none — that is the
+ * hatch in `requirePermission` that stops the first operator locking
+ * themselves out. Every screen showing this has to say so, because the
+ * opposite reading is the obvious one.
+ */
+export interface IPlatformAdmin {
+    id: string;
+    full_name: string;
+    email: string;
+    permissions: string[];
+    status: "pending" | "active" | "suspended";
+    created_at: string;
+}
+
+/** The token is absent on purpose: it is readable once, on the create. */
+export interface IPlatformInvite {
+    id: string;
+    email: string;
+    permissions: string[];
+    expires_at: string;
+    used_at: string | null;
+    revoked_at: string | null;
+    created_at: string;
+}
+
+export interface IPlatformActivity {
+    id: string;
+    entity_type: string;
+    entity_id: string | null;
+    action: string;
+    summary: string;
+    created_at: string;
+    /** Null once the operator has been removed — the entry outlives them. */
+    actor: { id: string; full_name: string; email: string } | null;
+}
+
+/**
+ * What an operator may do, as the API names them.
+ *
+ * Kept in step with `platform.permissions.ts` on the server by hand. A
+ * mismatch shows up immediately: the API refuses an unknown permission rather
+ * than storing it, so a typo here fails loudly on the first save.
+ */
+export const PLATFORM_PERMISSIONS = [
+    "platform.companies.view",
+    "platform.companies.manage",
+    "platform.plans.manage",
+    "platform.finance.view",
+    "platform.expenses.manage",
+    "platform.admins.manage",
+    "platform.campaigns.send",
+] as const;
+
+export type PlatformPermission = (typeof PLATFORM_PERMISSIONS)[number];
+
+export const PLATFORM_PERMISSION_INFO: Record<
+    PlatformPermission,
+    { area: string; label: string; description: string }
+> = {
+    "platform.companies.view": {
+        area: "Companies",
+        label: "See customers",
+        description: "Read the customer list, their plan and how much of it they use.",
+    },
+    "platform.companies.manage": {
+        area: "Companies",
+        label: "Create and change customers",
+        description:
+            "Provision a company, move it between plans, suspend or restore it. This is the one that can cut a paying customer off.",
+    },
+    "platform.plans.manage": {
+        area: "Plans",
+        label: "Edit plans",
+        description: "Change prices and limits. A plan edit moves every company on that tier at once.",
+    },
+    "platform.finance.view": {
+        area: "Finance",
+        label: "See the numbers",
+        description: "Revenue, churn and net profit for the platform itself.",
+    },
+    "platform.expenses.manage": {
+        area: "Finance",
+        label: "Record expenses",
+        description: "Add and edit what the platform spends.",
+    },
+    "platform.admins.manage": {
+        area: "Team",
+        label: "Manage the platform team",
+        description:
+            "Invite operators and set what they may do — including granting this permission, so hand it out carefully.",
+    },
+    "platform.campaigns.send": {
+        area: "Customers",
+        label: "Send announcements",
+        description: "Publish notices to customers, and email them.",
+    },
+};

@@ -170,6 +170,9 @@ if (!superEmail || !superPassword) {
 
   for (const [path, expected] of [
     ["/platform", 200],
+    // A prefix rule without a boundary claimed this too, and it is the one
+    // page that has to work for somebody with no account at all.
+    ["/platform-join/anything", 200],
     ["/my-profile", 200],
     ["/admin/dashboard", 307],
     ["/dashboard", 307],

@@ -54,7 +54,12 @@ export const AREAS: AreaRule[] = [
     { exact: ["/my-profile", "/change-password"], pattern: [], roles: null },
 
     // Platform. Only ever the super admin.
-    { exact: [], pattern: [/^\/platform/], roles: ["super_admin"] },
+    // The boundary matters. Written as /^\/platform/ this also matched
+    // /platform-join/<token> — the public page somebody opens to accept an
+    // invite, before they have any account — and sent them to sign in, which
+    // they cannot do. A prefix rule with no boundary claims every route that
+    // merely starts with the same letters.
+    { exact: [], pattern: [/^\/platform(\/|$)/], roles: ["super_admin"] },
 
     // Money and company state.
     {

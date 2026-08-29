@@ -1,7 +1,10 @@
 import CompaniesBoard from "@/components/modules/Platform/CompaniesBoard";
 import CreateCompanyModal from "@/components/modules/Platform/CreateCompanyModal";
 import PlansBoard from "@/components/modules/Platform/PlansBoard";
+import PlatformActivityFeed from "@/components/modules/Platform/PlatformActivityFeed";
+import PlatformInvites from "@/components/modules/Platform/PlatformInvites";
 import PlatformOverview from "@/components/modules/Platform/PlatformOverview";
+import PlatformTeam from "@/components/modules/Platform/PlatformTeam";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getUserInfo } from "@/services/auth.services";
 import type { Metadata } from "next";
@@ -39,6 +42,9 @@ const PlatformPage = async () => {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="companies">Companies</TabsTrigger>
           <TabsTrigger value="plans">Plans</TabsTrigger>
+          <TabsTrigger value="team">Team</TabsTrigger>
+          <TabsTrigger value="invites">Invite admin</TabsTrigger>
+          <TabsTrigger value="activity">Admin activity</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-4">
@@ -51,6 +57,18 @@ const PlatformPage = async () => {
 
         <TabsContent value="plans" className="mt-4">
           <PlansBoard />
+        </TabsContent>
+
+        <TabsContent value="team" className="mt-4">
+          <PlatformTeam />
+        </TabsContent>
+
+        <TabsContent value="invites" className="mt-4">
+          <PlatformInvites />
+        </TabsContent>
+
+        <TabsContent value="activity" className="mt-4">
+          <PlatformActivityFeed />
         </TabsContent>
       </Tabs>
     </div>
