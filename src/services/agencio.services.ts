@@ -45,6 +45,9 @@ import type {
     ICompanyRow,
     IMySubscription,
     IPlatformActivity,
+    IPlatformExpense,
+    IPlatformFinance,
+    IPlatformTrend,
     IPlatformAdmin,
     IPlatformInvite,
     IPlatformOverview,
@@ -634,4 +637,33 @@ export const revokePlatformInvite = async (id: string) =>
 export const getPlatformActivity = async (queryString?: string) =>
     wrap("fetching platform activity", () =>
         httpClient.get<IPlatformActivity[]>("/platform/activity", { params: toParams(queryString) })
+    )
+
+// ---------------------------------------------------------------------------
+// The platform's own books
+// ---------------------------------------------------------------------------
+
+export const getPlatformFinance = async (queryString?: string) =>
+    wrap("fetching the financial report", () =>
+        httpClient.get<IPlatformFinance>("/platform/finance", { params: toParams(queryString) })
+    )
+
+export const getPlatformTrend = async (queryString?: string) =>
+    wrap("fetching the trend", () =>
+        httpClient.get<IPlatformTrend>("/platform/trend", { params: toParams(queryString) })
+    )
+
+export const getPlatformExpenses = async (queryString?: string) =>
+    wrap("fetching platform expenses", () =>
+        httpClient.get<IPlatformExpense[]>("/platform/expenses", { params: toParams(queryString) })
+    )
+
+export const createPlatformExpense = async (payload: Record<string, unknown>) =>
+    wrap("recording an expense", () =>
+        httpClient.post<IPlatformExpense>("/platform/expenses", payload)
+    )
+
+export const deletePlatformExpense = async (id: string) =>
+    wrap("removing an expense", () =>
+        httpClient.delete<{ message: string }>(`/platform/expenses/${id}`)
     )

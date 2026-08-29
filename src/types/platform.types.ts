@@ -198,3 +198,52 @@ export const PLATFORM_PERMISSION_INFO: Record<
         description: "Publish notices to customers, and email them.",
     },
 };
+
+/** What running the platform costs. Flat and USD, like the API. */
+export interface IPlatformExpense {
+    id: string;
+    date: string;
+    category: string;
+    description: string;
+    amount_usd: number;
+    notes: string;
+    created_at: string;
+}
+
+/**
+ * AGENCIO's own books.
+ *
+ * `arpa_usd` and `churn_rate_pct` are null rather than zero when there is
+ * nobody to divide by — "we earn nothing per customer" and "we have no
+ * customers" are different statements, and only one of them is ever true.
+ */
+export interface IPlatformFinance {
+    from: string;
+    to: string;
+    mrr_usd: number;
+    arr_usd: number;
+    arpa_usd: number | null;
+    expenses_usd: number;
+    expense_count: number;
+    net_usd: number;
+    paying_companies: number;
+    total_companies: number;
+    churned_in_window: number;
+    churn_rate_pct: number | null;
+    by_plan: Array<{ name: string; companies: number; mrr_usd: number }>;
+    by_status: Record<SubscriptionStatus, number>;
+}
+
+/**
+ * What the dashboard charts draw.
+ *
+ * `mrr` is empty until snapshots have accumulated — it cannot be computed
+ * backwards, so `snapshots_since` says how far back there is anything to show
+ * and the chart explains itself rather than looking broken.
+ */
+export interface IPlatformTrend {
+    mrr: Array<{ date: string; mrr_usd: number; companies_active: number }>;
+    snapshots_since: string | null;
+    signups: Array<{ month: string; count: number }>;
+    revenue_by_plan: Array<{ name: string; companies: number; mrr_usd: number }>;
+}

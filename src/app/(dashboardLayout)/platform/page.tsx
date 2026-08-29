@@ -2,6 +2,8 @@ import CompaniesBoard from "@/components/modules/Platform/CompaniesBoard";
 import CreateCompanyModal from "@/components/modules/Platform/CreateCompanyModal";
 import PlansBoard from "@/components/modules/Platform/PlansBoard";
 import PlatformActivityFeed from "@/components/modules/Platform/PlatformActivityFeed";
+import PlatformCharts from "@/components/modules/Platform/PlatformCharts";
+import PlatformFinance from "@/components/modules/Platform/PlatformFinance";
 import PlatformInvites from "@/components/modules/Platform/PlatformInvites";
 import PlatformOverview from "@/components/modules/Platform/PlatformOverview";
 import PlatformTeam from "@/components/modules/Platform/PlatformTeam";
@@ -41,14 +43,20 @@ const PlatformPage = async () => {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="companies">Companies</TabsTrigger>
+          <TabsTrigger value="finance">Finance</TabsTrigger>
           <TabsTrigger value="plans">Plans</TabsTrigger>
           <TabsTrigger value="team">Team</TabsTrigger>
           <TabsTrigger value="invites">Invite admin</TabsTrigger>
           <TabsTrigger value="activity">Admin activity</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="mt-4">
+        <TabsContent value="overview" className="mt-4 space-y-6">
           <PlatformOverview />
+          <PlatformCharts />
+        </TabsContent>
+
+        <TabsContent value="finance" className="mt-4">
+          <PlatformFinance />
         </TabsContent>
 
         <TabsContent value="companies" className="mt-4">
