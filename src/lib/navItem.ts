@@ -138,6 +138,9 @@ const SUPER_ADMIN_SECTIONS: NavSection[] = [
     {
         title: "Customers",
         items: [
+            // First, because it is the console's actual job: bring agency
+            // owners on. Everything else here is about the ones already in.
+            { title: "Invite an agency", href: "/platform/invite-agency", icon: "MailPlus" },
             { title: "All users", href: "/platform/customers", icon: "UsersRound" },
             { title: "Active users", href: "/platform/active-users", icon: "UserCheck" },
             { title: "Plans", href: "/platform/plans", icon: "Wallet" },

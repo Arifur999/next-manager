@@ -126,7 +126,7 @@ for (const [role, expected] of [
 
 // No company role may reach the console, whatever the path under it.
 for (const role of Object.keys(EXPECT)) {
-  for (const path of ["/platform", "/platform/customers", "/platform/finance", "/platform/campaigns", "/platform/settings"]) {
+  for (const path of ["/platform", "/platform/customers", "/platform/finance", "/platform/campaigns", "/platform/settings", "/platform/invite-agency"]) {
     const res = await fetch(WEB + path, { headers: { Cookie: cookies[role] }, redirect: "manual" });
     const ok = res.status === 307 || res.status === 308;
     if (!ok) bad += 1;
@@ -138,7 +138,7 @@ for (const role of Object.keys(EXPECT)) {
 // platform rule was a prefix without a boundary once; this checks the whole
 // area rather than only its root.
 for (const role of Object.keys(EXPECT)) {
-  for (const path of ["/platform", "/platform/customers", "/platform/finance", "/platform/campaigns", "/platform/settings"]) {
+  for (const path of ["/platform", "/platform/customers", "/platform/finance", "/platform/campaigns", "/platform/settings", "/platform/invite-agency"]) {
     const res = await fetch(WEB + path, { headers: { Cookie: cookies[role] }, redirect: "manual" });
     const ok = res.status === 307 || res.status === 308;
     if (!ok) bad += 1;
@@ -205,6 +205,9 @@ if (!superEmail || !superPassword) {
     ["/platform/activity", 200],
     ["/platform/campaigns", 200],
     ["/platform/settings", 200],
+    ["/platform/invite-agency", 200],
+    // The public join page: it has to work for somebody with no account at all.
+    ["/agency-join/anything", 200],
     // A prefix rule without a boundary claimed this too, and it is the one
     // page that has to work for somebody with no account at all.
     ["/platform-join/anything", 200],

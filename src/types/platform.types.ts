@@ -335,3 +335,23 @@ export interface IPlatformSettings {
     plans: Array<{ id: string; name: string; code: string; price_usd: number }>;
     smtp: ISmtpStatus;
 }
+
+/**
+ * An invite that brings an agency onto the platform.
+ *
+ * Distinct from IPlatformInvite, which grows the team that runs AGENCIO. This
+ * one produces a customer: their workspace, their admin account, their
+ * subscription. `company_name` is empty when the owner names their own on the
+ * way in; `plan` is null when they arrive unprovisioned.
+ */
+export interface IAgencyInvite {
+    id: string;
+    email: string;
+    company_name: string;
+    trial_days: number;
+    expires_at: string;
+    used_at: string | null;
+    revoked_at: string | null;
+    created_at: string;
+    plan: { id: string; name: string; price_usd: number } | null;
+}

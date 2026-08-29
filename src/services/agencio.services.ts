@@ -42,6 +42,7 @@ import type {
 } from "@/types/agencio.types"
 import type { KpiScope } from "@/types/kpi.types"
 import type {
+    IAgencyInvite,
     IAnnouncement,
     ICompanyRow,
     IMySubscription,
@@ -729,4 +730,27 @@ export const getPlatformSettings = async () =>
 export const updatePlatformSettings = async (payload: Record<string, unknown>) =>
     wrap("saving the settings", () =>
         httpClient.patch<IPlatformSettings>("/platform/settings", payload)
+    )
+
+// ---------------------------------------------------------------------------
+// Bringing an agency on — the console's actual job
+// ---------------------------------------------------------------------------
+
+export const getAgencyInvites = async () =>
+    wrap("fetching agency invites", () =>
+        httpClient.get<IAgencyInvite[]>("/platform/agency-invites")
+    )
+
+export const createAgencyInvite = async (payload: Record<string, unknown>) =>
+    wrap("inviting the agency", () =>
+        httpClient.post<{
+            invite: IAgencyInvite
+            join_url: string
+            email: { delivered: boolean; reason: string | null }
+        }>("/platform/agency-invites", payload)
+    )
+
+export const revokeAgencyInvite = async (id: string) =>
+    wrap("revoking the invite", () =>
+        httpClient.delete<{ message: string }>(`/platform/agency-invites/${id}`)
     )
