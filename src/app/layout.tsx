@@ -35,8 +35,25 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    // suppressHydrationWarning on BOTH elements, for two different reasons.
+    //
+    // <html>: next-themes writes the theme class here before React hydrates,
+    // so the server's markup is expected to differ.
+    //
+    // <body>: extensions edit it. Grammarly, password managers and dark-mode
+    // add-ons all attach their own attributes to <body> before React loads,
+    // and React reports that as "attributes of the server rendered HTML didn't
+    // match" - an error about the visitor's browser that reads like an error
+    // about our code. Fifteen pages checked in a clean browser produce none of
+    // these, so what it was reporting was never ours to fix.
+    //
+    // It suppresses the warning for THIS element's own attributes only - it
+    // does not cascade - so a genuine mismatch anywhere inside still reports.
     <html lang="en" suppressHydrationWarning>
-      <body className={`${robotoCondensed.variable} antialiased font-sans`}>
+      <body
+        suppressHydrationWarning
+        className={`${robotoCondensed.variable} antialiased font-sans`}
+      >
         {/* Baseline keyboard accessibility - the first tab stop on every page. */}
         <a
           href="#main-content"
