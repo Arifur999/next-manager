@@ -1,13 +1,23 @@
 import { Toaster } from "@/components/ui/sonner";
 import type { Metadata } from "next";
-import { Work_Sans } from "next/font/google";
+import { Roboto_Condensed } from "next/font/google";
 import "./globals.css";
 import QueryProviders from "./providers/QueryProvider";
 import ThemeProvider from "./providers/ThemeProvider";
 
-const workSans = Work_Sans({
-  variable: "--font-work-sans",
+// Self-hosted at build time by next/font rather than pulled from
+// fonts.googleapis.com by the browser: no render-blocking third-party request
+// on every visit, and no flash of fallback text while the file arrives.
+//
+// The variable axis carries 100..900, so every weight the UI asks for comes
+// out of this one font rather than a separate download per weight. The name
+// here must match --font-roboto-condensed in globals.css, which is what
+// Tailwind's font-sans actually resolves to.
+const robotoCondensed = Roboto_Condensed({
+  variable: "--font-roboto-condensed",
   subsets: ["latin"],
+  style: ["normal", "italic"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -26,7 +36,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${workSans.variable} antialiased font-sans`}>
+      <body className={`${robotoCondensed.variable} antialiased font-sans`}>
         {/* Baseline keyboard accessibility - the first tab stop on every page. */}
         <a
           href="#main-content"
