@@ -131,4 +131,40 @@ for (const role of Object.keys(EXPECT)) {
   console.log(`${ok ? "OK  " : "FAIL"}  ${role.padEnd(16)} opens /dashboard/timesheet  (${res.status})`);
 }
 
+// The platform operator. Belongs to no company, so every company screen must
+// bounce — including the personal area, whose numbers would otherwise be
+// computed against an empty organization and render as a wall of zeros.
+// These live in the BACKEND .env, since that is what seeds the account. To
+// include these checks:
+//
+//   export $(grep -E "^SUPER_ADMIN_(EMAIL|PASSWORD)=" ../naxified_backend/.env | xargs)
+//
+// Skipped rather than failed when absent - a missing local credential is not a
+// broken build.
+const superEmail = process.env.SUPER_ADMIN_EMAIL;
+const superPassword = process.env.SUPER_ADMIN_PASSWORD;
+
+if (!superEmail || !superPassword) {
+  console.log("SKIP  super admin checks (no SUPER_ADMIN_EMAIL/PASSWORD in env)");
+} else {
+  const superCookie = (
+    await api("POST", "/auth/login", { email: superEmail, password: superPassword })
+  ).cookie;
+
+  for (const [path, expected] of [
+    ["/platform", 200],
+    ["/my-profile", 200],
+    ["/admin/dashboard", 307],
+    ["/dashboard", 307],
+    ["/dashboard/timesheet", 307],
+  ]) {
+    const res = await fetch(WEB + path, { headers: { Cookie: superCookie }, redirect: "manual" });
+    const ok = res.status === expected;
+    if (!ok) bad += 1;
+    console.log(
+      `${ok ? "OK  " : "FAIL"}  ${"super_admin".padEnd(16)} ${path} -> ${res.status} (want ${expected})`
+    );
+  }
+}
+
 console.log(`\n${bad === 0 ? "ROLE ROUTING CORRECT" : `${bad} ROUTING PROBLEM(S)`}`);

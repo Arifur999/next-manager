@@ -92,8 +92,19 @@ export const AREAS: AreaRule[] = [
     // one failure mode here that fails open, and one lint will never catch.
     { exact: [], pattern: [/^\/admin/], roles: ["admin"] },
 
-    // Everything else under /dashboard is the personal area.
-    { exact: [], pattern: [/^\/dashboard/], roles: null },
+    // Everything else under /dashboard is the personal area — a person's own
+    // hours, tasks and timesheet.
+    //
+    // Not `roles: null`, which would let the super admin in: they belong to no
+    // company, so every figure on those screens is computed against an empty
+    // organization and renders as a confident wall of zeros. Their own area is
+    // /platform. Profile and password stay open to them through the rule at
+    // the top of this list.
+    {
+        exact: [],
+        pattern: [/^\/dashboard/],
+        roles: ["admin", "sales", "project_manager", "operations"],
+    },
 ];
 
 /** The rule guarding a path, or null when the path is public. */

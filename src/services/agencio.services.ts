@@ -36,6 +36,12 @@ import type {
     ITimeSummary,
 } from "@/types/agencio.types"
 import type { KpiScope } from "@/types/kpi.types"
+import type {
+    ICompanyRow,
+    IMySubscription,
+    IPlan,
+    ISubscription,
+} from "@/types/platform.types"
 
 /**
  * Thin wrappers over httpClient, one per endpoint.
@@ -468,4 +474,33 @@ export const getKpi = async <T>(scope: KpiScope, queryString?: string) =>
 export const setProjectBaseline = async (projectId: string, payload: Record<string, unknown>) =>
     wrap("setting the baseline", () =>
         httpClient.post<IProject>(`/projects/${projectId}/baseline`, payload)
+    )
+
+// ---------------------------------------------------------------------------
+// Platform (super_admin) and a company's own standing
+// ---------------------------------------------------------------------------
+
+export const getMySubscription = async () =>
+    wrap("fetching subscription", () =>
+        httpClient.get<IMySubscription>("/platform/subscription")
+    )
+
+export const getPlans = async () =>
+    wrap("fetching plans", () => httpClient.get<IPlan[]>("/platform/plans"))
+
+export const createPlan = async (payload: Record<string, unknown>) =>
+    wrap("creating a plan", () => httpClient.post<IPlan>("/platform/plans", payload))
+
+export const updatePlan = async (id: string, payload: Record<string, unknown>) =>
+    wrap("updating a plan", () => httpClient.patch<IPlan>(`/platform/plans/${id}`, payload))
+
+export const getCompanies = async () =>
+    wrap("fetching companies", () => httpClient.get<ICompanyRow[]>("/platform/companies"))
+
+export const setSubscription = async (organizationId: string, payload: Record<string, unknown>) =>
+    wrap("updating a subscription", () =>
+        httpClient.patch<ISubscription>(
+            `/platform/companies/${organizationId}/subscription`,
+            payload
+        )
     )

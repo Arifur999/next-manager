@@ -1,3 +1,4 @@
+import SubscriptionPanel from "@/components/modules/Admin/Settings/SubscriptionPanel";
 import SettingsBoard from "@/components/modules/Admin/Settings/SettingsBoard";
 import {
   getExpenseCategories,
@@ -31,6 +32,10 @@ const SettingsPage = async () => {
           How the agency reports money, what it spends on, and who it is on paper.
         </p>
       </div>
+
+      {/* Above the rest: when a limit refuses something, this is the panel
+          the message is pointing at. */}
+      <SubscriptionPanel />
 
       <HydrationBoundary state={dehydrate(queryClient)}>
         <SettingsBoard />
