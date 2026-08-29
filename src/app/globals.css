@@ -169,6 +169,30 @@
   html {
     @apply font-sans;
   }
+
+  /* Anything you can click gets the hand.
+   *
+   * Tailwind v4 dropped the preflight rule that used to put cursor:pointer on
+   * <button>, on the grounds that the native default is `default`. That is
+   * true of a bare HTML button and wrong for this app, where every button is a
+   * styled control that looks clickable - and a control that looks pressable
+   * but does not answer the pointer reads as broken.
+   *
+   * Anchors are left alone: the browser's own stylesheet already gives a[href]
+   * a pointer, and claiming it here would also catch anchors with no href,
+   * which are not links.
+   *
+   * :disabled is excluded so a dead button never invites a click. Most
+   * disabled controls here also carry pointer-events-none, which settles it
+   * anyway, but the ones that do not are exactly the ones this matters for.
+   *
+   * Base layer on purpose: utilities outrank it, so a component that asks for
+   * something else - AppSubmitButton's cursor-wait while a form is in flight -
+   * still wins. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
 }
 
 /* Printing an invoice.
