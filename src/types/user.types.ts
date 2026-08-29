@@ -26,8 +26,14 @@ export interface IUser {
     phone?: string;
     avatar_url?: string;
     role: UserRole;
-    status?: "pending" | "active" | "suspended";
-    is_active: boolean;
+    /**
+     * Whether this person may sign in, and why not when they may not.
+     *
+     * Replaces `is_active`, which this type used to declare ALONGSIDE an
+     * optional `status` the API never sent. The backend now has one field and
+     * so does this.
+     */
+    status: "pending" | "active" | "suspended";
     email_verified: boolean;
     permissions?: string[];
     created_at?: string;

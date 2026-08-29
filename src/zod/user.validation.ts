@@ -34,7 +34,9 @@ export const editUserFormZodSchema = z.object({
   full_name: z.string().min(1, "Full name is required"),
   phone: z.string().optional(),
   role: z.enum(assignableRoles, { message: "Choose a role" }),
-  is_active: z.boolean().optional(),
+  // `pending` is absent on purpose - it is set by the invite flow and cleared
+  // by approval, never assigned by hand.
+  status: z.enum(["active", "suspended"]).optional(),
 })
 
 export type IEditUserFormValues = z.infer<typeof editUserFormZodSchema>

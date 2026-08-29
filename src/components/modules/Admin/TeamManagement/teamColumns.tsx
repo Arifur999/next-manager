@@ -42,7 +42,7 @@ export const teamColumns: ColumnDef<IUser>[] = [
     header: "Status",
     enableSorting: false,
     cell: ({ row }) => (
-      <StatusBadgeCell status={row.original.is_active ? "active" : "inactive"} />
+      <StatusBadgeCell status={row.original.status} />
     ),
   },
   {

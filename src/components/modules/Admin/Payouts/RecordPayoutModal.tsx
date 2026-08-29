@@ -85,7 +85,7 @@ const RecordPayoutModal = () => {
     enabled: open,
   })
 
-  const users = ((usersData?.data ?? []) as IUser[]).filter((user) => user.is_active)
+  const users = ((usersData?.data ?? []) as IUser[]).filter((user) => user.status === "active")
   const accounts = (accountsData?.data ?? []) as IAccount[]
   const projects = (projectsData?.data ?? []) as IProject[]
   const bdtAccounts = accounts.filter((account) => account.currency === "BDT" && account.is_active)

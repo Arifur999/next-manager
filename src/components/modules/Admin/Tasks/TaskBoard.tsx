@@ -76,7 +76,7 @@ const CreateTaskModal = () => {
   })
 
   const projects = (projectsData?.data ?? []) as IProject[]
-  const users = ((usersData?.data ?? []) as IUser[]).filter((user) => user.is_active)
+  const users = ((usersData?.data ?? []) as IUser[]).filter((user) => user.status === "active")
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: (values: TaskFormValues) =>

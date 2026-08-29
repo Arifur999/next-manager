@@ -61,7 +61,11 @@ const EditUserForm = ({ user, onOpenChange }: { user: IUser; onOpenChange: (open
       // A super_admin row would carry a role this form cannot assign; fall back
       // rather than rendering a Select with a value that is not an option.
       role: isAssignableRole(user.role) ? user.role : "operations",
-      is_active: user.is_active,
+      // A checkbox again rather than a three-way picker: `pending` is not
+      // something an admin assigns, it is what the invite flow sets and what
+      // approval clears. Offering it here would let an active person be pushed
+      // back into limbo with nothing recording why.
+      status: user.status === "suspended" ? "suspended" : "active",
     } satisfies IEditUserFormValues,
     onSubmit: async ({ value }) => {
       const result = await mutateAsync(value)
@@ -123,13 +127,15 @@ const EditUserForm = ({ user, onOpenChange }: { user: IUser; onOpenChange: (open
         )}
       </form.Field>
 
-      <form.Field name="is_active">
+      <form.Field name="status">
         {(field) => (
           <div className="flex items-center gap-2">
             <Checkbox
               id={field.name}
-              checked={field.state.value}
-              onCheckedChange={(checked) => field.handleChange(checked === true)}
+              checked={field.state.value === "active"}
+              onCheckedChange={(checked) =>
+                field.handleChange(checked === true ? "active" : "suspended")
+              }
               disabled={isPending}
             />
             <Label htmlFor={field.name} className="font-normal">

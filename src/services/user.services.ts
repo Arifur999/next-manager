@@ -39,7 +39,7 @@ export const createUser = async (payload: {
 
 export const updateUser = async (
   id: string,
-  payload: { full_name?: string; phone?: string; role?: string; is_active?: boolean },
+  payload: { full_name?: string; phone?: string; role?: string; status?: string },
 ) => {
   try {
     return await httpClient.patch<IUser>(`/users/${id}`, payload)

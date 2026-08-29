@@ -47,7 +47,7 @@ const ProjectTeamPanel = ({ projectId }: { projectId: string }) => {
   })
 
   const members = (membersData?.data ?? []) as IProjectMember[]
-  const users = ((usersData?.data ?? []) as IUser[]).filter((user) => user.is_active)
+  const users = ((usersData?.data ?? []) as IUser[]).filter((user) => user.status === "active")
 
   const { mutateAsync: assign, isPending: isAssigning } = useMutation({
     mutationFn: () =>
