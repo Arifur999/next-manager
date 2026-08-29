@@ -33,6 +33,7 @@ import type {
     IRateSettings,
     IRevealedCredential,
     ITask,
+    ITeamInvite,
     ITeamPayout,
     ITimeEntry,
     ITimeSummary,
@@ -530,3 +531,31 @@ export const getPlatformOverview = async () =>
 
 export const createCompany = async (payload: Record<string, unknown>) =>
     wrap("creating a company", () => httpClient.post("/platform/companies", payload))
+
+// ---------------------------------------------------------------------------
+// Team invites and the pending queue
+// ---------------------------------------------------------------------------
+
+/** Returns `join_url` — the only time the token is ever readable. */
+export const createInvite = async (payload: Record<string, unknown>) =>
+    wrap("creating an invite", () =>
+        httpClient.post<{ invite: ITeamInvite; join_url: string }>("/team-invites", payload)
+    )
+
+export const getInvites = async () =>
+    wrap("fetching invites", () => httpClient.get<ITeamInvite[]>("/team-invites"))
+
+export const revokeInvite = async (id: string) =>
+    wrap("revoking an invite", () =>
+        httpClient.delete<{ message: string }>(`/team-invites/${id}`)
+    )
+
+export const approveMember = async (id: string) =>
+    wrap("approving a member", () =>
+        httpClient.post(`/team-invites/members/${id}/approve`, {})
+    )
+
+export const rejectMember = async (id: string, payload: Record<string, unknown>) =>
+    wrap("turning down a request", () =>
+        httpClient.post(`/team-invites/members/${id}/reject`, payload)
+    )

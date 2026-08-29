@@ -507,3 +507,26 @@ export interface IActivityFilters {
     entity_types: Array<{ value: string; count: number }>;
     actions: Array<{ value: string; count: number }>;
 }
+
+/**
+ * An invitation to join as an operations member.
+ *
+ * The token is deliberately absent: the API returns it exactly once, on the
+ * response that creates the invite, and never again. There is nothing to model
+ * here because there is nothing to read back.
+ */
+export interface ITeamInvite {
+    id: string;
+    email: string;
+    role: string;
+    expires_at: string;
+    used_at: string | null;
+    revoked_at: string | null;
+    created_at: string;
+}
+
+/** What the join page is allowed to know before anybody has signed in. */
+export interface IInvitePreview {
+    email: string;
+    organization_name: string;
+}
