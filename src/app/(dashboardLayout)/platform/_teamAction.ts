@@ -28,7 +28,15 @@ export const setPermissionsAction = async (
 
 export const invitePlatformAdminAction = async (
     payload: Record<string, unknown>,
-): Promise<ApiResponse<{ invite: IPlatformInvite; join_url: string }> | ApiErrorResponse> => {
+): Promise<
+    | ApiResponse<{
+          invite: IPlatformInvite
+          join_url: string
+          /** Whether the link reached them, or why it did not. */
+          email: { delivered: boolean; reason: string | null }
+      }>
+    | ApiErrorResponse
+> => {
     try {
         return await createPlatformInvite(payload)
     } catch (error: unknown) {
