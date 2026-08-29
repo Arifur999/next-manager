@@ -1,4 +1,5 @@
 import AssignmentOverview from "@/components/modules/Admin/Team/AssignmentOverview";
+import CapacityPanel from "@/components/modules/Admin/Team/CapacityPanel";
 import TeamTable from "@/components/modules/Admin/TeamManagement/TeamTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getAssignmentOverview } from "@/services/agencio.services";
@@ -35,6 +36,7 @@ const TeamManagementPage = async () => {
           <TabsList>
             <TabsTrigger value="members">Members &amp; roles</TabsTrigger>
             <TabsTrigger value="assignments">Project assignments</TabsTrigger>
+            <TabsTrigger value="capacity">Capacity &amp; rates</TabsTrigger>
           </TabsList>
 
           <TabsContent value="members" className="mt-4">
@@ -43,6 +45,10 @@ const TeamManagementPage = async () => {
 
           <TabsContent value="assignments" className="mt-4">
             <AssignmentOverview />
+          </TabsContent>
+
+          <TabsContent value="capacity" className="mt-4">
+            <CapacityPanel />
           </TabsContent>
         </Tabs>
       </HydrationBoundary>

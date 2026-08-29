@@ -375,9 +375,16 @@ export const unapproveTimeEntry = async (id: string) =>
 export const getCapacities = async () =>
     wrap("fetching capacities", () => httpClient.get<ICapacityRow[]>("/time-entries/capacity"))
 
-export const setCapacity = async (userId: string, weeklyHours: number) =>
+/**
+ * Weekly hours, a bill rate, or both.
+ *
+ * Takes a payload rather than a single number so a rate can be set without
+ * touching the hours — the server only writes the fields it is sent, and
+ * passing a hardcoded weekly_hours here would have undone that.
+ */
+export const setCapacity = async (userId: string, payload: Record<string, unknown>) =>
     wrap("setting capacity", () =>
-        httpClient.patch(`/time-entries/capacity/${userId}`, { weekly_hours: weeklyHours })
+        httpClient.patch<ICapacityRow>(`/time-entries/capacity/${userId}`, payload)
     )
 
 // ---------------------------------------------------------------------------

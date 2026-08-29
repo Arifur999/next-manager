@@ -411,6 +411,8 @@ export interface ICapacityRow {
     user: { id: string; full_name: string; email: string; role: string };
     /** The denominator every utilization figure divides by. */
     weekly_hours: number;
+    /** Zero means unset - realization is reported as uncomputable, not as zero. */
+    standard_rate_usd: number;
     is_default: boolean;
 }
 
