@@ -33,7 +33,13 @@ const ACCOUNT_SECTION: NavSection = {
 };
 
 const ADMIN_SECTIONS: NavSection[] = [
-    { items: [{ title: "Dashboard", href: "/admin/dashboard", icon: "LayoutDashboard" }] },
+    {
+        items: [
+            { title: "Dashboard", href: "/admin/dashboard", icon: "LayoutDashboard" },
+            { title: "Sales", href: "/admin/dashboard/sales", icon: "Target" },
+            { title: "Delivery", href: "/admin/dashboard/delivery", icon: "FolderKanban" },
+        ],
+    },
     {
         title: "CRM",
         items: [
@@ -74,8 +80,8 @@ const ADMIN_SECTIONS: NavSection[] = [
     },
 ];
 
-// Sales lands on the pipeline, not a dashboard: the board IS their dashboard.
 const SALES_SECTIONS: NavSection[] = [
+    { items: [{ title: "Dashboard", href: "/admin/dashboard/sales", icon: "LayoutDashboard" }] },
     {
         title: "Pipeline",
         items: [
@@ -91,6 +97,7 @@ const SALES_SECTIONS: NavSection[] = [
 ];
 
 const PROJECT_MANAGER_SECTIONS: NavSection[] = [
+    { items: [{ title: "Dashboard", href: "/admin/dashboard/delivery", icon: "LayoutDashboard" }] },
     {
         title: "Delivery",
         items: [
@@ -113,9 +120,9 @@ const PROJECT_MANAGER_SECTIONS: NavSection[] = [
 const OPERATIONS_SECTIONS: NavSection[] = [
     {
         items: [
+            { title: "Overview", href: "/dashboard", icon: "LayoutDashboard" },
             { title: "My Tasks", href: "/dashboard/tasks", icon: "ListChecks" },
             { title: "Timesheet", href: "/dashboard/timesheet", icon: "Clock" },
-            { title: "Overview", href: "/dashboard", icon: "LayoutDashboard" },
         ],
     },
 ];

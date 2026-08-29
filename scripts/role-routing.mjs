@@ -39,9 +39,9 @@ for (const role of ["sales", "project_manager", "operations"]) {
 // Where each role should land, and one page each must be bounced away from.
 const EXPECT = {
   admin: { home: "/admin/dashboard", denied: null },
-  sales: { home: "/admin/dashboard/leads", denied: "/admin/dashboard/payments" },
-  project_manager: { home: "/admin/dashboard/projects", denied: "/admin/dashboard/reports" },
-  operations: { home: "/dashboard/tasks", denied: "/admin/dashboard/accounts" },
+  sales: { home: "/admin/dashboard/sales", denied: "/admin/dashboard/payments" },
+  project_manager: { home: "/admin/dashboard/delivery", denied: "/admin/dashboard/reports" },
+  operations: { home: "/dashboard", denied: "/admin/dashboard/accounts" },
 };
 
 let bad = 0;

@@ -68,14 +68,14 @@ export const AREAS: AreaRule[] = [
     // Selling: the pipeline and what gets billed for it.
     {
         exact: [],
-        pattern: [/^\/admin\/dashboard\/(leads|invoices)/],
+        pattern: [/^\/admin\/dashboard\/(leads|invoices|sales)/],
         roles: ["admin", "sales"],
     },
 
     // Delivery: who does what, and when.
     {
         exact: [],
-        pattern: [/^\/admin\/dashboard\/(projects|tasks|team-management|time-approvals)/],
+        pattern: [/^\/admin\/dashboard\/(projects|tasks|team-management|time-approvals|delivery)/],
         roles: ["admin", "project_manager"],
     },
 
@@ -121,11 +121,11 @@ export const getDefaultDashboardRoute = (role: UserRole): string => {
         case "admin":
             return "/admin/dashboard";
         case "sales":
-            return "/admin/dashboard/leads";
+            return "/admin/dashboard/sales";
         case "project_manager":
-            return "/admin/dashboard/projects";
+            return "/admin/dashboard/delivery";
         case "operations":
-            return "/dashboard/tasks";
+            return "/dashboard";
     }
 };
 

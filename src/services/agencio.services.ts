@@ -35,6 +35,7 @@ import type {
     ITimeEntry,
     ITimeSummary,
 } from "@/types/agencio.types"
+import type { KpiScope } from "@/types/kpi.types"
 
 /**
  * Thin wrappers over httpClient, one per endpoint.
@@ -435,4 +436,17 @@ export const deleteKpiTarget = async (id: string) =>
 export const getLeadStageEvents = async (leadId: string) =>
     wrap("fetching lead history", () =>
         httpClient.get<ILeadStageEvent[]>(`/leads/${leadId}/stage-events`)
+    )
+
+// ---------------------------------------------------------------------------
+// KPIs
+// ---------------------------------------------------------------------------
+
+/**
+ * One scope's numbers. The scope decides both what comes back and who may ask —
+ * the server refuses a scope the caller's role has no business reading.
+ */
+export const getKpi = async <T>(scope: KpiScope, queryString?: string) =>
+    wrap(`fetching ${scope} KPIs`, () =>
+        httpClient.get<T>(`/kpi/${scope}`, { params: toParams(queryString) })
     )
