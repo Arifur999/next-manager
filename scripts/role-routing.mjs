@@ -91,6 +91,22 @@ for (const [role, expected] of [
   );
 }
 
+// Targets commit the company to a number, so only admin sets them. A
+// salesperson who can edit their own quota does not have one.
+for (const [role, expected] of [
+  ["admin", 200],
+  ["project_manager", 307],
+  ["sales", 307],
+]) {
+  const res = await fetch(`${WEB}/admin/dashboard/targets`, {
+    headers: { Cookie: cookies[role] },
+    redirect: "manual",
+  });
+  const ok = res.status === expected;
+  if (!ok) bad += 1;
+  console.log(`${ok ? "OK  " : "FAIL"}  ${role.padEnd(16)} targets -> ${res.status} (want ${expected})`);
+}
+
 // An /admin path no rule names must be refused, not served. This is the
 // fail-open case, so it is asserted rather than assumed.
 const unlisted = await fetch(`${WEB}/admin/dashboard/nothing-here`, {

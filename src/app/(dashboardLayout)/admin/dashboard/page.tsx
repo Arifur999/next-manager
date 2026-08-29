@@ -1,3 +1,4 @@
+import AgencyKpiBand from "@/components/modules/Dashboard/AgencyKpiBand";
 import DashboardOverview from "@/components/modules/Dashboard/DashboardOverview";
 import { getDashboard } from "@/services/agencio.services";
 import { getUserInfo } from "@/services/auth.services";
@@ -30,6 +31,8 @@ const AdminDashboardPage = async () => {
           Where the agency stands today — money held, money owed, and what is due.
         </p>
       </div>
+
+      <AgencyKpiBand />
 
       <HydrationBoundary state={dehydrate(queryClient)}>
         <DashboardOverview />
