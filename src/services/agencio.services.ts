@@ -53,6 +53,7 @@ import type {
     IPlatformAdmin,
     IPlatformInvite,
     IPlatformOverview,
+    IPlatformSettings,
     IPlan,
     IPublishResult,
     ISubscription,
@@ -714,4 +715,18 @@ export const markNotificationRead = async (id: string) =>
 export const markAllNotificationsRead = async () =>
     wrap("marking everything read", () =>
         httpClient.post<{ marked: number }>("/notifications/read-all", {})
+    )
+
+// ---------------------------------------------------------------------------
+// How this installation is set up
+// ---------------------------------------------------------------------------
+
+export const getPlatformSettings = async () =>
+    wrap("fetching the settings", () =>
+        httpClient.get<IPlatformSettings>("/platform/settings")
+    )
+
+export const updatePlatformSettings = async (payload: Record<string, unknown>) =>
+    wrap("saving the settings", () =>
+        httpClient.patch<IPlatformSettings>("/platform/settings", payload)
     )

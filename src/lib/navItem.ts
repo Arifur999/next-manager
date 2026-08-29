@@ -158,6 +158,10 @@ const SUPER_ADMIN_SECTIONS: NavSection[] = [
             { title: "Admin activity", href: "/platform/activity", icon: "History" },
         ],
     },
+    {
+        title: "Platform",
+        items: [{ title: "Settings", href: "/platform/settings", icon: "Settings" }],
+    },
 ];
 
 const BY_ROLE: Record<UserRole, NavSection[]> = {

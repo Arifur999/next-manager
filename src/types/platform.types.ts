@@ -163,6 +163,7 @@ export const PLATFORM_PERMISSIONS = [
     "platform.expenses.manage",
     "platform.admins.manage",
     "platform.campaigns.send",
+    "platform.settings.manage",
 ] as const;
 
 export type PlatformPermission = (typeof PLATFORM_PERMISSIONS)[number];
@@ -207,6 +208,12 @@ export const PLATFORM_PERMISSION_INFO: Record<
         area: "Customers",
         label: "Send announcements",
         description: "Publish notices to customers, and email them.",
+    },
+    "platform.settings.manage": {
+        area: "Platform",
+        label: "Change how the platform is set up",
+        description:
+            "The product name and support address on every email it sends, and what a company that signs up itself is put on. One edit here changes what every future customer gets.",
     },
 };
 
@@ -293,4 +300,38 @@ export interface INotification {
     published_at: string;
     /** Null until they open it. */
     read_at: string | null;
+}
+
+/**
+ * Whether email works, without the credentials.
+ *
+ * `missing` names the environment variables that are not set, because "email
+ * is off" and "SMTP_PASSWORD is empty" send somebody to two different places.
+ */
+export interface ISmtpStatus {
+    configured: boolean;
+    host: string;
+    port: number;
+    from: string;
+    missing: string[];
+}
+
+/**
+ * How this installation is set up.
+ *
+ * `default_plan_id` null means new sign-ups are left unprovisioned and somebody
+ * sets them up by hand — a real choice, and the one this installation started
+ * with, not an unset field.
+ */
+export interface IPlatformSettings {
+    id: string;
+    product_name: string;
+    support_email: string;
+    default_plan_id: string | null;
+    default_trial_days: number;
+    updated_at: string;
+    updated_by: string | null;
+    /** The picker's options, so the screen never renders an id it cannot name. */
+    plans: Array<{ id: string; name: string; code: string; price_usd: number }>;
+    smtp: ISmtpStatus;
 }
