@@ -22,15 +22,19 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { toast } from "sonner"
 
-const defaultValues: ILoginFormValues = {
-  email: "",
-  password: "",
-}
-
 const LoginForm = () => {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [showPassword, setShowPassword] = useState(false)
+
+  // Registering sends the new admin here with their email attached, so they
+  // are not asked to type it again thirty seconds after choosing it. The
+  // password is deliberately not carried over - typing it once more is what
+  // confirms it is the one they meant.
+  const defaultValues: ILoginFormValues = {
+    email: searchParams.get("email") ?? "",
+    password: "",
+  }
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: (values: ILoginFormValues) => loginAction(values),
