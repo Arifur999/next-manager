@@ -89,7 +89,9 @@ export interface ILead {
     company: string;
     email: string;
     phone: string;
-    source: string;
+    /** Null when nobody said where it came from - not the same as "Direct". */
+    source_id: string | null;
+    source?: { id: string; name: string } | null;
     stage: LeadStage;
     estimated_value_usd: number;
     notes: string;
@@ -529,4 +531,30 @@ export interface ITeamInvite {
 export interface IInvitePreview {
     email: string;
     organization_name: string;
+}
+
+/**
+ * A marketplace or channel a company lands work through.
+ *
+ * Curated per company rather than fixed — agencies use different ones. The
+ * lead count comes back on the list so the screen can say why a source cannot
+ * be deleted before somebody tries.
+ */
+export interface ILeadSource {
+    id: string;
+    name: string;
+    is_active: boolean;
+    created_at: string;
+    _count?: { leads: number };
+}
+
+/** A pointer to where a client's work actually lives. */
+export interface IClientLink {
+    id: string;
+    client_id: string;
+    label: string;
+    url: string;
+    notes: string;
+    created_at: string;
+    client?: { id: string; name: string };
 }

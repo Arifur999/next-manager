@@ -8,6 +8,7 @@ import type {
     IAssignmentRow,
     ICapacityRow,
     IClient,
+    IClientLink,
     IClientFinancials,
     ICredential,
     ICredentialAccessEntry,
@@ -21,6 +22,7 @@ import type {
     IKpiTarget,
     ILeadStageEvent,
     ILeadPipeline,
+    ILeadSource,
     IMilestone,
     IMonthlyPoint,
     IOrganization,
@@ -558,4 +560,32 @@ export const approveMember = async (id: string) =>
 export const rejectMember = async (id: string, payload: Record<string, unknown>) =>
     wrap("turning down a request", () =>
         httpClient.post(`/team-invites/members/${id}/reject`, payload)
+    )
+
+// ---------------------------------------------------------------------------
+// Lead sources (where the work is landed) and client links
+// ---------------------------------------------------------------------------
+
+export const getLeadSources = async () =>
+    wrap("fetching lead sources", () => httpClient.get<ILeadSource[]>("/lead-sources"))
+
+export const createLeadSource = async (payload: Record<string, unknown>) =>
+    wrap("adding a lead source", () => httpClient.post<ILeadSource>("/lead-sources", payload))
+
+export const updateLeadSource = async (id: string, payload: Record<string, unknown>) =>
+    wrap("updating a lead source", () =>
+        httpClient.patch<ILeadSource>(`/lead-sources/${id}`, payload)
+    )
+
+export const getClientLinks = async (queryString?: string) =>
+    wrap("fetching client links", () =>
+        httpClient.get<IClientLink[]>("/client-links", { params: toParams(queryString) })
+    )
+
+export const createClientLink = async (payload: Record<string, unknown>) =>
+    wrap("adding a link", () => httpClient.post<IClientLink>("/client-links", payload))
+
+export const deleteClientLink = async (id: string) =>
+    wrap("removing a link", () =>
+        httpClient.delete<{ message: string }>(`/client-links/${id}`)
     )

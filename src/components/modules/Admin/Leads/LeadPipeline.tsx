@@ -29,8 +29,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { formatUsd } from "@/lib/currency"
-import { getLeadPipeline } from "@/services/agencio.services"
-import type { ILead, ILeadPipeline, LeadStage } from "@/types/agencio.types"
+import { getLeadPipeline, getLeadSources } from "@/services/agencio.services"
+import type { ILead, ILeadPipeline, ILeadSource, LeadStage } from "@/types/agencio.types"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { MoreHorizontal, Plus, Target, TrendingUp } from "lucide-react"
@@ -44,7 +44,9 @@ const leadFormSchema = z.object({
   company: z.string().optional(),
   email: z.string().email("Enter a valid email address").optional().or(z.literal("")),
   phone: z.string().optional(),
-  source: z.string().optional(),
+  // An id now, not typed text - see LeadSource on the server for why. Empty
+  // string means nobody said, which is a real answer.
+  source_id: z.string().optional(),
   stage: z.enum(["new", "contacted", "proposal", "negotiating", "won", "lost"]),
   estimated_value_usd: z
     .string()
@@ -72,11 +74,26 @@ const CreateLeadModal = () => {
   const [open, setOpen] = useState(false)
   const queryClient = useQueryClient()
 
+  const { data: sourcesData } = useQuery({
+    queryKey: ["lead-sources"],
+    queryFn: () => getLeadSources(),
+    enabled: open,
+  })
+
+  // Retired marketplaces stay out of the picker but keep their history on the
+  // leads that already point at them.
+  const activeSources = ((sourcesData?.data ?? []) as ILeadSource[]).filter(
+    (source) => source.is_active,
+  )
+
   const { mutateAsync, isPending } = useMutation({
     mutationFn: (values: LeadFormValues) =>
       createLeadAction({
         ...values,
         estimated_value_usd: values.estimated_value_usd ? Number(values.estimated_value_usd) : 0,
+        // An empty pick means "nobody said", which the API models as null
+        // rather than as an empty string.
+        source_id: values.source_id || null,
       }),
   })
 
@@ -85,7 +102,7 @@ const CreateLeadModal = () => {
     company: "",
     email: "",
     phone: "",
-    source: "",
+    source_id: "",
     stage: "new",
     estimated_value_usd: "",
   }
@@ -154,9 +171,21 @@ const CreateLeadModal = () => {
               {(field) => <AppField field={field} label="Company" disabled={isPending} />}
             </form.Field>
 
-            <form.Field name="source">
+            <form.Field name="source_id">
               {(field) => (
-                <AppField field={field} label="Source" placeholder="e.g. Upwork" disabled={isPending} />
+                <EntitySelect
+                  id={field.name}
+                  label="Where it came from"
+                  value={field.state.value ?? ""}
+                  onChange={field.handleChange}
+                  disabled={isPending}
+                  placeholder="Not recorded"
+                  emptyMessage="No marketplaces set up yet"
+                  options={activeSources.map((source) => ({
+                    value: source.id,
+                    label: source.name,
+                  }))}
+                />
               )}
             </form.Field>
           </div>
@@ -296,7 +325,7 @@ const LeadCard = ({ lead }: { lead: ILead }) => {
           {formatUsd(lead.estimated_value_usd)}
         </span>
         {lead.source && (
-          <span className="truncate text-[11px] text-muted-foreground">{lead.source}</span>
+          <span className="truncate text-[11px] text-muted-foreground">{lead.source.name}</span>
         )}
       </div>
     </div>

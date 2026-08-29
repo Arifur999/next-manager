@@ -7,6 +7,7 @@ import MetricTile, {
   times,
   usd,
 } from "@/components/shared/kpi/MetricTile"
+import WhereWorkComesFrom from "@/components/modules/Dashboard/WhereWorkComesFrom"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { getKpi } from "@/services/agencio.services"
 import type { SalesKpi } from "@/types/kpi.types"
@@ -98,6 +99,8 @@ const SalesDashboard = ({ range }: { range: string }) => {
           tone={1}
         />
       </div>
+
+      <WhereWorkComesFrom rows={kpi.by_source} />
 
       <Card className="gap-0 p-0">
         <CardHeader className="flex flex-row items-center justify-between gap-3 border-b px-5 py-4">

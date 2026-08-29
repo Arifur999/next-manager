@@ -75,6 +75,23 @@ export type SalesKpi = ScopeMeta & {
         average_deal_size_usd: Metric;
         sales_cycle_days: Metric;
     };
+    /**
+     * Where the work came from, over the whole history rather than the window.
+     *
+     * A marketplace's win rate across one month is three deals, which is
+     * noise. Leads nobody tagged appear as "Not recorded" rather than being
+     * dropped - hiding them makes the percentages add up while being computed
+     * from a subset.
+     */
+    by_source: Array<{
+        name: string;
+        won: number;
+        lost: number;
+        open: number;
+        won_value_usd: number;
+        /** Null where nothing has been decided yet - not 0%. */
+        win_rate_pct: number | null;
+    }>;
     context: {
         open_deals: number;
         open_pipeline_usd: number;

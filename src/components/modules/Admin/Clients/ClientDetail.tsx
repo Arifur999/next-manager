@@ -3,6 +3,7 @@
 import StatTile from "@/components/shared/StatTile"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
+import ClientLinksPanel from "@/components/modules/Admin/Clients/ClientLinksPanel"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { formatBdt, formatUsd } from "@/lib/currency"
 import {
@@ -126,6 +127,7 @@ const ClientDetail = ({ clientId }: { clientId: string }) => {
           <TabsTrigger value="projects">Projects</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
           <TabsTrigger value="invoices">Invoices</TabsTrigger>
+          <TabsTrigger value="links">Links</TabsTrigger>
           <TabsTrigger value="vault">Vault</TabsTrigger>
           <TabsTrigger value="notes">Notes</TabsTrigger>
         </TabsList>
@@ -162,6 +164,10 @@ const ClientDetail = ({ clientId }: { clientId: string }) => {
               </ul>
             )}
           </Card>
+        </TabsContent>
+
+        <TabsContent value="links" className="mt-4">
+          <ClientLinksPanel clientId={clientId} />
         </TabsContent>
 
         <TabsContent value="payments" className="mt-4">
