@@ -55,6 +55,17 @@ export interface ICompanyRow {
     email: string;
     created_at: string;
     subscription: ISubscription | null;
+    /**
+     * The person this was sold to. Name and email only — not the customer's
+     * whole staff list, which is not something running a platform needs.
+     */
+    admin: { id: string; full_name: string; email: string; status: string } | null;
+    /**
+     * When the company last did anything, from its own activity log. Null when
+     * nothing has ever been recorded, which is different from "a long time
+     * ago" and is shown differently.
+     */
+    last_active_at: string | null;
     usage: IUsage;
 }
 

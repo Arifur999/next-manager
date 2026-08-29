@@ -130,8 +130,33 @@ const OPERATIONS_SECTIONS: NavSection[] = [
 ];
 
 // The platform console is its own thing and shares nothing with a company.
+//
+// Every area is its own route rather than a tab, so this list can name them
+// and a link to one can be sent to a colleague.
 const SUPER_ADMIN_SECTIONS: NavSection[] = [
-    { items: [{ title: "Companies", href: "/platform", icon: "UsersRound" }] },
+    { items: [{ title: "Dashboard", href: "/platform", icon: "LayoutDashboard" }] },
+    {
+        title: "Customers",
+        items: [
+            { title: "All users", href: "/platform/customers", icon: "UsersRound" },
+            { title: "Active users", href: "/platform/active-users", icon: "UserCheck" },
+            { title: "Plans", href: "/platform/plans", icon: "Wallet" },
+        ],
+    },
+    {
+        title: "Money",
+        items: [
+            { title: "Financial report", href: "/platform/finance", icon: "ChartLine" },
+        ],
+    },
+    {
+        title: "Team",
+        items: [
+            { title: "Permissions", href: "/platform/permissions", icon: "KeyRound" },
+            { title: "Invite admin", href: "/platform/invite-admin", icon: "User" },
+            { title: "Admin activity", href: "/platform/activity", icon: "History" },
+        ],
+    },
 ];
 
 const BY_ROLE: Record<UserRole, NavSection[]> = {

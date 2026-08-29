@@ -124,6 +124,30 @@ for (const [role, expected] of [
   console.log(`${ok ? "OK  " : "FAIL"}  ${role.padEnd(16)} activity -> ${res.status} (want ${expected})`);
 }
 
+// No company role may reach the console, whatever the path under it.
+for (const role of Object.keys(EXPECT)) {
+  for (const path of ["/platform", "/platform/customers", "/platform/finance"]) {
+    const res = await fetch(WEB + path, { headers: { Cookie: cookies[role] }, redirect: "manual" });
+    const ok = res.status === 307 || res.status === 308;
+    if (!ok) bad += 1;
+    console.log();
+  }
+}
+
+// No company role may reach the console, whatever the path under it. The
+// platform rule was a prefix without a boundary once; this checks the whole
+// area rather than only its root.
+for (const role of Object.keys(EXPECT)) {
+  for (const path of ["/platform", "/platform/customers", "/platform/finance"]) {
+    const res = await fetch(WEB + path, { headers: { Cookie: cookies[role] }, redirect: "manual" });
+    const ok = res.status === 307 || res.status === 308;
+    if (!ok) bad += 1;
+    console.log(
+      `${ok ? "OK  " : "FAIL"}  ${role.padEnd(16)} bounced from ${path}  (${res.status})`
+    );
+  }
+}
+
 // An /admin path no rule names must be refused, not served. This is the
 // fail-open case, so it is asserted rather than assumed.
 const unlisted = await fetch(`${WEB}/admin/dashboard/nothing-here`, {
@@ -168,8 +192,17 @@ if (!superEmail || !superPassword) {
     await api("POST", "/auth/login", { email: superEmail, password: superPassword })
   ).cookie;
 
+  // Every console route the sidebar now names, plus the one page that has to
+  // work for somebody with no account at all.
   for (const [path, expected] of [
     ["/platform", 200],
+    ["/platform/customers", 200],
+    ["/platform/active-users", 200],
+    ["/platform/plans", 200],
+    ["/platform/finance", 200],
+    ["/platform/permissions", 200],
+    ["/platform/invite-admin", 200],
+    ["/platform/activity", 200],
     // A prefix rule without a boundary claimed this too, and it is the one
     // page that has to work for somebody with no account at all.
     ["/platform-join/anything", 200],

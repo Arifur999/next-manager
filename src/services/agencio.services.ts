@@ -506,8 +506,10 @@ export const createPlan = async (payload: Record<string, unknown>) =>
 export const updatePlan = async (id: string, payload: Record<string, unknown>) =>
     wrap("updating a plan", () => httpClient.patch<IPlan>(`/platform/plans/${id}`, payload))
 
-export const getCompanies = async () =>
-    wrap("fetching companies", () => httpClient.get<ICompanyRow[]>("/platform/companies"))
+export const getCompanies = async (queryString?: string) =>
+    wrap("fetching companies", () =>
+        httpClient.get<ICompanyRow[]>("/platform/companies", { params: toParams(queryString) })
+    )
 
 export const setSubscription = async (organizationId: string, payload: Record<string, unknown>) =>
     wrap("updating a subscription", () =>
