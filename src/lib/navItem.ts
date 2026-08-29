@@ -74,6 +74,7 @@ const ADMIN_SECTIONS: NavSection[] = [
         title: "Workspace",
         items: [
             { title: "Targets", href: "/admin/dashboard/targets", icon: "Target" },
+            { title: "Activity", href: "/admin/dashboard/activity", icon: "History" },
             { title: "Vault", href: "/admin/dashboard/vault", icon: "KeyRound" },
             { title: "Team", href: "/admin/dashboard/team-management", icon: "UsersRound" },
             { title: "Settings", href: "/admin/dashboard/settings", icon: "Settings" },

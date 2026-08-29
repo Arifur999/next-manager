@@ -482,3 +482,28 @@ export interface ILeadStageEvent {
     changed_by: string | null;
     changed_at: string;
 }
+
+/**
+ * One entry in the audit trail.
+ *
+ * `summary` is the sentence written at the time of the action and never
+ * recomputed, which is why the feed still reads correctly after the thing it
+ * describes has been renamed or deleted.
+ *
+ * `user` can be null: removing somebody sets their activity rows to null
+ * rather than deleting the history they left behind.
+ */
+export interface IActivityEntry {
+    id: string;
+    entity_type: string;
+    entity_id: string | null;
+    action: string;
+    summary: string;
+    created_at: string;
+    user?: { id: string; full_name: string; email: string; avatar_url?: string } | null;
+}
+
+export interface IActivityFilters {
+    entity_types: Array<{ value: string; count: number }>;
+    actions: Array<{ value: string; count: number }>;
+}

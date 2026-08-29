@@ -3,6 +3,8 @@
 import { httpClient } from "@/lib/axios/httpClient"
 import type {
     IAccount,
+    IActivityEntry,
+    IActivityFilters,
     IAssignmentRow,
     ICapacityRow,
     IClient,
@@ -503,4 +505,19 @@ export const setSubscription = async (organizationId: string, payload: Record<st
             `/platform/companies/${organizationId}/subscription`,
             payload
         )
+    )
+
+// ---------------------------------------------------------------------------
+// Activity (audit trail). Read-only by design — there is no write here because
+// there is no write endpoint.
+// ---------------------------------------------------------------------------
+
+export const getActivity = async (queryString?: string) =>
+    wrap("fetching activity", () =>
+        httpClient.get<IActivityEntry[]>("/activity", { params: toParams(queryString) })
+    )
+
+export const getActivityFilters = async () =>
+    wrap("fetching activity filters", () =>
+        httpClient.get<IActivityFilters>("/activity/filters")
     )
