@@ -9,6 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:nav": "node -r dotenv/config scripts/nav-sweep.mjs",
+    "test:journeys": "node scripts/journeys.mjs",
     "test:routing": "node -r dotenv/config scripts/role-routing.mjs",
     "verify": "node scripts/verify.mjs"
   },
