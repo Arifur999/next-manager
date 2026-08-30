@@ -51,6 +51,9 @@ const ADMIN_SECTIONS: NavSection[] = [
             { title: "Inactive", href: "/admin/dashboard/clients?status=inactive", icon: "Users" },
             { title: "Archived", href: "/admin/dashboard/clients?status=archived", icon: "Archive" },
             { title: "Leads", href: "/admin/dashboard/leads", icon: "Target" },
+            { title: "All Services", href: "/admin/dashboard/services", icon: "Package" },
+            { title: "Service Categories", href: "/admin/dashboard/services/categories", icon: "FolderTree" },
+            { title: "Service Packages", href: "/admin/dashboard/services/templates", icon: "Boxes" },
             { title: "Projects", href: "/admin/dashboard/projects", icon: "FolderKanban" },
         ],
     },
@@ -131,6 +134,16 @@ const SALES_SECTIONS: NavSection[] = [
             { title: "Leads", href: "/admin/dashboard/leads", icon: "Target" },
             { title: "Clients", href: "/admin/dashboard/clients", icon: "Users" },
             { title: "Invoices", href: "/admin/dashboard/invoices", icon: "FileText" },
+        ],
+    },
+    {
+        // Sales shapes the catalogue too - they are the ones who know what is
+        // being sold and for how much.
+        title: "What we sell",
+        items: [
+            { title: "Services", href: "/admin/dashboard/services", icon: "Package" },
+            { title: "Categories", href: "/admin/dashboard/services/categories", icon: "FolderTree" },
+            { title: "Packages", href: "/admin/dashboard/services/templates", icon: "Boxes" },
         ],
     },
     {

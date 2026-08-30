@@ -37,6 +37,10 @@ import type {
     IProjectMember,
     IRateSettings,
     IRevealedCredential,
+    IService,
+    IServiceCategory,
+    IServiceRevenue,
+    IServiceTemplate,
     ITask,
     ITeamInvite,
     ITeamPayout,
@@ -836,4 +840,62 @@ export const updateWorkflowStatus = async (id: string, payload: Record<string, u
 export const deleteWorkflowStatus = async (id: string) =>
     wrap("removing the status", () =>
         httpClient.delete<{ message: string }>(`/workflow-statuses/${id}`)
+    )
+
+// ---------------------------------------------------------------------------
+// What the agency sells
+// ---------------------------------------------------------------------------
+
+export const getServices = async (queryString?: string) =>
+    wrap("fetching services", () =>
+        httpClient.get<IService[]>("/services", { params: toParams(queryString) })
+    )
+
+export const createService = async (payload: Record<string, unknown>) =>
+    wrap("adding the service", () => httpClient.post<IService>("/services", payload))
+
+export const updateService = async (id: string, payload: Record<string, unknown>) =>
+    wrap("updating the service", () => httpClient.patch<IService>(`/services/${id}`, payload))
+
+export const deleteService = async (id: string) =>
+    wrap("removing the service", () =>
+        httpClient.delete<{ message: string }>(`/services/${id}`)
+    )
+
+export const getServiceRevenue = async () =>
+    wrap("fetching what each service earned", () =>
+        httpClient.get<IServiceRevenue[]>("/services/revenue")
+    )
+
+export const getServiceCategories = async () =>
+    wrap("fetching service categories", () =>
+        httpClient.get<IServiceCategory[]>("/services/categories")
+    )
+
+export const createServiceCategory = async (payload: Record<string, unknown>) =>
+    wrap("adding the category", () =>
+        httpClient.post<IServiceCategory>("/services/categories", payload)
+    )
+
+export const updateServiceCategory = async (id: string, payload: Record<string, unknown>) =>
+    wrap("updating the category", () =>
+        httpClient.patch<IServiceCategory>(`/services/categories/${id}`, payload)
+    )
+
+export const deleteServiceCategory = async (id: string) =>
+    wrap("removing the category", () =>
+        httpClient.delete<{ message: string }>(`/services/categories/${id}`)
+    )
+
+export const getServiceTemplates = async () =>
+    wrap("fetching packages", () => httpClient.get<IServiceTemplate[]>("/services/templates"))
+
+export const createServiceTemplate = async (payload: Record<string, unknown>) =>
+    wrap("creating the package", () =>
+        httpClient.post<IServiceTemplate>("/services/templates", payload)
+    )
+
+export const deleteServiceTemplate = async (id: string) =>
+    wrap("removing the package", () =>
+        httpClient.delete<{ message: string }>(`/services/templates/${id}`)
     )
