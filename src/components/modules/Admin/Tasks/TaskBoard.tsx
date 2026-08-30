@@ -21,9 +21,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { getProjects, getTasks } from "@/services/agencio.services"
+import { getProjects, getTasks, getWorkflowStatuses } from "@/services/agencio.services"
 import { getAllUsers } from "@/services/user.services"
-import type { IProject, ITask, TaskStatus } from "@/types/agencio.types"
+import type { IProject, ITask, IWorkflowStatus } from "@/types/agencio.types"
 import type { IUser } from "@/types/user.types"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -39,21 +39,14 @@ const taskFormSchema = z.object({
   project_id: z.string().min(1, "Choose a project"),
   title: z.string().min(1, "Title is required"),
   assignee_id: z.string().optional(),
-  status: z.enum(["todo", "in_progress", "in_review", "done"]),
+  // An id, not a word: the columns belong to the agency now.
+  status_id: z.string().optional(),
   priority: z.enum(["low", "medium", "high", "urgent"]),
   due_date: z.string().optional(),
 })
 
 type TaskFormValues = z.infer<typeof taskFormSchema>
 
-// The four states in the order work moves through them, so the columns read
-// left to right the way the work does.
-const COLUMNS: Array<{ status: TaskStatus; label: string }> = [
-  { status: "todo", label: "To do" },
-  { status: "in_progress", label: "In progress" },
-  { status: "in_review", label: "In review" },
-  { status: "done", label: "Done" },
-]
 
 const PRIORITY_TONE: Record<string, string> = {
   urgent: "bg-destructive/12 text-destructive",
@@ -93,7 +86,7 @@ const CreateTaskModal = () => {
     project_id: "",
     title: "",
     assignee_id: "",
-    status: "todo",
+    status_id: "",
     priority: "medium",
     due_date: "",
   }
@@ -255,21 +248,43 @@ const CreateTaskModal = () => {
   )
 }
 
-const TaskCard = ({ task }: { task: ITask }) => {
+const TaskCard = ({ task, statuses }: { task: ITask; statuses: IWorkflowStatus[] }) => {
   const queryClient = useQueryClient()
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (status: TaskStatus) => updateTaskAction(task.id, { status }),
+    mutationFn: (status_id: string) => updateTaskAction(task.id, { status_id }),
   })
 
+  // Finished is a category, so a column called "Shipped" strikes the title
+  // through exactly like the "Done" it replaced.
+  const isDone = task.status.category === "done"
+
   const overdue =
-    task.due_date && task.status !== "done"
-      ? isBefore(new Date(task.due_date), startOfToday())
-      : false
+    task.due_date && !isDone ? isBefore(new Date(task.due_date), startOfToday()) : false
+
+  // Ticking the box has to land on a real column, and which one depends on
+  // the board rather than on a word: the first finished status to close it,
+  // the board's own default to reopen it.
+  const closeTarget = statuses.find((status) => status.category === "done" && status.is_active)
+  const reopenTarget =
+    statuses.find((status) => status.is_default && status.is_active) ??
+    statuses.find((status) => status.category === "open" && status.is_active)
 
   const toggleDone = async () => {
-    const next: TaskStatus = task.status === "done" ? "todo" : "done"
-    const result = await mutateAsync(next)
+    const next = isDone ? reopenTarget : closeTarget
+
+    if (!next) {
+      // Said rather than silently doing nothing: the board has no column to
+      // move it to, which is a board-setup problem, not a click problem.
+      toast.error(
+        isDone
+          ? "This board has nothing to reopen work into."
+          : "This board has no finished column to move it to."
+      )
+      return
+    }
+
+    const result = await mutateAsync(next.id)
 
     if (!result.success) {
       toast.error(result.message || "Failed to update task")
@@ -284,17 +299,17 @@ const TaskCard = ({ task }: { task: ITask }) => {
     <div className="rounded-lg border bg-card p-3">
       <div className="flex items-start gap-2.5">
         <Checkbox
-          checked={task.status === "done"}
+          checked={isDone}
           onCheckedChange={() => void toggleDone()}
           disabled={isPending}
-          aria-label={task.status === "done" ? `Reopen ${task.title}` : `Mark ${task.title} done`}
+          aria-label={isDone ? `Reopen ${task.title}` : `Mark ${task.title} done`}
           className="mt-0.5"
         />
 
         <div className="min-w-0 flex-1">
           <p
             className={`text-sm ${
-              task.status === "done" ? "text-muted-foreground line-through" : "font-medium"
+              isDone ? "text-muted-foreground line-through" : "font-medium"
             }`}
           >
             {task.title}
@@ -355,7 +370,19 @@ const TaskBoard = ({ mineOnly = false }: { mineOnly?: boolean }) => {
     queryFn: () => getTasks(query || undefined),
   })
 
+  // The columns are the agency's own now, so the board asks for them instead
+  // of carrying a list of four words that used to be true.
+  const { data: statusData } = useQuery({
+    queryKey: ["workflow-statuses", "task"],
+    queryFn: () => getWorkflowStatuses("kind=task"),
+  })
+
   const tasks = (data?.data ?? []) as ITask[]
+  const statuses = ((statusData?.data ?? []) as IWorkflowStatus[]).filter(
+    // A retired column still holds work, so it is drawn when something is on
+    // it - just never offered as somewhere to put anything new.
+    (status) => status.is_active || tasks.some((task) => task.status.id === status.id)
+  )
 
   const empty = overdue
     ? "Nothing is late."
@@ -373,8 +400,8 @@ const TaskBoard = ({ mineOnly = false }: { mineOnly?: boolean }) => {
 
       {isLoading && tasks.length === 0 ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {COLUMNS.map((column) => (
-            <Card key={column.status} className="h-48 animate-pulse bg-muted/40" />
+          {(statuses.length > 0 ? statuses : [null, null, null, null]).map((column, index) => (
+            <Card key={column?.id ?? index} className="h-48 animate-pulse bg-muted/40" />
           ))}
         </div>
       ) : tasks.length === 0 ? (
@@ -398,14 +425,13 @@ const TaskBoard = ({ mineOnly = false }: { mineOnly?: boolean }) => {
                   </p>
                 </div>
 
-                <Badge variant="outline" className="capitalize">
-                  {task.status.replace(/_/g, " ")}
-                </Badge>
+                <Badge variant="outline">{task.status.name}</Badge>
 
                 {task.due_date && (
                   <span
                     className={
-                      isBefore(new Date(task.due_date), startOfToday()) && task.status !== "done"
+                      isBefore(new Date(task.due_date), startOfToday()) &&
+                      task.status.category !== "done"
                         ? "text-sm font-medium"
                         : "text-sm text-muted-foreground"
                     }
@@ -419,13 +445,20 @@ const TaskBoard = ({ mineOnly = false }: { mineOnly?: boolean }) => {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {COLUMNS.map((column) => {
-            const columnTasks = tasks.filter((task) => task.status === column.status)
+          {statuses.map((column) => {
+            const columnTasks = tasks.filter((task) => task.status.id === column.id)
 
             return (
-              <Card key={column.status} className="gap-0 overflow-hidden p-0">
+              <Card key={column.id} className="gap-0 overflow-hidden p-0">
                 <CardHeader className="flex flex-row items-center justify-between border-b px-4 py-3">
-                  <CardTitle className="text-sm">{column.label}</CardTitle>
+                  <CardTitle className="text-sm">
+                    {column.name}
+                    {!column.is_active && (
+                      <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                        (off)
+                      </span>
+                    )}
+                  </CardTitle>
                   <span className="text-xs text-muted-foreground tabular-nums">
                     {columnTasks.length}
                   </span>
@@ -435,7 +468,9 @@ const TaskBoard = ({ mineOnly = false }: { mineOnly?: boolean }) => {
                   {columnTasks.length === 0 ? (
                     <p className="py-6 text-center text-xs text-muted-foreground">Empty</p>
                   ) : (
-                    columnTasks.map((task) => <TaskCard key={task.id} task={task} />)
+                    columnTasks.map((task) => (
+                      <TaskCard key={task.id} task={task} statuses={statuses} />
+                    ))
                   )}
                 </div>
               </Card>

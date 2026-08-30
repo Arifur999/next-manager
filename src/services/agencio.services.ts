@@ -43,6 +43,7 @@ import type {
     ITimeEntry,
     ITimeSummary,
     ITransaction,
+    IWorkflowStatus,
 } from "@/types/agencio.types"
 import type { KpiScope } from "@/types/kpi.types"
 import type {
@@ -811,4 +812,28 @@ export const setNotificationRule = async (event: string, payload: Record<string,
 export const getLoginEvents = async (queryString?: string) =>
     wrap("fetching the login history", () =>
         httpClient.get<ILoginEvent[]>("/security/login-events", { params: toParams(queryString) })
+    )
+
+// ---------------------------------------------------------------------------
+// The columns on an agency's boards
+// ---------------------------------------------------------------------------
+
+export const getWorkflowStatuses = async (queryString?: string) =>
+    wrap("fetching the board", () =>
+        httpClient.get<IWorkflowStatus[]>("/workflow-statuses", { params: toParams(queryString) })
+    )
+
+export const createWorkflowStatus = async (payload: Record<string, unknown>) =>
+    wrap("adding the status", () =>
+        httpClient.post<IWorkflowStatus>("/workflow-statuses", payload)
+    )
+
+export const updateWorkflowStatus = async (id: string, payload: Record<string, unknown>) =>
+    wrap("updating the status", () =>
+        httpClient.patch<IWorkflowStatus>(`/workflow-statuses/${id}`, payload)
+    )
+
+export const deleteWorkflowStatus = async (id: string) =>
+    wrap("removing the status", () =>
+        httpClient.delete<{ message: string }>(`/workflow-statuses/${id}`)
     )

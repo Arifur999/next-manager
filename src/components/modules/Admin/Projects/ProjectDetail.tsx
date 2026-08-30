@@ -4,6 +4,7 @@ import ProjectBaselineCard from "@/components/modules/Admin/Projects/ProjectBase
 import ProjectMilestonePanel from "@/components/modules/Admin/Projects/ProjectMilestonePanel"
 import ProjectTeamPanel from "@/components/modules/Admin/Projects/ProjectTeamPanel"
 import StatTile from "@/components/shared/StatTile"
+import { STATUS_TONE } from "@/components/shared/status/statusTone"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -15,13 +16,6 @@ import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { ArrowDownLeft, KeyRound, Receipt, TrendingUp } from "lucide-react"
 import Link from "next/link"
-
-const TASK_TONE: Record<string, string> = {
-  todo: "bg-muted text-muted-foreground",
-  in_progress: "bg-chart-2/15 text-chart-2",
-  in_review: "bg-chart-4/15 text-chart-4",
-  done: "bg-chart-3/15 text-chart-3",
-}
 
 const ProjectDetail = ({ projectId }: { projectId: string }) => {
   const { data: projectData, isLoading } = useQuery({
@@ -55,7 +49,9 @@ const ProjectDetail = ({ projectId }: { projectId: string }) => {
 
   if (!project) return null
 
-  const doneCount = tasks.filter((task) => task.status === "done").length
+  // By category: a renamed "Done" still counts as finished, and so does a
+  // second finished status the agency added.
+  const doneCount = tasks.filter((task) => task.status.category === "done").length
   const progress = tasks.length > 0 ? (doneCount / tasks.length) * 100 : 0
 
   return (
@@ -66,7 +62,7 @@ const ProjectDetail = ({ projectId }: { projectId: string }) => {
             <h1 className="text-2xl font-semibold tracking-tight">{project.name}</h1>
             <Badge variant="outline">{project.code}</Badge>
             <Badge variant="outline" className="capitalize">
-              {project.status.replace(/_/g, " ")}
+              {project.status.name}
             </Badge>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -159,10 +155,10 @@ const ProjectDetail = ({ projectId }: { projectId: string }) => {
                     </div>
                     <span
                       className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-medium capitalize ${
-                        TASK_TONE[task.status]
+                        STATUS_TONE[task.status.category]
                       }`}
                     >
-                      {task.status.replace(/_/g, " ")}
+                      {task.status.name}
                     </span>
                   </li>
                 ))}

@@ -19,8 +19,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { getClients } from "@/services/agencio.services"
-import type { IClient, IProject } from "@/types/agencio.types"
+import { getClients, getWorkflowStatuses } from "@/services/agencio.services"
+import type { IClient, IProject, IWorkflowStatus } from "@/types/agencio.types"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
@@ -33,7 +33,8 @@ const projectFormSchema = z.object({
   client_id: z.string().min(1, "Choose a client"),
   name: z.string().min(1, "Name is required"),
   code: z.string().min(1, "Code is required"),
-  status: z.enum(["planning", "active", "on_hold", "completed", "cancelled"]),
+  // An id, not a word from a fixed list: the columns are the agency's now.
+  status_id: z.string().min(1, "Choose a status"),
   start_date: z.string().optional(),
   end_date: z.string().optional(),
   contract_value_usd: z
@@ -49,19 +50,11 @@ const projectFormSchema = z.object({
 
 type ProjectFormValues = z.infer<typeof projectFormSchema>
 
-const STATUSES = [
-  { value: "planning", label: "Planning" },
-  { value: "active", label: "Active" },
-  { value: "on_hold", label: "On hold" },
-  { value: "completed", label: "Completed" },
-  { value: "cancelled", label: "Cancelled" },
-] as const
-
 const emptyValues: ProjectFormValues = {
   client_id: "",
   name: "",
   code: "",
-  status: "planning",
+  status_id: "",
   start_date: "",
   end_date: "",
   contract_value_usd: "",
@@ -76,6 +69,13 @@ const ProjectForm = ({ project, onDone }: { project?: IProject | null; onDone: (
 
   const { data: clientsData } = useQuery({ queryKey: ["clients", ""], queryFn: () => getClients() })
   const clients = (clientsData?.data ?? []) as IClient[]
+
+  // The columns this agency actually uses, rather than a list baked in here.
+  const { data: statusData } = useQuery({
+    queryKey: ["workflow-statuses", "project"],
+    queryFn: () => getWorkflowStatuses("kind=project"),
+  })
+  const statuses = (statusData?.data ?? []) as IWorkflowStatus[]
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: (values: ProjectFormValues) => {
@@ -102,7 +102,7 @@ const ProjectForm = ({ project, onDone }: { project?: IProject | null; onDone: (
           client_id: project.client_id,
           name: project.name,
           code: project.code,
-          status: project.status,
+          status_id: project.status.id,
           start_date: project.start_date ?? "",
           end_date: project.end_date ?? "",
           contract_value_usd: String(project.contract_value_usd ?? ""),
@@ -183,15 +183,20 @@ const ProjectForm = ({ project, onDone }: { project?: IProject | null; onDone: (
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <form.Field name="status">
+        <form.Field name="status_id">
           {(field) => (
             <EntitySelect
               id={field.name}
               label="Status"
               value={field.state.value}
-              onChange={(value) => field.handleChange(value as ProjectFormValues["status"])}
+              onChange={(value) => field.handleChange(value)}
               disabled={isPending}
-              options={STATUSES.map((status) => ({ value: status.value, label: status.label }))}
+              // Read from the board rather than a constant, and only the
+              // columns that are switched on — a retired one is somewhere
+              // work can sit, not somewhere it can be put.
+              options={statuses
+                .filter((status) => status.is_active)
+                .map((status) => ({ value: status.id, label: status.name }))}
             />
           )}
         </form.Field>

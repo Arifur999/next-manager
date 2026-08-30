@@ -1,18 +1,12 @@
 import { Badge } from "@/components/ui/badge"
 import { formatUsd } from "@/lib/currency"
-import type { IProject, ProjectStatus } from "@/types/agencio.types"
+import { STATUS_TONE } from "@/components/shared/status/statusTone"
+import type { IProject } from "@/types/agencio.types"
 import { ColumnDef } from "@tanstack/react-table"
 
 // Status carries meaning, so it gets colour rather than the same outline for
 // all five: active is the working state, cancelled is a failure, the rest are
 // neutral waypoints.
-const STATUS_TONE: Record<ProjectStatus, string> = {
-  planning: "bg-muted text-muted-foreground",
-  active: "bg-chart-3/15 text-chart-3",
-  on_hold: "bg-chart-4/15 text-chart-4",
-  completed: "bg-chart-1/12 text-chart-1",
-  cancelled: "bg-destructive/12 text-destructive",
-}
 
 export const projectsColumns: ColumnDef<IProject>[] = [
   {
@@ -41,10 +35,10 @@ export const projectsColumns: ColumnDef<IProject>[] = [
     cell: ({ row }) => (
       <span
         className={`rounded-md px-2 py-0.5 text-xs font-medium capitalize ${
-          STATUS_TONE[row.original.status]
+          STATUS_TONE[row.original.status.category]
         }`}
       >
-        {row.original.status.replace(/_/g, " ")}
+        {row.original.status.name}
       </span>
     ),
   },

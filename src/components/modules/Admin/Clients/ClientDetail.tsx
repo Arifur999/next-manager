@@ -152,7 +152,7 @@ const ClientDetail = ({ clientId }: { clientId: string }) => {
                       </div>
                       <div className="flex shrink-0 items-center gap-3">
                         <Badge variant="outline" className="capitalize">
-                          {project.status.replace(/_/g, " ")}
+                          {project.status.name}
                         </Badge>
                         <span className="text-sm tabular-nums">
                           {formatUsd(project.contract_value_usd)}

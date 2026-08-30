@@ -19,8 +19,37 @@ export type AccountType =
 
 export type ClientStatus = "active" | "inactive" | "archived";
 export type LeadStage = "new" | "contacted" | "proposal" | "negotiating" | "won" | "lost";
-export type ProjectStatus = "planning" | "active" | "on_hold" | "completed" | "cancelled";
-export type TaskStatus = "todo" | "in_progress" | "in_review" | "done";
+/**
+ * What a status MEANS, as opposed to what an agency calls it.
+ *
+ * The name is theirs to change; this is what the product reasons about. A
+ * board column called "Shipped" or "Client approved" is `done` either way,
+ * and that is what stops the clock.
+ */
+export type StatusCategory = "open" | "active" | "blocked" | "done" | "cancelled";
+
+/** One column on a board. */
+export interface IWorkflowStatus {
+    id: string;
+    kind: "task" | "project";
+    name: string;
+    category: StatusCategory;
+    /** Board order, left to right. A sequence, not alphabetical. */
+    sort_order: number;
+    /** What new work lands on. One per board. */
+    is_default: boolean;
+    is_active: boolean;
+    /** How much is on it — what makes deleting one refusable. */
+    _count?: { tasks: number; projects: number };
+}
+
+/** The status as it travels on a task or project row. */
+export interface IStatusRef {
+    id: string;
+    name: string;
+    category: StatusCategory;
+    sort_order: number;
+}
 export type TaskPriority = "low" | "medium" | "high" | "urgent";
 export type InvoiceStatus =
     | "draft"
@@ -121,7 +150,7 @@ export interface IProject {
     name: string;
     code: string;
     description: string;
-    status: ProjectStatus;
+    status: IStatusRef;
     start_date: string | null;
     end_date: string | null;
     contract_value_usd: number;
@@ -148,7 +177,7 @@ export interface ITask {
     title: string;
     description: string;
     assignee_id: string | null;
-    status: TaskStatus;
+    status: IStatusRef;
     priority: TaskPriority;
     due_date: string | null;
     completed_at: string | null;
@@ -388,7 +417,7 @@ export interface IAssignmentRow {
     assignments: Array<{
         id: string;
         role_on_project: string;
-        project: { id: string; name: string; code: string; status: ProjectStatus };
+        project: { id: string; name: string; code: string; status: IStatusRef };
     }>;
     /** Live work only — finished projects would make everyone look busy forever. */
     active_count: number;
