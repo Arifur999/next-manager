@@ -635,3 +635,23 @@ export interface INotificationRule {
     roles: string[];
     customised: boolean;
 }
+
+/**
+ * One sign-in attempt.
+ *
+ * `user` is null when the account has since been removed — the attempt
+ * outlives the person, which is the point of keeping it. The address is
+ * always there, so a row is never anonymous.
+ *
+ * Attempts at addresses with no account are not in this list at all: they
+ * belong to no company, and never reach a company's screen.
+ */
+export interface ILoginEvent {
+    id: string;
+    email: string;
+    success: boolean;
+    ip: string;
+    user_agent: string;
+    created_at: string;
+    user: { id: string; full_name: string; role: string } | null;
+}

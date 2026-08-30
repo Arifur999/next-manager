@@ -24,6 +24,7 @@ import type {
     ILeadPipeline,
     ILeadSource,
     ILeadStageEvent,
+    ILoginEvent,
     IMilestone,
     IMonthlyPoint,
     INotificationRule,
@@ -801,4 +802,13 @@ export const getNotificationRules = async () =>
 export const setNotificationRule = async (event: string, payload: Record<string, unknown>) =>
     wrap("saving the notification setting", () =>
         httpClient.patch<INotificationRule>(`/notification-rules/${event}`, payload)
+    )
+
+// ---------------------------------------------------------------------------
+// Who tried to sign in
+// ---------------------------------------------------------------------------
+
+export const getLoginEvents = async (queryString?: string) =>
+    wrap("fetching the login history", () =>
+        httpClient.get<ILoginEvent[]>("/security/login-events", { params: toParams(queryString) })
     )

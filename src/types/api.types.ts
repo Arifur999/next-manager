@@ -21,6 +21,13 @@ export interface PaginationMeta {
      * true of nothing.
      */
     totals?: Array<{ currency: string; amount: number }>;
+    /**
+     * Counted across the whole window rather than the page — narrowing the
+     * list must not hide the thing the security page is opened to notice.
+     */
+    failed_last_24h?: number;
+    /** How long login history is kept, so the screen can say it. */
+    retention_days?: number;
 }
 
 export interface ApiErrorResponse {
