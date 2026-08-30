@@ -13,12 +13,28 @@ function ScrollArea({
   return (
     <ScrollAreaPrimitive.Root
       data-slot="scroll-area"
-      className={cn("relative", className)}
+      // overflow-hidden so the corners actually clip, and so nothing can paint
+      // outside the box even if the viewport below is ever left unconstrained.
+      className={cn("relative overflow-hidden", className)}
       {...props}
     >
       <ScrollAreaPrimitive.Viewport
         data-slot="scroll-area-viewport"
-        className="size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1"
+        // max-h-[inherit] is what makes `<ScrollArea className="max-h-96">`
+        // mean what everyone here assumed it meant.
+        //
+        // The viewport is size-full, i.e. height:100%. A percentage height
+        // resolves against the PARENT'S HEIGHT, and a parent carrying only a
+        // max-height still computes height:auto - so 100% resolved to auto and
+        // the viewport grew to its content instead of to the box. A 384px
+        // notification panel held a 1211px viewport, which then never scrolled
+        // (scrollHeight === clientHeight) and simply painted through the card.
+        //
+        // Inheriting the max-height binds the viewport to the same ceiling the
+        // caller set, so Radix's overflow:scroll finally has something to
+        // scroll against. Short content is untouched: the ceiling does not
+        // bind, and no scrollbar appears.
+        className="size-full max-h-[inherit] rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1"
       >
         {children}
       </ScrollAreaPrimitive.Viewport>

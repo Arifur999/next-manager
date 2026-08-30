@@ -13,6 +13,14 @@ export interface PaginationMeta {
     limit: number;
     total: number;
     totalPage: number;
+    /**
+     * Sums for the whole filtered list rather than the page that came back —
+     * the transactions ledger sends this.
+     *
+     * Per currency, never across it: dollars added to taka is a number that is
+     * true of nothing.
+     */
+    totals?: Array<{ currency: string; amount: number }>;
 }
 
 export interface ApiErrorResponse {

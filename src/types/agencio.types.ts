@@ -573,3 +573,35 @@ export interface IDepartment {
     created_at: string;
     _count?: { members: number };
 }
+
+/** What produced a ledger row. Mirrors the backend's LedgerSource. */
+export type LedgerSource =
+    | "opening_balance"
+    | "payment"
+    | "expense"
+    | "team_payout"
+    | "owner_withdrawal"
+    | "exchange_out"
+    | "exchange_in"
+    | "due_received"
+    | "due_payment"
+    | "adjustment";
+
+/**
+ * One row of the ledger.
+ *
+ * Written by whatever caused it — a payment, an expense, an exchange — never
+ * typed in directly. `amount` is signed: positive is money in.
+ */
+export interface ITransaction {
+    id: string;
+    date: string;
+    amount: number;
+    currency: Currency;
+    source_type: LedgerSource;
+    /** The record that produced it. Null only for a manual adjustment. */
+    source_id: string | null;
+    description: string;
+    created_at: string;
+    account: Pick<IAccount, "id" | "name" | "currency">;
+}

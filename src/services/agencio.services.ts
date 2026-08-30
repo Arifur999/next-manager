@@ -40,6 +40,7 @@ import type {
     ITeamPayout,
     ITimeEntry,
     ITimeSummary,
+    ITransaction,
 } from "@/types/agencio.types"
 import type { KpiScope } from "@/types/kpi.types"
 import type {
@@ -776,4 +777,13 @@ export const updateDepartment = async (id: string, payload: Record<string, unkno
 export const deleteDepartment = async (id: string) =>
     wrap("deleting the department", () =>
         httpClient.delete<{ message: string }>(`/departments/${id}`)
+    )
+
+// ---------------------------------------------------------------------------
+// The ledger, read as a ledger
+// ---------------------------------------------------------------------------
+
+export const getTransactions = async (queryString?: string) =>
+    wrap("fetching transactions", () =>
+        httpClient.get<ITransaction[]>("/transactions", { params: toParams(queryString) })
     )
