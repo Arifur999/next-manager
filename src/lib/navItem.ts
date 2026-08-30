@@ -71,13 +71,19 @@ const ADMIN_SECTIONS: NavSection[] = [
         ],
     },
     {
-        title: "Workspace",
+        // Everything an admin configures about their own agency, in the words
+        // an admin uses for them. "Settings" held three of these as tabs, which
+        // is why they read as missing: the things you change least often are
+        // the hardest to find when they are nested behind something else.
+        title: "Administration",
         items: [
+            { title: "Business Information", href: "/admin/dashboard/business", icon: "Building2" },
+            { title: "Users", href: "/admin/dashboard/team-management", icon: "UsersRound" },
+            { title: "Departments", href: "/admin/dashboard/departments", icon: "Network" },
+            { title: "Finance Configuration", href: "/admin/dashboard/finance-config", icon: "Settings" },
             { title: "Targets", href: "/admin/dashboard/targets", icon: "Target" },
-            { title: "Activity", href: "/admin/dashboard/activity", icon: "History" },
             { title: "Vault", href: "/admin/dashboard/vault", icon: "KeyRound" },
-            { title: "Team", href: "/admin/dashboard/team-management", icon: "UsersRound" },
-            { title: "Settings", href: "/admin/dashboard/settings", icon: "Settings" },
+            { title: "Audit Log", href: "/admin/dashboard/activity", icon: "History" },
         ],
     },
 ];

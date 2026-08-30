@@ -6,20 +6,9 @@ import {
     deleteExpenseCategory,
     refreshRate,
     setDefaultRate,
-    updateOrganization,
 } from "@/services/agencio.services"
-import type { IExpenseCategory, IOrganization } from "@/types/agencio.types"
+import type { IExpenseCategory } from "@/types/agencio.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
-
-export const updateOrganizationAction = async (
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<IOrganization> | ApiErrorResponse> => {
-    try {
-        return await updateOrganization(payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to update the profile") }
-    }
-}
 
 export const setDefaultRateAction = async (
     rate: number | null,

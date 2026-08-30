@@ -3,7 +3,7 @@
 import {
   refreshRateAction,
   setDefaultRateAction,
-} from "@/app/(dashboardLayout)/admin/dashboard/settings/_action"
+} from "@/app/(dashboardLayout)/admin/dashboard/finance-config/_action"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"

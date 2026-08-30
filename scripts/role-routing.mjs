@@ -107,6 +107,24 @@ for (const [role, expected] of [
   console.log(`${ok ? "OK  " : "FAIL"}  ${role.padEnd(16)} targets -> ${res.status} (want ${expected})`);
 }
 
+// Configuration pages. These moved out of one "settings" page, so each is
+// checked by name rather than trusted to the catch-all.
+for (const path of ["/admin/dashboard/business", "/admin/dashboard/finance-config"]) {
+  for (const [role, expected] of [
+    ["admin", 200],
+    ["project_manager", 307],
+    ["sales", 307],
+    ["operations", 307],
+  ]) {
+    const res = await fetch(WEB + path, { headers: { Cookie: cookies[role] }, redirect: "manual" });
+    const ok = res.status === expected;
+    if (!ok) bad += 1;
+    console.log(
+      `${ok ? "OK  " : "FAIL"}  ${role.padEnd(16)} ${path} -> ${res.status} (want ${expected})`
+    );
+  }
+}
+
 // The activity feed names money across the whole company, so it stays with
 // admin - anyone else reading it has been handed the finance screens sideways.
 for (const [role, expected] of [

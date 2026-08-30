@@ -65,7 +65,12 @@ export const AREAS: AreaRule[] = [
     {
         exact: [],
         pattern: [
-            /^\/admin\/dashboard\/(accounts|payments|exchange|expenses|payouts|withdrawals|due-payments|reports|settings)/,
+            /^\/admin\/dashboard\/(accounts|payments|exchange|expenses|payouts|withdrawals|due-payments|reports)/,
+            // Configuration. "settings" was one page and is now several;
+            // the /^\/admin/ catch-all below would cover them anyway, but
+            // naming them says they are admin-only on purpose rather than
+            // by omission.
+            /^\/admin\/dashboard\/(business|finance-config|departments|services|workflow|permissions|notifications|security)/,
         ],
         roles: ["admin"],
     },

@@ -1,5 +1,6 @@
 import {
     ArrowDownLeft,
+    Building2,
     ArrowLeftRight,
     ChartLine,
     Clock,
@@ -14,6 +15,7 @@ import {
     LogOut,
     MailPlus,
     Megaphone,
+    Network,
     PiggyBank,
     Receipt,
     Scale,
@@ -32,6 +34,7 @@ import {
 const ICONS: Record<string, LucideIcon> = {
     ArrowDownLeft,
     ArrowLeftRight,
+    Building2,
     ChartLine,
     Clock,
     FileText,
@@ -45,6 +48,7 @@ const ICONS: Record<string, LucideIcon> = {
     LogOut,
     MailPlus,
     Megaphone,
+    Network,
     PiggyBank,
     Receipt,
     Scale,
