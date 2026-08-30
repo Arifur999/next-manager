@@ -12,26 +12,27 @@ import { usePathname, useSearchParams } from "next/navigation";
 /**
  * Which entry is the one you are on.
  *
- * Several entries now point at the same page with a different filter —
- * All Clients, Active, Inactive, Archived are one board and four links. So
- * matching on pathname alone would light all four at once, and a link whose
- * href carries a query would never light at all.
+ * Two things make this harder than comparing strings.
  *
- * An entry WITH a query is the one you are on only when every parameter in
- * it matches. An entry WITHOUT one is the unfiltered view, so it lights on
- * its own path and on anything nested under it — a client's detail page
- * keeps All Clients highlighted — but not while a filter is applied.
+ * Several entries point at the same page with a different filter — All
+ * Clients, Active, Inactive, Archived are one board and four links — so an
+ * entry WITH a query matches only when every parameter in it does, and an
+ * entry WITHOUT one is the unfiltered view and does not match while a
+ * sibling's filter is set.
+ *
+ * And one entry's path can be a prefix of another's: /reports is the Business
+ * report, /reports/clients is a different page. Matching by prefix alone
+ * lights both. So every candidate is collected and the LONGEST matching path
+ * wins — which still keeps All Clients lit on a client's detail page, because
+ * nothing deeper is in the sidebar to beat it.
  */
-const isCurrent = (href: string, pathname: string, params: URLSearchParams) => {
+const matches = (href: string, pathname: string, params: URLSearchParams) => {
   const [path, queryString] = href.split("?");
 
-  if (path !== "/" && !pathname.startsWith(path)) return false;
   if (path === "/") return pathname === "/";
+  if (!pathname.startsWith(path)) return false;
 
-  if (!queryString) {
-    // Unfiltered: not the one you are on while a sibling's filter is set.
-    return params.size === 0;
-  }
+  if (!queryString) return params.size === 0;
 
   const wanted = new URLSearchParams(queryString);
   for (const [key, value] of wanted) {
@@ -41,10 +42,27 @@ const isCurrent = (href: string, pathname: string, params: URLSearchParams) => {
   return true;
 };
 
+/** The href of the entry that wins, or null when none of them do. */
+const currentHref = (
+  hrefs: string[],
+  pathname: string,
+  params: URLSearchParams
+): string | null =>
+  hrefs
+    .filter((href) => matches(href, pathname, params))
+    .sort((a, b) => b.split("?")[0].length - a.split("?")[0].length)[0] ?? null;
 const DashboardSidebar = ({ role }: { role: UserRole }) => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const sections = getNavSections(role);
+
+  // Decided once across every entry, not per entry: the winner depends on
+  // what the others matched.
+  const active = currentHref(
+    sections.flatMap((section) => section.items.map((item) => item.href)),
+    pathname,
+    searchParams
+  );
 
   // Only admin can approve, so only admin is asked. Somebody waiting to join
   // is invisible until an admin happens to open the team screen, and a person
@@ -79,7 +97,7 @@ const DashboardSidebar = ({ role }: { role: UserRole }) => {
 
             {section.items.map((item) => {
               const Icon = getIcon(item.icon);
-              const isActive = isCurrent(item.href, pathname, searchParams);
+              const isActive = item.href === active;
 
               return (
                 <Link

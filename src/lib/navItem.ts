@@ -90,9 +90,15 @@ const ADMIN_SECTIONS: NavSection[] = [
         ],
     },
     {
+        // Five questions, five pages. One screen carrying all five answers is
+        // one nobody reads to the bottom of.
         title: "Reports",
         items: [
-            { title: "Reports", href: "/admin/dashboard/reports", icon: "ChartLine" },
+            { title: "Business", href: "/admin/dashboard/reports", icon: "ChartLine" },
+            { title: "Clients", href: "/admin/dashboard/reports/clients", icon: "Users" },
+            { title: "Projects", href: "/admin/dashboard/reports/projects", icon: "FolderKanban" },
+            { title: "Team", href: "/admin/dashboard/reports/team", icon: "UsersRound" },
+            { title: "Finance", href: "/admin/dashboard/reports/finance", icon: "Scale" },
         ],
     },
     {
