@@ -1,4 +1,5 @@
 import {
+    Archive,
     ArrowDownLeft,
     Building2,
     ArrowLeftRight,
@@ -32,6 +33,7 @@ import {
 // Keeps nav config serializable: the config stores a name, this turns it into a
 // component at render time.
 const ICONS: Record<string, LucideIcon> = {
+    Archive,
     ArrowDownLeft,
     ArrowLeftRight,
     Building2,

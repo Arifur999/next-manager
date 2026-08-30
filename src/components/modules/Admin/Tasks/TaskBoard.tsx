@@ -28,7 +28,9 @@ import type { IUser } from "@/types/user.types"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { format, isBefore, startOfToday } from "date-fns"
+import { Badge } from "@/components/ui/badge"
 import { ListChecks, Plus } from "lucide-react"
+import { useSearchParams } from "next/navigation"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
 import { z } from "zod"
@@ -327,8 +329,26 @@ const TaskCard = ({ task }: { task: ITask }) => {
   )
 }
 
+/**
+ * Tasks, in four views over one query.
+ *
+ * Board, List, Overdue and My Tasks are sidebar entries pointing at this same
+ * component with a different URL. Four pages would be four places to fix the
+ * same bug, and the sidebar looks identical either way.
+ *
+ * Overdue is filtered on the SERVER, not here: the list is paginated, so
+ * filtering whatever page arrived would hide late work rather than find it.
+ */
 const TaskBoard = ({ mineOnly = false }: { mineOnly?: boolean }) => {
-  const query = mineOnly ? "mine=true" : ""
+  const searchParams = useSearchParams()
+
+  const mine = mineOnly || searchParams.get("mine") === "true"
+  const overdue = searchParams.get("overdue") === "true"
+  const asList = searchParams.get("view") === "list" || overdue
+
+  const query = [mine ? "mine=true" : "", overdue ? "overdue=true" : ""]
+    .filter(Boolean)
+    .join("&")
 
   const { data, isLoading } = useQuery({
     queryKey: ["tasks", query],
@@ -337,9 +357,15 @@ const TaskBoard = ({ mineOnly = false }: { mineOnly?: boolean }) => {
 
   const tasks = (data?.data ?? []) as ITask[]
 
+  const empty = overdue
+    ? "Nothing is late."
+    : mine
+      ? "Nothing assigned to you."
+      : "No tasks yet."
+
   return (
     <div className="space-y-4">
-      {!mineOnly && (
+      {!mine && !overdue && (
         <div className="flex justify-end">
           <CreateTaskModal />
         </div>
@@ -354,9 +380,42 @@ const TaskBoard = ({ mineOnly = false }: { mineOnly?: boolean }) => {
       ) : tasks.length === 0 ? (
         <Card className="flex flex-col items-center gap-2 px-6 py-16 text-center">
           <ListChecks className="size-8 text-muted-foreground" aria-hidden="true" />
-          <p className="text-sm font-medium">
-            {mineOnly ? "Nothing assigned to you." : "No tasks yet."}
-          </p>
+          <p className="text-sm font-medium">{empty}</p>
+        </Card>
+      ) : asList ? (
+        // One flat list, newest deadline first. A board is for seeing where
+        // work is stuck; a list is for working through it, and a column of
+        // four late tasks beside three empty columns says nothing.
+        <Card className="gap-0 overflow-hidden p-0">
+          <ul className="divide-y">
+            {tasks.map((task) => (
+              <li key={task.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
+                <div className="min-w-48 flex-1">
+                  <p className="font-medium">{task.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {task.project?.name ?? "No project"}
+                    {task.assignee ? ` · ${task.assignee.full_name}` : " · unassigned"}
+                  </p>
+                </div>
+
+                <Badge variant="outline" className="capitalize">
+                  {task.status.replace(/_/g, " ")}
+                </Badge>
+
+                {task.due_date && (
+                  <span
+                    className={
+                      isBefore(new Date(task.due_date), startOfToday()) && task.status !== "done"
+                        ? "text-sm font-medium"
+                        : "text-sm text-muted-foreground"
+                    }
+                  >
+                    {format(new Date(task.due_date), "d MMM")}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

@@ -41,46 +41,66 @@ const ADMIN_SECTIONS: NavSection[] = [
         ],
     },
     {
-        title: "CRM",
+        // Sub-entries are filters on one board, not separate pages. Four client
+        // pages would be four places to fix the same bug; the sidebar gets the
+        // four entries either way, and the board stays one file.
+        title: "Operations",
         items: [
-            { title: "Clients", href: "/admin/dashboard/clients", icon: "Users" },
+            { title: "All Clients", href: "/admin/dashboard/clients", icon: "Users" },
+            { title: "Active", href: "/admin/dashboard/clients?status=active", icon: "UserCheck" },
+            { title: "Inactive", href: "/admin/dashboard/clients?status=inactive", icon: "Users" },
+            { title: "Archived", href: "/admin/dashboard/clients?status=archived", icon: "Archive" },
             { title: "Leads", href: "/admin/dashboard/leads", icon: "Target" },
+            { title: "Projects", href: "/admin/dashboard/projects", icon: "FolderKanban" },
         ],
     },
     {
-        title: "Work",
+        title: "Tasks",
         items: [
-            { title: "Projects", href: "/admin/dashboard/projects", icon: "FolderKanban" },
-            { title: "Tasks", href: "/admin/dashboard/tasks", icon: "ListChecks" },
+            { title: "Board", href: "/admin/dashboard/tasks", icon: "ListChecks" },
+            { title: "List", href: "/admin/dashboard/tasks?view=list", icon: "FileText" },
+            { title: "Overdue", href: "/admin/dashboard/tasks?overdue=true", icon: "Clock" },
+            { title: "My Tasks", href: "/admin/dashboard/tasks?mine=true", icon: "User" },
+        ],
+    },
+    {
+        title: "Team",
+        items: [
+            { title: "Users", href: "/admin/dashboard/team-management", icon: "UsersRound" },
+            { title: "Departments", href: "/admin/dashboard/departments", icon: "Network" },
             { title: "Timesheet", href: "/dashboard/timesheet", icon: "Clock" },
             { title: "Time Approvals", href: "/admin/dashboard/time-approvals", icon: "UserCheck" },
         ],
     },
     {
-        title: "Finance",
+        title: "Accounts",
         items: [
-            { title: "Accounts", href: "/admin/dashboard/accounts", icon: "Wallet" },
+            { title: "Overview", href: "/admin/dashboard/accounts", icon: "Wallet" },
             { title: "Invoices", href: "/admin/dashboard/invoices", icon: "FileText" },
             { title: "Payments", href: "/admin/dashboard/payments", icon: "ArrowDownLeft" },
-            { title: "Exchange", href: "/admin/dashboard/exchange", icon: "ArrowLeftRight" },
             { title: "Expenses", href: "/admin/dashboard/expenses", icon: "Receipt" },
+            { title: "Exchange", href: "/admin/dashboard/exchange", icon: "ArrowLeftRight" },
             { title: "Team Payouts", href: "/admin/dashboard/payouts", icon: "HandCoins" },
             { title: "Withdrawals", href: "/admin/dashboard/withdrawals", icon: "PiggyBank" },
             { title: "Due Payments", href: "/admin/dashboard/due-payments", icon: "Scale" },
+        ],
+    },
+    {
+        title: "Reports",
+        items: [
             { title: "Reports", href: "/admin/dashboard/reports", icon: "ChartLine" },
         ],
     },
     {
         // Everything an admin configures about their own agency, in the words
-        // an admin uses for them. "Settings" held three of these as tabs, which
-        // is why they read as missing: the things you change least often are
-        // the hardest to find when they are nested behind something else.
-        title: "Administration",
+        // an admin uses for them.
+        // Users and Departments live under Team, where the work with people
+        // happens. Listing them twice would light two entries at once and give
+        // the reader two doors to one room.
+        title: "Admin",
         items: [
             { title: "Business Information", href: "/admin/dashboard/business", icon: "Building2" },
-            { title: "Users", href: "/admin/dashboard/team-management", icon: "UsersRound" },
-            { title: "Departments", href: "/admin/dashboard/departments", icon: "Network" },
-            { title: "Finance Configuration", href: "/admin/dashboard/finance-config", icon: "Settings" },
+            { title: "Finance Settings", href: "/admin/dashboard/finance-config", icon: "Settings" },
             { title: "Targets", href: "/admin/dashboard/targets", icon: "Target" },
             { title: "Vault", href: "/admin/dashboard/vault", icon: "KeyRound" },
             { title: "Audit Log", href: "/admin/dashboard/activity", icon: "History" },

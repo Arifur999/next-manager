@@ -8,12 +8,26 @@ import { useRowActionModalState } from "@/hooks/useRowActionModalState"
 import { getClients } from "@/services/agencio.services"
 import type { IClient } from "@/types/agencio.types"
 import { useQuery } from "@tanstack/react-query"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 
+/**
+ * The client list, and its four sidebar entries.
+ *
+ * The filter comes from the URL rather than local state, so All / Active /
+ * Inactive / Archived are four links to one board. Kept in the URL and not
+ * in a chip row because that is what makes them linkable at all — and the
+ * sidebar can then show which one you are on.
+ *
+ * Archived is a state, not a deletion: the client and its history stay, and
+ * it drops out of the list somebody works from.
+ */
 const ClientsTable = () => {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [search, setSearch] = useState("")
+
+  const status = searchParams.get("status") ?? ""
 
   const {
     editingItem,
@@ -25,9 +39,16 @@ const ClientsTable = () => {
     tableActions,
   } = useRowActionModalState<IClient>({ enableView: true })
 
+  const query = [
+    search ? `search=${encodeURIComponent(search)}` : "",
+    status ? `status=${status}` : "",
+  ]
+    .filter(Boolean)
+    .join("&")
+
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ["clients", search],
-    queryFn: () => getClients(search ? `search=${encodeURIComponent(search)}` : undefined),
+    queryKey: ["clients", query],
+    queryFn: () => getClients(query || undefined),
   })
 
   const clients = (data?.data ?? []) as IClient[]
@@ -38,7 +59,13 @@ const ClientsTable = () => {
         data={clients}
         columns={clientsColumns}
         isLoading={isLoading || isFetching}
-        emptyMessage="No clients yet."
+        emptyMessage={
+          status
+            ? // Says which list is empty. "No clients yet" on a filtered view is a
+              // lie about the business rather than a fact about the filter.
+              `No ${status} clients.`
+            : "No clients yet."
+        }
         toolbarAction={<ClientFormModal />}
         search={{
           initialValue: search,
