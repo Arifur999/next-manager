@@ -111,6 +111,7 @@ const ADMIN_SECTIONS: NavSection[] = [
         title: "Admin",
         items: [
             { title: "Business Information", href: "/admin/dashboard/business", icon: "Building2" },
+            { title: "Notifications", href: "/admin/dashboard/notifications", icon: "BellRing" },
             { title: "Finance Settings", href: "/admin/dashboard/finance-config", icon: "Settings" },
             { title: "Targets", href: "/admin/dashboard/targets", icon: "Target" },
             { title: "Vault", href: "/admin/dashboard/vault", icon: "KeyRound" },

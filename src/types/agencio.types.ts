@@ -605,3 +605,33 @@ export interface ITransaction {
     created_at: string;
     account: Pick<IAccount, "id" | "name" | "currency">;
 }
+
+/** Things this app notifies about. Mirrors the backend's NotificationEvent. */
+export type NotificationEventName =
+    | "task_assigned"
+    | "time_awaiting_approval"
+    | "payment_recorded"
+    | "member_awaiting_approval"
+    | "invoice_overdue";
+
+/**
+ * One row of the notification settings.
+ *
+ * `roles` is the EFFECTIVE audience, not the stored one: an agency that has
+ * never touched a rule has no row, and showing an empty picker for it would
+ * read as "nobody is told", which is the opposite of the truth. `customised`
+ * says whether anybody has changed it.
+ *
+ * `kind` decides whether a role picker is offered at all — a directed event
+ * goes to the person it concerns, and a picker there would do nothing.
+ */
+export interface INotificationRule {
+    event: NotificationEventName;
+    kind: "directed" | "broadcast";
+    label: string;
+    description: string;
+    in_app: boolean;
+    email: boolean;
+    roles: string[];
+    customised: boolean;
+}

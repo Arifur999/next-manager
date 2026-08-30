@@ -26,6 +26,7 @@ import type {
     ILeadStageEvent,
     IMilestone,
     IMonthlyPoint,
+    INotificationRule,
     IOrganization,
     IOwnerWithdrawal,
     IPayment,
@@ -786,4 +787,18 @@ export const deleteDepartment = async (id: string) =>
 export const getTransactions = async (queryString?: string) =>
     wrap("fetching transactions", () =>
         httpClient.get<ITransaction[]>("/transactions", { params: toParams(queryString) })
+    )
+
+// ---------------------------------------------------------------------------
+// What the company notifies itself about
+// ---------------------------------------------------------------------------
+
+export const getNotificationRules = async () =>
+    wrap("fetching notification settings", () =>
+        httpClient.get<INotificationRule[]>("/notification-rules")
+    )
+
+export const setNotificationRule = async (event: string, payload: Record<string, unknown>) =>
+    wrap("saving the notification setting", () =>
+        httpClient.patch<INotificationRule>(`/notification-rules/${event}`, payload)
     )

@@ -1,5 +1,6 @@
 import {
     Archive,
+    BellRing,
     ArrowDownLeft,
     Building2,
     ArrowLeftRight,
@@ -34,6 +35,7 @@ import {
 // component at render time.
 const ICONS: Record<string, LucideIcon> = {
     Archive,
+    BellRing,
     ArrowDownLeft,
     ArrowLeftRight,
     Building2,

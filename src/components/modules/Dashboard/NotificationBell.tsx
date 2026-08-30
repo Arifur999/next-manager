@@ -17,10 +17,15 @@ import { Bell } from "lucide-react"
 import { useState } from "react"
 
 /**
- * What the platform has told this company.
+ * Everything one person needs to know, in one place.
  *
- * Everybody gets it, not only the person who pays: "the servers move on Sunday"
- * is for whoever works on Sunday.
+ * Two sources: notices from the platform, and notifications from inside their
+ * own company. One panel and one badge, because two bells would be two things
+ * to ignore and a badge counting half of what the panel shows is worse than
+ * no badge at all.
+ *
+ * The platform ones reach everybody, not only the person who pays: "the
+ * servers move on Sunday" is for whoever works on Sunday.
  *
  * The count and the list are separate requests on purpose. The badge is what
  * gets fetched repeatedly, and fetching the full list to render one number
@@ -35,10 +40,11 @@ const NotificationBell = () => {
   const { data: countData } = useQuery({
     queryKey: ["notifications-unread"],
     queryFn: () => getUnreadCount(),
-    // Announcements are rare and never urgent to the minute. A tighter loop
-    // would be one request per user per interval, forever, for a number that
-    // changes a handful of times a year.
-    refetchInterval: 5 * 60 * 1000,
+    // Company notifications move faster than platform notices, but not by
+    // much: a task assignment can wait a minute. A tighter loop would be one
+    // request per user per interval, forever, for a number that changes a
+    // handful of times a day.
+    refetchInterval: 60 * 1000,
   })
 
   const { data, isLoading } = useQuery({
@@ -105,7 +111,7 @@ const NotificationBell = () => {
           <div className="h-24 animate-pulse bg-muted/40" />
         ) : notifications.length === 0 ? (
           <p className="px-4 py-10 text-center text-sm text-muted-foreground">
-            Nothing yet. Notices from AGENCIO show up here.
+            Nothing yet. Work assigned to you, and notices from AGENCIO, show up here.
           </p>
         ) : (
           <ScrollArea className="max-h-96">
@@ -117,6 +123,13 @@ const NotificationBell = () => {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <p className="text-sm font-medium">{notification.title}</p>
+                    {/* Said, not colour-coded: a notice from AGENCIO and one
+                        from your own team need different reactions. */}
+                    {notification.source === "platform" && (
+                      <Badge variant="outline" className="shrink-0 text-[10px]">
+                        AGENCIO
+                      </Badge>
+                    )}
                     {!notification.read_at && (
                       <Badge variant="secondary" className="shrink-0 text-[10px]">
                         new

@@ -300,6 +300,16 @@ export interface INotification {
     published_at: string;
     /** Null until they open it. */
     read_at: string | null;
+    /**
+     * Where it came from. The two clear differently underneath — an
+     * announcement is read per person against a shared row, a company
+     * notification IS the per-person row — but the caller marks both read the
+     * same way, so this is for labelling, not routing.
+     */
+    source: "platform" | "company";
+    /** What it is about, so the bell can link somewhere useful. */
+    entity_type: string;
+    entity_id: string | null;
 }
 
 /**
