@@ -558,3 +558,18 @@ export interface IClientLink {
     created_at: string;
     client?: { id: string; name: string };
 }
+
+/**
+ * A team inside the agency.
+ *
+ * `_count.members` counts people who are still here — a department is not
+ * "large" because six people who left were once in it.
+ */
+export interface IDepartment {
+    id: string;
+    name: string;
+    description: string;
+    is_active: boolean;
+    created_at: string;
+    _count?: { members: number };
+}

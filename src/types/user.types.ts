@@ -36,6 +36,14 @@ export interface IUser {
     status: "pending" | "active" | "suspended";
     email_verified: boolean;
     permissions?: string[];
+    /**
+     * Which part of the business they are in — a second axis to role.
+     *
+     * Null is a real answer, not a missing one: somebody can work here without
+     * belonging to a department, and the API sends the name alongside the id so
+     * a list of people never has to fetch the department list to render a word.
+     */
+    department?: { id: string; name: string } | null;
     created_at?: string;
     updated_at?: string;
 }

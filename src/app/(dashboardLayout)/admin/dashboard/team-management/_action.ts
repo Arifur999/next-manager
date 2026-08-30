@@ -36,6 +36,8 @@ export const createUserAction = async (payload: {
   password: string
   phone?: string
   role: string
+  /** Null is "no department", and a real answer. */
+  department_id?: string | null
 }): Promise<ApiResponse<IUser> | ApiErrorResponse> => {
   try {
     return await createUser(payload)
@@ -46,7 +48,13 @@ export const createUserAction = async (payload: {
 
 export const updateUserAction = async (
   id: string,
-  payload: { full_name?: string; phone?: string; role?: string; status?: string },
+  payload: {
+    full_name?: string
+    phone?: string
+    role?: string
+    status?: string
+    department_id?: string | null
+  },
 ): Promise<ApiResponse<IUser> | ApiErrorResponse> => {
   if (!id) {
     return { success: false, message: "Invalid user id" }

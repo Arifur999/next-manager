@@ -109,7 +109,11 @@ for (const [role, expected] of [
 
 // Configuration pages. These moved out of one "settings" page, so each is
 // checked by name rather than trusted to the catch-all.
-for (const path of ["/admin/dashboard/business", "/admin/dashboard/finance-config"]) {
+for (const path of [
+  "/admin/dashboard/business",
+  "/admin/dashboard/finance-config",
+  "/admin/dashboard/departments",
+]) {
   for (const [role, expected] of [
     ["admin", 200],
     ["project_manager", 307],

@@ -1,6 +1,10 @@
 "use client"
 
 import { createUserAction } from "@/app/(dashboardLayout)/admin/dashboard/team-management/_action"
+import DepartmentField, {
+  NO_DEPARTMENT,
+  toDepartmentId,
+} from "@/components/modules/Admin/TeamManagement/DepartmentField"
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
 import { Button } from "@/components/ui/button"
@@ -42,6 +46,7 @@ const defaultValues: ICreateUserFormValues = {
   phone: "",
   password: "",
   role: "operations",
+  department_id: NO_DEPARTMENT,
 }
 
 const ROLE_OPTIONS = ASSIGNABLE_ROLES.map((value) => ({ value, label: ROLE_LABELS[value] }))
@@ -52,7 +57,8 @@ const CreateUserFormModal = () => {
   const router = useRouter()
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: ICreateUserFormValues) => createUserAction(values),
+    mutationFn: (values: ICreateUserFormValues) =>
+      createUserAction({ ...values, department_id: toDepartmentId(values.department_id) }),
   })
 
   const form = useForm({
@@ -189,6 +195,16 @@ const CreateUserFormModal = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                )}
+              </form.Field>
+
+              <form.Field name="department_id">
+                {(field) => (
+                  <DepartmentField
+                    value={field.state.value}
+                    onChange={field.handleChange}
+                    disabled={isPending}
+                  />
                 )}
               </form.Field>
 

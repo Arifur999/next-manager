@@ -8,11 +8,12 @@ import type {
     IAssignmentRow,
     ICapacityRow,
     IClient,
-    IClientLink,
     IClientFinancials,
+    IClientLink,
     ICredential,
     ICredentialAccessEntry,
     IDashboard,
+    IDepartment,
     IDuePerson,
     IDueTransaction,
     IExchange,
@@ -20,9 +21,9 @@ import type {
     IExpenseCategory,
     IInvoice,
     IKpiTarget,
-    ILeadStageEvent,
     ILeadPipeline,
     ILeadSource,
+    ILeadStageEvent,
     IMilestone,
     IMonthlyPoint,
     IOrganization,
@@ -753,4 +754,26 @@ export const createAgencyInvite = async (payload: Record<string, unknown>) =>
 export const revokeAgencyInvite = async (id: string) =>
     wrap("revoking the invite", () =>
         httpClient.delete<{ message: string }>(`/platform/agency-invites/${id}`)
+    )
+
+// ---------------------------------------------------------------------------
+// Departments — which part of the business somebody is in
+// ---------------------------------------------------------------------------
+
+export const getDepartments = async () =>
+    wrap("fetching departments", () => httpClient.get<IDepartment[]>("/departments"))
+
+export const createDepartment = async (payload: Record<string, unknown>) =>
+    wrap("creating the department", () =>
+        httpClient.post<IDepartment>("/departments", payload)
+    )
+
+export const updateDepartment = async (id: string, payload: Record<string, unknown>) =>
+    wrap("updating the department", () =>
+        httpClient.patch<IDepartment>(`/departments/${id}`, payload)
+    )
+
+export const deleteDepartment = async (id: string) =>
+    wrap("deleting the department", () =>
+        httpClient.delete<{ message: string }>(`/departments/${id}`)
     )

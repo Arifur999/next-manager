@@ -24,6 +24,9 @@ export const createUserFormZodSchema = z.object({
     .regex(/[A-Za-z]/, "Password must contain a letter")
     .regex(/[0-9]/, "Password must contain a number"),
   role: z.enum(assignableRoles, { message: "Choose a role" }),
+  // The sentinel for "no department", because a Select cannot hold "" and
+  // null is a real answer here: somebody can work across all of them.
+  department_id: z.string().optional(),
 })
 
 export type ICreateUserFormValues = z.infer<typeof createUserFormZodSchema>
@@ -34,6 +37,9 @@ export const editUserFormZodSchema = z.object({
   full_name: z.string().min(1, "Full name is required"),
   phone: z.string().optional(),
   role: z.enum(assignableRoles, { message: "Choose a role" }),
+  // The sentinel for "no department", because a Select cannot hold "" and
+  // null is a real answer here: somebody can work across all of them.
+  department_id: z.string().optional(),
   // `pending` is absent on purpose - it is set by the invite flow and cleared
   // by approval, never assigned by hand.
   status: z.enum(["active", "suspended"]).optional(),

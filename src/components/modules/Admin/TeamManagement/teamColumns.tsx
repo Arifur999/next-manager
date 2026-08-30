@@ -38,6 +38,19 @@ export const teamColumns: ColumnDef<IUser>[] = [
     ),
   },
   {
+    id: "department",
+    header: "Department",
+    enableSorting: false,
+    cell: ({ row }) =>
+      // Said out loud rather than left blank. An empty cell reads as data
+      // that failed to load; "No department" is a fact about the person.
+      row.original.department ? (
+        <Badge variant="secondary">{row.original.department.name}</Badge>
+      ) : (
+        <span className="text-sm text-muted-foreground">No department</span>
+      ),
+  },
+  {
     id: "status",
     header: "Status",
     enableSorting: false,

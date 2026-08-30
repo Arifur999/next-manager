@@ -1,6 +1,10 @@
 "use client"
 
 import { updateUserAction } from "@/app/(dashboardLayout)/admin/dashboard/team-management/_action"
+import DepartmentField, {
+  NO_DEPARTMENT,
+  toDepartmentId,
+} from "@/components/modules/Admin/TeamManagement/DepartmentField"
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
 import { Button } from "@/components/ui/button"
@@ -51,7 +55,12 @@ const EditUserForm = ({ user, onOpenChange }: { user: IUser; onOpenChange: (open
   const router = useRouter()
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IEditUserFormValues) => updateUserAction(user.id, values),
+    mutationFn: (values: IEditUserFormValues) =>
+      updateUserAction(user.id, {
+        ...values,
+        // The sentinel never leaves the form: the API wants null.
+        department_id: toDepartmentId(values.department_id),
+      }),
   })
 
   const form = useForm({
@@ -61,6 +70,7 @@ const EditUserForm = ({ user, onOpenChange }: { user: IUser; onOpenChange: (open
       // A super_admin row would carry a role this form cannot assign; fall back
       // rather than rendering a Select with a value that is not an option.
       role: isAssignableRole(user.role) ? user.role : "operations",
+      department_id: user.department?.id ?? NO_DEPARTMENT,
       // A checkbox again rather than a three-way picker: `pending` is not
       // something an admin assigns, it is what the invite flow sets and what
       // approval clears. Offering it here would let an active person be pushed
@@ -124,6 +134,16 @@ const EditUserForm = ({ user, onOpenChange }: { user: IUser; onOpenChange: (open
               </SelectContent>
             </Select>
           </div>
+        )}
+      </form.Field>
+
+      <form.Field name="department_id">
+        {(field) => (
+          <DepartmentField
+            value={field.state.value}
+            onChange={field.handleChange}
+            disabled={isPending}
+          />
         )}
       </form.Field>
 
