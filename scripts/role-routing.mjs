@@ -117,6 +117,7 @@ for (const path of [
   "/admin/dashboard/reports/clients",
   "/admin/dashboard/reports/team",
   "/admin/dashboard/reports/finance",
+  "/admin/dashboard/permissions",
 ]) {
   for (const [role, expected] of [
     ["admin", 200],

@@ -68,6 +68,7 @@ const ADMIN_SECTIONS: NavSection[] = [
         items: [
             { title: "Users", href: "/admin/dashboard/team-management", icon: "UsersRound" },
             { title: "Departments", href: "/admin/dashboard/departments", icon: "Network" },
+            { title: "Roles & Permissions", href: "/admin/dashboard/permissions", icon: "Lock" },
             { title: "Timesheet", href: "/dashboard/timesheet", icon: "Clock" },
             { title: "Time Approvals", href: "/admin/dashboard/time-approvals", icon: "UserCheck" },
         ],

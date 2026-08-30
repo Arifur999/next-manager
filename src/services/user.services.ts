@@ -57,3 +57,15 @@ export const deleteUser = async (id: string) => {
     throw error
   }
 }
+
+/**
+ * What a colleague may do inside their role.
+ *
+ * Its own call rather than a field on the user update: setting access is a
+ * deliberate act, and an empty array means something specific — everything the
+ * role allows.
+ */
+export const setUserPermissions = async (id: string, permissions: string[]) => {
+    const res = await httpClient.patch<IUser>(`/users/${id}/permissions`, { permissions })
+    return res
+}
