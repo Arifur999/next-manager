@@ -9,7 +9,9 @@ const WEB = "http://localhost:3000";
 const stamp = Date.now();
 
 let problems = 0;
+let checked = 0;
 const step = (label, ok, detail = "") => {
+  checked += 1;
   if (!ok) {
     problems += 1;
     console.log(`PROBLEM  ${label}${detail ? ` -> ${detail}` : ""}`);
@@ -170,6 +172,119 @@ step(
   `status ${r.json.data?.status}`
 );
 
+// ---- somebody is away, and everybody gets paid ----
+//
+// Being present, being away, and being paid for the month. Salary is the one
+// number that has to leave a real account, so this section watches the balance
+// rather than trusting the message.
+r = await api("POST", "/hr/attendance/clock", {}, cookies.operations);
+step("operations can clock in", r.status === 200 || r.status === 201, `${r.status} ${r.json.message}`);
+r = await api("POST", "/hr/attendance/clock", {}, cookies.operations);
+step("and clock out again", r.status === 200, `${r.status} ${r.json.message}`);
+
+r = await api("GET", "/hr/leave-types", null, admin);
+let leaveTypeId = r.json.data?.[0]?.id;
+if (!leaveTypeId) {
+  r = await api("POST", "/hr/leave-types", { name: "Annual", days_per_year: 10, is_paid: true }, admin);
+  step("admin can add a kind of leave", r.status === 201, `${r.status} ${r.json.message}`);
+  leaveTypeId = r.json.data?.id;
+}
+
+r = await api(
+  "POST",
+  "/hr/leave",
+  { leave_type_id: leaveTypeId, from_date: "2026-09-14", to_date: "2026-09-15", days: 2, reason: "Family" },
+  cookies.operations
+);
+step("operations can ask to be away", r.status === 201, `${r.status} ${r.json.message}`);
+const leaveId = r.json.data?.id;
+
+// The approve buttons are rendered from the role the page was built for, so a
+// role that cannot decide must not be shown them - a button that always fails
+// only teaches people the app is broken.
+for (const [role, offered] of [
+  ["admin", true],
+  ["project_manager", true],
+  ["sales", false],
+  ["operations", false],
+]) {
+  const view = await page("/dashboard/leave", cookies[role]);
+  step(`${role} opens /dashboard/leave`, view.status === 200, `${view.status}`);
+  step(
+    offered ? `${role} is offered Approve` : `${role} is not offered Approve`,
+    view.text.includes(" Approve ") === offered
+  );
+}
+
+r = await api("POST", `/hr/leave/${leaveId}/decide`, { approve: true }, cookies.project_manager);
+step("a project manager can approve it", r.status === 200, `${r.status} ${r.json.message}`);
+
+r = await api("GET", "/hr/leave/balance", null, cookies.operations);
+step(
+  "and it comes off their allowance",
+  Number(r.json.data?.find((b) => b.leave_type?.id === leaveTypeId)?.days_taken) === 2,
+  `${r.json.data?.[0]?.days_taken}`
+);
+
+r = await api(
+  "POST",
+  "/accounts",
+  { name: "Salary account", type: "bank", currency: "BDT", opening_balance: 500000 },
+  admin
+);
+const bdt = r.json.data?.id;
+step("admin can open an account to pay salaries from", r.status === 201, `${r.status} ${r.json.message}`);
+
+r = await api("POST", "/hr/payroll", { period_start: "2026-08-01", period_end: "2026-08-31" }, admin);
+step("admin can open a payroll month", r.status === 201, `${r.status} ${r.json.message}`);
+const runId = r.json.data?.id;
+const payrollItems = (r.json.data?.items ?? []).map((item) => ({
+  id: item.id,
+  gross_bdt: 30000,
+  deductions_bdt: 5000,
+}));
+step("it opens with a line per person", payrollItems.length > 0, `${payrollItems.length} lines`);
+
+const payrollPage = await page("/admin/dashboard/payroll", admin);
+step("the payroll page shows the draft", payrollPage.text.includes("August 2026"));
+step("naming the people on it", payrollPage.text.includes("Deep operations"));
+
+r = await api("PATCH", `/hr/payroll/${runId}/items`, { items: payrollItems }, admin);
+step("admin can set the numbers", r.status === 200, `${r.status} ${r.json.message}`);
+
+const balanceOf = async () => {
+  const list = await api("GET", "/accounts", null, admin);
+  return Number((list.json.data ?? []).find((a) => a.id === bdt)?.balance ?? 0);
+};
+const beforePayroll = await balanceOf();
+
+r = await api("POST", `/hr/payroll/${runId}/complete`, { account_id: bdt }, admin);
+step("and pay the run", r.status === 200, `${r.status} ${r.json.message}`);
+
+const owed = 25000 * payrollItems.length;
+const afterPayroll = await balanceOf();
+step(
+  "which moves exactly what the run said",
+  beforePayroll - afterPayroll === owed,
+  `${beforePayroll} -> ${afterPayroll}, expected -${owed}`
+);
+
+// One place salary is recorded. If payroll wrote its own money trail instead of
+// team payouts, every profitability figure in the product would disagree with
+// the payslips.
+r = await api("GET", "/team-payouts", null, admin);
+const fromPayroll = (r.json.data ?? []).filter((payout) => Number(payout.amount_bdt) === 25000);
+step(
+  "as one team payout per person, not a second set of books",
+  fromPayroll.length === payrollItems.length,
+  `${fromPayroll.length} of ${payrollItems.length}`
+);
+
+// Paying it twice would double every salary. It is refused.
+r = await api("POST", `/hr/payroll/${runId}/complete`, { account_id: bdt }, admin);
+step("paying it twice is refused", r.status >= 400, `${r.status} ${r.json.message}`);
+step("with nothing moving", (await balanceOf()) === afterPayroll);
+
 // ---- the numbers the agency runs on ----
 for (const [path, label] of [
   ["/dashboard", "the dashboard"],
@@ -197,10 +312,27 @@ const screens = {
     "/admin/dashboard/transactions",
     "/admin/dashboard/reports",
     "/admin/dashboard/reports/team",
+    "/admin/dashboard/payroll",
+    "/dashboard/attendance",
   ],
-  sales: ["/admin/dashboard/sales", "/admin/dashboard/leads", "/admin/dashboard/clients"],
-  project_manager: ["/admin/dashboard/delivery", "/admin/dashboard/projects", "/admin/dashboard/tasks"],
-  operations: ["/dashboard", "/dashboard/tasks", "/dashboard/timesheet"],
+  sales: [
+    "/admin/dashboard/sales",
+    "/admin/dashboard/leads",
+    "/admin/dashboard/clients",
+    "/dashboard/attendance",
+  ],
+  project_manager: [
+    "/admin/dashboard/delivery",
+    "/admin/dashboard/projects",
+    "/admin/dashboard/tasks",
+    "/dashboard/attendance",
+  ],
+  operations: [
+    "/dashboard",
+    "/dashboard/tasks",
+    "/dashboard/timesheet",
+    "/dashboard/attendance",
+  ],
 };
 
 for (const [role, paths] of Object.entries(screens)) {
@@ -211,5 +343,7 @@ for (const [role, paths] of Object.entries(screens)) {
 }
 
 console.log(
-  `\n${problems === 0 ? "Every journey completed. No problems found." : `${problems} PROBLEM(S) above`}`
+  `
+${checked} steps walked. ` +
+    `${problems === 0 ? "Every journey completed. No problems found." : `${problems} PROBLEM(S) above`}`
 );

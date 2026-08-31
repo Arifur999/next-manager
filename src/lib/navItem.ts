@@ -74,6 +74,13 @@ const ADMIN_SECTIONS: NavSection[] = [
             { title: "Roles & Permissions", href: "/admin/dashboard/permissions", icon: "Lock" },
             { title: "Timesheet", href: "/dashboard/timesheet", icon: "Clock" },
             { title: "Time Approvals", href: "/admin/dashboard/time-approvals", icon: "UserCheck" },
+            // Attendance and Leave live under /dashboard because everybody
+            // has them — the same route the whole company uses, linked from
+            // here the way Timesheet already is. Payroll is the exception:
+            // every colleague's salary on one screen, admin only.
+            { title: "Attendance", href: "/dashboard/attendance", icon: "CalendarCheck" },
+            { title: "Leave", href: "/dashboard/leave", icon: "CalendarOff" },
+            { title: "Payroll", href: "/admin/dashboard/payroll", icon: "HandCoins" },
         ],
     },
     {
@@ -148,7 +155,11 @@ const SALES_SECTIONS: NavSection[] = [
     },
     {
         title: "Workspace",
-        items: [{ title: "Vault", href: "/admin/dashboard/vault", icon: "KeyRound" }],
+        items: [
+            { title: "Attendance", href: "/dashboard/attendance", icon: "CalendarCheck" },
+            { title: "Leave", href: "/dashboard/leave", icon: "CalendarOff" },
+            { title: "Vault", href: "/admin/dashboard/vault", icon: "KeyRound" },
+        ],
     },
 ];
 
@@ -161,6 +172,10 @@ const PROJECT_MANAGER_SECTIONS: NavSection[] = [
             { title: "Tasks", href: "/admin/dashboard/tasks", icon: "ListChecks" },
             { title: "Timesheet", href: "/dashboard/timesheet", icon: "Clock" },
             { title: "Time Approvals", href: "/admin/dashboard/time-approvals", icon: "UserCheck" },
+            { title: "Attendance", href: "/dashboard/attendance", icon: "CalendarCheck" },
+            // A project manager decides leave as well as approving hours —
+            // it is the same judgement about the same person's week.
+            { title: "Leave", href: "/dashboard/leave", icon: "CalendarOff" },
             { title: "Team", href: "/admin/dashboard/team-management", icon: "UsersRound" },
         ],
     },
@@ -179,6 +194,11 @@ const OPERATIONS_SECTIONS: NavSection[] = [
             { title: "Overview", href: "/dashboard", icon: "LayoutDashboard" },
             { title: "My Tasks", href: "/dashboard/tasks", icon: "ListChecks" },
             { title: "Timesheet", href: "/dashboard/timesheet", icon: "Clock" },
+            // The API narrows both of these to their own rows, so what an
+            // operations member opens here is their own day and nobody
+            // else's — the same page an admin uses to see everyone.
+            { title: "Attendance", href: "/dashboard/attendance", icon: "CalendarCheck" },
+            { title: "Leave", href: "/dashboard/leave", icon: "CalendarOff" },
         ],
     },
 ];

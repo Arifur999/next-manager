@@ -122,6 +122,10 @@ for (const path of [
   "/admin/dashboard/security",
   "/admin/dashboard/workflow",
   "/admin/dashboard/project-settings",
+  // Every colleague's salary on one screen, and the button that moves the
+  // money. The most sensitive page in the product, so it is named here rather
+  // than left to the catch-all.
+  "/admin/dashboard/payroll",
 ]) {
   for (const [role, expected] of [
     ["admin", 200],
@@ -226,6 +230,22 @@ for (const role of Object.keys(EXPECT)) {
   console.log(`${ok ? "OK  " : "FAIL"}  ${role.padEnd(16)} opens /dashboard/timesheet  (${res.status})`);
 }
 
+// Attendance and Leave are shared for the same reason: everybody clocks in
+// and everybody asks to be away. The API narrows each caller to their own
+// rows, so the page is safe to open for all four - and a nav entry that
+// redirects would be worse than no entry.
+for (const path of ["/dashboard/attendance", "/dashboard/leave"]) {
+  for (const role of Object.keys(EXPECT)) {
+    const res = await fetch(WEB + path, {
+      headers: { Cookie: cookies[role] },
+      redirect: "manual",
+    });
+    const ok = res.status === 200;
+    if (!ok) bad += 1;
+    console.log(`${ok ? "OK  " : "FAIL"}  ${role.padEnd(16)} opens ${path}  (${res.status})`);
+  }
+}
+
 // The platform operator. Belongs to no company, so every company screen must
 // bounce — including the personal area, whose numbers would otherwise be
 // computed against an empty organization and render as a wall of zeros.
@@ -269,6 +289,9 @@ if (!superEmail || !superPassword) {
     ["/admin/dashboard", 307],
     ["/dashboard", 307],
     ["/dashboard/timesheet", 307],
+    ["/dashboard/attendance", 307],
+    ["/dashboard/leave", 307],
+    ["/admin/dashboard/payroll", 307],
   ]) {
     const res = await fetch(WEB + path, { headers: { Cookie: superCookie }, redirect: "manual" });
     const ok = res.status === expected;

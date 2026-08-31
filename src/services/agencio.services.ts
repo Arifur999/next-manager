@@ -6,6 +6,7 @@ import type {
     IActivityEntry,
     IActivityFilters,
     IAssignmentRow,
+    IAttendance,
     ICapacityRow,
     IClient,
     IClientFinancials,
@@ -24,6 +25,9 @@ import type {
     ILeadPipeline,
     ILeadSource,
     ILeadStageEvent,
+    ILeaveBalance,
+    ILeaveRequest,
+    ILeaveType,
     ILoginEvent,
     IMilestone,
     IMonthlyPoint,
@@ -31,6 +35,7 @@ import type {
     IOrganization,
     IOwnerWithdrawal,
     IPayment,
+    IPayrollRun,
     IProfitAndLoss,
     IProject,
     IProjectFinancials,
@@ -898,4 +903,67 @@ export const createServiceTemplate = async (payload: Record<string, unknown>) =>
 export const deleteServiceTemplate = async (id: string) =>
     wrap("removing the package", () =>
         httpClient.delete<{ message: string }>(`/services/templates/${id}`)
+    )
+
+// ---------------------------------------------------------------------------
+// People: attendance, leave and payroll
+// ---------------------------------------------------------------------------
+
+export const getAttendance = async (queryString?: string) =>
+    wrap("fetching attendance", () =>
+        httpClient.get<IAttendance[]>("/hr/attendance", { params: toParams(queryString) })
+    )
+
+export const clockAttendance = async () =>
+    wrap("clocking in", () => httpClient.post<IAttendance>("/hr/attendance/clock", {}))
+
+export const recordAttendance = async (payload: Record<string, unknown>) =>
+    wrap("recording attendance", () => httpClient.post<IAttendance>("/hr/attendance", payload))
+
+export const getLeaveTypes = async () =>
+    wrap("fetching leave types", () => httpClient.get<ILeaveType[]>("/hr/leave-types"))
+
+export const createLeaveType = async (payload: Record<string, unknown>) =>
+    wrap("adding the leave type", () => httpClient.post<ILeaveType>("/hr/leave-types", payload))
+
+export const getLeaveRequests = async (queryString?: string) =>
+    wrap("fetching leave requests", () =>
+        httpClient.get<ILeaveRequest[]>("/hr/leave", { params: toParams(queryString) })
+    )
+
+export const getLeaveBalance = async (queryString?: string) =>
+    wrap("fetching the leave balance", () =>
+        httpClient.get<ILeaveBalance[]>("/hr/leave/balance", { params: toParams(queryString) })
+    )
+
+export const requestLeave = async (payload: Record<string, unknown>) =>
+    wrap("asking for leave", () => httpClient.post<ILeaveRequest>("/hr/leave", payload))
+
+export const cancelLeave = async (id: string) =>
+    wrap("withdrawing the request", () =>
+        httpClient.post<ILeaveRequest>(`/hr/leave/${id}/cancel`, {})
+    )
+
+export const decideLeave = async (id: string, payload: Record<string, unknown>) =>
+    wrap("deciding the request", () =>
+        httpClient.post<ILeaveRequest>(`/hr/leave/${id}/decide`, payload)
+    )
+
+export const getPayrollRuns = async () =>
+    wrap("fetching payroll", () => httpClient.get<IPayrollRun[]>("/hr/payroll"))
+
+export const createPayrollRun = async (payload: Record<string, unknown>) =>
+    wrap("opening payroll", () => httpClient.post<IPayrollRun>("/hr/payroll", payload))
+
+export const setPayrollItems = async (id: string, payload: Record<string, unknown>) =>
+    wrap("saving payroll", () => httpClient.patch<IPayrollRun>(`/hr/payroll/${id}/items`, payload))
+
+export const completePayroll = async (id: string, payload: Record<string, unknown>) =>
+    wrap("paying the salaries", () =>
+        httpClient.post<IPayrollRun>(`/hr/payroll/${id}/complete`, payload)
+    )
+
+export const deletePayrollRun = async (id: string) =>
+    wrap("discarding the draft", () =>
+        httpClient.delete<{ message: string }>(`/hr/payroll/${id}`)
     )
