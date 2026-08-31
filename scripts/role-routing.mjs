@@ -122,6 +122,7 @@ for (const path of [
   "/admin/dashboard/security",
   "/admin/dashboard/workflow",
   "/admin/dashboard/project-settings",
+  "/admin/dashboard/leave-settings",
   // Every colleague's salary on one screen, and the button that moves the
   // money. The most sensitive page in the product, so it is named here rather
   // than left to the catch-all.

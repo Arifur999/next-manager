@@ -70,7 +70,7 @@ export const AREAS: AreaRule[] = [
             // the /^\/admin/ catch-all below would cover them anyway, but
             // naming them says they are admin-only on purpose rather than
             // by omission.
-            /^\/admin\/dashboard\/(business|finance-config|departments|workflow|project-settings|permissions|notifications|security)/,
+            /^\/admin\/dashboard\/(business|finance-config|departments|workflow|project-settings|leave-settings|permissions|notifications|security)/,
         ],
         roles: ["admin"],
     },

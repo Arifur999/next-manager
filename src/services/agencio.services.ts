@@ -926,6 +926,13 @@ export const getLeaveTypes = async () =>
 export const createLeaveType = async (payload: Record<string, unknown>) =>
     wrap("adding the leave type", () => httpClient.post<ILeaveType>("/hr/leave-types", payload))
 
+// Retiring a kind is `is_active: false`, never a delete: leave already
+// approved against it has to keep saying what it was for.
+export const updateLeaveType = async (id: string, payload: Record<string, unknown>) =>
+    wrap("updating the leave type", () =>
+        httpClient.patch<ILeaveType>(`/hr/leave-types/${id}`, payload)
+    )
+
 export const getLeaveRequests = async (queryString?: string) =>
     wrap("fetching leave requests", () =>
         httpClient.get<ILeaveRequest[]>("/hr/leave", { params: toParams(queryString) })

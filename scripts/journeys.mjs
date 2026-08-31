@@ -182,13 +182,60 @@ step("operations can clock in", r.status === 200 || r.status === 201, `${r.statu
 r = await api("POST", "/hr/attendance/clock", {}, cookies.operations);
 step("and clock out again", r.status === 200, `${r.status} ${r.json.message}`);
 
-r = await api("GET", "/hr/leave-types", null, admin);
-let leaveTypeId = r.json.data?.[0]?.id;
-if (!leaveTypeId) {
-  r = await api("POST", "/hr/leave-types", { name: "Annual", days_per_year: 10, is_paid: true }, admin);
-  step("admin can add a kind of leave", r.status === 201, `${r.status} ${r.json.message}`);
-  leaveTypeId = r.json.data?.id;
+// Writing down somebody else's day is a different claim from clocking your
+// own, so the form for it is shown only to the roles the route allows - and
+// the row it writes is labelled as recorded rather than clocked.
+for (const [role, offered] of [
+  ["admin", true],
+  ["project_manager", true],
+  ["sales", false],
+  ["operations", false],
+]) {
+  const view = await page("/dashboard/attendance", cookies[role]);
+  step(`${role} opens /dashboard/attendance`, view.status === 200, `${view.status}`);
+  step(
+    offered
+      ? `${role} can record it for somebody`
+      : `${role} is not offered to record it for somebody`,
+    view.text.includes("Record it for somebody") === offered
+  );
 }
+
+r = await api(
+  "POST",
+  "/hr/attendance",
+  { user_id: userIds.operations, date: "2026-09-02", check_in: "09:30", check_out: "17:00" },
+  cookies.project_manager
+);
+step("a project manager can write down somebody's day", r.status === 200 || r.status === 201, `${r.status} ${r.json.message}`);
+step("and it is filed as recorded, not as clocked", r.json.data?.source === "admin", `${r.json.data?.source}`);
+
+// A brand-new agency has to arrive with kinds of leave already on it. This is
+// asserted rather than arranged: the previous version of this sweep created one
+// when none came back, which is precisely what hid the fact that HR shipped
+// with no seeder - an empty picker means nobody can ask to be away at all.
+r = await api("GET", "/hr/leave-types", null, admin);
+const seededTypes = r.json.data ?? [];
+step("a new agency starts with kinds of leave", seededTypes.length > 0, `${seededTypes.length} kinds`);
+step(
+  "including an uncapped one, so unpaid absence can be recorded",
+  seededTypes.some((type) => type.days_per_year === 0 && !type.is_paid)
+);
+const leaveTypeId = seededTypes[0]?.id;
+
+// And the screen that keeps them editable, without which an agency that
+// retired the wrong one could not put it back.
+r = await api("POST", "/hr/leave-types", { name: "Study leave", days_per_year: 3, is_paid: true }, admin);
+step("admin can add a kind of their own", r.status === 201, `${r.status} ${r.json.message}`);
+const ownTypeId = r.json.data?.id;
+
+r = await api("PATCH", `/hr/leave-types/${ownTypeId}`, { is_active: false }, admin);
+step("and retire it", r.status === 200, `${r.status} ${r.json.message}`);
+
+const settings = await page("/admin/dashboard/leave-settings", admin);
+step("the leave settings screen lists them", settings.status === 200, `${settings.status}`);
+step("naming a seeded kind", settings.text.includes("Annual leave"));
+step("and showing the uncapped one as no limit", settings.text.includes("No limit"));
 
 r = await api(
   "POST",
@@ -313,6 +360,7 @@ const screens = {
     "/admin/dashboard/reports",
     "/admin/dashboard/reports/team",
     "/admin/dashboard/payroll",
+    "/admin/dashboard/leave-settings",
     "/dashboard/attendance",
   ],
   sales: [

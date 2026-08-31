@@ -125,6 +125,9 @@ const ADMIN_SECTIONS: NavSection[] = [
             { title: "Security", href: "/admin/dashboard/security", icon: "ShieldCheck" },
             { title: "Project Settings", href: "/admin/dashboard/project-settings", icon: "FolderKanban" },
             { title: "Task Settings", href: "/admin/dashboard/workflow", icon: "ListChecks" },
+            // Not optional furniture: nobody can ask to be away without a kind
+            // to ask against, so this is the screen that keeps leave usable.
+            { title: "Leave Settings", href: "/admin/dashboard/leave-settings", icon: "CalendarOff" },
             { title: "Finance Settings", href: "/admin/dashboard/finance-config", icon: "Settings" },
             { title: "Targets", href: "/admin/dashboard/targets", icon: "Target" },
             { title: "Vault", href: "/admin/dashboard/vault", icon: "KeyRound" },

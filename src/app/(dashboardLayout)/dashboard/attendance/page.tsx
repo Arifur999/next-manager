@@ -1,5 +1,6 @@
 import AttendanceBoard from "@/components/modules/Admin/People/AttendanceBoard";
 import { getAttendance } from "@/services/agencio.services";
+import { getUserInfo } from "@/services/auth.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 
@@ -10,10 +11,16 @@ export const metadata: Metadata = {
 const AttendancePage = async () => {
   const queryClient = new QueryClient();
 
-  await queryClient.prefetchQuery({
-    queryKey: ["attendance"],
-    queryFn: () => getAttendance(),
-  });
+  const [user] = await Promise.all([
+    getUserInfo(),
+    queryClient.prefetchQuery({ queryKey: ["attendance"], queryFn: () => getAttendance() }),
+  ]);
+
+  // The same two roles the route lets write somebody else's day. Decided here
+  // from the role this page rendered for rather than guessed in the component,
+  // because the API is what enforces it — everybody else gets a 403, and a form
+  // that always fails only teaches people the app is broken.
+  const canRecord = user?.role === "admin" || user?.role === "project_manager";
 
   return (
     <div className="space-y-6">
@@ -27,7 +34,7 @@ const AttendancePage = async () => {
       </div>
 
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <AttendanceBoard />
+        <AttendanceBoard canRecord={canRecord} />
       </HydrationBoundary>
     </div>
   );

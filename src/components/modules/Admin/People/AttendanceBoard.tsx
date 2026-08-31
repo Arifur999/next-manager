@@ -1,6 +1,7 @@
 "use client"
 
 import { clockAction } from "@/app/(dashboardLayout)/dashboard/attendance/_action"
+import RecordAttendanceCard from "@/components/modules/Admin/People/RecordAttendanceCard"
 import EmptyState from "@/components/shared/state/EmptyState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Badge } from "@/components/ui/badge"
@@ -22,6 +23,11 @@ import { toast } from "sonner"
  *
  * A row with no check-out is somebody still in, not a gap in the data, and it
  * says so rather than showing a blank.
+ *
+ * Writing down somebody else's day is a different claim and lives in its own
+ * card, shown only to the roles the route lets do it. `canRecord` is passed in
+ * from the page rather than read here, the same way the leave board is told
+ * whether to offer Approve.
  */
 
 const hoursBetween = (from: string | null, to: string | null) => {
@@ -30,7 +36,7 @@ const hoursBetween = (from: string | null, to: string | null) => {
   return minutes > 0 ? (minutes / 60).toFixed(1) : null
 }
 
-const AttendanceBoard = () => {
+const AttendanceBoard = ({ canRecord = false }: { canRecord?: boolean }) => {
   const queryClient = useQueryClient()
 
   const { data, isLoading } = useQuery({
@@ -58,7 +64,7 @@ const AttendanceBoard = () => {
   const mineToday = rows.find((row) => format(parseISO(row.date), "yyyy-MM-dd") === today)
   const stillIn = Boolean(mineToday?.check_in && !mineToday?.check_out)
 
-  return (
+  const table = (
     <Card className="gap-0 overflow-hidden p-0">
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 border-b px-5 py-4">
         <div>
@@ -133,6 +139,15 @@ const AttendanceBoard = () => {
         </div>
       )}
     </Card>
+  )
+
+  if (!canRecord) return table
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+      {table}
+      <RecordAttendanceCard />
+    </div>
   )
 }
 
