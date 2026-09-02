@@ -17,7 +17,23 @@ import { format } from "date-fns"
 import { ArrowDownLeft, KeyRound, Receipt, TrendingUp } from "lucide-react"
 import Link from "next/link"
 
-const ProjectDetail = ({ projectId }: { projectId: string }) => {
+/**
+ * One project, and how much of it somebody may see.
+ *
+ * A salesperson opens this to find out where a client they brought in has
+ * got to. That is the tasks, the status and who is on it - never what the
+ * work earns. `canSeeMoney` decides it, and when false the financials are not
+ * hidden but UNFETCHED: /projects/:id/financials is admin and project-manager
+ * only, so asking would produce an empty panel and a 403 for a question the
+ * page already knew the answer to.
+ */
+const ProjectDetail = ({
+  projectId,
+  canSeeMoney = false,
+}: {
+  projectId: string
+  canSeeMoney?: boolean
+}) => {
   const { data: projectData, isLoading } = useQuery({
     queryKey: ["project", projectId],
     queryFn: () => getProject(projectId),
@@ -25,6 +41,7 @@ const ProjectDetail = ({ projectId }: { projectId: string }) => {
 
   const { data: financeData } = useQuery({
     queryKey: ["project-financials", projectId],
+    enabled: canSeeMoney,
     queryFn: () => getProjectFinancials(projectId),
   })
 
@@ -81,7 +98,9 @@ const ProjectDetail = ({ projectId }: { projectId: string }) => {
         </div>
       </div>
 
-      {finance && (
+      {/* Undefined for anybody who may not see it, because the query never
+          ran - not because a flag is checked in two places. */}
+      {canSeeMoney && finance && (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatTile
             label="Contract value"

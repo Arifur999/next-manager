@@ -26,7 +26,23 @@ import { format } from "date-fns"
 import { ArrowDownLeft, FileText, FolderKanban, TrendingUp } from "lucide-react"
 import Link from "next/link"
 
-const ClientDetail = ({ clientId }: { clientId: string }) => {
+/**
+ * One client, and how much of them somebody may see.
+ *
+ * `canSeeMoney` is decided by the page from the role it rendered for, the same
+ * way LeaveBoard is told whether to offer Approve. When it is false the money
+ * is not hidden with CSS — it is NOT FETCHED. The endpoints behind these panels
+ * are admin-only and would refuse a salesperson anyway, so asking would produce
+ * a broken panel and a 403 in the log for a question the page already knew the
+ * answer to.
+ */
+const ClientDetail = ({
+  clientId,
+  canSeeMoney = false,
+}: {
+  clientId: string
+  canSeeMoney?: boolean
+}) => {
   const { data: clientData, isLoading } = useQuery({
     queryKey: ["client", clientId],
     queryFn: () => getClient(clientId),
@@ -35,6 +51,7 @@ const ClientDetail = ({ clientId }: { clientId: string }) => {
   const { data: financeData } = useQuery({
     queryKey: ["client-financials", clientId],
     queryFn: () => getClientFinancials(clientId),
+    enabled: canSeeMoney,
   })
 
   // Payments and invoices still come back unfiltered - those two endpoints
@@ -43,10 +60,12 @@ const ClientDetail = ({ clientId }: { clientId: string }) => {
   const { data: paymentsData } = useQuery({
     queryKey: ["payments", ""],
     queryFn: () => getPayments(),
+    enabled: canSeeMoney,
   })
   const { data: invoicesData } = useQuery({
     queryKey: ["invoices", ""],
     queryFn: () => getInvoices(),
+    enabled: canSeeMoney,
   })
   const { data: credentialsData } = useQuery({
     queryKey: ["credentials", `client_id=${clientId}`],
@@ -86,7 +105,9 @@ const ClientDetail = ({ clientId }: { clientId: string }) => {
         </div>
       </div>
 
-      {finance && (
+      {/* Undefined for anybody who may not see it, because the query never
+          ran — not because a flag is checked in two places. */}
+      {canSeeMoney && finance && (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatTile
             label="Lifetime value"
@@ -125,8 +146,8 @@ const ClientDetail = ({ clientId }: { clientId: string }) => {
       <Tabs defaultValue="projects">
         <TabsList>
           <TabsTrigger value="projects">Projects</TabsTrigger>
-          <TabsTrigger value="payments">Payments</TabsTrigger>
-          <TabsTrigger value="invoices">Invoices</TabsTrigger>
+          {canSeeMoney && <TabsTrigger value="payments">Payments</TabsTrigger>}
+          {canSeeMoney && <TabsTrigger value="invoices">Invoices</TabsTrigger>}
           <TabsTrigger value="links">Links</TabsTrigger>
           <TabsTrigger value="vault">Vault</TabsTrigger>
           <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -154,9 +175,11 @@ const ClientDetail = ({ clientId }: { clientId: string }) => {
                         <Badge variant="outline" className="capitalize">
                           {project.status.name}
                         </Badge>
-                        <span className="text-sm tabular-nums">
-                          {formatUsd(project.contract_value_usd)}
-                        </span>
+                        {canSeeMoney && (
+                          <span className="text-sm tabular-nums">
+                            {formatUsd(project.contract_value_usd)}
+                          </span>
+                        )}
                       </div>
                     </Link>
                   </li>
@@ -170,6 +193,10 @@ const ClientDetail = ({ clientId }: { clientId: string }) => {
           <ClientLinksPanel clientId={clientId} />
         </TabsContent>
 
+        {/* Unreachable without their triggers, but left in the DOM they are
+            two lists waiting for data that will never arrive. */}
+        {canSeeMoney && (
+        <>
         <TabsContent value="payments" className="mt-4">
           <Card className="gap-0 overflow-hidden p-0">
             {payments.length === 0 ? (
@@ -236,6 +263,8 @@ const ClientDetail = ({ clientId }: { clientId: string }) => {
             )}
           </Card>
         </TabsContent>
+        </>
+        )}
 
         <TabsContent value="vault" className="mt-4">
           <Card className="gap-0 overflow-hidden p-0">
