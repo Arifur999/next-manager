@@ -223,6 +223,75 @@ console.log(
   `${unlistedOk ? "OK  " : "FAIL"}  ${"sales".padEnd(16)} bounced from an unlisted /admin path  (${unlisted.status})`
 );
 
+// Sales watches delivery without running it. The page opening is only half the
+// claim - the other half is that everything behind it is still refused, and
+// that half is checked from the API in the smoke suite.
+for (const path of [
+  "/admin/dashboard/projects",
+  "/admin/dashboard/tasks",
+  "/admin/dashboard/team-directory",
+]) {
+  for (const [role, expected] of [
+    ["admin", 200],
+    ["project_manager", 200],
+    ["sales", 200],
+    ["operations", 307],
+  ]) {
+    const res = await fetch(WEB + path, { headers: { Cookie: cookies[role] }, redirect: "manual" });
+    const ok = res.status === expected;
+    if (!ok) bad += 1;
+    console.log(
+      `${ok ? "OK  " : "FAIL"}  ${role.padEnd(16)} ${path} -> ${res.status} (want ${expected})`
+    );
+  }
+}
+
+// And the screens that run the team stay closed to them. team-management is the
+// one that matters: it is a page away from team-directory and it creates,
+// edits and deactivates people.
+for (const path of [
+  "/admin/dashboard/team-management",
+  "/admin/dashboard/time-approvals",
+  "/admin/dashboard/delivery",
+]) {
+  const res = await fetch(WEB + path, { headers: { Cookie: cookies.sales }, redirect: "manual" });
+  const ok = res.status === 307;
+  if (!ok) bad += 1;
+  console.log(`${ok ? "OK  " : "FAIL"}  ${"sales".padEnd(16)} bounced from ${path}  (${res.status})`);
+}
+
+// Every area sales must never reach, named rather than trusted to a catch-all.
+// A rule reordered by accident is exactly the kind of change that opens one of
+// these without anybody noticing.
+for (const path of [
+  "/admin/dashboard/accounts",
+  "/admin/dashboard/payments",
+  "/admin/dashboard/expenses",
+  "/admin/dashboard/payouts",
+  "/admin/dashboard/withdrawals",
+  "/admin/dashboard/due-payments",
+  "/admin/dashboard/loans",
+  "/admin/dashboard/shareholders",
+  "/admin/dashboard/payroll",
+  "/admin/dashboard/transactions",
+  "/admin/dashboard/exchange",
+  "/admin/dashboard/permissions",
+  "/admin/dashboard/notifications",
+  "/admin/dashboard/security",
+  "/admin/dashboard/business",
+  "/admin/dashboard/finance-config",
+  "/admin/dashboard/activity",
+  "/admin/dashboard/reports",
+  "/admin/dashboard/reports/finance",
+  "/admin/dashboard/reports/team",
+  "/admin/dashboard/reports/projects",
+]) {
+  const res = await fetch(WEB + path, { headers: { Cookie: cookies.sales }, redirect: "manual" });
+  const ok = res.status === 307;
+  if (!ok) bad += 1;
+  console.log(`${ok ? "OK  " : "FAIL"}  ${"sales".padEnd(16)} refused ${path}  (${res.status})`);
+}
+
 // The timesheet is shared: every company role logs hours, so no role may be
 // bounced off it. A nav link that redirects is worse than no nav link at all.
 for (const role of Object.keys(EXPECT)) {

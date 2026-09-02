@@ -173,8 +173,19 @@ const SALES_SECTIONS: NavSection[] = [
         ],
     },
     {
+        // Watching, not running. Sales opens a project their client is behind
+        // and sees where it has got to; everything that changes it is refused
+        // by the API, so these are read-only in the only place that counts.
+        title: "Delivery",
+        items: [
+            { title: "Projects", href: "/admin/dashboard/projects", icon: "FolderKanban" },
+            { title: "Tasks", href: "/admin/dashboard/tasks", icon: "ListChecks" },
+        ],
+    },
+    {
         title: "Workspace",
         items: [
+            { title: "Team", href: "/admin/dashboard/team-directory", icon: "UsersRound" },
             { title: "Chat", href: "/dashboard/chat", icon: "MessagesSquare" },
             { title: "Attendance", href: "/dashboard/attendance", icon: "CalendarCheck" },
             { title: "Leave", href: "/dashboard/leave", icon: "CalendarOff" },

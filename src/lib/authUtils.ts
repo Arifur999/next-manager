@@ -82,11 +82,32 @@ export const AREAS: AreaRule[] = [
         roles: ["admin", "sales"],
     },
 
-    // Delivery: who does what, and when.
+    // Watching the work. Sales opens these to see where a client they brought
+    // in has got to - and only to see. Every write behind them is refused by
+    // the API to anybody but admin and the project manager, so "view, not
+    // control" is enforced where it cannot be worked around, rather than by
+    // hiding a page.
     {
         exact: [],
-        pattern: [/^\/admin\/dashboard\/(projects|tasks|team-management|time-approvals|delivery)/],
+        pattern: [/^\/admin\/dashboard\/(projects|tasks)/],
+        roles: ["admin", "project_manager", "sales"],
+    },
+
+    // Running the work, and running the people. Not sales.
+    {
+        exact: [],
+        pattern: [/^\/admin\/dashboard\/(team-management|time-approvals|delivery)/],
         roles: ["admin", "project_manager"],
+    },
+
+    // The directory. A separate page from team-management on purpose: that one
+    // creates, edits and deactivates people, and sales has no business there.
+    // This is a read-only list, and the API hands it a narrower projection with
+    // no permissions and no status on it.
+    {
+        exact: [],
+        pattern: [/^\/admin\/dashboard\/team-directory/],
+        roles: ["admin", "project_manager", "sales"],
     },
 
     // Shared workspace screens.
