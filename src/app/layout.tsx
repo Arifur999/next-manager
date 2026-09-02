@@ -1,22 +1,37 @@
 import { Toaster } from "@/components/ui/sonner";
 import type { Metadata } from "next";
-import { Roboto_Condensed } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import QueryProviders from "./providers/QueryProvider";
 import ThemeProvider from "./providers/ThemeProvider";
 
-// Self-hosted at build time by next/font rather than pulled from
-// fonts.googleapis.com by the browser: no render-blocking third-party request
-// on every visit, and no flash of fallback text while the file arrives.
+// The font files live in this repo, not on Google's servers.
 //
-// The variable axis carries 100..900, so every weight the UI asks for comes
-// out of this one font rather than a separate download per weight. The name
-// here must match --font-roboto-condensed in globals.css, which is what
-// Tailwind's font-sans actually resolves to.
-const robotoCondensed = Roboto_Condensed({
+// next/font/google also self-hosts the result, but it fetches from
+// fonts.googleapis.com AT BUILD TIME - so a network hiccup on the build machine
+// is a failed build, which is exactly what happened here. Nothing about the
+// shipped page needed Google, only the build did, and that is a dependency
+// worth not having.
+//
+// Both files are the latin subset of the variable face, which carries the whole
+// 100..900 axis: every weight the UI asks for comes out of one file rather than
+// a download per weight. The variable name must stay
+// --font-roboto-condensed, which is what Tailwind's font-sans resolves to in
+// globals.css.
+const robotoCondensed = localFont({
+  src: [
+    {
+      path: "./fonts/RobotoCondensed-latin-variable.woff2",
+      style: "normal",
+      weight: "100 900",
+    },
+    {
+      path: "./fonts/RobotoCondensed-latin-variable-italic.woff2",
+      style: "italic",
+      weight: "100 900",
+    },
+  ],
   variable: "--font-roboto-condensed",
-  subsets: ["latin"],
-  style: ["normal", "italic"],
   display: "swap",
 });
 
