@@ -239,7 +239,10 @@ for (const role of Object.keys(EXPECT)) {
 // and everybody asks to be away. The API narrows each caller to their own
 // rows, so the page is safe to open for all four - and a nav entry that
 // redirects would be worse than no entry.
-for (const path of ["/dashboard/attendance", "/dashboard/leave"]) {
+// Chat is shared for the same reason attendance and leave are: who may read a
+// conversation is a membership row, not a job title, so no role is bounced
+// from the page itself.
+for (const path of ["/dashboard/attendance", "/dashboard/leave", "/dashboard/chat"]) {
   for (const role of Object.keys(EXPECT)) {
     const res = await fetch(WEB + path, {
       headers: { Cookie: cookies[role] },
@@ -296,6 +299,7 @@ if (!superEmail || !superPassword) {
     ["/dashboard/timesheet", 307],
     ["/dashboard/attendance", 307],
     ["/dashboard/leave", 307],
+    ["/dashboard/chat", 307],
     ["/admin/dashboard/payroll", 307],
   ]) {
     const res = await fetch(WEB + path, { headers: { Cookie: superCookie }, redirect: "manual" });

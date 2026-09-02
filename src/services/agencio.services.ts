@@ -27,6 +27,7 @@ import type {
     ILeadStageEvent,
     ILeaveBalance,
     ILeaveRequest,
+    IConversation,
     ILeaveType,
     ILoan,
     ILoanSummary,
@@ -37,6 +38,7 @@ import type {
     IOrganization,
     IOwnerWithdrawal,
     IPayment,
+    IMessage,
     IPayrollRun,
     IShareholder,
     IShareholderDistribution,
@@ -1048,3 +1050,42 @@ export const deleteDistribution = async (id: string) =>
     wrap("deleting the distribution", () =>
         httpClient.delete<{ message: string }>(`/shareholders/distributions/${id}`)
     )
+
+// ---------------------------------------------------------------- chat
+
+export const getConversations = async (queryString?: string) =>
+    wrap("fetching conversations", () =>
+        httpClient.get<IConversation[]>("/chat", { params: toParams(queryString) })
+    )
+
+export const getUnreadTotal = async () =>
+    wrap("fetching the unread count", () =>
+        httpClient.get<{ unread_count: number }>("/chat/unread")
+    )
+
+export const createConversation = async (payload: Record<string, unknown>) =>
+    wrap("starting the conversation", () =>
+        httpClient.post<{ id: string }>("/chat", payload)
+    )
+
+export const getMessages = async (id: string) =>
+    wrap("fetching messages", () => httpClient.get<IMessage[]>(`/chat/${id}/messages`))
+
+export const sendMessage = async (id: string, payload: Record<string, unknown>) =>
+    wrap("sending the message", () =>
+        httpClient.post<IMessage>(`/chat/${id}/messages`, payload)
+    )
+
+export const markConversationRead = async (id: string) =>
+    wrap("marking it read", () => httpClient.post<{ message: string }>(`/chat/${id}/read`, {}))
+
+export const addConversationMembers = async (id: string, payload: Record<string, unknown>) =>
+    wrap("adding them", () => httpClient.post<{ message: string }>(`/chat/${id}/members`, payload))
+
+export const setConversationArchived = async (id: string, archived: boolean) =>
+    wrap("archiving it", () =>
+        httpClient.post<{ message: string }>(`/chat/${id}/archive`, { archived })
+    )
+
+export const leaveConversation = async (id: string) =>
+    wrap("leaving it", () => httpClient.post<{ message: string }>(`/chat/${id}/leave`, {}))

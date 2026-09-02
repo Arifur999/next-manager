@@ -84,6 +84,18 @@ const ADMIN_SECTIONS: NavSection[] = [
         ],
     },
     {
+        // Five entries, one board. Built as separate pages this would be five
+        // copies of the same two queries and five places to fix one bug.
+        title: "Chat",
+        items: [
+            { title: "All", href: "/dashboard/chat", icon: "MessagesSquare" },
+            { title: "Unread", href: "/dashboard/chat?unread=true", icon: "BellRing" },
+            { title: "Direct", href: "/dashboard/chat?type=direct", icon: "User" },
+            { title: "Groups", href: "/dashboard/chat?type=group", icon: "UsersRound" },
+            { title: "Archived", href: "/dashboard/chat?archived=true", icon: "Archive" },
+        ],
+    },
+    {
         title: "Accounts",
         items: [
             { title: "Overview", href: "/admin/dashboard/accounts", icon: "Wallet" },
@@ -163,6 +175,7 @@ const SALES_SECTIONS: NavSection[] = [
     {
         title: "Workspace",
         items: [
+            { title: "Chat", href: "/dashboard/chat", icon: "MessagesSquare" },
             { title: "Attendance", href: "/dashboard/attendance", icon: "CalendarCheck" },
             { title: "Leave", href: "/dashboard/leave", icon: "CalendarOff" },
             { title: "Vault", href: "/admin/dashboard/vault", icon: "KeyRound" },
@@ -189,6 +202,7 @@ const PROJECT_MANAGER_SECTIONS: NavSection[] = [
     {
         title: "Workspace",
         items: [
+            { title: "Chat", href: "/dashboard/chat", icon: "MessagesSquare" },
             { title: "Clients", href: "/admin/dashboard/clients", icon: "Users" },
             { title: "Vault", href: "/admin/dashboard/vault", icon: "KeyRound" },
         ],
@@ -204,6 +218,7 @@ const OPERATIONS_SECTIONS: NavSection[] = [
             // The API narrows both of these to their own rows, so what an
             // operations member opens here is their own day and nobody
             // else's — the same page an admin uses to see everyone.
+            { title: "Chat", href: "/dashboard/chat", icon: "MessagesSquare" },
             { title: "Attendance", href: "/dashboard/attendance", icon: "CalendarCheck" },
             { title: "Leave", href: "/dashboard/leave", icon: "CalendarOff" },
         ],

@@ -902,3 +902,45 @@ export interface IShareholderDistribution {
     shareholder?: Pick<IShareholder, "id" | "name" | "share_pct">;
     account?: Pick<IAccount, "id" | "name" | "currency">;
 }
+
+export type ConversationType = "direct" | "group" | "project";
+
+export interface IChatPerson {
+    id: string;
+    full_name: string;
+    email: string;
+    role: string;
+    avatar_url?: string | null;
+}
+
+/**
+ * One conversation, as the list screen needs it.
+ *
+ * `name` is resolved by the server: a direct conversation has no stored name
+ * because it is named after whoever you are talking to, which is a different
+ * name for each of the two people in it.
+ */
+export interface IConversation {
+    id: string;
+    type: ConversationType;
+    name: string;
+    project: { id: string; name: string; code: string } | null;
+    members: IChatPerson[];
+    last_message: {
+        id: string;
+        body: string;
+        created_at: string;
+        sender: { id: string; full_name: string } | null;
+    } | null;
+    last_message_at: string;
+    archived_at: string | null;
+    unread_count: number;
+}
+
+export interface IMessage {
+    id: string;
+    conversation_id: string;
+    body: string;
+    created_at: string;
+    sender: IChatPerson | null;
+}
