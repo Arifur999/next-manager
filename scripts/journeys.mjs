@@ -34,7 +34,16 @@ const api = async (method, path, body, cookie = "") => {
 const page = async (path, cookie) => {
   const res = await fetch(WEB + path, { headers: { Cookie: cookie }, redirect: "manual" });
   const html = res.status === 200 ? await res.text() : "";
-  return { status: res.status, text: html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ") };
+  // React separates adjacent text nodes with an empty comment, so `{pct}%`
+  // ships as `55<!-- -->%`. Those are removed first and WITHOUT a space in
+  // their place - stripping them as ordinary tags would turn "55%" into "55 %",
+  // and a check for what the reader actually sees would then fail on a page
+  // that is perfectly correct.
+  const text = html
+    .replace(/<!--.*?-->/g, "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ");
+  return { status: res.status, text };
 };
 
 // ---- an agency opens ----
@@ -332,6 +341,126 @@ r = await api("POST", `/hr/payroll/${runId}/complete`, { account_id: bdt }, admi
 step("paying it twice is refused", r.status >= 400, `${r.status} ${r.json.message}`);
 step("with nothing moving", (await balanceOf()) === afterPayroll);
 
+// ---- it borrows, and pays its owners ----
+//
+// The two records in this product that are accounted for backwards from how
+// they look. Both are checked against profit and loss, not just against the
+// message the API sends back - the whole point of the module is that neither
+// one moves the profit.
+const plBefore = (await api("GET", "/reports/profit-loss", null, admin)).json.data;
+
+r = await api(
+  "POST",
+  "/loans",
+  {
+    lender: "City Bank",
+    principal_bdt: 60000,
+    interest_rate: 10,
+    started_on: "2026-01-01",
+    term_months: 6,
+    account_id: bdt,
+  },
+  admin
+);
+step("admin can record a bank loan", r.status === 201, `${r.status} ${r.json.message}`);
+const loanId = r.json.data?.id;
+step("it arrives with a schedule for the whole term", r.json.data?.instalment_count === 6, `${r.json.data?.instalment_count}`);
+step("owing the whole principal", r.json.data?.outstanding_bdt === 60000, `${r.json.data?.outstanding_bdt}`);
+
+r = await api("GET", "/reports/profit-loss", null, admin);
+step(
+  "but borrowing is not revenue",
+  r.json.data?.revenue?.bdt_reporting === plBefore?.revenue?.bdt_reporting,
+  `${plBefore?.revenue?.bdt_reporting} -> ${r.json.data?.revenue?.bdt_reporting}`
+);
+
+// Correct the schedule to the bank's real numbers, then pay one.
+r = await api("GET", `/loans/${loanId}`, null, admin);
+const instalments = r.json.data?.instalments ?? [];
+r = await api(
+  "PATCH",
+  `/loans/${loanId}/instalments`,
+  {
+    instalments: instalments.map((item, index) => ({
+      due_date: item.due_date.slice(0, 10),
+      principal_bdt: 10000,
+      interest_bdt: index === 0 ? 500 : 0,
+    })),
+  },
+  admin
+);
+step("the schedule can be corrected to the bank's own table", r.status === 200, `${r.status} ${r.json.message}`);
+
+const firstInstalment = r.json.data?.instalments?.[0]?.id;
+const beforeInstalment = await balanceOf();
+r = await api("PATCH", `/loans/instalments/${firstInstalment}/pay`, { account_id: bdt }, admin);
+step("and an instalment paid", r.status === 200, `${r.status} ${r.json.message}`);
+step("which owes the principal down, not the whole payment", r.json.data?.outstanding_bdt === 50000, `${r.json.data?.outstanding_bdt}`);
+step(
+  "while the account loses principal and interest together",
+  beforeInstalment - (await balanceOf()) === 10500,
+  `moved ${beforeInstalment - (await balanceOf())}, expected 10500`
+);
+
+// The rule the whole module exists for.
+r = await api("GET", "/reports/profit-loss", null, admin);
+step(
+  "only the interest becomes a cost",
+  r.json.data?.cost?.loan_interest_bdt === 500,
+  `${r.json.data?.cost?.loan_interest_bdt}`
+);
+step(
+  "so cost rose by the interest alone",
+  (r.json.data?.cost?.total_bdt ?? 0) - (plBefore?.cost?.total_bdt ?? 0) === 500,
+  `cost moved ${(r.json.data?.cost?.total_bdt ?? 0) - (plBefore?.cost?.total_bdt ?? 0)}`
+);
+
+const plAfterLoan = r.json.data;
+
+r = await api("POST", "/shareholders", { name: "Dana Admin", share_pct: 70 }, admin);
+step("admin can record a shareholder", r.status === 201, `${r.status} ${r.json.message}`);
+const shareholderId = r.json.data?.id;
+
+r = await api("POST", "/shareholders", { name: "Silent Partner", share_pct: 40 }, admin);
+step("shares over 100% are refused", r.status === 400, `${r.status} ${r.json.message}`);
+
+r = await api("GET", "/shareholders", null, admin);
+step("and the list says what is still unassigned", r.json.meta?.unallocated_pct === 30, `${r.json.meta?.unallocated_pct}`);
+
+const beforePayout = await balanceOf();
+r = await api(
+  "POST",
+  "/shareholders/distributions",
+  { shareholder_id: shareholderId, date: "2026-06-01", amount_bdt: 5000, account_id: bdt },
+  admin
+);
+step("an owner can be paid", r.status === 201, `${r.status} ${r.json.message}`);
+step("which really leaves the account", beforePayout - (await balanceOf()) === 5000, `moved ${beforePayout - (await balanceOf())}`);
+
+r = await api("GET", "/reports/profit-loss", null, admin);
+step(
+  "but paying owners is not a cost",
+  r.json.data?.cost?.total_bdt === plAfterLoan?.cost?.total_bdt,
+  `${plAfterLoan?.cost?.total_bdt} -> ${r.json.data?.cost?.total_bdt}`
+);
+step(
+  "so the agency cannot shrink its own profit by paying itself",
+  r.json.data?.net_profit_bdt === plAfterLoan?.net_profit_bdt,
+  `${plAfterLoan?.net_profit_bdt} -> ${r.json.data?.net_profit_bdt}`
+);
+
+// Both screens, and the ledger that now carries three new kinds of movement.
+for (const [path, label] of [
+  ["/loans/summary", "the loan summary"],
+  ["/shareholders", "the shareholder list"],
+  ["/transactions?kind=income", "income on the ledger"],
+  ["/transactions?kind=expense", "spending on the ledger"],
+]) {
+  const res = await api("GET", path, null, admin);
+  step(`${label} loads`, res.status === 200, `${res.status} ${res.json.message}`);
+}
+
+
 // ---- the numbers the agency runs on ----
 for (const [path, label] of [
   ["/dashboard", "the dashboard"],
@@ -361,6 +490,8 @@ const screens = {
     "/admin/dashboard/reports/team",
     "/admin/dashboard/payroll",
     "/admin/dashboard/leave-settings",
+    "/admin/dashboard/loans",
+    "/admin/dashboard/shareholders",
     "/dashboard/attendance",
   ],
   sales: [

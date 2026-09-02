@@ -123,6 +123,10 @@ for (const path of [
   "/admin/dashboard/workflow",
   "/admin/dashboard/project-settings",
   "/admin/dashboard/leave-settings",
+  // What the agency owes a bank, and who owns it: the two facts kept
+  // furthest from the staff.
+  "/admin/dashboard/loans",
+  "/admin/dashboard/shareholders",
   // Every colleague's salary on one screen, and the button that moves the
   // money. The most sensitive page in the product, so it is named here rather
   // than left to the catch-all.

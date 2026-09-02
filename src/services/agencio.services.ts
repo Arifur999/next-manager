@@ -28,6 +28,8 @@ import type {
     ILeaveBalance,
     ILeaveRequest,
     ILeaveType,
+    ILoan,
+    ILoanSummary,
     ILoginEvent,
     IMilestone,
     IMonthlyPoint,
@@ -36,6 +38,8 @@ import type {
     IOwnerWithdrawal,
     IPayment,
     IPayrollRun,
+    IShareholder,
+    IShareholderDistribution,
     IProfitAndLoss,
     IProject,
     IProjectFinancials,
@@ -973,4 +977,74 @@ export const completePayroll = async (id: string, payload: Record<string, unknow
 export const deletePayrollRun = async (id: string) =>
     wrap("discarding the draft", () =>
         httpClient.delete<{ message: string }>(`/hr/payroll/${id}`)
+    )
+
+// ---------------------------------------------------------------- loans
+
+export const getLoans = async (queryString?: string) =>
+    wrap("fetching loans", () => httpClient.get<ILoan[]>("/loans", { params: toParams(queryString) }))
+
+export const getLoan = async (id: string) =>
+    wrap("fetching the loan", () => httpClient.get<ILoan>(`/loans/${id}`))
+
+export const getLoanSummary = async () =>
+    wrap("fetching the loan summary", () => httpClient.get<ILoanSummary>("/loans/summary"))
+
+export const createLoan = async (payload: Record<string, unknown>) =>
+    wrap("recording the loan", () => httpClient.post<ILoan>("/loans", payload))
+
+export const updateLoan = async (id: string, payload: Record<string, unknown>) =>
+    wrap("updating the loan", () => httpClient.patch<ILoan>(`/loans/${id}`, payload))
+
+export const setLoanInstalments = async (id: string, payload: Record<string, unknown>) =>
+    wrap("saving the schedule", () =>
+        httpClient.patch<ILoan>(`/loans/${id}/instalments`, payload)
+    )
+
+export const payLoanInstalment = async (instalmentId: string, payload: Record<string, unknown>) =>
+    wrap("paying the instalment", () =>
+        httpClient.patch<ILoan>(`/loans/instalments/${instalmentId}/pay`, payload)
+    )
+
+export const reverseLoanInstalment = async (instalmentId: string) =>
+    wrap("reversing the instalment", () =>
+        httpClient.patch<ILoan>(`/loans/instalments/${instalmentId}/reverse`, {})
+    )
+
+export const deleteLoan = async (id: string) =>
+    wrap("deleting the loan", () => httpClient.delete<{ message: string }>(`/loans/${id}`))
+
+// ---------------------------------------------------------------- shareholders
+
+export const getShareholders = async () =>
+    wrap("fetching shareholders", () => httpClient.get<IShareholder[]>("/shareholders"))
+
+export const createShareholder = async (payload: Record<string, unknown>) =>
+    wrap("adding the shareholder", () => httpClient.post<IShareholder>("/shareholders", payload))
+
+export const updateShareholder = async (id: string, payload: Record<string, unknown>) =>
+    wrap("updating the shareholder", () =>
+        httpClient.patch<IShareholder>(`/shareholders/${id}`, payload)
+    )
+
+export const deleteShareholder = async (id: string) =>
+    wrap("deleting the shareholder", () =>
+        httpClient.delete<{ message: string }>(`/shareholders/${id}`)
+    )
+
+export const getDistributions = async (queryString?: string) =>
+    wrap("fetching distributions", () =>
+        httpClient.get<IShareholderDistribution[]>("/shareholders/distributions", {
+            params: toParams(queryString),
+        })
+    )
+
+export const createDistribution = async (payload: Record<string, unknown>) =>
+    wrap("recording the distribution", () =>
+        httpClient.post<IShareholderDistribution>("/shareholders/distributions", payload)
+    )
+
+export const deleteDistribution = async (id: string) =>
+    wrap("deleting the distribution", () =>
+        httpClient.delete<{ message: string }>(`/shareholders/distributions/${id}`)
     )

@@ -98,6 +98,10 @@ const ADMIN_SECTIONS: NavSection[] = [
             { title: "Team Payouts", href: "/admin/dashboard/payouts", icon: "HandCoins" },
             { title: "Withdrawals", href: "/admin/dashboard/withdrawals", icon: "PiggyBank" },
             { title: "Due Payments", href: "/admin/dashboard/due-payments", icon: "Scale" },
+            // A bank loan is not Due Payments: that is informal lending between
+            // people, with no schedule, no interest and no term.
+            { title: "Loans", href: "/admin/dashboard/loans", icon: "Landmark" },
+            { title: "Shareholders", href: "/admin/dashboard/shareholders", icon: "PieChart" },
         ],
     },
     {
