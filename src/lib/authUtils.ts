@@ -109,7 +109,9 @@ export const AREAS: AreaRule[] = [
     // Running the work. The project manager's, not sales'.
     {
         exact: [],
-        pattern: [/^\/admin\/dashboard\/(time-approvals|delivery)/],
+        pattern: [
+            /^\/admin\/dashboard\/(time-approvals|delivery|workload|availability|leave-calendar)/,
+        ],
         roles: ["admin", "project_manager"],
     },
 

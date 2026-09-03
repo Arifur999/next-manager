@@ -237,7 +237,12 @@ const PROJECT_MANAGER_SECTIONS: NavSection[] = [
             // A project manager decides leave as well as approving hours —
             // it is the same judgement about the same person's week.
             { title: "Leave", href: "/dashboard/leave", icon: "CalendarOff" },
-            { title: "Team", href: "/admin/dashboard/team-directory", icon: "UsersRound" },
+            { title: "Team Members", href: "/admin/dashboard/team-directory", icon: "UsersRound" },
+            { title: "Workload", href: "/admin/dashboard/workload", icon: "ChartLine" },
+            // The same figures as Workload read from the other end. One
+            // subtraction shown twice, from one query, so they cannot disagree.
+            { title: "Availability", href: "/admin/dashboard/availability", icon: "UserCheck" },
+            { title: "Leave Calendar", href: "/admin/dashboard/leave-calendar", icon: "CalendarOff" },
         ],
     },
     {

@@ -962,3 +962,29 @@ export interface IServiceDetail extends IService {
     }>;
     clients: Array<{ id: string; name: string; company: string }>;
 }
+
+/**
+ * One person's week, as both readings of it.
+ *
+ * `remaining_hours` is available minus logged — the same subtraction the
+ * Workload and Availability screens show from opposite ends, so they cannot
+ * disagree. `is_default` says the capacity behind it is an assumption nobody
+ * entered rather than a decision somebody made.
+ */
+export interface IWorkloadRow {
+    user: IChatPerson & { department?: { id: string; name: string } | null };
+    weekly_hours: number;
+    is_default: boolean;
+    available_hours: number;
+    logged_hours: number;
+    remaining_hours: number;
+    utilization_pct: number | null;
+    leave_days: number;
+}
+
+export interface IWorkload {
+    rows: IWorkloadRow[];
+    from: string;
+    to: string;
+    days: number;
+}

@@ -42,6 +42,7 @@ import type {
     IPayrollRun,
     IServiceDetail,
     IShareholder,
+    IWorkload,
     IShareholderDistribution,
     IProfitAndLoss,
     IProject,
@@ -1093,3 +1094,8 @@ export const leaveConversation = async (id: string) =>
 
 export const getService = async (id: string) =>
     wrap("fetching the service", () => httpClient.get<IServiceDetail>(`/services/${id}`))
+
+export const getWorkload = async (queryString?: string) =>
+    wrap("fetching the workload", () =>
+        httpClient.get<IWorkload>("/time-entries/workload", { params: toParams(queryString) })
+    )

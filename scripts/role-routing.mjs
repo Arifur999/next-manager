@@ -263,6 +263,10 @@ for (const path of [
   "/admin/dashboard/team-management",
   "/admin/dashboard/time-approvals",
   "/admin/dashboard/delivery",
+  // Running the team is delivery's business, not selling's.
+  "/admin/dashboard/workload",
+  "/admin/dashboard/availability",
+  "/admin/dashboard/leave-calendar",
 ]) {
   const res = await fetch(WEB + path, { headers: { Cookie: cookies.sales }, redirect: "manual" });
   const ok = res.status === 307;
