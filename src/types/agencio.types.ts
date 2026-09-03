@@ -988,3 +988,23 @@ export interface IWorkload {
     to: string;
     days: number;
 }
+
+/**
+ * The task board, counted.
+ *
+ * Done and overdue are decided by status CATEGORY on the server, never by a
+ * name — an agency that renames Done to Shipped keeps a correct report.
+ */
+export interface ITaskReport {
+    total: number;
+    overdue_count: number;
+    done_count: number;
+    unassigned_count: number;
+    by_status: Array<{ status: IWorkflowStatus | null; count: number }>;
+    by_assignee: Array<{
+        user: IChatPerson | null;
+        total: number;
+        done: number;
+        overdue: number;
+    }>;
+}

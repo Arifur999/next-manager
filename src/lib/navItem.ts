@@ -128,6 +128,7 @@ const ADMIN_SECTIONS: NavSection[] = [
             { title: "Business", href: "/admin/dashboard/reports", icon: "ChartLine" },
             { title: "Clients", href: "/admin/dashboard/reports/clients", icon: "Users" },
             { title: "Projects", href: "/admin/dashboard/reports/projects", icon: "FolderKanban" },
+            { title: "Tasks", href: "/admin/dashboard/reports/tasks", icon: "ListChecks" },
             { title: "Team", href: "/admin/dashboard/reports/team", icon: "UsersRound" },
             { title: "Finance", href: "/admin/dashboard/reports/finance", icon: "Scale" },
         ],
@@ -246,10 +247,32 @@ const PROJECT_MANAGER_SECTIONS: NavSection[] = [
         ],
     },
     {
+        // Read, not shaped. A project manager picks what a project delivers;
+        // the seller decides what is on offer, and the API refuses them every
+        // write behind these pages.
+        title: "Services",
+        items: [
+            { title: "All Services", href: "/admin/dashboard/services", icon: "Package" },
+            { title: "Service Templates", href: "/admin/dashboard/services/templates", icon: "Boxes" },
+        ],
+    },
+    {
+        title: "Reports",
+        items: [
+            { title: "Project Reports", href: "/admin/dashboard/reports/projects", icon: "FolderKanban" },
+            { title: "Task Reports", href: "/admin/dashboard/reports/tasks", icon: "ListChecks" },
+            { title: "Team Workload", href: "/admin/dashboard/reports/team", icon: "UsersRound" },
+        ],
+    },
+    {
         title: "Workspace",
         items: [
             { title: "Chat", href: "/dashboard/chat", icon: "MessagesSquare" },
             { title: "Clients", href: "/admin/dashboard/clients", icon: "Users" },
+            // Shaping the board is theirs to control, so the settings that do it
+            // are too. Leave policy is not - that stays with the admin.
+            { title: "Task Settings", href: "/admin/dashboard/workflow", icon: "ListChecks" },
+            { title: "Project Settings", href: "/admin/dashboard/project-settings", icon: "FolderKanban" },
             { title: "Vault", href: "/admin/dashboard/vault", icon: "KeyRound" },
         ],
     },

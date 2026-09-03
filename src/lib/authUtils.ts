@@ -61,6 +61,22 @@ export const AREAS: AreaRule[] = [
     // merely starts with the same letters.
     { exact: [], pattern: [/^\/platform(\/|$)/], roles: ["super_admin"] },
 
+    // What delivery is measured by. The project manager runs it for the whole
+    // agency, so these are not scoped the way a salesperson's are — and
+    // reports/projects carries margin, which is theirs by design.
+    //
+    // Declared before the money rule below for the same reason the sales one
+    // is: that rule claims every /reports path, and the first match wins.
+    {
+        exact: [
+            "/admin/dashboard/reports/projects",
+            "/admin/dashboard/reports/team",
+            "/admin/dashboard/reports/tasks",
+        ],
+        pattern: [],
+        roles: ["admin", "project_manager"],
+    },
+
     // The two reports a salesperson may open, and only these two. Declared
     // before the money rule below, which claims every /reports path for
     // admin - the first matching rule wins, so this ordering IS the
@@ -74,6 +90,17 @@ export const AREAS: AreaRule[] = [
         roles: ["admin", "sales"],
     },
 
+    // How work MOVES: the columns a task or a project sits in. You listed
+    // Workflow as the project manager's to control, and it is the one thing
+    // under configuration that is about delivery rather than about the
+    // company. leave-settings stays admin-only below — that is a policy about
+    // people, not a workflow.
+    {
+        exact: [],
+        pattern: [/^\/admin\/dashboard\/(workflow|project-settings)/],
+        roles: ["admin", "project_manager"],
+    },
+
     // Money and company state.
     {
         exact: [],
@@ -83,7 +110,7 @@ export const AREAS: AreaRule[] = [
             // the /^\/admin/ catch-all below would cover them anyway, but
             // naming them says they are admin-only on purpose rather than
             // by omission.
-            /^\/admin\/dashboard\/(business|finance-config|departments|workflow|project-settings|leave-settings|permissions|notifications|security)/,
+            /^\/admin\/dashboard\/(business|finance-config|departments|leave-settings|permissions|notifications|security)/,
         ],
         roles: ["admin"],
     },
@@ -91,8 +118,17 @@ export const AREAS: AreaRule[] = [
     // Selling: the pipeline and what gets billed for it.
     {
         exact: [],
-        pattern: [/^\/admin\/dashboard\/(leads|invoices|sales|services)/],
+        pattern: [/^\/admin\/dashboard\/(leads|invoices|sales)/],
         roles: ["admin", "sales"],
+    },
+
+    // The catalogue. Sales shapes it and the project manager reads it — they
+    // pick what a project is delivering, and a catalogue they cannot open
+    // makes that a guess.
+    {
+        exact: [],
+        pattern: [/^\/admin\/dashboard\/services/],
+        roles: ["admin", "sales", "project_manager"],
     },
 
     // Watching the work. Sales opens these to see where a client they brought

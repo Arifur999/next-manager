@@ -23,7 +23,15 @@ import { toast } from "sonner"
  * This component only holds the state the two halves share. The form and the
  * list are their own files, so neither grows the other.
  */
-const ServicesBoard = () => {
+/**
+ * The catalogue.
+ *
+ * `canManage` decides whether this is a board somebody shapes or one they only
+ * read. A project manager picks what a project delivers and needs to see what
+ * is on offer; shaping the list is the seller's job, and the API refuses them
+ * every write behind it — so offering the form would only be a form that fails.
+ */
+const ServicesBoard = ({ canManage = true }: { canManage?: boolean }) => {
   const queryClient = useQueryClient()
   const [draft, setDraft] = useState<ServiceDraft>(emptyService)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -94,7 +102,14 @@ const ServicesBoard = () => {
   })
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
+    <div
+      className={
+        canManage
+          ? "grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]"
+          : "grid gap-4"
+      }
+    >
+      {canManage && (
       <ServiceFormCard
         draft={draft}
         categories={categories}
@@ -104,6 +119,7 @@ const ServicesBoard = () => {
         onSubmit={save}
         onCancel={reset}
       />
+      )}
 
       <ServiceList
         services={services}
@@ -119,6 +135,7 @@ const ServicesBoard = () => {
               : "",
           })
         }}
+        onEditable={canManage}
         onToggle={toggle}
         onDelete={remove}
       />

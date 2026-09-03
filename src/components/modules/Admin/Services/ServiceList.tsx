@@ -21,12 +21,15 @@ import { Package, Power, Trash2 } from "lucide-react"
 const ServiceList = ({
   services,
   isLoading,
+  onEditable = true,
   onEdit,
   onToggle,
   onDelete,
 }: {
   services: IService[]
   isLoading: boolean
+  /** Whether the row actions appear. False for anybody the API refuses. */
+  onEditable?: boolean
   onEdit: (service: IService) => void
   onToggle: (service: IService) => void
   onDelete: (service: IService) => void
@@ -80,6 +83,7 @@ const ServiceList = ({
                 </p>
               </div>
 
+              {onEditable && (
               <div className="flex items-center gap-1">
                 <Button size="sm" variant="outline" onClick={() => onEdit(service)}>
                   Edit
@@ -108,6 +112,7 @@ const ServiceList = ({
                   <Trash2 className="size-4" />
                 </Button>
               </div>
+              )}
             </li>
           )
         })}

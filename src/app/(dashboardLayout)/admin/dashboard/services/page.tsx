@@ -1,5 +1,6 @@
 import ServicesBoard from "@/components/modules/Admin/Services/ServicesBoard";
 import { getServiceCategories, getServices } from "@/services/agencio.services";
+import { getUserInfo } from "@/services/auth.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 
@@ -9,6 +10,12 @@ export const metadata: Metadata = {
 
 const ServicesPage = async () => {
   const queryClient = new QueryClient();
+  const user = await getUserInfo();
+
+  // The same two the API lets write the catalogue. A project manager reads
+  // it to pick what a project delivers; shaping it is the seller's job, and
+  // a form that always failed would only teach them the app is broken.
+  const canManage = user?.role === "admin" || user?.role === "sales";
 
   await Promise.all([
     queryClient.prefetchQuery({ queryKey: ["services"], queryFn: () => getServices() }),
@@ -29,7 +36,7 @@ const ServicesPage = async () => {
       </div>
 
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <ServicesBoard />
+        <ServicesBoard canManage={canManage} />
       </HydrationBoundary>
     </div>
   );

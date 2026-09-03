@@ -42,6 +42,7 @@ import type {
     IPayrollRun,
     IServiceDetail,
     IShareholder,
+    ITaskReport,
     IWorkload,
     IShareholderDistribution,
     IProfitAndLoss,
@@ -1098,4 +1099,9 @@ export const getService = async (id: string) =>
 export const getWorkload = async (queryString?: string) =>
     wrap("fetching the workload", () =>
         httpClient.get<IWorkload>("/time-entries/workload", { params: toParams(queryString) })
+    )
+
+export const getTaskReport = async (queryString?: string) =>
+    wrap("fetching the task report", () =>
+        httpClient.get<ITaskReport>("/tasks/report", { params: toParams(queryString) })
     )

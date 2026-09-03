@@ -114,13 +114,10 @@ for (const path of [
   "/admin/dashboard/finance-config",
   "/admin/dashboard/departments",
   "/admin/dashboard/transactions",
-  "/admin/dashboard/reports/team",
   "/admin/dashboard/reports/finance",
   "/admin/dashboard/permissions",
   "/admin/dashboard/notifications",
   "/admin/dashboard/security",
-  "/admin/dashboard/workflow",
-  "/admin/dashboard/project-settings",
   "/admin/dashboard/leave-settings",
   // Adding, editing and deactivating colleagues. The admin's alone - the
   // project manager had it, and every button on it returned 403 for them.
@@ -149,19 +146,19 @@ for (const path of [
   }
 }
 
-// The catalogue. Sales shapes it as well as admin, because they are the two
-// roles that decide what is sold and for how much - and the API says so, so
-// the routing has to agree.
+// The catalogue. Sales SHAPES it and the project manager READS it — they pick
+// what a project delivers, and a catalogue they cannot open makes that a guess.
+// Opening the page is all the PM gets: the API refuses them every write behind
+// it, and the board hides the form rather than offering one that fails.
 for (const path of [
   "/admin/dashboard/services",
   "/admin/dashboard/services/categories",
-  "/admin/dashboard/services/templates",
   "/admin/dashboard/services/templates",
 ]) {
   for (const [role, expected] of [
     ["admin", 200],
     ["sales", 200],
-    ["project_manager", 307],
+    ["project_manager", 200],
     ["operations", 307],
   ]) {
     const res = await fetch(WEB + path, { headers: { Cookie: cookies[role] }, redirect: "manual" });
@@ -267,6 +264,13 @@ for (const path of [
   "/admin/dashboard/workload",
   "/admin/dashboard/availability",
   "/admin/dashboard/leave-calendar",
+  // Delivery is measured for the whole agency, and the board is theirs to
+  // shape - neither is sales' business.
+  "/admin/dashboard/reports/projects",
+  "/admin/dashboard/reports/tasks",
+  "/admin/dashboard/reports/team",
+  "/admin/dashboard/workflow",
+  "/admin/dashboard/project-settings",
 ]) {
   const res = await fetch(WEB + path, { headers: { Cookie: cookies.sales }, redirect: "manual" });
   const ok = res.status === 307;
