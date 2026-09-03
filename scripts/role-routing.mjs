@@ -122,6 +122,9 @@ for (const path of [
   "/admin/dashboard/workflow",
   "/admin/dashboard/project-settings",
   "/admin/dashboard/leave-settings",
+  // Adding, editing and deactivating colleagues. The admin's alone - the
+  // project manager had it, and every button on it returned 403 for them.
+  "/admin/dashboard/team-management",
   // What the agency owes a bank, and who owns it: the two facts kept
   // furthest from the staff.
   "/admin/dashboard/loans",

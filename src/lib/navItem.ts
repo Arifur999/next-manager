@@ -237,7 +237,7 @@ const PROJECT_MANAGER_SECTIONS: NavSection[] = [
             // A project manager decides leave as well as approving hours —
             // it is the same judgement about the same person's week.
             { title: "Leave", href: "/dashboard/leave", icon: "CalendarOff" },
-            { title: "Team", href: "/admin/dashboard/team-management", icon: "UsersRound" },
+            { title: "Team", href: "/admin/dashboard/team-directory", icon: "UsersRound" },
         ],
     },
     {

@@ -106,11 +106,25 @@ export const AREAS: AreaRule[] = [
         roles: ["admin", "project_manager", "sales"],
     },
 
-    // Running the work, and running the people. Not sales.
+    // Running the work. The project manager's, not sales'.
     {
         exact: [],
-        pattern: [/^\/admin\/dashboard\/(team-management|time-approvals|delivery)/],
+        pattern: [/^\/admin\/dashboard\/(time-approvals|delivery)/],
         roles: ["admin", "project_manager"],
+    },
+
+    // Running the PEOPLE. The admin's alone.
+    //
+    // Split out from the rule above rather than left inside it: this screen
+    // adds, edits, deactivates and approves colleagues, and every one of those
+    // writes is admin-only at the API. A project manager could open it and get
+    // a page of buttons that all returned 403 — which teaches people the
+    // product is broken rather than that they lack a permission. Their Team is
+    // the read-only directory below.
+    {
+        exact: [],
+        pattern: [/^\/admin\/dashboard\/team-management/],
+        roles: ["admin"],
     },
 
     // The directory. A separate page from team-management on purpose: that one
