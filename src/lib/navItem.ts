@@ -62,6 +62,10 @@ const ADMIN_SECTIONS: NavSection[] = [
         items: [
             { title: "Board", href: "/admin/dashboard/tasks", icon: "ListChecks" },
             { title: "List", href: "/admin/dashboard/tasks?view=list", icon: "FileText" },
+            { title: "Calendar", href: "/admin/dashboard/tasks?view=calendar", icon: "CalendarDays" },
+            // By status NAME, for the same reason the project views are: a
+            // sidebar href cannot carry an id that differs per agency.
+            { title: "Review", href: "/admin/dashboard/tasks?status=In review", icon: "UserCheck" },
             { title: "Overdue", href: "/admin/dashboard/tasks?overdue=true", icon: "Clock" },
             { title: "My Tasks", href: "/admin/dashboard/tasks?mine=true", icon: "User" },
         ],

@@ -1,5 +1,5 @@
 import TaskBoard from "@/components/modules/Admin/Tasks/TaskBoard";
-import { getTasks } from "@/services/agencio.services";
+import { getTasks, getWorkflowStatuses } from "@/services/agencio.services";
 import { getUserInfo } from "@/services/auth.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
@@ -36,6 +36,15 @@ const TasksPage = async ({
     queryClient.prefetchQuery({
       queryKey: ["tasks", query],
       queryFn: () => getTasks(query || undefined),
+      staleTime: 1000 * 30,
+    }),
+    // The board draws its COLUMNS from these, so without them the server
+    // renders a board with no columns and therefore no tasks — everything
+    // appearing only once the browser has hydrated and fetched them. The list
+    // and calendar views never showed it because they read tasks directly.
+    queryClient.prefetchQuery({
+      queryKey: ["workflow-statuses", "task"],
+      queryFn: () => getWorkflowStatuses("kind=task"),
       staleTime: 1000 * 30,
     }),
   ]);

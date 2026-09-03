@@ -1,6 +1,7 @@
 "use client"
 
 import CreateTaskModal from "@/components/modules/Admin/Tasks/CreateTaskModal"
+import TaskCalendar from "@/components/modules/Admin/Tasks/TaskCalendar"
 import TaskCard from "@/components/modules/Admin/Tasks/TaskCard"
 import EmptyState from "@/components/shared/state/EmptyState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
@@ -36,7 +37,11 @@ const TaskBoard = ({
   // server resolves it as project -> client -> owner and accepts only the
   // literal "me", so it can never be pointed at somebody else's book.
   const clientOwner = searchParams.get("client_owner") === "me"
-  const asList = searchParams.get("view") === "list" || overdue
+  const view = searchParams.get("view")
+  // Overdue forces the list: a board with four late tasks in one column and
+  // three empty ones beside it says nothing.
+  const asList = view === "list" || overdue
+  const asCalendar = view === "calendar" && !overdue
 
   const query = [
     mine ? "mine=true" : "",
@@ -93,6 +98,10 @@ const TaskBoard = ({
         <Card>
           <EmptyState icon={ListChecks}>{empty}</EmptyState>
         </Card>
+      ) : asCalendar ? (
+        // What lands this week, rather than where work is stuck. A third
+        // view over the same query, not a different screen.
+        <TaskCalendar tasks={tasks} />
       ) : asList ? (
         // One flat list, newest deadline first. A board is for seeing where
         // work is stuck; a list is for working through it, and a column of
