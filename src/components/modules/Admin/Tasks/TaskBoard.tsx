@@ -37,16 +37,22 @@ const TaskBoard = ({
   // server resolves it as project -> client -> owner and accepts only the
   // literal "me", so it can never be pointed at somebody else's book.
   const clientOwner = searchParams.get("client_owner") === "me"
+  // The My Work views. "upcoming" is a seven-day window, decided on the server
+  // so the sidebar and the query cannot disagree about how far ahead it looks.
+  const due = searchParams.get("due")
+  const completed = searchParams.get("completed") === "true"
   const view = searchParams.get("view")
   // Overdue forces the list: a board with four late tasks in one column and
   // three empty ones beside it says nothing.
-  const asList = view === "list" || overdue
+  const asList = view === "list" || overdue || due !== null || completed
   const asCalendar = view === "calendar" && !overdue
 
   const query = [
     mine ? "mine=true" : "",
     overdue ? "overdue=true" : "",
     clientOwner ? "client_owner=me" : "",
+    due === "today" || due === "upcoming" ? `due=${due}` : "",
+    completed ? "completed=true" : "",
   ]
     .filter(Boolean)
     .join("&")
@@ -72,6 +78,12 @@ const TaskBoard = ({
 
   const empty = overdue
     ? "Nothing is late."
+    : due === "today"
+      ? "Nothing is due today."
+      : due === "upcoming"
+        ? "Nothing due in the next seven days."
+        : completed
+          ? "Nothing finished yet."
     : mine
       ? "Nothing assigned to you."
       : clientOwner
@@ -80,7 +92,7 @@ const TaskBoard = ({
 
   return (
     <div className="space-y-4">
-      {canManage && !mine && !overdue && !clientOwner && (
+      {canManage && !mine && !overdue && !clientOwner && !due && !completed && (
         <div className="flex justify-end">
           <CreateTaskModal />
         </div>

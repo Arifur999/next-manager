@@ -322,15 +322,42 @@ const PROJECT_MANAGER_SECTIONS: NavSection[] = [
 ];
 
 const OPERATIONS_SECTIONS: NavSection[] = [
+    { items: [{ title: "Dashboard", href: "/dashboard", icon: "LayoutDashboard" }] },
     {
+        // Five readings of one question: what do I need to do. All one board
+        // reading its filter off the URL - "upcoming" is a seven-day window,
+        // and "completed" is read by what a status MEANS, so renaming a column
+        // does not empty it.
+        title: "My Work",
         items: [
-            { title: "Overview", href: "/dashboard", icon: "LayoutDashboard" },
             { title: "My Tasks", href: "/dashboard/tasks", icon: "ListChecks" },
+            { title: "Due Today", href: "/dashboard/tasks?due=today", icon: "CalendarCheck" },
+            { title: "Upcoming", href: "/dashboard/tasks?due=upcoming", icon: "CalendarDays" },
+            { title: "Overdue", href: "/dashboard/tasks?overdue=true", icon: "Clock" },
+            { title: "Completed", href: "/dashboard/tasks?completed=true", icon: "CheckCircle2" },
+            // Not in the sidebar you drew, but this role's existing duty and the
+            // thing every utilisation figure is built from. Dropping it because
+            // a sketch omitted it would take away something nobody asked to
+            // lose.
             { title: "Timesheet", href: "/dashboard/timesheet", icon: "Clock" },
+        ],
+    },
+    {
+        title: "Chat",
+        items: [
+            { title: "All", href: "/dashboard/chat", icon: "MessagesSquare" },
+            { title: "Direct Messages", href: "/dashboard/chat?type=direct", icon: "User" },
+            { title: "Groups", href: "/dashboard/chat?type=group", icon: "UsersRound" },
+            { title: "Project Chats", href: "/dashboard/chat?type=project", icon: "FolderKanban" },
+        ],
+    },
+    {
+        title: "My Account",
+        items: [
+            { title: "Profile", href: "/my-profile", icon: "User" },
             // The API narrows both of these to their own rows, so what an
-            // operations member opens here is their own day and nobody
-            // else's — the same page an admin uses to see everyone.
-            { title: "Chat", href: "/dashboard/chat", icon: "MessagesSquare" },
+            // operations member opens here is their own day and nobody else's -
+            // the same page an admin uses to see everyone.
             { title: "Attendance", href: "/dashboard/attendance", icon: "CalendarCheck" },
             { title: "Leave", href: "/dashboard/leave", icon: "CalendarOff" },
         ],

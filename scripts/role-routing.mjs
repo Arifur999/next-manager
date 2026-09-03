@@ -351,7 +351,17 @@ for (const role of Object.keys(EXPECT)) {
 // Chat is shared for the same reason attendance and leave are: who may read a
 // conversation is a membership row, not a job title, so no role is bounced
 // from the page itself.
-for (const path of ["/dashboard/attendance", "/dashboard/leave", "/dashboard/chat"]) {
+for (const path of [
+  "/dashboard/attendance",
+  "/dashboard/leave",
+  "/dashboard/chat",
+  // The five My Work views. One board, five filters - and every company role
+  // has them, because everybody has work assigned to them.
+  "/dashboard/tasks?due=today",
+  "/dashboard/tasks?due=upcoming",
+  "/dashboard/tasks?overdue=true",
+  "/dashboard/tasks?completed=true",
+]) {
   for (const role of Object.keys(EXPECT)) {
     const res = await fetch(WEB + path, {
       headers: { Cookie: cookies[role] },
