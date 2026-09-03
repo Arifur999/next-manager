@@ -40,6 +40,7 @@ import type {
     IPayment,
     IMessage,
     IPayrollRun,
+    IServiceDetail,
     IShareholder,
     IShareholderDistribution,
     IProfitAndLoss,
@@ -1089,3 +1090,6 @@ export const setConversationArchived = async (id: string, archived: boolean) =>
 
 export const leaveConversation = async (id: string) =>
     wrap("leaving it", () => httpClient.post<{ message: string }>(`/chat/${id}/leave`, {}))
+
+export const getService = async (id: string) =>
+    wrap("fetching the service", () => httpClient.get<IServiceDetail>(`/services/${id}`))

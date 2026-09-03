@@ -944,3 +944,21 @@ export interface IMessage {
     created_at: string;
     sender: IChatPerson | null;
 }
+
+/**
+ * One service, with where it is actually being sold.
+ *
+ * No money on it on purpose: which clients bought a service is a sales fact,
+ * what it earned is an income one, and that lives on the admin's revenue
+ * report.
+ */
+export interface IServiceDetail extends IService {
+    projects: Array<{
+        id: string;
+        name: string;
+        code: string;
+        status: { id: string; name: string; category: string } | null;
+        client: { id: string; name: string; company: string } | null;
+    }>;
+    clients: Array<{ id: string; name: string; company: string }>;
+}

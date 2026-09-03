@@ -153,6 +153,7 @@ for (const path of [
   "/admin/dashboard/services",
   "/admin/dashboard/services/categories",
   "/admin/dashboard/services/templates",
+  "/admin/dashboard/services/templates",
 ]) {
   for (const [role, expected] of [
     ["admin", 200],

@@ -155,27 +155,33 @@ const ADMIN_SECTIONS: NavSection[] = [
 const SALES_SECTIONS: NavSection[] = [
     { items: [{ title: "Dashboard", href: "/admin/dashboard/sales", icon: "LayoutDashboard" }] },
     {
-        title: "Pipeline",
+        // The job, in the order it happens: a lead becomes a client, a client
+        // gets billed. The three client views are one board reading ?status=,
+        // which the ClientStatus enum already has exactly.
+        title: "Clients",
         items: [
             { title: "Leads", href: "/admin/dashboard/leads", icon: "Target" },
-            { title: "Clients", href: "/admin/dashboard/clients", icon: "Users" },
+            { title: "All Clients", href: "/admin/dashboard/clients", icon: "Users" },
+            { title: "Active Clients", href: "/admin/dashboard/clients?status=active", icon: "UserCheck" },
+            { title: "Inactive Clients", href: "/admin/dashboard/clients?status=inactive", icon: "Users" },
             { title: "Invoices", href: "/admin/dashboard/invoices", icon: "FileText" },
         ],
     },
     {
         // Sales shapes the catalogue too - they are the ones who know what is
-        // being sold and for how much.
-        title: "What we sell",
+        // being sold and for how much. A service's own page is reached by
+        // clicking its name, not by a sidebar entry with no id to point at.
+        title: "Services",
         items: [
-            { title: "Services", href: "/admin/dashboard/services", icon: "Package" },
+            { title: "All Services", href: "/admin/dashboard/services", icon: "Package" },
             { title: "Categories", href: "/admin/dashboard/services/categories", icon: "FolderTree" },
             { title: "Packages", href: "/admin/dashboard/services/templates", icon: "Boxes" },
         ],
     },
     {
         // Watching, not running. Sales opens a project their client is behind
-        // and sees where it has got to; everything that changes it is refused
-        // by the API, so these are read-only in the only place that counts.
+        // and sees where it has got to; every write behind these is refused by
+        // the API, so they are read-only where it cannot be worked around.
         title: "Delivery",
         items: [
             { title: "Projects", href: "/admin/dashboard/projects", icon: "FolderKanban" },
@@ -186,6 +192,17 @@ const SALES_SECTIONS: NavSection[] = [
         ],
     },
     {
+        title: "Chat",
+        items: [
+            { title: "All", href: "/dashboard/chat", icon: "MessagesSquare" },
+            { title: "Direct Messages", href: "/dashboard/chat?type=direct", icon: "User" },
+            { title: "Groups", href: "/dashboard/chat?type=group", icon: "UsersRound" },
+            { title: "Project Conversations", href: "/dashboard/chat?type=project", icon: "FolderKanban" },
+        ],
+    },
+    {
+        // Both scoped to the clients this person brought in - the server forces
+        // it rather than reading it from the query.
         title: "Reports",
         items: [
             { title: "Client Reports", href: "/admin/dashboard/reports/clients", icon: "Users" },
@@ -196,7 +213,6 @@ const SALES_SECTIONS: NavSection[] = [
         title: "Workspace",
         items: [
             { title: "Team", href: "/admin/dashboard/team-directory", icon: "UsersRound" },
-            { title: "Chat", href: "/dashboard/chat", icon: "MessagesSquare" },
             { title: "Attendance", href: "/dashboard/attendance", icon: "CalendarCheck" },
             { title: "Leave", href: "/dashboard/leave", icon: "CalendarOff" },
             { title: "Vault", href: "/admin/dashboard/vault", icon: "KeyRound" },

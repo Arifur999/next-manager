@@ -1,5 +1,7 @@
 "use client"
 
+import Link from "next/link"
+
 import EmptyState from "@/components/shared/state/EmptyState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Badge } from "@/components/ui/badge"
@@ -58,7 +60,12 @@ const ServiceList = ({
             >
               <div className="min-w-48 flex-1">
                 <p className="flex items-center gap-2 font-medium">
-                  {service.name}
+                  <Link
+                    href={`/admin/dashboard/services/${service.id}`}
+                    className="hover:underline"
+                  >
+                    {service.name}
+                  </Link>
                   {service.category && (
                     <Badge variant="secondary">{service.category.name}</Badge>
                   )}
