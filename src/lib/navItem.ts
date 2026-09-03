@@ -179,7 +179,10 @@ const SALES_SECTIONS: NavSection[] = [
         title: "Delivery",
         items: [
             { title: "Projects", href: "/admin/dashboard/projects", icon: "FolderKanban" },
-            { title: "Tasks", href: "/admin/dashboard/tasks", icon: "ListChecks" },
+            { title: "My Tasks", href: "/admin/dashboard/tasks?mine=true", icon: "User" },
+            // Not "tasks assigned to me" but "work inside what I brought in" -
+            // a different question, and the one a salesperson actually has.
+            { title: "Sales Tasks", href: "/admin/dashboard/tasks?client_owner=me", icon: "ListChecks" },
         ],
     },
     {

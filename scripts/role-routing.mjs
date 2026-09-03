@@ -230,6 +230,9 @@ for (const path of [
   "/admin/dashboard/projects",
   "/admin/dashboard/tasks",
   "/admin/dashboard/team-directory",
+  // The two task views a salesperson is offered.
+  "/admin/dashboard/tasks?mine=true",
+  "/admin/dashboard/tasks?client_owner=me",
 ]) {
   for (const [role, expected] of [
     ["admin", 200],

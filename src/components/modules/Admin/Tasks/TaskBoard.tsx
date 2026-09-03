@@ -13,14 +13,36 @@ import { format, isBefore, startOfToday } from "date-fns"
 import { ListChecks } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 
-const TaskBoard = ({ mineOnly = false }: { mineOnly?: boolean }) => {
+/**
+ * The task board.
+ *
+ * `canManage` decides whether this is a board somebody works from or one they
+ * only read. Sales gets the second: they open it to see where a client they
+ * brought in has got to, and the API refuses them every write behind it, so
+ * offering a create button would only teach them the app is broken.
+ */
+const TaskBoard = ({
+  mineOnly = false,
+  canManage = true,
+}: {
+  mineOnly?: boolean
+  canManage?: boolean
+}) => {
   const searchParams = useSearchParams()
 
   const mine = mineOnly || searchParams.get("mine") === "true"
   const overdue = searchParams.get("overdue") === "true"
+  // Every task inside work this person brought in, whoever is doing it. The
+  // server resolves it as project -> client -> owner and accepts only the
+  // literal "me", so it can never be pointed at somebody else's book.
+  const clientOwner = searchParams.get("client_owner") === "me"
   const asList = searchParams.get("view") === "list" || overdue
 
-  const query = [mine ? "mine=true" : "", overdue ? "overdue=true" : ""]
+  const query = [
+    mine ? "mine=true" : "",
+    overdue ? "overdue=true" : "",
+    clientOwner ? "client_owner=me" : "",
+  ]
     .filter(Boolean)
     .join("&")
 
@@ -47,11 +69,13 @@ const TaskBoard = ({ mineOnly = false }: { mineOnly?: boolean }) => {
     ? "Nothing is late."
     : mine
       ? "Nothing assigned to you."
-      : "No tasks yet."
+      : clientOwner
+        ? "No work on the clients you brought in yet."
+        : "No tasks yet."
 
   return (
     <div className="space-y-4">
-      {!mine && !overdue && (
+      {canManage && !mine && !overdue && !clientOwner && (
         <div className="flex justify-end">
           <CreateTaskModal />
         </div>
