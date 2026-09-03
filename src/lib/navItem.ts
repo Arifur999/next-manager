@@ -55,10 +55,15 @@ const ADMIN_SECTIONS: NavSection[] = [
             { title: "Service Categories", href: "/admin/dashboard/services/categories", icon: "FolderTree" },
             { title: "Service Packages", href: "/admin/dashboard/services/templates", icon: "Boxes" },
             { title: "Projects", href: "/admin/dashboard/projects", icon: "FolderKanban" },
+            { title: "Tasks", href: "/admin/dashboard/tasks", icon: "ListChecks" },
         ],
     },
     {
-        title: "Tasks",
+        // The task views, kept as their own section under Operations rather
+        // than folded into the list above: nine entries in one group is a wall,
+        // and these six are readings of one board while those nine are
+        // different things.
+        title: "Task views",
         items: [
             { title: "Board", href: "/admin/dashboard/tasks", icon: "ListChecks" },
             { title: "List", href: "/admin/dashboard/tasks?view=list", icon: "FileText" },
@@ -80,11 +85,15 @@ const ADMIN_SECTIONS: NavSection[] = [
             { title: "Time Approvals", href: "/admin/dashboard/time-approvals", icon: "UserCheck" },
             // Attendance and Leave live under /dashboard because everybody
             // has them — the same route the whole company uses, linked from
-            // here the way Timesheet already is. Payroll is the exception:
-            // every colleague's salary on one screen, admin only.
+            // here the way Timesheet already is.
+            //
+            // Payroll is NOT here. It was, and it should not have been: every
+            // colleague's salary on one screen is the most sensitive list in
+            // the product, and it sat beside the directory. It is under Admin
+            // now, with the other things only an admin has. The route rule has
+            // always been admin-only — this is the sidebar catching up with it.
             { title: "Attendance", href: "/dashboard/attendance", icon: "CalendarCheck" },
             { title: "Leave", href: "/dashboard/leave", icon: "CalendarOff" },
-            { title: "Payroll", href: "/admin/dashboard/payroll", icon: "HandCoins" },
         ],
     },
     {
@@ -141,6 +150,7 @@ const ADMIN_SECTIONS: NavSection[] = [
         // the reader two doors to one room.
         title: "Admin",
         items: [
+            { title: "Payroll", href: "/admin/dashboard/payroll", icon: "HandCoins" },
             { title: "Business Information", href: "/admin/dashboard/business", icon: "Building2" },
             { title: "Notifications", href: "/admin/dashboard/notifications", icon: "BellRing" },
             { title: "Security", href: "/admin/dashboard/security", icon: "ShieldCheck" },
