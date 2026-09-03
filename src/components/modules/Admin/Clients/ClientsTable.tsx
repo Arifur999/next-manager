@@ -22,7 +22,21 @@ import { useState } from "react"
  * Archived is a state, not a deletion: the client and its history stay, and
  * it drops out of the list somebody works from.
  */
-const ClientsTable = () => {
+/**
+ * The clients list.
+ *
+ * `canManage` hides the create and edit forms; `canOpen` hides the row link to a
+ * client page. Operations gets neither: the API returns only the clients whose
+ * projects they are on, and knowing WHO they are working for is the whole of
+ * what they need - the client page itself is somebody else's screen.
+ */
+const ClientsTable = ({
+  canManage = true,
+  canOpen = true,
+}: {
+  canManage?: boolean
+  canOpen?: boolean
+}) => {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [search, setSearch] = useState("")
@@ -66,25 +80,35 @@ const ClientsTable = () => {
               `No ${status} clients.`
             : "No clients yet."
         }
-        toolbarAction={<ClientFormModal />}
+        toolbarAction={canManage ? <ClientFormModal /> : undefined}
         search={{
           initialValue: search,
           placeholder: "Search name, company or email...",
           onDebouncedChange: setSearch,
         }}
         actions={{
-          ...tableActions,
-          onView: (client) => router.push(`/admin/dashboard/clients/${client.id}`),
+          ...(canManage ? tableActions : {}),
+          ...(canOpen
+            ? { onView: (client: IClient) => router.push(`/admin/dashboard/clients/${client.id}`) }
+            : {}),
         }}
       />
 
-      <ClientFormModal client={editingItem} open={isEditModalOpen} onOpenChange={onEditOpenChange} />
+      {canManage && (
+        <>
+          <ClientFormModal
+            client={editingItem}
+            open={isEditModalOpen}
+            onOpenChange={onEditOpenChange}
+          />
 
-      <DeleteClientDialog
-        open={isDeleteDialogOpen}
-        onOpenChange={onDeleteOpenChange}
-        client={deletingItem}
-      />
+          <DeleteClientDialog
+            open={isDeleteDialogOpen}
+            onOpenChange={onDeleteOpenChange}
+            client={deletingItem}
+          />
+        </>
+      )}
     </>
   )
 }

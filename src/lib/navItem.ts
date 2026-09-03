@@ -353,6 +353,20 @@ const OPERATIONS_SECTIONS: NavSection[] = [
         ],
     },
     {
+        // Who they are working for. A list, not a doorway: the client page
+        // itself is somebody else's screen, so there is no row link.
+        title: "Clients",
+        items: [
+            { title: "Assigned Clients", href: "/admin/dashboard/clients", icon: "Users" },
+        ],
+    },
+    {
+        title: "Team",
+        items: [
+            { title: "Team Directory", href: "/admin/dashboard/team-directory", icon: "UsersRound" },
+        ],
+    },
+    {
         title: "Chat",
         items: [
             { title: "All", href: "/dashboard/chat", icon: "MessagesSquare" },

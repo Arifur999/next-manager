@@ -223,14 +223,14 @@ console.log(
   `${unlistedOk ? "OK  " : "FAIL"}  ${"sales".padEnd(16)} bounced from an unlisted /admin path  (${unlisted.status})`
 );
 
-// The directory. Operations does not have it yet - that is the next step, and
-// keeping the expectation honest here is what makes flipping it a visible
-// change rather than a silent one.
+// The directory, now open to everybody in a company. What it SAYS is what
+// makes that safe: anybody who is not admin or project_manager gets a
+// projection with no permissions and no status on it.
 for (const [role, expected] of [
   ["admin", 200],
   ["project_manager", 200],
   ["sales", 200],
-  ["operations", 307],
+  ["operations", 200],
 ]) {
   const res = await fetch(WEB + "/admin/dashboard/team-directory", {
     headers: { Cookie: cookies[role] },

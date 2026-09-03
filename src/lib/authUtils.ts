@@ -175,14 +175,24 @@ export const AREAS: AreaRule[] = [
     {
         exact: [],
         pattern: [/^\/admin\/dashboard\/team-directory/],
-        roles: ["admin", "project_manager", "sales"],
+        roles: ["admin", "project_manager", "sales", "operations"],
     },
 
     // Shared workspace screens.
     {
         exact: [],
-        pattern: [/^\/admin\/dashboard\/(clients|vault)/],
+        pattern: [/^\/admin\/dashboard\/vault/],
         roles: ["admin", "sales", "project_manager"],
+    },
+
+    // The clients they work FOR. Operations reaches the list; the API returns
+    // only the clients whose projects they are on, and the page offers no row
+    // link and no form - knowing who they are working for is the whole of
+    // what this role needs.
+    {
+        exact: [],
+        pattern: [/^\/admin\/dashboard\/clients/],
+        roles: ["admin", "sales", "project_manager", "operations"],
     },
 
     // The admin landing page, and anything under /admin that no rule above
