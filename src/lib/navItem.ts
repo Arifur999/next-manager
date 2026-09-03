@@ -228,32 +228,77 @@ const SALES_SECTIONS: NavSection[] = [
 const PROJECT_MANAGER_SECTIONS: NavSection[] = [
     { items: [{ title: "Dashboard", href: "/admin/dashboard/delivery", icon: "LayoutDashboard" }] },
     {
-        title: "Delivery",
+        title: "Clients",
         items: [
-            { title: "Projects", href: "/admin/dashboard/projects", icon: "FolderKanban" },
-            { title: "Tasks", href: "/admin/dashboard/tasks", icon: "ListChecks" },
-            { title: "Timesheet", href: "/dashboard/timesheet", icon: "Clock" },
-            { title: "Time Approvals", href: "/admin/dashboard/time-approvals", icon: "UserCheck" },
-            { title: "Attendance", href: "/dashboard/attendance", icon: "CalendarCheck" },
-            // A project manager decides leave as well as approving hours —
-            // it is the same judgement about the same person's week.
-            { title: "Leave", href: "/dashboard/leave", icon: "CalendarOff" },
+            { title: "All Clients", href: "/admin/dashboard/clients", icon: "Users" },
+            { title: "Active Clients", href: "/admin/dashboard/clients?status=active", icon: "UserCheck" },
+        ],
+    },
+    {
+        // Read, not shaped. A project manager picks what a project delivers;
+        // the seller decides what is on offer, and the API refuses them every
+        // write behind these pages - so the board hides the form rather than
+        // offering one that fails.
+        title: "Services",
+        items: [
+            { title: "All Services", href: "/admin/dashboard/services", icon: "Package" },
+            { title: "Service Templates", href: "/admin/dashboard/services/templates", icon: "Boxes" },
+        ],
+    },
+    {
+        // Six views, one board reading ?status= and ?mine= off the URL. By
+        // status NAME, because a sidebar href is a static string: an id differs
+        // per agency, and category cannot tell Active from Review - both are
+        // `active`.
+        title: "Projects",
+        items: [
+            { title: "All Projects", href: "/admin/dashboard/projects", icon: "FolderKanban" },
+            { title: "My Projects", href: "/admin/dashboard/projects?mine=true", icon: "User" },
+            { title: "Planning", href: "/admin/dashboard/projects?status=Planning", icon: "Clock" },
+            { title: "Active", href: "/admin/dashboard/projects?status=Active", icon: "ChartLine" },
+            { title: "Review", href: "/admin/dashboard/projects?status=Review", icon: "UserCheck" },
+            { title: "On Hold", href: "/admin/dashboard/projects?status=On hold", icon: "Archive" },
+            { title: "Completed", href: "/admin/dashboard/projects?status=Completed", icon: "CheckCircle2" },
+        ],
+    },
+    {
+        title: "Tasks",
+        items: [
+            { title: "All Tasks", href: "/admin/dashboard/tasks", icon: "ListChecks" },
+            { title: "My Tasks", href: "/admin/dashboard/tasks?mine=true", icon: "User" },
+            { title: "List", href: "/admin/dashboard/tasks?view=list", icon: "FileText" },
+            { title: "Calendar", href: "/admin/dashboard/tasks?view=calendar", icon: "CalendarDays" },
+            { title: "Review", href: "/admin/dashboard/tasks?status=In review", icon: "UserCheck" },
+            { title: "Overdue", href: "/admin/dashboard/tasks?overdue=true", icon: "Clock" },
+        ],
+    },
+    {
+        title: "Team",
+        items: [
             { title: "Team Members", href: "/admin/dashboard/team-directory", icon: "UsersRound" },
             { title: "Workload", href: "/admin/dashboard/workload", icon: "ChartLine" },
             // The same figures as Workload read from the other end. One
             // subtraction shown twice, from one query, so they cannot disagree.
             { title: "Availability", href: "/admin/dashboard/availability", icon: "UserCheck" },
             { title: "Leave Calendar", href: "/admin/dashboard/leave-calendar", icon: "CalendarOff" },
+            // Not in the sidebar you drew, but existing working duties: a PM
+            // approves hours and decides leave, and dropping them because a
+            // sketch omitted them would take away something nobody asked to
+            // lose. They belong here, with the rest of the people work.
+            { title: "Timesheet", href: "/dashboard/timesheet", icon: "Clock" },
+            { title: "Time Approvals", href: "/admin/dashboard/time-approvals", icon: "UserCheck" },
+            { title: "Leave", href: "/dashboard/leave", icon: "CalendarOff" },
+            { title: "Attendance", href: "/dashboard/attendance", icon: "CalendarCheck" },
         ],
     },
     {
-        // Read, not shaped. A project manager picks what a project delivers;
-        // the seller decides what is on offer, and the API refuses them every
-        // write behind these pages.
-        title: "Services",
+        title: "Chat",
         items: [
-            { title: "All Services", href: "/admin/dashboard/services", icon: "Package" },
-            { title: "Service Templates", href: "/admin/dashboard/services/templates", icon: "Boxes" },
+            { title: "All", href: "/dashboard/chat", icon: "MessagesSquare" },
+            { title: "Direct Messages", href: "/dashboard/chat?type=direct", icon: "User" },
+            { title: "Groups", href: "/dashboard/chat?type=group", icon: "UsersRound" },
+            { title: "Project Chats", href: "/dashboard/chat?type=project", icon: "FolderKanban" },
+            { title: "Archived", href: "/dashboard/chat?archived=true", icon: "Archive" },
         ],
     },
     {
@@ -267,8 +312,6 @@ const PROJECT_MANAGER_SECTIONS: NavSection[] = [
     {
         title: "Workspace",
         items: [
-            { title: "Chat", href: "/dashboard/chat", icon: "MessagesSquare" },
-            { title: "Clients", href: "/admin/dashboard/clients", icon: "Users" },
             // Shaping the board is theirs to control, so the settings that do it
             // are too. Leave policy is not - that stays with the admin.
             { title: "Task Settings", href: "/admin/dashboard/workflow", icon: "ListChecks" },

@@ -47,6 +47,7 @@ import type {
     IShareholderDistribution,
     IProfitAndLoss,
     IProject,
+    IProjectLink,
     IProjectFinancials,
     IProjectMember,
     IRateSettings,
@@ -1104,4 +1105,17 @@ export const getWorkload = async (queryString?: string) =>
 export const getTaskReport = async (queryString?: string) =>
     wrap("fetching the task report", () =>
         httpClient.get<ITaskReport>("/tasks/report", { params: toParams(queryString) })
+    )
+
+export const getProjectLinks = async (queryString?: string) =>
+    wrap("fetching project links", () =>
+        httpClient.get<IProjectLink[]>("/project-links", { params: toParams(queryString) })
+    )
+
+export const createProjectLink = async (payload: Record<string, unknown>) =>
+    wrap("adding a link", () => httpClient.post<IProjectLink>("/project-links", payload))
+
+export const deleteProjectLink = async (id: string) =>
+    wrap("removing a link", () =>
+        httpClient.delete<{ message: string }>(`/project-links/${id}`)
     )

@@ -1008,3 +1008,14 @@ export interface ITaskReport {
         overdue: number;
     }>;
 }
+
+/** The same shape as IClientLink: a project and a client keep material alike. */
+export interface IProjectLink {
+    id: string;
+    project_id: string;
+    label: string;
+    url: string;
+    notes: string;
+    created_at: string;
+    project?: { id: string; name: string; code: string };
+}

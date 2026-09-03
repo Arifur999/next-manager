@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { formatBdt, formatPercent, formatUsd } from "@/lib/currency"
 import { getCredentials, getProject, getProjectFinancials, getTasks } from "@/services/agencio.services"
 import type { ICredential, IProject, IProjectFinancials, ITask } from "@/types/agencio.types"
+import ProjectLinksPanel from "@/components/modules/Admin/Projects/ProjectLinksPanel"
 import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { ArrowDownLeft, KeyRound, Receipt, TrendingUp } from "lucide-react"
@@ -145,6 +146,7 @@ const ProjectDetail = ({
           <TabsTrigger value="milestones">Milestones</TabsTrigger>
           <TabsTrigger value="team">Team</TabsTrigger>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="links">Links</TabsTrigger>
           <TabsTrigger value="vault">Vault</TabsTrigger>
         </TabsList>
 
@@ -218,6 +220,10 @@ const ProjectDetail = ({
               </div>
             </dl>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="links" className="mt-4">
+          <ProjectLinksPanel projectId={projectId} />
         </TabsContent>
 
         <TabsContent value="vault" className="mt-4">
