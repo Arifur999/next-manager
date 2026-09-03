@@ -186,6 +186,13 @@ const SALES_SECTIONS: NavSection[] = [
         ],
     },
     {
+        title: "Reports",
+        items: [
+            { title: "Client Reports", href: "/admin/dashboard/reports/clients", icon: "Users" },
+            { title: "Sales Reports", href: "/admin/dashboard/reports/sales", icon: "ChartLine" },
+        ],
+    },
+    {
         title: "Workspace",
         items: [
             { title: "Team", href: "/admin/dashboard/team-directory", icon: "UsersRound" },

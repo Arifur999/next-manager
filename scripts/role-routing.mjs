@@ -114,7 +114,6 @@ for (const path of [
   "/admin/dashboard/finance-config",
   "/admin/dashboard/departments",
   "/admin/dashboard/transactions",
-  "/admin/dashboard/reports/clients",
   "/admin/dashboard/reports/team",
   "/admin/dashboard/reports/finance",
   "/admin/dashboard/permissions",
@@ -293,6 +292,28 @@ for (const path of [
   const ok = res.status === 307;
   if (!ok) bad += 1;
   console.log(`${ok ? "OK  " : "FAIL"}  ${"sales".padEnd(16)} refused ${path}  (${res.status})`);
+}
+
+// The two reports sales may open — and the ONLY two. Both are scoped to the
+// caller's own clients by the server, which forces it rather than reading it
+// from the query, so opening the page cannot be turned into the whole book.
+//
+// The project manager is deliberately not offered them: they run delivery, not
+// the sales pipeline, and the sales KPI scope already refuses them at the API.
+for (const path of ["/admin/dashboard/reports/clients", "/admin/dashboard/reports/sales"]) {
+  for (const [role, expected] of [
+    ["admin", 200],
+    ["sales", 200],
+    ["project_manager", 307],
+    ["operations", 307],
+  ]) {
+    const res = await fetch(WEB + path, { headers: { Cookie: cookies[role] }, redirect: "manual" });
+    const ok = res.status === expected;
+    if (!ok) bad += 1;
+    console.log(
+      `${ok ? "OK  " : "FAIL"}  ${role.padEnd(16)} ${path} -> ${res.status} (want ${expected})`
+    );
+  }
 }
 
 // The timesheet is shared: every company role logs hours, so no role may be

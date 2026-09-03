@@ -61,6 +61,19 @@ export const AREAS: AreaRule[] = [
     // merely starts with the same letters.
     { exact: [], pattern: [/^\/platform(\/|$)/], roles: ["super_admin"] },
 
+    // The two reports a salesperson may open, and only these two. Declared
+    // before the money rule below, which claims every /reports path for
+    // admin - the first matching rule wins, so this ordering IS the
+    // permission and moving it would silently close both pages.
+    //
+    // Both are scoped to the caller's own clients by the server, which
+    // forces it rather than reading it from the query.
+    {
+        exact: ["/admin/dashboard/reports/clients", "/admin/dashboard/reports/sales"],
+        pattern: [],
+        roles: ["admin", "sales"],
+    },
+
     // Money and company state.
     {
         exact: [],
