@@ -60,7 +60,15 @@ const statusOf = (milestone: IMilestone): Status => {
   return { label: "due", late: false, tone: "outline" }
 }
 
-const ProjectMilestonePanel = ({ projectId }: { projectId: string }) => {
+/** `canManage` is false for anybody the API refuses: the controls that change
+ *  things come off rather than failing when pressed. */
+const ProjectMilestonePanel = ({
+  projectId,
+  canManage = true,
+}: {
+  projectId: string
+  canManage?: boolean
+}) => {
   const queryClient = useQueryClient()
   const [title, setTitle] = useState("")
   const [dueDate, setDueDate] = useState("")
@@ -141,6 +149,7 @@ const ProjectMilestonePanel = ({ projectId }: { projectId: string }) => {
         </div>
       </CardHeader>
 
+      {canManage && (
       <form
         className="flex flex-wrap items-end gap-3 border-b px-5 py-4"
         onSubmit={(event) => {
@@ -176,6 +185,7 @@ const ProjectMilestonePanel = ({ projectId }: { projectId: string }) => {
           Add
         </Button>
       </form>
+      )}
 
       {isLoading && milestones.length === 0 ? (
         <div className="h-32 animate-pulse bg-muted/40" />
@@ -245,6 +255,7 @@ const ProjectMilestonePanel = ({ projectId }: { projectId: string }) => {
                     </Button>
                   )}
 
+                  {canManage && (
                   <Button
                     type="button"
                     size="sm"
@@ -255,6 +266,7 @@ const ProjectMilestonePanel = ({ projectId }: { projectId: string }) => {
                     <Trash2 className="size-3.5" />
                     <span className="sr-only">Delete</span>
                   </Button>
+                  )}
                 </div>
               </li>
             )

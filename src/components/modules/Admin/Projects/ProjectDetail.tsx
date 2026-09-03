@@ -31,9 +31,12 @@ import Link from "next/link"
 const ProjectDetail = ({
   projectId,
   canSeeMoney = false,
+  canManage = false,
 }: {
   projectId: string
   canSeeMoney?: boolean
+  /** Whether the panels that CHANGE a project appear. Admin and PM only. */
+  canManage?: boolean
 }) => {
   const { data: projectData, isLoading } = useQuery({
     queryKey: ["project", projectId],
@@ -189,12 +192,12 @@ const ProjectDetail = ({
         </TabsContent>
 
         <TabsContent value="milestones" className="mt-4 space-y-4">
-          <ProjectBaselineCard projectId={projectId} />
-          <ProjectMilestonePanel projectId={projectId} />
+          {canManage && <ProjectBaselineCard projectId={projectId} />}
+          <ProjectMilestonePanel projectId={projectId} canManage={canManage} />
         </TabsContent>
 
         <TabsContent value="team" className="mt-4">
-          <ProjectTeamPanel projectId={projectId} />
+          <ProjectTeamPanel projectId={projectId} canManage={canManage} />
         </TabsContent>
 
         <TabsContent value="overview" className="mt-4">
@@ -223,7 +226,7 @@ const ProjectDetail = ({
         </TabsContent>
 
         <TabsContent value="links" className="mt-4">
-          <ProjectLinksPanel projectId={projectId} />
+          <ProjectLinksPanel projectId={projectId} canManage={canManage} />
         </TabsContent>
 
         <TabsContent value="vault" className="mt-4">

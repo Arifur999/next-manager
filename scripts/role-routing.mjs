@@ -223,13 +223,32 @@ console.log(
   `${unlistedOk ? "OK  " : "FAIL"}  ${"sales".padEnd(16)} bounced from an unlisted /admin path  (${unlisted.status})`
 );
 
+// The directory. Operations does not have it yet - that is the next step, and
+// keeping the expectation honest here is what makes flipping it a visible
+// change rather than a silent one.
+for (const [role, expected] of [
+  ["admin", 200],
+  ["project_manager", 200],
+  ["sales", 200],
+  ["operations", 307],
+]) {
+  const res = await fetch(WEB + "/admin/dashboard/team-directory", {
+    headers: { Cookie: cookies[role] },
+    redirect: "manual",
+  });
+  const ok = res.status === expected;
+  if (!ok) bad += 1;
+  console.log(
+    `${ok ? "OK  " : "FAIL"}  ${role.padEnd(16)} team-directory -> ${res.status} (want ${expected})`
+  );
+}
+
 // Sales watches delivery without running it. The page opening is only half the
 // claim - the other half is that everything behind it is still refused, and
 // that half is checked from the API in the smoke suite.
 for (const path of [
   "/admin/dashboard/projects",
   "/admin/dashboard/tasks",
-  "/admin/dashboard/team-directory",
   // The two task views a salesperson is offered.
   "/admin/dashboard/tasks?mine=true",
   "/admin/dashboard/tasks?client_owner=me",
@@ -242,7 +261,10 @@ for (const path of [
     ["admin", 200],
     ["project_manager", 200],
     ["sales", 200],
-    ["operations", 307],
+    // Operations opens these too. The API returns only the projects they are
+    // on and only the tasks assigned to them, and the pages hide every write
+    // they would be refused.
+    ["operations", 200],
   ]) {
     const res = await fetch(WEB + path, { headers: { Cookie: cookies[role] }, redirect: "manual" });
     const ok = res.status === expected;

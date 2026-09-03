@@ -38,7 +38,15 @@ const hostOf = (url: string) => {
   }
 }
 
-const ProjectLinksPanel = ({ projectId }: { projectId: string }) => {
+/** `canManage` is false for anybody the API refuses: the controls that change
+ *  things come off rather than failing when pressed. */
+const ProjectLinksPanel = ({
+  projectId,
+  canManage = true,
+}: {
+  projectId: string
+  canManage?: boolean
+}) => {
   const queryClient = useQueryClient()
   const [label, setLabel] = useState("")
   const [url, setUrl] = useState("")
@@ -91,6 +99,7 @@ const ProjectLinksPanel = ({ projectId }: { projectId: string }) => {
         </p>
       </CardHeader>
 
+      {canManage && (
       <form
         className="flex flex-wrap items-end gap-3 border-b px-5 py-4"
         onSubmit={(event) => {
@@ -126,6 +135,7 @@ const ProjectLinksPanel = ({ projectId }: { projectId: string }) => {
           Add
         </Button>
       </form>
+      )}
 
       {isLoading && links.length === 0 ? (
         <div className="h-24 animate-pulse bg-muted/40" />
@@ -157,6 +167,7 @@ const ProjectLinksPanel = ({ projectId }: { projectId: string }) => {
                 </p>
               </div>
 
+              {canManage && (
               <Button
                 type="button"
                 variant="outline"
@@ -167,6 +178,7 @@ const ProjectLinksPanel = ({ projectId }: { projectId: string }) => {
                 <Trash2 className="size-3.5" />
                 <span className="sr-only">Remove {link.label}</span>
               </Button>
+              )}
             </li>
           ))}
         </ul>

@@ -20,8 +20,13 @@ import { useState } from "react"
  * The status is matched by NAME because a sidebar href is a static string: an
  * id differs per agency, and category cannot tell Active from Review since both
  * are `active`.
+ *
+ * `canManage` decides whether this is a list somebody works from or one they
+ * only read. Operations opens it to see the projects they are on — the API
+ * returns only those — and refuses them every write behind it, so the create
+ * and edit forms come off rather than failing.
  */
-const ProjectsTable = () => {
+const ProjectsTable = ({ canManage = true }: { canManage?: boolean }) => {
   const router = useRouter()
   const params = useSearchParams()
   const [search, setSearch] = useState("")
@@ -60,7 +65,7 @@ const ProjectsTable = () => {
         columns={projectsColumns}
         isLoading={isLoading || isFetching}
         emptyMessage="No projects yet."
-        toolbarAction={<ProjectFormModal />}
+        toolbarAction={canManage ? <ProjectFormModal /> : undefined}
         search={{
           initialValue: search,
           placeholder: "Search name, code or client...",
@@ -70,16 +75,20 @@ const ProjectsTable = () => {
         // money against it cannot be deleted anyway, and marking it completed
         // or cancelled from the edit form is what actually happens.
         actions={{
-          ...tableActions,
+          // Viewing stays for everybody; editing is dropped for anybody the
+          // API would refuse, rather than offered and then rejected.
+          ...(canManage ? tableActions : {}),
           onView: (project) => router.push(`/admin/dashboard/projects/${project.id}`),
         }}
       />
 
-      <ProjectFormModal
-        project={editingItem}
-        open={isEditModalOpen}
-        onOpenChange={onEditOpenChange}
-      />
+      {canManage && (
+        <ProjectFormModal
+          project={editingItem}
+          open={isEditModalOpen}
+          onOpenChange={onEditOpenChange}
+        />
+      )}
     </>
   )
 }

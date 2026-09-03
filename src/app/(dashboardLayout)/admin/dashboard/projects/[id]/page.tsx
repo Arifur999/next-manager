@@ -19,6 +19,9 @@ const ProjectDetailPage = async ({ params }: { params: Promise<{ id: string }> }
   // to see where a client's work has got to, not what it earns — and the check
   // lives here so the page never asks a question it would be refused.
   const canSeeMoney = user?.role === "admin" || user?.role === "project_manager";
+  // The same pair, and for the same reason: the milestone, team and link
+  // panels are all admin/PM at the API.
+  const canManage = canSeeMoney;
 
   // Prefetched in parallel rather than one after another — the page needs them
   // all before it can paint, so serialising would just add round-trips.
@@ -46,7 +49,7 @@ const ProjectDetailPage = async ({ params }: { params: Promise<{ id: string }> }
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <ProjectDetail projectId={id} canSeeMoney={canSeeMoney} />
+      <ProjectDetail projectId={id} canSeeMoney={canSeeMoney} canManage={canManage} />
     </HydrationBoundary>
   );
 };

@@ -32,7 +32,15 @@ const initialsOf = (name: string) =>
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("") || "?"
 
-const ProjectTeamPanel = ({ projectId }: { projectId: string }) => {
+/** `canManage` is false for anybody the API refuses: the controls that change
+ *  things come off rather than failing when pressed. */
+const ProjectTeamPanel = ({
+  projectId,
+  canManage = true,
+}: {
+  projectId: string
+  canManage?: boolean
+}) => {
   const queryClient = useQueryClient()
   const [userId, setUserId] = useState("")
   const [roleOnProject, setRoleOnProject] = useState("")
@@ -102,6 +110,7 @@ const ProjectTeamPanel = ({ projectId }: { projectId: string }) => {
         <CardTitle className="text-base">Team on this project</CardTitle>
       </CardHeader>
 
+      {canManage && (
       <div className="flex flex-wrap gap-2 border-b px-5 py-4">
         <Select value={userId} onValueChange={setUserId} disabled={isAssigning || users.length === 0}>
           <SelectTrigger className="min-w-0 flex-1">
@@ -129,6 +138,7 @@ const ProjectTeamPanel = ({ projectId }: { projectId: string }) => {
           Assign
         </Button>
       </div>
+      )}
 
       {members.length === 0 ? (
         <p className="px-5 py-10 text-center text-sm text-muted-foreground">
@@ -151,6 +161,7 @@ const ProjectTeamPanel = ({ projectId }: { projectId: string }) => {
                 </p>
               </div>
 
+              {canManage && (
               <Button
                 type="button"
                 variant="ghost"
@@ -160,6 +171,7 @@ const ProjectTeamPanel = ({ projectId }: { projectId: string }) => {
                 <UserMinus className="size-4" />
                 <span className="sr-only">Remove {member.user.full_name}</span>
               </Button>
+              )}
             </li>
           ))}
         </ul>

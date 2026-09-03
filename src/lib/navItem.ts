@@ -343,6 +343,16 @@ const OPERATIONS_SECTIONS: NavSection[] = [
         ],
     },
     {
+        // The projects they are on, and nothing else - decided by the API,
+        // not by this entry. ?mine=true says so anyway: a page whose title
+        // reads "My" and whose query does not is how a scope quietly stops
+        // being one.
+        title: "Projects",
+        items: [
+            { title: "My Projects", href: "/admin/dashboard/projects?mine=true", icon: "FolderKanban" },
+        ],
+    },
+    {
         title: "Chat",
         items: [
             { title: "All", href: "/dashboard/chat", icon: "MessagesSquare" },

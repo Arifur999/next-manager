@@ -1,5 +1,6 @@
 import ProjectsTable from "@/components/modules/Admin/Projects/ProjectsTable";
 import { getProjects } from "@/services/agencio.services";
+import { getUserInfo } from "@/services/auth.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { Suspense } from "react";
@@ -15,6 +16,12 @@ const ProjectsPage = async ({
 }) => {
   const params = await searchParams;
   const queryClient = new QueryClient();
+  const user = await getUserInfo();
+
+  // The same two the API lets create and edit a project. Operations opens this
+  // to see the work they are on - the server returns only those - and every
+  // write behind it is refused, so the forms come off rather than failing.
+  const canManage = user?.role === "admin" || user?.role === "project_manager";
 
   // Built the same way the table builds it, so the first paint is the view that
   // was asked for rather than every project followed by a correction.
@@ -50,7 +57,7 @@ const ProjectsPage = async ({
         {/* The table reads its filter from the URL, which needs a Suspense
             boundary around useSearchParams. */}
         <Suspense fallback={null}>
-          <ProjectsTable />
+          <ProjectsTable canManage={canManage} />
         </Suspense>
       </HydrationBoundary>
     </div>

@@ -136,10 +136,13 @@ export const AREAS: AreaRule[] = [
     // the API to anybody but admin and the project manager, so "view, not
     // control" is enforced where it cannot be worked around, rather than by
     // hiding a page.
+    // Operations reaches them too, and the same API scope decides what they
+    // get: only the projects they are a member of, only the tasks assigned
+    // to them. The pages hide every write they would be refused.
     {
         exact: [],
         pattern: [/^\/admin\/dashboard\/(projects|tasks)/],
-        roles: ["admin", "project_manager", "sales"],
+        roles: ["admin", "project_manager", "sales", "operations"],
     },
 
     // Running the work. The project manager's, not sales'.
