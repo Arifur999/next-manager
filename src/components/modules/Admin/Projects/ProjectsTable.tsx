@@ -7,12 +7,27 @@ import { useRowActionModalState } from "@/hooks/useRowActionModalState"
 import { getProjects } from "@/services/agencio.services"
 import type { IProject } from "@/types/agencio.types"
 import { useQuery } from "@tanstack/react-query"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 
+/**
+ * The projects list.
+ *
+ * Every sub-view in the sidebar - Planning, Active, Review, On Hold, Completed,
+ * My Projects - is this one table reading its filter off the URL. Built as six
+ * pages it would be six copies of one query and six places to fix one bug.
+ *
+ * The status is matched by NAME because a sidebar href is a static string: an
+ * id differs per agency, and category cannot tell Active from Review since both
+ * are `active`.
+ */
 const ProjectsTable = () => {
   const router = useRouter()
+  const params = useSearchParams()
   const [search, setSearch] = useState("")
+
+  const status = params.get("status") ?? ""
+  const mine = params.get("mine") === "true"
 
   const {
     editingItem,
@@ -21,9 +36,19 @@ const ProjectsTable = () => {
     tableActions,
   } = useRowActionModalState<IProject>({ enableView: true, enableDelete: false })
 
+  // Built the same way the page builds it, so the two agree on the cache key
+  // and the first paint is the view that was asked for.
+  const query = [
+    search ? `search=${encodeURIComponent(search)}` : "",
+    status ? `status=${encodeURIComponent(status)}` : "",
+    mine ? "mine=true" : "",
+  ]
+    .filter(Boolean)
+    .join("&")
+
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ["projects", search],
-    queryFn: () => getProjects(search ? `search=${encodeURIComponent(search)}` : undefined),
+    queryKey: ["projects", query],
+    queryFn: () => getProjects(query || undefined),
   })
 
   const projects = (data?.data ?? []) as IProject[]
