@@ -1,4 +1,5 @@
 import KpiScreen from "@/components/modules/Dashboard/KpiScreen";
+import SalesOverview from "@/components/modules/Dashboard/SalesOverview";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -18,6 +19,10 @@ const SalesDashboardPage = () => {
         </p>
       </div>
 
+      <SalesOverview />
+
+      {/* Win rate and cycle length are verdicts on work already done. They
+          belong under what is happening now, not above it. */}
       <KpiScreen scope="sales" />
     </div>
   );

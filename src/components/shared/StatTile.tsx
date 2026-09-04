@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 type StatTileProps = {
   label: string;
@@ -16,6 +17,15 @@ type StatTileProps = {
   icon?: React.ReactNode;
   /** Which of the five chart hues to tint the icon chip with. */
   tone?: 1 | 2 | 3 | 4 | 5;
+  /**
+   * The page this figure summarises.
+   *
+   * A count on a dashboard is a question — "eleven overdue, which ones?" — and
+   * a tile that cannot answer it makes somebody go and find the page
+   * themselves. It also keeps the number honest: the tile links to the list it
+   * was counted from, so the two can be compared in one click.
+   */
+  href?: string;
   className?: string;
 };
 
@@ -29,9 +39,20 @@ const TONES: Record<NonNullable<StatTileProps["tone"]>, string> = {
   5: "bg-chart-5/12 text-chart-5",
 };
 
-const StatTile = ({ label, value, secondary, hint, icon, tone = 1, className }: StatTileProps) => {
-  return (
-    <Card className={cn("gap-0 p-5", className)}>
+const StatTile = ({
+  label,
+  value,
+  secondary,
+  hint,
+  icon,
+  tone = 1,
+  href,
+  className,
+}: StatTileProps) => {
+  const card = (
+    <Card
+      className={cn("gap-0 p-5", href && "transition-colors hover:bg-muted/40", className)}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-sm text-muted-foreground">{label}</p>
@@ -58,6 +79,16 @@ const StatTile = ({ label, value, secondary, hint, icon, tone = 1, className }: 
 
       {hint && <p className="mt-3 text-xs text-muted-foreground">{hint}</p>}
     </Card>
+  );
+
+  // Wrapped rather than made into a link itself, so a tile without a
+  // destination stays exactly the plain card it has always been.
+  return href ? (
+    <Link href={href} className="block">
+      {card}
+    </Link>
+  ) : (
+    card
   );
 };
 
