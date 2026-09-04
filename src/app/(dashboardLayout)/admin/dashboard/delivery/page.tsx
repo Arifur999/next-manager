@@ -1,4 +1,5 @@
 import KpiScreen from "@/components/modules/Dashboard/KpiScreen";
+import PmOverview from "@/components/modules/Dashboard/PmOverview";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -14,6 +15,8 @@ const DeliveryDashboardPage = () => {
           Is the work landing when it was promised, at the size it was sold.
         </p>
       </div>
+
+      <PmOverview />
 
       <KpiScreen scope="delivery" />
     </div>

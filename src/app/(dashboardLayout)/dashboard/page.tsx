@@ -1,4 +1,5 @@
 import KpiScreen from "@/components/modules/Dashboard/KpiScreen";
+import OpsOverview from "@/components/modules/Dashboard/OpsOverview";
 import { getUserInfo } from "@/services/auth.services";
 import type { Metadata } from "next";
 
@@ -19,6 +20,8 @@ const StaffDashboardPage = async () => {
           Your hours, your deadlines, and what is still waiting on you.
         </p>
       </div>
+
+      <OpsOverview />
 
       <KpiScreen scope="me" />
     </div>
