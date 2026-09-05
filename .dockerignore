@@ -1,0 +1,36 @@
+# What must never enter the build context.
+#
+# .env.local holds JWT_ACCESS_SECRET, which is the same secret the API signs
+# access tokens with. Anything copied into a layer stays in that layer forever -
+# `docker history` reads it back out even after a later step deletes the file -
+# and this image is pushed to a registry. Secrets arrive at runtime through
+# env_file instead.
+#
+# .git carries every secret that was ever committed and then removed, which is
+# the same leak with a longer memory.
+.env
+.env.*
+.git
+.gitignore
+
+# Rebuilt inside the image. A host node_modules would also drag Windows-compiled
+# binaries into an Alpine container.
+node_modules
+.next
+.next-check
+
+# Test harnesses. They talk to a running server and a real database, so they
+# have no business in an image and only make the context bigger.
+scripts/nav-sweep.mjs
+scripts/journeys.mjs
+scripts/role-routing.mjs
+scripts/role-matrix.mjs
+scripts/permission-grid.mjs
+scripts/verify.mjs
+**/*.test.ts
+**/*.test.tsx
+
+README.md
+eslint.config.mjs
+Dockerfile
+.dockerignore

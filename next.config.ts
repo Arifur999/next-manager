@@ -2,6 +2,19 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /**
+   * What the container copies out.
+   *
+   * "standalone" writes .next/standalone: server.js plus only the node_modules
+   * the built pages actually import, traced file by file. The Docker image
+   * copies that instead of installing a production tree, which is both smaller
+   * and impossible to get wrong - nothing is in it that nothing imports.
+   *
+   * Additive. `next start` and `next dev` behave exactly as before, and the
+   * verification build still works, so nothing outside Docker notices.
+   */
+  output: "standalone",
+
+  /**
    * Where the build output goes.
    *
    * `next build` and `next dev` share `.next` by default, and a build run
