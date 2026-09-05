@@ -13,6 +13,7 @@
     "test:journeys": "node scripts/journeys.mjs",
     "test:routing": "node -r dotenv/config scripts/role-routing.mjs",
     "test:matrix": "node -r dotenv/config scripts/role-matrix.mjs",
+    "test:permission-grid": "node -r dotenv/config scripts/permission-grid.mjs",
     "verify": "node scripts/verify.mjs"
   },
   "dependencies": {

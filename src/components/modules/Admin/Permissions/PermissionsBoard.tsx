@@ -1,183 +1,158 @@
 "use client"
 
-import { setPermissionsAction } from "@/app/(dashboardLayout)/admin/dashboard/permissions/_action"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
-import { getAllUsers } from "@/services/user.services"
+import RolePermissionGrid from "@/components/modules/Admin/Permissions/RolePermissionGrid"
+import UserPermissionGrid from "@/components/modules/Admin/Permissions/UserPermissionGrid"
+import { usePermissionGrid } from "@/components/shared/permission/usePermissionGrid"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
-  COMPANY_PERMISSIONS,
-  COMPANY_PERMISSION_INFO,
-  type IUser,
-} from "@/types/user.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { ShieldCheck } from "lucide-react"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { getAllUsers } from "@/services/user.services"
+import { ROLE_LABEL, titleise } from "@/types/permission.types"
+import type { IUser } from "@/types/user.types"
+import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
-import { toast } from "sonner"
 
 /**
- * What each colleague may do inside the role they already have.
+ * Who may do what, as a grid rather than a list of capabilities.
  *
- * Two things this screen has to say plainly, because both read backwards
- * otherwise.
+ * Two tabs' worth of idea. **Roles** is the template every person in that role
+ * starts from. **One person** is the exception, and its squares read "Inherit"
+ * until somebody deliberately says otherwise.
  *
- * **Nothing ticked means everything the role allows** — not nothing. That is
- * where everybody starts, and it is why turning this layer on took nothing away
- * from anybody.
- *
- * **Ticking one box is a restriction, not a grant.** It flips somebody from
- * "everything your role allows" to "only these". Somebody expecting to hand out
- * one extra capability would otherwise take six away by accident.
- *
- * Admins are listed but not editable: they pass every check by design, so a
- * list stored against one would look like a restriction and enforce nothing.
+ * The sentence this screen has to keep true: nothing set here can WIDEN
+ * anybody. The role gate runs first and these values only narrow inside it, so
+ * giving operations "Accounts — everything" does not open the accounts page to
+ * them; the question is never asked. And no value here can cross into another
+ * company, because there is no scope that means another company.
  */
 
 const PermissionsBoard = () => {
-  const queryClient = useQueryClient()
-  const [draft, setDraft] = useState<Record<string, string[]>>({})
+  const [personId, setPersonId] = useState<string>("")
 
-  const { data, isLoading } = useQuery({
+  const roleGrid = usePermissionGrid()
+  const personGrid = usePermissionGrid(personId || undefined)
+
+  const { data: userData } = useQuery({
     queryKey: ["users", ""],
     queryFn: () => getAllUsers(),
   })
 
-  const users = (data?.data ?? []) as IUser[]
+  // An admin passes every check by design, so an override stored against one
+  // would look like a restriction and enforce nothing.
+  const people = ((userData?.data ?? []) as IUser[]).filter((user) => user.role !== "admin")
 
-  const { mutate: save, isPending } = useMutation({
-    mutationFn: ({ id, permissions }: { id: string; permissions: string[] }) =>
-      setPermissionsAction(id, permissions),
-    onSuccess: (result, variables) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not update access")
-        return
-      }
-
-      toast.success(
-        variables.permissions.length === 0
-          ? "Back to everything their role allows"
-          : `Limited to ${variables.permissions.length} thing${variables.permissions.length === 1 ? "" : "s"}`
-      )
-
-      setDraft((current) => {
-        const next = { ...current }
-        delete next[variables.id]
-        return next
-      })
-
-      void queryClient.invalidateQueries({ queryKey: ["users"] })
-    },
-  })
-
-  const permissionsOf = (user: IUser) => draft[user.id] ?? user.permissions ?? []
-  const isDirty = (user: IUser) => draft[user.id] !== undefined
-
-  const toggle = (user: IUser, permission: string, on: boolean) => {
-    const current = permissionsOf(user)
-    setDraft({
-      ...draft,
-      [user.id]: on ? [...current, permission] : current.filter((value) => value !== permission),
-    })
+  if (roleGrid.isLoading && !roleGrid.grid) {
+    return <div className="h-96 animate-pulse rounded-xl bg-muted/40" />
   }
 
-  if (isLoading && users.length === 0) {
-    return <div className="h-64 animate-pulse rounded-xl bg-muted/40" />
-  }
+  if (!roleGrid.grid) return null
+
+  const roles = roleGrid.grid.roles
 
   return (
-    <div className="space-y-4">
-      {users.map((user) => {
-        const permissions = permissionsOf(user)
-        const unrestricted = permissions.length === 0
-        const isAdmin = user.role === "admin"
+    <Tabs defaultValue="roles" className="space-y-4">
+      <TabsList>
+        <TabsTrigger value="roles">Roles</TabsTrigger>
+        <TabsTrigger value="person">One person</TabsTrigger>
+      </TabsList>
 
-        return (
-          <Card key={user.id} className="gap-0 overflow-hidden p-0">
-            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 border-b px-5 py-4">
-              <div>
-                <CardTitle className="text-base">{user.full_name}</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  {user.email} · <span className="capitalize">{user.role.replace(/_/g, " ")}</span>
-                  {user.department ? ` · ${user.department.name}` : ""}
-                </p>
-              </div>
+      <TabsContent value="roles" className="space-y-4">
+        <Tabs defaultValue={roles[0]} className="space-y-4">
+          <TabsList>
+            {roles.map((role) => (
+              <TabsTrigger key={role} value={role}>
+                {ROLE_LABEL[role] ?? titleise(role)}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-              <div className="flex items-center gap-2">
-                {isAdmin ? (
-                  <Badge variant="secondary">passes every check</Badge>
-                ) : unrestricted ? (
-                  <Badge variant="secondary">everything their role allows</Badge>
-                ) : (
-                  <Badge variant="outline">
-                    limited to {permissions.length}
-                  </Badge>
-                )}
+          {roles.map((role) => (
+            <TabsContent key={role} value={role}>
+              <Card className="gap-0 overflow-hidden p-0">
+                <CardHeader className="border-b px-5 py-4">
+                  <CardTitle className="text-base">
+                    {ROLE_LABEL[role] ?? titleise(role)}
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Everybody in this role, unless they have been given an exception on
+                    the next tab. Each square saves as you change it.
+                  </p>
+                </CardHeader>
 
-                {isDirty(user) && (
-                  <Button
-                    size="sm"
-                    disabled={isPending}
-                    onClick={() => save({ id: user.id, permissions })}
-                  >
-                    Save
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
+                <CardContent className="p-0">
+                  <RolePermissionGrid
+                    grid={roleGrid.grid!}
+                    role={role}
+                    disabled={roleGrid.isBusy}
+                    save={roleGrid.save}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          ))}
+        </Tabs>
+      </TabsContent>
 
-            {isAdmin ? (
-              <p className="px-5 py-4 text-sm text-muted-foreground">
-                An admin reaches everything in their own company, and there is no way back in
-                if that were switched off with a checkbox. Change their role first if you
-                want to limit them.
+      <TabsContent value="person" className="space-y-4">
+        <Card className="gap-0 overflow-hidden p-0">
+          <CardHeader className="border-b px-5 py-4">
+            <CardTitle className="text-base">One person</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              An exception for somebody whose job does not quite match their role.
+              Everything starts on Inherit, and putting a square back to Inherit removes
+              the exception rather than freezing today&apos;s answer.
+            </p>
+
+            <div className="pt-2">
+              <Select value={personId} onValueChange={setPersonId}>
+                <SelectTrigger className="w-full sm:w-80" aria-label="Choose somebody">
+                  <SelectValue placeholder="Choose somebody" />
+                </SelectTrigger>
+                <SelectContent>
+                  {people.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.full_name}
+                      <span className="text-muted-foreground">
+                        {" "}
+                        — {ROLE_LABEL[user.role] ?? titleise(user.role)}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardHeader>
+
+          <CardContent className="p-0">
+            {!personId ? (
+              <p className="px-5 py-10 text-center text-sm text-muted-foreground">
+                Choose somebody to see where they differ from their role.
               </p>
+            ) : personGrid.grid?.user ? (
+              <UserPermissionGrid
+                grid={personGrid.grid}
+                disabled={personGrid.isBusy}
+                save={personGrid.save}
+              />
             ) : (
-              <div className="space-y-3 px-5 py-4">
-                <p className="text-xs text-muted-foreground">
-                  {unrestricted
-                    ? "Nothing ticked means everything their role allows — which is where everybody starts. Tick one and they are limited to what is ticked."
-                    : "Limited to what is ticked. Untick everything to give their whole role back."}
-                </p>
-
-                <div className="grid gap-2.5 sm:grid-cols-2">
-                  {COMPANY_PERMISSIONS.map((permission) => {
-                    const info = COMPANY_PERMISSION_INFO[permission]
-                    const id = `${user.id}-${permission}`
-
-                    return (
-                      <div key={permission} className="flex items-start gap-2.5">
-                        <Checkbox
-                          id={id}
-                          className="mt-0.5"
-                          checked={permissions.includes(permission)}
-                          onCheckedChange={(checked) => toggle(user, permission, checked === true)}
-                          disabled={isPending}
-                        />
-                        <Label htmlFor={id} className="font-normal">
-                          {info.label}
-                          <span className="block text-xs text-muted-foreground">
-                            {info.area} — {info.description}
-                          </span>
-                        </Label>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
+              <div className="h-64 animate-pulse bg-muted/40" />
             )}
-          </Card>
-        )
-      })}
-
-      {users.length === 0 && (
-        <Card className="flex flex-col items-center gap-2 px-6 py-12 text-center">
-          <ShieldCheck className="size-7 text-muted-foreground" aria-hidden="true" />
-          <p className="text-sm text-muted-foreground">Nobody to set access for yet.</p>
+          </CardContent>
         </Card>
-      )}
-    </div>
+
+        {people.length === 0 && (
+          <p className="text-sm text-muted-foreground">
+            Nobody to set an exception for yet.
+          </p>
+        )}
+      </TabsContent>
+    </Tabs>
   )
 }
 
