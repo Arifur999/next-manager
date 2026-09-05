@@ -26,11 +26,16 @@ COPY . .
 # at runtime - so this has to be a build argument, and changing it means
 # rebuilding rather than restarting.
 #
-# It points at the API over the compose network because every call is made from
-# the Next SERVER: httpClient.ts reads cookies() and headers() from
-# next/headers, so it only ever runs server-side and the browser never sees
-# this host. It is not a secret, and nothing else is passed in here.
-ARG NEXT_PUBLIC_API_BASE_URL=http://api:5000/api/v1
+# This is the BROWSER's route to the API, and it must be a public one.
+# useChatSocket runs client-side and derives the WebSocket URL from this exact
+# value, so a container hostname here would give every browser a ws:// address
+# that only resolves inside the compose network. Default is the origin nginx
+# serves, which proxies /api and /ws to the API.
+#
+# The server's own route is API_INTERNAL_URL, set at RUNTIME rather than baked
+# in - see src/lib/axios/httpClient.ts. It is not a secret, and nothing else is
+# passed in here.
+ARG NEXT_PUBLIC_API_BASE_URL=http://localhost/api/v1
 ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
 
 # Telemetry off during the build: it is a network call in a step that should be

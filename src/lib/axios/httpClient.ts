@@ -5,10 +5,29 @@ import axios from 'axios';
 import { cookies, headers } from 'next/headers';
 import { isTokenExpiringSoon } from '../tokenUtils';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+/**
+ * Where THIS process reaches the API.
+ *
+ * Everything in this file runs on the server - it reads cookies() and
+ * headers() from next/headers - so it wants a route the container has, which
+ * behind nginx is not the route the browser has.
+ *
+ * NEXT_PUBLIC_API_BASE_URL is the browser's answer: it is inlined into the
+ * bundle at build time and used by useChatSocket to open the WebSocket, so it
+ * has to be the PUBLIC origin. From inside the web container that same URL
+ * points at the web container itself.
+ *
+ * So API_INTERNAL_URL wins here when it is set - in compose it is
+ * http://api:5000/api/v1, straight over the container network with no proxy
+ * hop - and the public value is the fallback, which is what a single-process
+ * dev machine has and all it needs.
+ */
+const API_BASE_URL = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
 
 if (!API_BASE_URL) {
-    throw new Error('NEXT_PUBLIC_API_BASE_URL is not defined in environment variables');
+    throw new Error(
+        'Neither API_INTERNAL_URL nor NEXT_PUBLIC_API_BASE_URL is defined in environment variables'
+    );
 }
 
 async function tryRefreshToken(accessToken: string, refreshToken: string): Promise<void> {
