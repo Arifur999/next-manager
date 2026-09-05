@@ -8,7 +8,7 @@ import { toast } from "sonner"
 /**
  * The grid, and the one thing every write to it has in common.
  *
- * Each square saves on its own the moment it changes. A Save button over 168
+ * Each square saves on its own the moment it changes. A Save button over 200
  * squares is a button where a mistake in one corner cannot be told apart from a
  * deliberate change in another, and where two admins editing at once quietly
  * overwrite each other.

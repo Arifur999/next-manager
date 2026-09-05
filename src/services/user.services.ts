@@ -65,7 +65,3 @@ export const deleteUser = async (id: string) => {
  * deliberate act, and an empty array means something specific — everything the
  * role allows.
  */
-export const setUserPermissions = async (id: string, permissions: string[]) => {
-    const res = await httpClient.patch<IUser>(`/users/${id}/permissions`, { permissions })
-    return res
-}
