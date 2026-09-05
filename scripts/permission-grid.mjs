@@ -62,19 +62,19 @@ let page = await load();
 check("the page renders", page.status === 200, String(page.status));
 check("with a table on it", page.table.length > 0);
 
-const MODULES = ["Clients","Services","Projects","Tasks","Team","Chat","Accounts","Reports","Vault","Attendance","Leave","Time"];
+const MODULES = ["Clients","Leads","Invoices","Services","Projects","Tasks","Team","Chat","Accounts","Reports","Vault","Attendance","Leave","Time"];
 const headings = [...page.table.matchAll(/table-head[^>]*>([^<]+)</g)].map((m) => m[1]);
 const rowNames = [...page.table.matchAll(/font-medium">([^<]+)</g)].map((m) => m[1]);
 
 check("a column per action", ["Module","View","Create","Edit","Delete","Assign"].every((h) => headings.includes(h)), headings.join(" "));
 check("a row per module", MODULES.every((m) => rowNames.includes(m)), `${rowNames.length} rows`);
 
-// 12 modules x 5 actions is 60 squares, but only 42 exist in the catalogue.
-// The other 18 must be dashes, not pickers offering a value the server refuses.
+// 14 modules x 5 actions is 70 squares, but only 50 exist in the catalogue.
+// The other 20 must be dashes, not pickers offering a value the server refuses.
 const pickers = (page.table.match(/data-slot="select-value"/g) ?? []).length;
 const dashes = (page.table.match(/not applicable/g) ?? []).length;
-check("a picker on every real square", pickers === 42, `${pickers}`);
-check("and a dash on every square that is not", dashes === 18, `${dashes}`);
+check("a picker on every real square", pickers === 50, `${pickers}`);
+check("and a dash on every square that is not", dashes === 20, `${dashes}`);
 check("no picker is blank before hydration", !/data-slot="select-value"[^>]*><\//.test(page.table));
 
 check("both tabs", page.html.includes("Roles") && page.html.includes("One person"));

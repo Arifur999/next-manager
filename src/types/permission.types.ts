@@ -54,6 +54,8 @@ export const SCOPE_INFO: Record<PermissionScope, { label: string; description: s
 /** Titles for the grid's rows and columns. The server sends slugs. */
 export const MODULE_LABEL: Record<string, string> = {
     clients: "Clients",
+    leads: "Leads",
+    invoices: "Invoices",
     services: "Services",
     projects: "Projects",
     tasks: "Tasks",
