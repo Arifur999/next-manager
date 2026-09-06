@@ -3,8 +3,9 @@
 import { getActionErrorMessage } from "@/lib/actionError"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 import type { IUser } from "@/types/user.types"
+import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
 
-const BASE_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+const BASE_API_URL = SERVER_API_BASE_URL
 
 /**
  * Creates a company and its first admin.

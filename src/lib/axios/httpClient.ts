@@ -4,6 +4,7 @@ import { ApiResponse } from '@/types/api.types';
 import axios from 'axios';
 import { cookies, headers } from 'next/headers';
 import { isTokenExpiringSoon } from '../tokenUtils';
+import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
 
 /**
  * Where THIS process reaches the API.
@@ -22,7 +23,7 @@ import { isTokenExpiringSoon } from '../tokenUtils';
  * hop - and the public value is the fallback, which is what a single-process
  * dev machine has and all it needs.
  */
-const API_BASE_URL = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
+const API_BASE_URL = SERVER_API_BASE_URL
 
 if (!API_BASE_URL) {
     throw new Error(

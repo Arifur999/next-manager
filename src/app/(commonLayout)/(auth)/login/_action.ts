@@ -3,8 +3,9 @@
 import { setTokenInCookies } from "@/lib/tokenUtils"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 import { type ILoginResponse } from "@/types/auth.types"
+import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
 
-const BASE_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+const BASE_API_URL = SERVER_API_BASE_URL
 
 // One place that turns an unknown thrown value into a message worth showing.
 // Without it a component sees "Request failed with status code 401" instead of

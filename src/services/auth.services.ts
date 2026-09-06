@@ -6,8 +6,9 @@ import { setTokenInCookies } from "@/lib/tokenUtils"
 import { type IUser } from "@/types/user.types"
 import { cookies } from "next/headers"
 import { cache } from "react"
+import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
 
-const BASE_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+const BASE_API_URL = SERVER_API_BASE_URL
 
 if (!BASE_API_URL) {
     throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined")

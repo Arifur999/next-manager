@@ -1,6 +1,7 @@
 import JoinForm from "@/components/modules/Auth/JoinForm";
 import type { IInvitePreview } from "@/types/agencio.types";
 import type { Metadata } from "next";
+import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
 
 export const metadata: Metadata = {
   title: "Join a team",
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 // show one person's invite to the next visitor.
 export const dynamic = "force-dynamic";
 
-const BASE_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const BASE_API_URL = SERVER_API_BASE_URL
 
 /**
  * Validated on the server before anything renders.

@@ -1,5 +1,6 @@
 import AgencyJoinForm from "@/components/modules/Auth/AgencyJoinForm";
 import type { Metadata } from "next";
+import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
 
 export const metadata: Metadata = {
   title: "Open your agency",
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
 // Reads a token from the URL, so it must never be cached.
 export const dynamic = "force-dynamic";
 
-const BASE_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const BASE_API_URL = SERVER_API_BASE_URL
 
 export interface AgencyInvite {
   email: string;
