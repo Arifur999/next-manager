@@ -92,9 +92,38 @@ export async function proxy(request: NextRequest) {
         return NextResponse.next();
     } catch (error) {
         console.error("Error in proxy:", error);
-        // Never let a proxy bug take the whole site down - fall through to the
-        // route and let the page's own auth checks answer.
-        return NextResponse.next();
+
+        // Fail CLOSED on a protected route.
+        //
+        // This used to fall through to the page on any error, on the reasoning
+        // that a proxy bug should not take the whole site down. But the pages
+        // have no auth check of their own - the API is what refuses, and it
+        // refuses data, not the shell - so falling through meant an unhandled
+        // exception here was the difference between a redirect and a rendered
+        // admin layout.
+        //
+        // A public route still falls through, because failing closed there
+        // WOULD take the site down: a bug in this function would put /login
+        // itself behind a redirect to /login.
+        //
+        // Nothing observed produced this path - with JWT_ACCESS_SECRET blanked
+        // entirely, verifyToken returns { success: false } rather than
+        // throwing, and Rule 3 redirects correctly. That is the point: the
+        // catch exists for what has not happened yet, and it should not be the
+        // one branch that opens the door.
+        try {
+            if (getAreaRule(request.nextUrl.pathname) === null) {
+                return NextResponse.next();
+            }
+
+            const loginUrl = new URL("/login", request.url);
+            loginUrl.searchParams.set("redirect", request.nextUrl.pathname);
+            return NextResponse.redirect(loginUrl);
+        } catch {
+            // The recovery itself failed, which leaves no safe way to tell a
+            // public route from a protected one. Refuse rather than guess.
+            return NextResponse.redirect(new URL("/login", request.url));
+        }
     }
 }
 
