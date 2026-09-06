@@ -118,25 +118,55 @@ export async function proxy(request: NextRequest) {
             }
 
             const loginUrl = new URL("/login", request.url);
-            loginUrl.searchParams.set("redirect", request.nextUrl.pathname);
+            // The QUERY too, exactly as Rule 3 does it. Signing in from a
+            // filtered report should come back to that report, not to a bare
+            // one with the filters dropped.
+            loginUrl.searchParams.set(
+                "redirect",
+                `${request.nextUrl.pathname}${request.nextUrl.search}`
+            );
             return NextResponse.redirect(loginUrl);
         } catch {
-            // The recovery itself failed, which leaves no safe way to tell a
-            // public route from a protected one. Refuse rather than guess.
-            return NextResponse.redirect(new URL("/login", request.url));
+            // The recovery itself failed, so getAreaRule is very likely what
+            // threw - which means it would throw for /login too. Redirecting
+            // there would be a request for /login that redirects to /login,
+            // forever: ERR_TOO_MANY_REDIRECTS on the whole site, which is the
+            // outage the outer branch is written to avoid.
+            //
+            // So fall through instead. The layout still calls getUserInfo and
+            // the API still refuses without a session, and a page that renders
+            // its shell is a far smaller failure than a site nobody can open.
+            return allow(request);
         }
     }
 }
 
 export const config = {
     matcher: [
-        /*
-         * Every path except:
-         * - api            (route handlers)
-         * - _next/static   (static files)
-         * - _next/image    (image optimization)
-         * - metadata files
-         */
-        '/((?!api|_next|favicon.ico|sitemap.xml|robots.txt|.well-known).*)',
+        {
+            /*
+             * Every path except:
+             * - api            (route handlers)
+             * - _next/static   (static files)
+             * - _next/image    (image optimization)
+             * - metadata files
+             */
+            source: '/((?!api|_next|favicon.ico|sitemap.xml|robots.txt|.well-known).*)',
+
+            /*
+             * And not prefetches. A dashboard full of <Link> fires one per
+             * link as it scrolls into view, and each would run this whole
+             * function - a UUID, a policy, sometimes a refresh round trip - to
+             * attach a nonce to an RSC payload that is not a document and will
+             * never use it.
+             *
+             * Auth is not weakened by skipping them: a prefetch only warms a
+             * cache, and the real navigation that follows goes through here.
+             */
+            missing: [
+                { type: 'header', key: 'next-router-prefetch' },
+                { type: 'header', key: 'purpose', value: 'prefetch' },
+            ],
+        },
     ],
 };

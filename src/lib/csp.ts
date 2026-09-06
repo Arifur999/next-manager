@@ -30,25 +30,53 @@ import { NextRequest, NextResponse } from "next/server"
  * against this same origin, and same-origin WebSocket is not covered by 'self'
  * in every browser.
  */
+const isProduction = process.env.NODE_ENV === "production"
+
 const policy = (nonce: string) =>
     [
         "default-src 'self'",
-        `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+
+        // 'unsafe-eval' in development ONLY, and Next requires it: React uses
+        // eval there to rebuild server-side error stacks in the browser, so
+        // without it a real server error arrives as an opaque client one with
+        // CSP noise beside it. It is never sent in production, which is the
+        // only place it would matter.
+        `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isProduction ? "" : " 'unsafe-eval'"}`,
+
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: blob: https:",
         "font-src 'self' data:",
-        "connect-src 'self' ws: wss:",
+
+        // 'self' covers the chat socket, which is same-origin: useChatSocket
+        // takes NEXT_PUBLIC_API_BASE_URL and only swaps the protocol and path,
+        // so it opens wss://<this origin>/ws.
+        //
+        // The bare ws: and wss: schemes were here before and were a hole: a
+        // scheme-source matches ANY host, so injected script could have opened
+        // a socket to somebody else's server and streamed the page off it -
+        // the exact exfiltration channel default-src 'self' is meant to close.
+        // In development the dev server's HMR socket needs the local schemes,
+        // and only there.
+        `connect-src 'self'${isProduction ? "" : " ws: wss:"}`,
+
         // Nothing here is meant to be embedded. This is the header version of
         // X-Frame-Options and the one modern browsers actually read.
         "frame-ancestors 'none'",
         "frame-src 'none'",
         "object-src 'none'",
+
         // Stops injected markup from repointing every relative URL on the page.
         "base-uri 'self'",
+
         // A form that posts somewhere else is how a page exfiltrates what was
         // typed into it.
         "form-action 'self'",
-        "upgrade-insecure-requests",
+
+        // Production only. Browsers exempt localhost, so on a dev machine this
+        // is invisible - but `next dev` opened on a LAN address to test on a
+        // phone has every subresource rewritten to https, with nothing
+        // listening on 443, and the page simply fails to load.
+        ...(isProduction ? ["upgrade-insecure-requests"] : []),
     ].join("; ")
 
 /**

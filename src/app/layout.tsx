@@ -55,6 +55,17 @@ export default async function RootLayout({
   // hydrates, and under a nonce CSP that is the one script a browser would
   // otherwise refuse - bringing back the white flash this whole mechanism
   // exists to avoid.
+  //
+  // The cost, stated rather than discovered later: reading headers() in the
+  // ROOT layout makes every route dynamic. Static optimisation and ISR are
+  // off, a CDN cannot cache a page, and Partial Prerendering does not apply.
+  // The landing page and the four auth pages were prerendered at build and are
+  // server-rendered on every request now.
+  //
+  // Worth it here because this app is almost entirely signed-in and dynamic
+  // already - only five routes were static - and a nonce is what makes the CSP
+  // mean anything. If that trade ever stops paying, the alternative is Next's
+  // experimental SRI support, which needs no per-request value.
   const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (

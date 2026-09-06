@@ -23,3 +23,13 @@
  */
 export const SERVER_API_BASE_URL =
     process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_BASE_URL
+
+// Checked here rather than by each caller. Two of them checked it separately
+// and one named only NEXT_PUBLIC_API_BASE_URL, so a compose deploy missing
+// API_INTERNAL_URL sent the operator to fix a variable that was not the
+// problem. One throw, naming both.
+if (!SERVER_API_BASE_URL) {
+    throw new Error(
+        "Neither API_INTERNAL_URL nor NEXT_PUBLIC_API_BASE_URL is set. The server has no route to the API."
+    )
+}

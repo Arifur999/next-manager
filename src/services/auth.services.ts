@@ -10,10 +10,6 @@ import { forwardAuthCookies } from "@/lib/authCookies"
 
 const BASE_API_URL = SERVER_API_BASE_URL
 
-if (!BASE_API_URL) {
-    throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined")
-}
-
 // Uses fetch rather than httpClient on purpose: httpClient calls back into this
 // module to refresh, so going through it here would recurse.
 export async function getNewTokensWithRefreshToken(refreshToken: string): Promise<boolean> {
