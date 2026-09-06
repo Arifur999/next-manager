@@ -1,9 +1,9 @@
 "use server"
 
-import { setTokenInCookies } from "@/lib/tokenUtils"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 import { type ILoginResponse } from "@/types/auth.types"
 import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
+import { forwardAuthCookies } from "@/lib/authCookies"
 
 const BASE_API_URL = SERVER_API_BASE_URL
 
@@ -53,10 +53,18 @@ export const loginAction = async (payload: {
       return { success: false, message: body?.message ?? "Invalid email or password" }
     }
 
-    const { accessToken, refreshToken } = body.data ?? {}
+    // From the API's Set-Cookie, not from the body. This server action is the
+    // only thing that puts auth cookies in the browser - the API's own header
+    // lands on the fetch Response above, which the browser never sees - so if
+    // this does not carry them across, nobody is signed in.
+    const forwarded = await forwardAuthCookies(res)
 
-    if (accessToken) await setTokenInCookies("accessToken", accessToken)
-    if (refreshToken) await setTokenInCookies("refreshToken", refreshToken)
+    if (!forwarded) {
+        // Loudly, rather than returning a success the browser cannot act on:
+        // the toast would say "Signed in", the redirect would fire, and the
+        // proxy would bounce it straight back to /login.
+        return { success: false, message: "Signed in, but no session was issued. Please try again." }
+    }
 
     return body as ApiResponse<ILoginResponse>
   } catch (error: unknown) {

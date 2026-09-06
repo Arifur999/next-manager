@@ -2,11 +2,11 @@
 
 import { httpClient } from "@/lib/axios/httpClient"
 import { deleteCookie } from "@/lib/cookiesUtils"
-import { setTokenInCookies } from "@/lib/tokenUtils"
 import { type IUser } from "@/types/user.types"
 import { cookies } from "next/headers"
 import { cache } from "react"
 import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
+import { forwardAuthCookies } from "@/lib/authCookies"
 
 const BASE_API_URL = SERVER_API_BASE_URL
 
@@ -31,18 +31,13 @@ export async function getNewTokensWithRefreshToken(refreshToken: string): Promis
             return false
         }
 
-        const { data } = await res.json()
-        const { accessToken, refreshToken: newRefreshToken } = data ?? {}
-
-        if (accessToken) {
-            await setTokenInCookies("accessToken", accessToken)
-        }
-
-        if (newRefreshToken) {
-            await setTokenInCookies("refreshToken", newRefreshToken)
-        }
-
-        return true
+        // Whether the rotation actually happened, not whether the call
+        // returned 200. Reporting true for a refresh that set nothing made the
+        // proxy stamp x-token-refreshed on the request, which tells every
+        // Server Component below it not to bother trying - so a session would
+        // spin on a wasted round trip per request until the token really
+        // expired and then bounce to /login.
+        return await forwardAuthCookies(res)
     } catch (error) {
         console.error("Error refreshing token:", error)
         return false
