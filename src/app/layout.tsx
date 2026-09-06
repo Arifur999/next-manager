@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import QueryProviders from "./providers/QueryProvider";
 import ThemeProvider from "./providers/ThemeProvider";
+import { headers } from "next/headers";
 
 // The font files live in this repo, not on Google's servers.
 //
@@ -44,11 +45,18 @@ export const metadata: Metadata = {
     "Naxified is a modular management platform for running a business: team, inventory, sales and finance in one workspace.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Minted per request in the proxy and passed down on x-nonce. next-themes
+  // puts an inline script in the head to paint the right theme before React
+  // hydrates, and under a nonce CSP that is the one script a browser would
+  // otherwise refuse - bringing back the white flash this whole mechanism
+  // exists to avoid.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     // suppressHydrationWarning on BOTH elements, for two different reasons.
     //
@@ -76,7 +84,7 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
-        <ThemeProvider>
+        <ThemeProvider nonce={nonce}>
           <QueryProviders>
             {children}
             <Toaster position="top-right" richColors />

@@ -6,6 +6,7 @@ import {
     isAuthRoute,
     type UserRole,
 } from "./lib/authUtils";
+import { allow } from "./lib/csp";
 import { jwtUtils } from "./lib/jwtUtils";
 import { isTokenExpiringSoon } from "./lib/tokenUtils";
 import { getNewTokensWithRefreshToken } from "./services/auth.services";
@@ -57,7 +58,7 @@ export async function proxy(request: NextRequest) {
                 requestHeaders.set("x-token-refreshed", "1");
             }
 
-            return NextResponse.next({ request: { headers: requestHeaders } });
+            return allow(request, requestHeaders);
         }
 
         // Rule 1 - a signed-in user has no business on the auth pages.
@@ -67,7 +68,7 @@ export async function proxy(request: NextRequest) {
 
         // Rule 2 - public route, nothing to check.
         if (area === null) {
-            return NextResponse.next();
+            return allow(request);
         }
 
         // Rule 3 - not signed in on a protected route. Carry the intended
@@ -80,7 +81,7 @@ export async function proxy(request: NextRequest) {
 
         // Rule 4 - signed in, and the area is open to any signed-in user.
         if (area.roles === null) {
-            return NextResponse.next();
+            return allow(request);
         }
 
         // Rule 5 - role-gated area: send a role that cannot open it to its own
@@ -89,7 +90,7 @@ export async function proxy(request: NextRequest) {
             return NextResponse.redirect(new URL(getDefaultDashboardRoute(userRole), request.url));
         }
 
-        return NextResponse.next();
+        return allow(request);
     } catch (error) {
         console.error("Error in proxy:", error);
 
@@ -113,7 +114,7 @@ export async function proxy(request: NextRequest) {
         // one branch that opens the door.
         try {
             if (getAreaRule(request.nextUrl.pathname) === null) {
-                return NextResponse.next();
+                return allow(request);
             }
 
             const loginUrl = new URL("/login", request.url);
