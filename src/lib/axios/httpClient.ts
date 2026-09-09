@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getNewTokensWithRefreshToken } from '@/services/auth.services';
+import { getNewTokensWithRefreshToken } from '@/lib/refreshSession';
 import { ApiResponse } from '@/types/api.types';
 import axios from 'axios';
 import { cookies, headers } from 'next/headers';

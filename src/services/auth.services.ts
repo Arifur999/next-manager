@@ -10,42 +10,6 @@ import { forwardAuthCookies } from "@/lib/authCookies"
 
 const BASE_API_URL = SERVER_API_BASE_URL
 
-// Uses fetch rather than httpClient on purpose: httpClient calls back into this
-// module to refresh, so going through it here would recurse.
-export async function getNewTokensWithRefreshToken(refreshToken: string): Promise<boolean> {
-    try {
-        const res = await fetch(`${BASE_API_URL}/auth/refresh-token`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Cookie: `refreshToken=${refreshToken}`,
-            },
-            cache: "no-store",
-        })
-
-        if (!res.ok) {
-            return false
-        }
-
-        // Whether the rotation actually happened, not whether the call
-        // returned 200. Reporting true for a refresh that set nothing made the
-        // proxy stamp x-token-refreshed on the request, which tells every
-        // Server Component below it not to bother trying - so a session would
-        // spin on a wasted round trip per request until the token really
-        // expired and then bounce to /login.
-        return await forwardAuthCookies(res)
-    } catch (error) {
-        console.error("Error refreshing token:", error)
-        return false
-    }
-}
-
-// Multiple Server Components in the same request tree (sidebar, navbar, page
-// content) each call this independently. Without request-level dedup that is
-// several separate live round-trips per page load, and if any single one is
-// slow or flaky that component silently loses its user data while the others
-// render fine - the sidebar vanishing while the page content still shows.
-// cache() gives one real fetch per request, shared by every caller.
 export const getUserInfo = cache(async (): Promise<IUser | null> => {
     try {
         const cookieStore = await cookies()

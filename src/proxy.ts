@@ -9,7 +9,7 @@ import {
 import { allow } from "./lib/csp";
 import { jwtUtils } from "./lib/jwtUtils";
 import { isTokenExpiringSoon } from "./lib/tokenUtils";
-import { getNewTokensWithRefreshToken } from "./services/auth.services";
+import { getNewTokensWithRefreshToken } from "@/lib/refreshSession";
 import { toUserRole } from "./types/user.types";
 
 // Next 16 renamed the `middleware` file convention to `proxy`. Same runtime,
@@ -46,8 +46,21 @@ export async function proxy(request: NextRequest) {
 
         // Rule 0 - proactively refresh a token that is about to expire, so a
         // long session never bounces the user to /login mid-navigation.
+        //
+        // It does NOT return. It used to, and that was an authorisation
+        // bypass: returning here skipped Rules 1 to 5, so for the sixty
+        // seconds before a token expired - once per token lifetime, for every
+        // signed-in session - canRoleReach never ran and every page was open
+        // to every role. Measured with the leeway widened so the window was
+        // always open: all 66 routes went to "open" for all four roles,
+        // including the platform pages.
+        //
+        // Refreshing is housekeeping. It is not a decision about who may be
+        // here, so it must not be the thing that answers that question.
+        let requestHeaders: Headers | undefined;
+
         if (isValidAccessToken && accessToken && refreshToken && (await isTokenExpiringSoon(accessToken))) {
-            const requestHeaders = new Headers(request.headers);
+            requestHeaders = new Headers(request.headers);
 
             const refreshed = await refreshTokenInProxy(refreshToken);
 
@@ -58,7 +71,9 @@ export async function proxy(request: NextRequest) {
                 requestHeaders.set("x-token-refreshed", "1");
             }
 
-            return allow(request, requestHeaders);
+            // The role on the rotated token is the same role: a refresh
+            // renews a session, it does not change who it belongs to. So the
+            // userRole read above still holds for the checks below.
         }
 
         // Rule 1 - a signed-in user has no business on the auth pages.
@@ -68,7 +83,7 @@ export async function proxy(request: NextRequest) {
 
         // Rule 2 - public route, nothing to check.
         if (area === null) {
-            return allow(request);
+            return allow(request, requestHeaders);
         }
 
         // Rule 3 - not signed in on a protected route. Carry the intended
@@ -81,7 +96,7 @@ export async function proxy(request: NextRequest) {
 
         // Rule 4 - signed in, and the area is open to any signed-in user.
         if (area.roles === null) {
-            return allow(request);
+            return allow(request, requestHeaders);
         }
 
         // Rule 5 - role-gated area: send a role that cannot open it to its own
@@ -90,7 +105,7 @@ export async function proxy(request: NextRequest) {
             return NextResponse.redirect(new URL(getDefaultDashboardRoute(userRole), request.url));
         }
 
-        return allow(request);
+        return allow(request, requestHeaders);
     } catch (error) {
         console.error("Error in proxy:", error);
 
