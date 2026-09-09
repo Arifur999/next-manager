@@ -2,8 +2,26 @@
 // actions, which is not the same thing as being one.
 
 import { deleteCookie, setCookie } from "./cookiesUtils"
+import { parseSetCookie } from "./parseSetCookie"
 
 const AUTH_COOKIE_NAMES = ["accessToken", "refreshToken"]
+
+/**
+ * What the API's Set-Cookie headers turned out to mean.
+ *
+ * A boolean could not say this. It reported "nothing happened" and "a
+ * deliberate clear happened" with the same value, so login would have told
+ * somebody to try again after a sign-out the API performed on purpose.
+ */
+export type AuthCookieOutcome =
+    /** A session was written to the browser. */
+    | "set"
+    /** The API asked for the session to be removed, and it was. */
+    | "cleared"
+    /** The response carried no auth cookies at all. */
+    | "none"
+    /** Next refused the write because this is a render, not an action. */
+    | "blocked"
 
 /**
  * Copy the API's auth cookies onto the browser.
@@ -13,57 +31,58 @@ const AUTH_COOKIE_NAMES = ["accessToken", "refreshToken"]
  * response - a server-side object the browser never sees - so somebody has to
  * carry it across, and that is this.
  *
- * It used to be carried differently: the API also put the tokens in the
- * response body and the action read them from there. That is why removing them
- * from the body took sign-in down with it. Reading Set-Cookie is the version
- * that does not need the API to hand a credential to anything that asks; the
- * header is already there, addressed to exactly this hop.
+ * ── Where this can and cannot run ──────────────────────────────────────────
  *
- * Returns whether anything was actually forwarded, so a caller cannot report
- * success for a refresh that set nothing.
+ * Next only allows cookie writes in the "action" phase; during a Server
+ * Component RENDER it throws ReadonlyRequestCookiesError
+ * (request-cookies.js: `return requestStore.phase === 'action'`). So the same
+ * call works from a server action or the proxy and cannot work from a
+ * component rendering a page.
+ *
+ * That path exists: httpClient refreshes an expiring token mid-render. It is
+ * reported as "blocked" rather than thrown, because it is not an error the
+ * caller can do anything about, and because it is harmless here - this API's
+ * refresh tokens are not single-use, verified by presenting the same one
+ * twice and getting 200 both times, so a rotation that fails to store leaves
+ * the old token working. The proxy refreshes for real on the next navigation.
  */
-export const forwardAuthCookies = async (response: Response): Promise<boolean> => {
+export const forwardAuthCookies = async (response: Response): Promise<AuthCookieOutcome> => {
     // getSetCookie keeps each Set-Cookie separate. A plain get("set-cookie")
     // joins them with commas, which is unparseable here because Expires dates
     // contain commas of their own.
     const headers = response.headers.getSetCookie?.() ?? []
-    let forwarded = false
+
+    let set = 0
+    let cleared = 0
 
     for (const header of headers) {
-        const [pair, ...attributes] = header.split(";")
-        const equals = pair.indexOf("=")
-        if (equals === -1) continue
-
-        const name = pair.slice(0, equals).trim()
-        const value = pair.slice(equals + 1).trim()
+        const cookie = parseSetCookie(header)
+        if (!cookie) continue
 
         // Only the two we know. The API is not given a free hand to set
         // arbitrary cookies on the browser through this path.
-        if (!AUTH_COOKIE_NAMES.includes(name) || !value) continue
+        if (!AUTH_COOKIE_NAMES.includes(cookie.name)) continue
 
-        const maxAge = attributes
-            .map((attribute) => attribute.trim())
-            .find((attribute) => attribute.toLowerCase().startsWith("max-age="))
-            ?.split("=")[1]
+        try {
+            if (cookie.clearing) {
+                await deleteCookie(cookie.name)
+                cleared++
+                continue
+            }
 
-        const seconds = Number(maxAge)
-
-        // Max-Age=0 is a DELETE instruction, not a lifetime. Treating it as
-        // "no usable value" and falling back to an hour would turn a clearing
-        // cookie into a fresh one - the opposite of what was asked. Nothing
-        // sends one down this path today (logout clears cookies on its own
-        // side), which is exactly why it is worth handling before something
-        // does.
-        if (Number.isFinite(seconds) && seconds <= 0) {
-            await deleteCookie(name)
-            continue
+            // The API's own lifetime is the one to keep - it is the side that
+            // knows when the token it just signed expires.
+            await setCookie(cookie.name, cookie.value, cookie.maxAge ?? 3600)
+            set++
+        } catch {
+            // The render-phase refusal described above. Nothing was written,
+            // and saying so is more use than a stack trace the caller cannot
+            // act on.
+            return "blocked"
         }
-
-        // Otherwise the API's own lifetime, because it is the side that knows
-        // when the token it just signed expires.
-        await setCookie(name, value, Number.isFinite(seconds) ? seconds : 3600)
-        forwarded = true
     }
 
-    return forwarded
+    if (set > 0) return "set"
+    if (cleared > 0) return "cleared"
+    return "none"
 }

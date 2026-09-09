@@ -3,6 +3,7 @@ import { getNewTokensWithRefreshToken } from '@/lib/refreshSession';
 import { ApiResponse } from '@/types/api.types';
 import axios from 'axios';
 import { cookies, headers } from 'next/headers';
+import { cache } from 'react';
 import { isTokenExpiringSoon } from '../tokenUtils';
 import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
 
@@ -10,25 +11,42 @@ import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
 // routes, and which wins, is explained once in lib/apiBaseUrl.ts.
 const API_BASE_URL = SERVER_API_BASE_URL
 
-async function tryRefreshToken(accessToken: string, refreshToken: string): Promise<void> {
-    if (!(await isTokenExpiringSoon(accessToken))) {
-        return;
-    }
-
-    const requestHeader = await headers();
-
-    // Several Server Components render in one request tree. Without this flag
-    // each of them would fire its own refresh against the same refresh token,
-    // and whichever landed last would win while the others got a 401.
-    if (requestHeader.get("x-token-refreshed") === "1") {
-        return;
-    }
-
+/**
+ * At most one refresh attempt per request tree.
+ *
+ * React's cache() memoises on the arguments for the life of one request, so
+ * the sidebar, the navbar and the page content share a single call instead of
+ * three.
+ *
+ * The x-token-refreshed header alone could not do this. It is set in exactly
+ * one place - the proxy - and headers() here is READ-ONLY, so this function
+ * could never set it for the component rendering next to it. On any request
+ * the proxy did not refresh (a next/link prefetch, which the matcher skips)
+ * the flag was simply absent and every component fired its own rotation. The
+ * header is still honoured, because when the proxy HAS refreshed there is
+ * nothing left to do.
+ */
+const refreshOncePerRequest = cache(async (refreshToken: string): Promise<void> => {
     try {
         await getNewTokensWithRefreshToken(refreshToken);
     } catch (error: any) {
         console.error("Error refreshing token in http client:", error);
     }
+});
+
+async function tryRefreshToken(accessToken: string, refreshToken: string): Promise<void> {
+    if (!isTokenExpiringSoon(accessToken)) {
+        return;
+    }
+
+    const requestHeader = await headers();
+
+    // The proxy already did it for this request.
+    if (requestHeader.get("x-token-refreshed") === "1") {
+        return;
+    }
+
+    await refreshOncePerRequest(refreshToken);
 }
 
 const buildCookieHeader = async () => {

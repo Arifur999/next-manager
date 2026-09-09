@@ -57,9 +57,11 @@ export const loginAction = async (payload: {
     // only thing that puts auth cookies in the browser - the API's own header
     // lands on the fetch Response above, which the browser never sees - so if
     // this does not carry them across, nobody is signed in.
-    const forwarded = await forwardAuthCookies(res)
+    // "set" specifically. A login that cleared cookies, or carried none, is
+    // not a login however healthy the status code looked.
+    const outcome = await forwardAuthCookies(res)
 
-    if (!forwarded) {
+    if (outcome !== "set") {
         // Loudly, rather than returning a success the browser cannot act on:
         // the toast would say "Signed in", the redirect would fire, and the
         // proxy would bounce it straight back to /login.

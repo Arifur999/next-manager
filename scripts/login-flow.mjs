@@ -50,6 +50,15 @@ const body = await res.json();
 
 check("the API accepts the credentials", res.status === 200, `${res.status} ${body.message}`);
 
+// A deliberately MINIMAL read of the header - name, value, Max-Age - and not
+// a second copy of authCookies.ts's parser. That is what this used to be, and
+// two copies of a parser drift: this one had none of the clearing rules, so
+// the suite written to protect the seam would have passed against a parser
+// that deleted sessions. Parsing correctness lives in
+// src/lib/parseSetCookie.test.ts, where it can be tested directly. What this
+// file checks is the API's side of the contract: that the headers exist at
+// all, and carry what the action needs.
+//
 // getSetCookie, not get("set-cookie"): the joined form is unparseable because
 // Expires dates contain commas.
 const headers = res.headers.getSetCookie?.() ?? [];

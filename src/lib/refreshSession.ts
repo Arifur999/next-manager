@@ -35,13 +35,17 @@ export async function getNewTokensWithRefreshToken(refreshToken: string): Promis
             return false
         }
 
-        // Whether the rotation actually happened, not whether the call
-        // returned 200. Reporting true for a refresh that set nothing made the
-        // proxy stamp x-token-refreshed on the request, which tells every
-        // Server Component below it not to bother trying - so a session would
+        // Whether the rotation actually reached the browser, not whether the
+        // call returned 200. Reporting true for a refresh that stored nothing
+        // made the proxy stamp x-token-refreshed on the request, which tells
+        // every Server Component below it not to bother - so a session would
         // spin on a wasted round trip per request until the token really
         // expired and then bounce to /login.
-        return await forwardAuthCookies(res)
+        //
+        // "blocked" is a false too, and deliberately so: it means this ran
+        // during a render, where Next will not let anything write a cookie.
+        // Nothing was stored, so nothing downstream should be told otherwise.
+        return (await forwardAuthCookies(res)) === "set"
     } catch (error) {
         console.error("Error refreshing token:", error)
         return false

@@ -8,7 +8,12 @@ import { jwtUtils } from "./jwtUtils"
 // second to reach the API isn't rejected by a token that expired in flight.
 const EXPIRY_LEEWAY_SECONDS = 60
 
-export const isTokenExpiringSoon = async (token: string): Promise<boolean> => {
+// Synchronous. It decodes and compares two numbers - there is no I/O here.
+// The async was only ever there to satisfy "use server", which required every
+// export to be a promise; with the directive gone it was a microtask per
+// request on the proxy's hot path, and an await at both call sites, for
+// nothing.
+export const isTokenExpiringSoon = (token: string): boolean => {
   const decoded = jwtUtils.decodeToken(token)
 
   if (!decoded?.exp) {
