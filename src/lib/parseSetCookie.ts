@@ -55,9 +55,25 @@ export const parseSetCookie = (header: string): ParsedSetCookie | null => {
     // a malformed header became a real, wrong lifetime: a garbage Max-Age
     // signed somebody out sixteen seconds after signing them in, instead of
     // falling back to the default.
+    // Ten years. Long enough that nothing legitimate is near it - the longest
+    // this API issues is seven days - and short enough that the date arithmetic
+    // downstream stays valid.
+    //
+    // Form was checked but not MAGNITUDE, and both matter. "100000000000000000000"
+    // passes the digit test, and Next then computes
+    // new Date(Date.now() + maxAge * 1000), which is an Invalid Date: the
+    // header goes out as "Expires=Invalid Date", a browser rejects it and
+    // stores nothing, and forwardAuthCookies still reports "set". A silently
+    // sessionless login that every layer believes worked.
+    const MAX_REASONABLE_AGE = 10 * 365 * 24 * 60 * 60
+
     const rawMaxAge = attribute("max-age")
-    const maxAge =
+    const parsedMaxAge =
         rawMaxAge !== undefined && /^-?[0-9]+$/.test(rawMaxAge) ? Number(rawMaxAge) : undefined
+    const maxAge =
+        parsedMaxAge !== undefined && Math.abs(parsedMaxAge) <= MAX_REASONABLE_AGE
+            ? parsedMaxAge
+            : undefined
 
     const rawExpires = attribute("expires")
     const expiresAt = rawExpires ? new Date(rawExpires).getTime() : Number.NaN

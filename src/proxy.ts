@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import {
     canRoleReach,
@@ -57,18 +58,31 @@ export async function proxy(request: NextRequest) {
         //
         // Refreshing is housekeeping. It is not a decision about who may be
         // here, so it must not be the thing that answers that question.
-        let requestHeaders: Headers | undefined;
+        const requestHeaders = new Headers(request.headers);
+        let refreshed = false;
 
         if (isValidAccessToken && accessToken && refreshToken && isTokenExpiringSoon(accessToken)) {
-            requestHeaders = new Headers(request.headers);
-
-            const refreshed = await refreshTokenInProxy(refreshToken);
+            refreshed = await refreshTokenInProxy(refreshToken);
 
             if (refreshed) {
-                // Tells httpClient, further down the same request, that the
-                // refresh already happened - otherwise every Server Component
-                // would try again against a token that has just been rotated.
-                requestHeaders.set("x-token-refreshed", "1");
+                // The rotated cookies have to be put into the REQUEST too.
+                //
+                // refreshTokenInProxy writes them with cookies().set(), which
+                // Next flushes onto the RESPONSE's Set-Cookie - it does not
+                // touch the request headers this render will read. Without
+                // this line the render saw the old, about-to-expire token
+                // while x-token-refreshed told httpClient not to refresh
+                // either, so a token that expired in flight 401'd the API and
+                // bounced the person to /login on the very request that had
+                // just renewed their session.
+                const store = await cookies();
+                requestHeaders.set(
+                    "cookie",
+                    store
+                        .getAll()
+                        .map((entry) => `${entry.name}=${entry.value}`)
+                        .join("; ")
+                );
             }
 
             // The role on the rotated token is the same role: a refresh
@@ -83,7 +97,7 @@ export async function proxy(request: NextRequest) {
 
         // Rule 2 - public route, nothing to check.
         if (area === null) {
-            return allow(request, requestHeaders);
+            return allow(request, requestHeaders, { refreshed });
         }
 
         // Rule 3 - not signed in on a protected route. Carry the intended
@@ -96,7 +110,7 @@ export async function proxy(request: NextRequest) {
 
         // Rule 4 - signed in, and the area is open to any signed-in user.
         if (area.roles === null) {
-            return allow(request, requestHeaders);
+            return allow(request, requestHeaders, { refreshed });
         }
 
         // Rule 5 - role-gated area: send a role that cannot open it to its own
@@ -105,7 +119,7 @@ export async function proxy(request: NextRequest) {
             return NextResponse.redirect(new URL(getDefaultDashboardRoute(userRole), request.url));
         }
 
-        return allow(request, requestHeaders);
+        return allow(request, requestHeaders, { refreshed });
     } catch (error) {
         console.error("Error in proxy:", error);
 

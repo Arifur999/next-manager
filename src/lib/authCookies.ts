@@ -4,7 +4,14 @@
 import { deleteCookie, setCookie } from "./cookiesUtils"
 import { parseSetCookie } from "./parseSetCookie"
 
-const AUTH_COOKIE_NAMES = ["accessToken", "refreshToken"]
+/**
+ * What a session is made of.
+ *
+ * Exported because it is the definition, and more than one place needs it -
+ * logout() clears exactly these, and having it re-list them by hand meant a
+ * third cookie added here would be forwarded and never cleared.
+ */
+export const AUTH_COOKIE_NAMES = ["accessToken", "refreshToken"] as const
 
 /**
  * Next's "you cannot write cookies during a render" error, and only that one.
@@ -80,6 +87,7 @@ export const forwardAuthCookies = async (response: Response): Promise<AuthCookie
     // contain commas of their own.
     const headers = response.headers.getSetCookie?.() ?? []
 
+    const wrote = new Set<string>()
     let set = 0
     let cleared = 0
     let blocked = false
@@ -90,7 +98,7 @@ export const forwardAuthCookies = async (response: Response): Promise<AuthCookie
 
         // Only the two we know. The API is not given a free hand to set
         // arbitrary cookies on the browser through this path.
-        if (!AUTH_COOKIE_NAMES.includes(cookie.name)) continue
+        if (!(AUTH_COOKIE_NAMES as readonly string[]).includes(cookie.name)) continue
 
         try {
             if (cookie.clearing) {
@@ -102,6 +110,7 @@ export const forwardAuthCookies = async (response: Response): Promise<AuthCookie
             // The API's own lifetime is the one to keep - it is the side that
             // knows when the token it just signed expires.
             await setCookie(cookie.name, cookie.value, cookie.maxAge ?? 3600)
+            wrote.add(cookie.name)
             set++
         } catch (error) {
             // ONLY the render-phase refusal. A bare catch here would have
@@ -126,7 +135,16 @@ export const forwardAuthCookies = async (response: Response): Promise<AuthCookie
     // they had just been told they could not enter.
     if (set > 0 && cleared > 0) return "partial"
     if (blocked) return set > 0 || cleared > 0 ? "partial" : "blocked"
-    if (set > 0) return "set"
+
+    if (set > 0) {
+        // ALL of them, not merely one. A response carrying only an
+        // accessToken - a header dropped by a proxy, or an API change - used
+        // to be reported as a clean "set", which is the exact state this
+        // function's own documentation calls worse than none: it works until
+        // expiry and then dies with no way to renew.
+        return AUTH_COOKIE_NAMES.every((name) => wrote.has(name)) ? "set" : "partial"
+    }
+
     if (cleared > 0) return "cleared"
     return "none"
 }

@@ -42,6 +42,13 @@ const ChangePasswordForm = () => {
 
       toast.success("Password changed. Sign in again with the new one.")
       router.replace("/login")
+      // The session is over on the server - the action cleared the cookies -
+      // but Next's client Router Cache still holds the RSC payload for the
+      // signed-in layout. Without this, going back or clicking another
+      // dashboard route renders the authenticated shell for a session that no
+      // longer exists. DashboardNavbar's sign-out does the same thing for the
+      // same reason.
+      router.refresh()
     },
   })
 

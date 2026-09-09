@@ -67,7 +67,7 @@ for (const header of headers) {
   // Name, value, Max-Age. Nothing else, because nothing else is this file's
   // question - and the previous version of these lines was a second copy of
   // the real parser that had drifted from it within a day.
-  const [pair, ...attributes] = header.split(";");
+  const pair = header.split(";", 1)[0];
   const equals = pair.indexOf("=");
   if (equals === -1) continue;
   const maxAge = /(?:^|;)[ 	]*max-age=[ 	]*(-?[0-9]+)/i.exec(header)?.[1];
@@ -75,7 +75,6 @@ for (const header of headers) {
     value: pair.slice(equals + 1).trim(),
     maxAge: maxAge === undefined ? undefined : Number(maxAge),
   });
-  void attributes;
 }
 
 // THE check. Without these two headers the login action has nothing to give

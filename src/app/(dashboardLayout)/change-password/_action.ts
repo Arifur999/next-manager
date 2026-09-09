@@ -1,7 +1,8 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { changePassword, logout } from "@/services/auth.services"
+import { changePassword } from "@/services/auth.services"
+import { logout } from "@/services/logout"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 /**

@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import NotificationBell from "@/components/modules/Dashboard/NotificationBell";
-import { logout } from "@/services/auth.services";
+import { logout } from "@/services/logout"
 import { type IUser } from "@/types/user.types";
 import { LogOut, Moon, Sun, User } from "lucide-react";
 import { useTheme } from "next-themes";

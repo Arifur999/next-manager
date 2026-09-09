@@ -4,35 +4,10 @@ import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 import { type ILoginResponse } from "@/types/auth.types"
 import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
 import { forwardAuthCookies } from "@/lib/authCookies"
-import { logout } from "@/services/auth.services"
+import { getActionErrorMessage } from "@/lib/actionError"
+import { logout } from "@/services/logout"
 
 const BASE_API_URL = SERVER_API_BASE_URL
-
-// One place that turns an unknown thrown value into a message worth showing.
-// Without it a component sees "Request failed with status code 401" instead of
-// the backend's own "Invalid email or password".
-const getActionErrorMessage = (error: unknown, fallbackMessage: string) => {
-  if (
-    error &&
-    typeof error === "object" &&
-    "response" in error &&
-    error.response &&
-    typeof error.response === "object" &&
-    "data" in error.response &&
-    error.response.data &&
-    typeof error.response.data === "object" &&
-    "message" in error.response.data &&
-    typeof error.response.data.message === "string"
-  ) {
-    return error.response.data.message
-  }
-
-  if (error instanceof Error) {
-    return error.message
-  }
-
-  return fallbackMessage
-}
 
 export const loginAction = async (payload: {
   email: string

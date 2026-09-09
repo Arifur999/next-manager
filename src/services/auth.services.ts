@@ -1,7 +1,9 @@
-"use server"
+// Not "use server". Only logout() ever needed to be callable from a client
+// component, and it lives in ./logout.ts now - leaving the directive here
+// would keep publishing getUserInfo, updateMe and changePassword as endpoints
+// that skip the actions wrapping them.
 
 import { httpClient } from "@/lib/axios/httpClient"
-import { deleteCookie } from "@/lib/cookiesUtils"
 import { type IUser } from "@/types/user.types"
 import { cookies } from "next/headers"
 import { cache } from "react"
@@ -38,11 +40,6 @@ export const getUserInfo = cache(async (): Promise<IUser | null> => {
         return null
     }
 })
-
-export const logout = async () => {
-    await deleteCookie("accessToken")
-    await deleteCookie("refreshToken")
-}
 
 /**
  * Edit your own record.

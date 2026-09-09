@@ -100,4 +100,13 @@ describe("parseSetCookie", () => {
     it("treats an empty value as a clear even with a live Max-Age", () => {
         expect(parseSetCookie("accessToken=; Max-Age=86400; Path=/")?.clearing).toBe(true)
     })
+
+    // Digits, but not a lifetime. Next computes new Date(now + maxAge*1000)
+    // from this, which overflows to an Invalid Date and puts
+    // "Expires=Invalid Date" on the wire - a header browsers drop, while
+    // everything upstream believes the cookie was set.
+    it("rejects a Max-Age too large to be a date", () => {
+        expect(parseSetCookie("a=b; Max-Age=100000000000000000000")?.maxAge).toBeUndefined()
+        expect(parseSetCookie("a=b; Max-Age=604800")?.maxAge).toBe(604800)
+    })
 })

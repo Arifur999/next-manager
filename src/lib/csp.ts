@@ -85,11 +85,30 @@ const policy = (nonce: string) =>
  * Every path in the proxy that renders a page goes through here, so there is
  * one place the header is set rather than five that have to stay in step.
  */
-export const allow = (request: NextRequest, extraRequestHeaders?: Headers) => {
+export const allow = (
+    request: NextRequest,
+    extraRequestHeaders?: Headers,
+    options?: { refreshed?: boolean }
+) => {
     const nonce = crypto.randomUUID().replace(/-/g, "")
     const value = policy(nonce)
 
     const requestHeaders = extraRequestHeaders ?? new Headers(request.headers)
+
+    // x-token-refreshed is a SERVER signal, and it is set here rather than by
+    // the caller so it cannot be forged or forgotten.
+    //
+    // Next's HIDDEN_REQUEST_HEADERS masks only its own flight headers, so a
+    // client-sent `x-token-refreshed: 1` reached headers() in the render
+    // untouched - and httpClient reads it as "the proxy already refreshed,
+    // do not bother". Anyone could have sent it and switched proactive refresh
+    // off for their own session, which then simply expires into /login instead
+    // of rolling over. Deleted on every path, set on none but this one.
+    requestHeaders.delete("x-token-refreshed")
+    if (options?.refreshed) {
+        requestHeaders.set("x-token-refreshed", "1")
+    }
+
     requestHeaders.set("x-nonce", nonce)
     // Next reads the policy off the REQUEST to decide where to place the nonce,
     // so it has to be set on both halves, not just the response.
