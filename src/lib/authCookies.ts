@@ -1,4 +1,5 @@
-"use server"
+// Not "use server" - same reason as cookiesUtils.ts. It is called from server
+// actions, which is not the same thing as being one.
 
 import { setCookie } from "./cookiesUtils"
 
