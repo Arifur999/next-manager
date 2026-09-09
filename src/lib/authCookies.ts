@@ -1,7 +1,7 @@
 // Not "use server" - same reason as cookiesUtils.ts. It is called from server
 // actions, which is not the same thing as being one.
 
-import { setCookie } from "./cookiesUtils"
+import { deleteCookie, setCookie } from "./cookiesUtils"
 
 const AUTH_COOKIE_NAMES = ["accessToken", "refreshToken"]
 
@@ -48,9 +48,20 @@ export const forwardAuthCookies = async (response: Response): Promise<boolean> =
 
         const seconds = Number(maxAge)
 
-        // The API's own lifetime is the one to keep - it is the side that knows
+        // Max-Age=0 is a DELETE instruction, not a lifetime. Treating it as
+        // "no usable value" and falling back to an hour would turn a clearing
+        // cookie into a fresh one - the opposite of what was asked. Nothing
+        // sends one down this path today (logout clears cookies on its own
+        // side), which is exactly why it is worth handling before something
+        // does.
+        if (Number.isFinite(seconds) && seconds <= 0) {
+            await deleteCookie(name)
+            continue
+        }
+
+        // Otherwise the API's own lifetime, because it is the side that knows
         // when the token it just signed expires.
-        await setCookie(name, value, Number.isFinite(seconds) && seconds > 0 ? seconds : 3600)
+        await setCookie(name, value, Number.isFinite(seconds) ? seconds : 3600)
         forwarded = true
     }
 
