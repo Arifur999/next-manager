@@ -7,6 +7,26 @@ import { parseSetCookie } from "./parseSetCookie"
 const AUTH_COOKIE_NAMES = ["accessToken", "refreshToken"]
 
 /**
+ * Next's "you cannot write cookies during a render" error, and only that one.
+ *
+ * Identified by its error CODE, not its class name: the class is
+ * ReadonlyRequestCookiesError but it never assigns `this.name`, so `error.name`
+ * is the inherited "Error" and a name check silently matches nothing - which
+ * would mean every write failure re-thrown as if it were serious, or worse,
+ * every one swallowed. The code is set deliberately, with
+ * Object.defineProperty, and is what Next itself uses to recognise it.
+ *
+ * The message is a second string to match on in case that ever changes, since
+ * being wrong here fails closed in an unhelpful direction either way.
+ */
+const isReadonlyCookiesError = (error: unknown): boolean => {
+    if (!(error instanceof Error)) return false
+
+    const code = (error as Error & { __NEXT_ERROR_CODE?: string }).__NEXT_ERROR_CODE
+    return code === "E1180" || error.message.includes("Cookies can only be modified")
+}
+
+/**
  * What the API's Set-Cookie headers turned out to mean.
  *
  * A boolean could not say this. It reported "nothing happened" and "a
@@ -14,7 +34,7 @@ const AUTH_COOKIE_NAMES = ["accessToken", "refreshToken"]
  * somebody to try again after a sign-out the API performed on purpose.
  */
 export type AuthCookieOutcome =
-    /** A session was written to the browser. */
+    /** A session was written to the browser, whole. */
     | "set"
     /** The API asked for the session to be removed, and it was. */
     | "cleared"
@@ -22,6 +42,14 @@ export type AuthCookieOutcome =
     | "none"
     /** Next refused the write because this is a render, not an action. */
     | "blocked"
+    /**
+     * Some of it landed and some did not - one cookie set and the other
+     * cleared, or a write that failed halfway. Never reported as "set",
+     * because half a session is worse than none: an accessToken with no
+     * refreshToken works until it expires and then dies with no way to renew,
+     * which reads as a session dropping at random.
+     */
+    | "partial"
 
 /**
  * Copy the API's auth cookies onto the browser.
@@ -54,6 +82,7 @@ export const forwardAuthCookies = async (response: Response): Promise<AuthCookie
 
     let set = 0
     let cleared = 0
+    let blocked = false
 
     for (const header of headers) {
         const cookie = parseSetCookie(header)
@@ -74,14 +103,29 @@ export const forwardAuthCookies = async (response: Response): Promise<AuthCookie
             // knows when the token it just signed expires.
             await setCookie(cookie.name, cookie.value, cookie.maxAge ?? 3600)
             set++
-        } catch {
-            // The render-phase refusal described above. Nothing was written,
-            // and saying so is more use than a stack trace the caller cannot
-            // act on.
-            return "blocked"
+        } catch (error) {
+            // ONLY the render-phase refusal. A bare catch here would have
+            // swallowed an oversized value, an invalid character, or any
+            // future change in Next's internals, mapped all of them to
+            // "blocked", and left no log on the auth path - a real breakage
+            // would have surfaced as people saying they cannot sign in, with
+            // nothing to look at.
+            if (isReadonlyCookiesError(error)) {
+                blocked = true
+                break
+            }
+
+            throw error
         }
     }
 
+    // Order matters. A throw partway through does NOT discard what already
+    // landed: reporting "blocked" after one cookie was written would tell
+    // login that no session exists while the browser holds an accessToken -
+    // and the proxy would then bounce that person off /login into a dashboard
+    // they had just been told they could not enter.
+    if (set > 0 && cleared > 0) return "partial"
+    if (blocked) return set > 0 || cleared > 0 ? "partial" : "blocked"
     if (set > 0) return "set"
     if (cleared > 0) return "cleared"
     return "none"

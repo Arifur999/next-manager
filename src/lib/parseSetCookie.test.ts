@@ -58,4 +58,46 @@ describe("parseSetCookie", () => {
         expect(parseSetCookie("=value; Path=/")).toBeNull()
         expect(parseSetCookie("nonsense")).toBeNull()
     })
+
+    // The combination this API actually sends on every auth cookie, and the
+    // one the first version of these tests never covered: Express emits BOTH
+    // Max-Age and an Expires derived from its own clock. RFC 6265 4.1.2.2
+    // gives Max-Age precedence, so a live Max-Age must survive an Expires that
+    // has already passed - which is what a clock running ahead of the API's
+    // looks like. OR-ing the two made every login parse as a delete.
+    it("gives Max-Age precedence over a past Expires", () => {
+        const c = parseSetCookie(
+            "accessToken=aa.bb.cc; Max-Age=86400; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/"
+        )
+        expect(c).toMatchObject({ maxAge: 86400, clearing: false })
+    })
+
+    it("and over a future Expires when Max-Age says to clear", () => {
+        const c = parseSetCookie(
+            "accessToken=abc; Max-Age=0; Expires=Sun, 13 Sep 2099 04:39:38 GMT; Path=/"
+        )
+        expect(c?.clearing).toBe(true)
+    })
+
+    it("falls back to Expires only when Max-Age is absent or malformed", () => {
+        expect(parseSetCookie("a=b; Expires=Thu, 01 Jan 1970 00:00:00 GMT")?.clearing).toBe(true)
+        expect(parseSetCookie("a=b; Max-Age=nope; Expires=Thu, 01 Jan 1970 00:00:00 GMT")?.clearing).toBe(true)
+    })
+
+    // Number() swallows far more than a cookie lifetime may be. Each of these
+    // used to become a real, wrong Max-Age - a garbage header signing somebody
+    // out sixteen seconds after signing them in.
+    it("requires Max-Age to be a digit string", () => {
+        expect(parseSetCookie("a=b; Max-Age=0x10")?.maxAge).toBeUndefined()
+        expect(parseSetCookie("a=b; Max-Age=1e3")?.maxAge).toBeUndefined()
+        expect(parseSetCookie("a=b; Max-Age=1.5")?.maxAge).toBeUndefined()
+        expect(parseSetCookie("a=b; Max-Age= 60 ")?.maxAge).toBe(60)
+        expect(parseSetCookie("a=b; Max-Age=-1")?.clearing).toBe(true)
+    })
+
+    // An empty value outranks any lifetime: a server sending no value is not
+    // setting anything, whatever it attaches.
+    it("treats an empty value as a clear even with a live Max-Age", () => {
+        expect(parseSetCookie("accessToken=; Max-Age=86400; Path=/")?.clearing).toBe(true)
+    })
 })

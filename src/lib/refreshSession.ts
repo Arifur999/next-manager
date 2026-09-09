@@ -51,10 +51,3 @@ export async function getNewTokensWithRefreshToken(refreshToken: string): Promis
         return false
     }
 }
-
-// Multiple Server Components in the same request tree (sidebar, navbar, page
-// content) each call this independently. Without request-level dedup that is
-// several separate live round-trips per page load, and if any single one is
-// slow or flaky that component silently loses its user data while the others
-// render fine - the sidebar vanishing while the page content still shows.
-// cache() gives one real fetch per request, shared by every caller.

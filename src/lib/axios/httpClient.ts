@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getNewTokensWithRefreshToken } from '@/lib/refreshSession';
 import { ApiResponse } from '@/types/api.types';
 import axios from 'axios';
@@ -27,11 +26,11 @@ const API_BASE_URL = SERVER_API_BASE_URL
  * nothing left to do.
  */
 const refreshOncePerRequest = cache(async (refreshToken: string): Promise<void> => {
-    try {
-        await getNewTokensWithRefreshToken(refreshToken);
-    } catch (error: any) {
-        console.error("Error refreshing token in http client:", error);
-    }
+    // No try here. getNewTokensWithRefreshToken catches its own failures and
+    // returns false rather than throwing, so a catch would be unreachable -
+    // and it duplicated a console.error that already exists one level down,
+    // so the one time it could have fired it would have logged twice.
+    await getNewTokensWithRefreshToken(refreshToken);
 });
 
 async function tryRefreshToken(accessToken: string, refreshToken: string): Promise<void> {

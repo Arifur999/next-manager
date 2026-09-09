@@ -59,7 +59,7 @@ export async function proxy(request: NextRequest) {
         // here, so it must not be the thing that answers that question.
         let requestHeaders: Headers | undefined;
 
-        if (isValidAccessToken && accessToken && refreshToken && (isTokenExpiringSoon(accessToken))) {
+        if (isValidAccessToken && accessToken && refreshToken && isTokenExpiringSoon(accessToken)) {
             requestHeaders = new Headers(request.headers);
 
             const refreshed = await refreshTokenInProxy(refreshToken);

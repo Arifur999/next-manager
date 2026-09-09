@@ -4,6 +4,7 @@ import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 import { type ILoginResponse } from "@/types/auth.types"
 import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
 import { forwardAuthCookies } from "@/lib/authCookies"
+import { logout } from "@/services/auth.services"
 
 const BASE_API_URL = SERVER_API_BASE_URL
 
@@ -62,6 +63,14 @@ export const loginAction = async (payload: {
     const outcome = await forwardAuthCookies(res)
 
     if (outcome !== "set") {
+        // Leave nothing behind. "partial" means one cookie landed and the
+        // other did not, and a browser holding an accessToken with no
+        // refreshToken is worse than one holding neither: the proxy would see
+        // a valid token, bounce the person off /login into the dashboard they
+        // were just told they could not enter, and the session would then die
+        // at its first renewal with no way back.
+        await logout()
+
         // Loudly, rather than returning a success the browser cannot act on:
         // the toast would say "Signed in", the redirect would fire, and the
         // proxy would bounce it straight back to /login.

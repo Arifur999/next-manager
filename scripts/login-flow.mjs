@@ -64,14 +64,18 @@ check("the API accepts the credentials", res.status === 200, `${res.status} ${bo
 const headers = res.headers.getSetCookie?.() ?? [];
 const parsed = new Map();
 for (const header of headers) {
+  // Name, value, Max-Age. Nothing else, because nothing else is this file's
+  // question - and the previous version of these lines was a second copy of
+  // the real parser that had drifted from it within a day.
   const [pair, ...attributes] = header.split(";");
   const equals = pair.indexOf("=");
   if (equals === -1) continue;
-  const maxAge = attributes
-    .map((a) => a.trim())
-    .find((a) => a.toLowerCase().startsWith("max-age="))
-    ?.split("=")[1];
-  parsed.set(pair.slice(0, equals).trim(), { value: pair.slice(equals + 1).trim(), maxAge: Number(maxAge) });
+  const maxAge = /(?:^|;)[ 	]*max-age=[ 	]*(-?[0-9]+)/i.exec(header)?.[1];
+  parsed.set(pair.slice(0, equals).trim(), {
+    value: pair.slice(equals + 1).trim(),
+    maxAge: maxAge === undefined ? undefined : Number(maxAge),
+  });
+  void attributes;
 }
 
 // THE check. Without these two headers the login action has nothing to give

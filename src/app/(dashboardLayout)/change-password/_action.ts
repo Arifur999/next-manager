@@ -1,8 +1,7 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { deleteCookie } from "@/lib/cookiesUtils"
-import { changePassword } from "@/services/auth.services"
+import { changePassword, logout } from "@/services/auth.services"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 /**
@@ -24,9 +23,18 @@ export const changePasswordAction = async (
     try {
         const result = await changePassword(payload)
 
-        // Only on success. A wrong current password must not sign anybody out.
-        await deleteCookie("accessToken")
-        await deleteCookie("refreshToken")
+        // Checked, not assumed. httpClient returns response.data for every
+        // 2xx, so a 200 carrying { success: false } reaches here - and the
+        // form branches on exactly that, shows an error and does NOT redirect.
+        // Signing that person out would leave them on the page being told the
+        // change failed, with the session already gone, discovering it only on
+        // their next click.
+        if (result.success) {
+            // logout() rather than two deletes of its own. There is one
+            // definition of what ending a session means, and when it grows a
+            // step this gets it too.
+            await logout()
+        }
 
         return result
     } catch (error: unknown) {

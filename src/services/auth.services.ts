@@ -6,7 +6,6 @@ import { type IUser } from "@/types/user.types"
 import { cookies } from "next/headers"
 import { cache } from "react"
 import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
-import { forwardAuthCookies } from "@/lib/authCookies"
 
 const BASE_API_URL = SERVER_API_BASE_URL
 
