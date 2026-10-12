@@ -38,7 +38,7 @@ Web access was not used to open these while writing; each one is marked unverifi
 | Marker | `oklch(0.92 0.15 100)` | annotations on product frames only; never text colour, never status |
 | Status green | hue 150 ramp | success, always with an icon and a word |
 
-- Type: IBM Plex Sans variable (wght 100 to 700, wdth 75 to 100; `next/font/local`, latin subset) for everything; IBM Plex Mono 400 and 500 for invoice numbers, codes and amounts inside product frames. Scale ratio 1.2 at 360 px rising to about 1.33 at 1440 px for marketing headings; fixed sizes in the app.
+- Type: IBM Plex Sans variable (latin subset instanced to wght 400 to 700, wdth 87 to 100, the ranges in use; `next/font/local`) for everything; IBM Plex Mono 400 and 500 for invoice numbers, codes and amounts inside product frames. Scale ratio 1.2 at 360 px rising to about 1.33 at 1440 px for marketing headings; fixed sizes in the app.
 - Radius and depth: `--radius: 0.375rem`; hairline borders everywhere; one shadow (`--elevation-frame`) used only on product frames so they read as objects on paper.
 - Imagery: no photography. The product interface is the imagery, built from the real tokens and components with sample data (long client names, USD invoices, a BDT account, hours by person). Marker strokes annotate two or three numbers per frame.
 - Motion: marketing level 3, app level 1. The one orchestrated moment is the workflow headline reveal; the hero never animates. Details in `design/motion.md`.

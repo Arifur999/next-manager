@@ -2,15 +2,18 @@ import localFont from "next/font/local"
 
 // Local files, not next/font/google: the Google loader fetches at build time,
 // and a network hiccup on the build machine should not fail a build.
-// Plex Sans is one variable file carrying weight (100 to 700) and width (75 to
-// 100), so dense tables narrow with `font-stretch` instead of a second family.
+// Plex Sans is one variable file carrying weight and width, so dense tables
+// narrow with `font-stretch` instead of a second family. The file is the
+// Fontsource latin subset instanced to the ranges the UI uses (weight 400 to
+// 700, width 87 to 100; fontTools varLib.instancer): 49 KB instead of 65 KB
+// for the one font the hero text waits on.
 const plexSans = localFont({
   // Upright only: italic appears in one muted label, and preloading a second
   // 76 KB file for it delayed the landing page's LCP on mobile.
-  src: [{ path: "../app/fonts/IBMPlexSans-var.woff2", weight: "100 700", style: "normal" }],
+  src: [{ path: "../app/fonts/IBMPlexSans-var.woff2", weight: "400 700", style: "normal" }],
   variable: "--ff-sans",
   display: "swap",
-  declarations: [{ prop: "font-stretch", value: "75% 100%" }],
+  declarations: [{ prop: "font-stretch", value: "87% 100%" }],
 })
 
 // Invoice numbers, codes and amounts in product frames.
