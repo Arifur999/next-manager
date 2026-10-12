@@ -1,20 +1,18 @@
 import jwt, { type JwtPayload } from 'jsonwebtoken';
 
-const verifyToken = (token: string, secret: string) => {
+export type VerifyResult =
+  | { success: true; decoded: JwtPayload }
+  | { success: false; reason: 'expired' | 'invalid' };
+
+// "expired" is told apart from "invalid" so the proxy can renew an expired
+// session but never one whose signature does not check out.
+const verifyToken = (token: string, secret: string): VerifyResult => {
   try {
-    const decoded = jwt.verify(token, secret) as JwtPayload;
-    return {
-      success: true,
-      decoded,
-      message: 'Token verified successfully',
-    };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (error: any) {
-    return {
-      success: false,
-      message: error.message,
-      error: error,
-    };
+    const decoded = jwt.verify(token, secret);
+    if (typeof decoded === 'string') return { success: false, reason: 'invalid' };
+    return { success: true, decoded };
+  } catch (error: unknown) {
+    return { success: false, reason: error instanceof jwt.TokenExpiredError ? 'expired' : 'invalid' };
   }
 };
 

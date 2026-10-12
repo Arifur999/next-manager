@@ -9,7 +9,8 @@ import {
 } from "./lib/authUtils";
 import { AUTH_COOKIE_NAMES } from "./lib/authCookies";
 import { allow } from "./lib/csp";
-import { jwtUtils } from "./lib/jwtUtils";
+import { jwtUtils, type VerifyResult } from "./lib/jwtUtils";
+import { getRefreshPlan, type AccessState } from "./lib/refreshPlan";
 import { isTokenExpiringSoon } from "./lib/tokenUtils";
 import { getNewTokensWithRefreshToken } from "@/lib/refreshSession";
 import { toUserRole } from "./types/user.types";
@@ -26,6 +27,15 @@ async function refreshTokenInProxy(refreshToken: string): Promise<boolean> {
     }
 }
 
+const toAccessState = (
+    accessToken: string | undefined,
+    verified: VerifyResult | null
+): AccessState => {
+    if (!accessToken || !verified) return "missing";
+    if (!verified.success) return verified.reason;
+    return isTokenExpiringSoon(accessToken) ? "expiring" : "valid";
+};
+
 export async function proxy(request: NextRequest) {
     try {
         const { pathname } = request.nextUrl;
@@ -41,49 +51,27 @@ export async function proxy(request: NextRequest) {
 
         const accessToken = request.cookies.get("accessToken")?.value;
         const refreshToken = request.cookies.get("refreshToken")?.value;
+        const secret = process.env.JWT_ACCESS_SECRET as string;
 
-        const verified = accessToken
-            ? jwtUtils.verifyToken(accessToken, process.env.JWT_ACCESS_SECRET as string)
-            : null;
-
-        const isValidAccessToken = Boolean(verified?.success);
-        const userRole: UserRole | null = verified?.success
-            ? toUserRole(verified.decoded?.role)
-            : null;
+        let verified = accessToken ? jwtUtils.verifyToken(accessToken, secret) : null;
+        const accessState = toAccessState(accessToken, verified);
+        const plan = getRefreshPlan({ accessState, hasRefreshToken: Boolean(refreshToken) });
 
         const area = getAreaRule(pathname);
         const isAuth = isAuthRoute(pathname);
 
-        // Rule 0 - proactively refresh a token that is about to expire, so a
-        // long session never bounces the user to /login mid-navigation.
-        //
-        // It does NOT return. It used to, and that was an authorisation
-        // bypass: returning here skipped Rules 1 to 5, so for the sixty
-        // seconds before a token expired - once per token lifetime, for every
-        // signed-in session - canRoleReach never ran and every page was open
-        // to every role. Measured with the leeway widened so the window was
-        // always open: all 66 routes went to "open" for all four roles,
-        // including the platform pages.
-        //
-        // Refreshing is housekeeping. It is not a decision about who may be
-        // here, so it must not be the thing that answers that question.
+        // Rule 0 - renew the session: early when the token is about to expire,
+        // or to recover one whose access cookie is already gone. It never
+        // returns, so Rules 1 to 5 still decide who may be here.
         const requestHeaders = new Headers(request.headers);
         let refreshed = false;
 
-        if (isValidAccessToken && accessToken && refreshToken && isTokenExpiringSoon(accessToken)) {
+        if (plan !== "none" && refreshToken) {
             refreshed = await refreshTokenInProxy(refreshToken);
 
             if (refreshed) {
-                // The rotated cookies have to be put into the REQUEST too.
-                //
-                // refreshTokenInProxy writes them with cookies().set(), which
-                // Next flushes onto the RESPONSE's Set-Cookie - it does not
-                // touch the request headers this render will read. Without
-                // this line the render saw the old, about-to-expire token
-                // while x-token-refreshed told httpClient not to refresh
-                // either, so a token that expired in flight 401'd the API and
-                // bounced the person to /login on the very request that had
-                // just renewed their session.
+                // The rotated cookies land on the response only; copy them into
+                // the request so this render reads the new token, not the old one.
                 const store = await cookies();
                 requestHeaders.set(
                     "cookie",
@@ -92,12 +80,19 @@ export async function proxy(request: NextRequest) {
                         .map((entry) => `${entry.name}=${entry.value}`)
                         .join("; ")
                 );
-            }
 
-            // The role on the rotated token is the same role: a refresh
-            // renews a session, it does not change who it belongs to. So the
-            // userRole read above still holds for the checks below.
+                // Recovery had no usable token, so the role comes from the new one.
+                const rotated = store.get("accessToken")?.value;
+                if (plan === "recover" && rotated) {
+                    verified = jwtUtils.verifyToken(rotated, secret);
+                }
+            }
         }
+
+        const isValidAccessToken = Boolean(verified?.success);
+        const userRole: UserRole | null = verified?.success
+            ? toUserRole(verified.decoded.role)
+            : null;
 
         // Rule 1 - a signed-in user has no business on the auth pages.
         if (isAuth && isValidAccessToken && userRole) {
