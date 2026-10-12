@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PaginationMeta } from "@/types/api.types";
+import { pageCountOf, type PaginationMeta } from "@/types/api.types";
 import {
   ColumnDef,
   flexRender,
@@ -133,7 +133,7 @@ const DataTable = <TData,>({
     getPaginationRowModel: getPaginationRowModel(),
     manualSorting: !!sorting,
     manualPagination: !!pagination,
-    pageCount: pagination ? Math.max(meta?.totalPage ?? 0, 0) : undefined,
+    pageCount: pagination ? Math.max(pageCountOf(meta) ?? 0, 0) : undefined,
     state: {
       ...(sorting ? { sorting: sorting.state } : {}),
       ...(pagination ? { pagination: pagination.state } : {}),
@@ -240,7 +240,7 @@ const DataTable = <TData,>({
         {pagination && (
           <DataTablePagination
             table={table}
-            totalPages={meta?.totalPage}
+            totalPages={pageCountOf(meta)}
             totalRows={meta?.total}
             isLoading={isLoading}
           />

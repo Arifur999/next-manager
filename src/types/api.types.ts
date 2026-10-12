@@ -5,14 +5,16 @@ export interface ApiResponse<TData = unknown> {
     meta?: PaginationMeta;
 }
 
-// Mirrors what the backend's sendResponse() emits - note `totalPage`, singular,
-// which is the field the API actually sends. Renaming it here would only move
-// the mismatch somewhere harder to find.
+// Mirrors what the backend's sendResponse() emits. `totalPages` is the house
+// name and is being added beside the old `totalPage`; read it through
+// pageCountOf so either API version works.
 export interface PaginationMeta {
     page: number;
     limit: number;
     total: number;
-    totalPage: number;
+    totalPages?: number;
+    /** @deprecated Use totalPages; removed from the API once this app reads it. */
+    totalPage?: number;
     /**
      * Sums for the whole filtered list rather than the page that came back —
      * the transactions ledger sends this.
@@ -49,3 +51,6 @@ export interface ApiErrorResponse {
 export type ApiResult<TData> =
     | { success: true; message: string; data: TData; meta?: PaginationMeta }
     | { success: false; message: string; fieldErrors?: Record<string, string[]> };
+
+export const pageCountOf = (meta: Pick<PaginationMeta, "totalPages" | "totalPage"> | undefined) =>
+    meta?.totalPages ?? meta?.totalPage;
