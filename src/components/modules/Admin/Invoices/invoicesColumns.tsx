@@ -1,6 +1,6 @@
 import DateCell from "@/components/shared/cell/DateCell"
 import { formatUsd } from "@/lib/currency"
-import type { IInvoice, InvoiceStatus } from "@/types/agencio.types"
+import type { IInvoice, InvoiceStatus } from "@/types/billing.types"
 import { ColumnDef } from "@tanstack/react-table"
 
 // Status is a state, so it takes state colours: paid is good, overdue is

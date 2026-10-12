@@ -1,5 +1,5 @@
 import PaymentsTable from "@/components/modules/Admin/Payments/PaymentsTable";
-import { getPayments } from "@/services/agencio.services";
+import { getPayments } from "@/services/billing.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

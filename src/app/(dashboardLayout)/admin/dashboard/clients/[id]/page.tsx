@@ -1,5 +1,5 @@
 import ClientDetail from "@/components/modules/Admin/Clients/ClientDetail";
-import { getInvoices, getPayments } from "@/services/agencio.services";
+import { getInvoices, getPayments } from "@/services/billing.services";
 import { getClient, getClientFinancials } from "@/services/crm.services";
 import { getUserInfo } from "@/services/auth.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";

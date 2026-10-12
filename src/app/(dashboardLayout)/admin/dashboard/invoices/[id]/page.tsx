@@ -1,5 +1,5 @@
 import InvoiceDetail from "@/components/modules/Admin/Invoices/InvoiceDetail";
-import { getInvoice } from "@/services/agencio.services";
+import { getInvoice } from "@/services/billing.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

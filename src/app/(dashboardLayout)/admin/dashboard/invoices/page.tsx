@@ -1,5 +1,5 @@
 import InvoicesTable from "@/components/modules/Admin/Invoices/InvoicesTable";
-import { getInvoices } from "@/services/agencio.services";
+import { getInvoices } from "@/services/billing.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

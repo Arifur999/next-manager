@@ -1,8 +1,8 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { createPayment, deletePayment } from "@/services/agencio.services"
-import type { IPayment } from "@/types/agencio.types"
+import { createPayment, deletePayment } from "@/services/billing.services"
+import type { IPayment } from "@/types/billing.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 export const createPaymentAction = async (

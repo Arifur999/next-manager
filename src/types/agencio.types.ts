@@ -20,13 +20,6 @@ export type AccountType =
     | "nagad"
     | "other";
 
-export type InvoiceStatus =
-    | "draft"
-    | "sent"
-    | "partially_paid"
-    | "paid"
-    | "overdue"
-    | "cancelled";
 export type ExpenseCategoryType = "general" | "employee";
 export type PayoutType = "salary" | "project_bonus" | "commission" | "reimbursement";
 export type WithdrawalType = "personal" | "reinvestment";
@@ -59,24 +52,6 @@ export interface IAccount {
     created_at: string;
 }
 
-export interface IPayment {
-    id: string;
-    client_id: string;
-    project_id: string | null;
-    invoice_id: string | null;
-    date: string;
-    amount_usd: number;
-    /** Frozen when the payment was saved — not today's rate. */
-    reporting_rate: number;
-    amount_bdt_reporting: number;
-    account_id: string;
-    reference: string;
-    notes: string;
-    client?: Pick<IClient, "id" | "name" | "company">;
-    project?: Pick<IProject, "id" | "name" | "code"> | null;
-    account?: Pick<IAccount, "id" | "name" | "currency">;
-}
-
 export interface IExchange {
     id: string;
     date: string;
@@ -90,40 +65,6 @@ export interface IExchange {
     notes: string;
     from_account?: Pick<IAccount, "id" | "name" | "currency">;
     to_account?: Pick<IAccount, "id" | "name" | "currency">;
-}
-
-export interface IInvoiceItem {
-    id: string;
-    description: string;
-    quantity: number;
-    unit_price: number;
-    amount: number;
-    sort_order: number;
-}
-
-export interface IInvoice {
-    id: string;
-    client_id: string;
-    project_id: string | null;
-    invoice_number: string;
-    issue_date: string;
-    due_date: string;
-    status: InvoiceStatus;
-    subtotal: number;
-    discount: number;
-    tax: number;
-    total: number;
-    notes: string;
-    terms: string;
-    /** Derived on read from due_date, never stored. */
-    is_overdue: boolean;
-    paid_usd?: number;
-    due_usd?: number;
-    client?: Pick<IClient, "id" | "name" | "company" | "email">;
-    project?: Pick<IProject, "id" | "name" | "code"> | null;
-    items?: IInvoiceItem[];
-    payments?: Array<Pick<IPayment, "id" | "date" | "amount_usd" | "reference">>;
-    _count?: { items: number; payments: number };
 }
 
 export interface IExpenseCategory {
