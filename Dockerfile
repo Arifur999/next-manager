@@ -22,21 +22,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# NEXT_PUBLIC_ variables are inlined into the bundle by `next build`, not read
-# at runtime - so this has to be a build argument, and changing it means
-# rebuilding rather than restarting.
-#
-# This is the BROWSER's route to the API, and it must be a public one.
-# useChatSocket runs client-side and derives the WebSocket URL from this exact
-# value, so a container hostname here would give every browser a ws:// address
-# that only resolves inside the compose network. Default is the origin nginx
-# serves, which proxies /api and /ws to the API.
-#
-# The server's own route is API_INTERNAL_URL, set at RUNTIME rather than baked
-# in - see src/lib/axios/httpClient.ts. It is not a secret, and nothing else is
-# passed in here.
-ARG NEXT_PUBLIC_API_BASE_URL=http://localhost/api/v1
-ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
+# Nothing environment-specific is baked in: the server reads API_BASE_URL and
+# the rest at runtime (src/env.ts), and the chat socket uses the page origin,
+# so one image runs anywhere.
 
 # Telemetry off during the build: it is a network call in a step that should be
 # reproducible, and it fails noisily on a machine with no route out.

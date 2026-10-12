@@ -18,6 +18,18 @@ import { useEffect, useRef } from "react"
  * Reconnects with a backoff that gives up climbing at 30s, because a server
  * that is down for a minute should not be hit every 200ms by every open tab.
  */
+// nginx serves the socket at /ws on the page's own origin, which CSP
+// connect-src 'self' allows. Only `next dev` (page on 3000, API on 5000) needs
+// NEXT_PUBLIC_DEV_WS_URL; production images carry no API address at all.
+const chatSocketUrl = () => {
+    const devUrl = process.env.NODE_ENV === "development" ? process.env.NEXT_PUBLIC_DEV_WS_URL : undefined
+    if (devUrl) return new URL(devUrl)
+
+    const url = new URL("/ws", window.location.origin)
+    url.protocol = url.protocol === "https:" ? "wss:" : "ws:"
+    return url
+}
+
 export const useChatSocket = (onEvent: (event: { type: string; conversation_id?: string }) => void) => {
     // Held in a ref so a changing callback never tears down the connection —
     // re-opening a socket on every render would be a reconnect storm. Written
@@ -30,13 +42,7 @@ export const useChatSocket = (onEvent: (event: { type: string; conversation_id?:
     }, [onEvent])
 
     useEffect(() => {
-        // The socket shares the API's origin, so it is derived from the same
-        // env var rather than configured twice and left to disagree.
-        const base = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000/api/v1"
-        const url = new URL(base)
-        url.protocol = url.protocol === "https:" ? "wss:" : "ws:"
-        url.pathname = "/ws"
-        url.search = ""
+        const url = chatSocketUrl()
 
         let socket: WebSocket | null = null
         let retry: ReturnType<typeof setTimeout> | null = null

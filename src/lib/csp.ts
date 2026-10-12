@@ -48,8 +48,7 @@ const policy = (nonce: string) =>
         "font-src 'self' data:",
 
         // 'self' covers the chat socket, which is same-origin: useChatSocket
-        // takes NEXT_PUBLIC_API_BASE_URL and only swaps the protocol and path,
-        // so it opens wss://<this origin>/ws.
+        // opens wss://<this origin>/ws.
         //
         // The bare ws: and wss: schemes were here before and were a hole: a
         // scheme-source matches ANY host, so injected script could have opened
