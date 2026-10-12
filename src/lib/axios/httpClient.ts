@@ -1,6 +1,7 @@
 import "server-only";
 
 import { logApiFailure } from "@/lib/apiFailure";
+import { AUTH_COOKIE_NAMES } from "@/lib/authCookies";
 import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl";
 import { getNewTokensWithRefreshToken } from "@/lib/refreshSession";
 import { isTokenExpiringSoon } from "@/lib/tokenUtils";
@@ -26,12 +27,13 @@ const refreshIfExpiring = async (accessToken: string, refreshToken: string) => {
     await refreshOncePerRequest(refreshToken);
 };
 
+// Only the session travels to the API; theme and third-party cookies stay here.
 const buildCookieHeader = async () => {
     const cookieStore = await cookies();
-    return cookieStore
-        .getAll()
-        .map((cookie) => `${cookie.name}=${cookie.value}`)
-        .join("; ");
+    return AUTH_COOKIE_NAMES.flatMap((name) => {
+        const value = cookieStore.get(name)?.value;
+        return value ? [`${name}=${value}`] : [];
+    }).join("; ");
 };
 
 // Query strings can carry search terms, so logs get the path only.
