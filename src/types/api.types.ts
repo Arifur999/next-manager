@@ -40,6 +40,12 @@ export interface PaginationMeta {
 }
 
 export interface ApiErrorResponse {
-    success: boolean;
+    success: false;
     message: string;
 }
+
+// What an action hands back to the browser. Discriminated on `success`, so a
+// caller that checked it can read `data` without a cast.
+export type ApiResult<TData> =
+    | { success: true; message: string; data: TData; meta?: PaginationMeta }
+    | { success: false; message: string; fieldErrors?: Record<string, string[]> };

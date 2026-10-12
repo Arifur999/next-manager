@@ -156,7 +156,7 @@ export const updateProject = async (id: string, payload: Record<string, unknown>
     wrap("updating project", () => httpClient.patch<IProject>(`/projects/${id}`, payload))
 
 export const deleteProject = async (id: string) =>
-    wrap("deleting project", () => httpClient.delete(`/projects/${id}`))
+    wrap("deleting project", () => httpClient.delete<{ message: string }>(`/projects/${id}`))
 
 // -------------------------------------------------------------------- tasks
 
@@ -170,7 +170,7 @@ export const updateTask = async (id: string, payload: Record<string, unknown>) =
     wrap("updating task", () => httpClient.patch<ITask>(`/tasks/${id}`, payload))
 
 export const deleteTask = async (id: string) =>
-    wrap("deleting task", () => httpClient.delete(`/tasks/${id}`))
+    wrap("deleting task", () => httpClient.delete<{ message: string }>(`/tasks/${id}`))
 
 // ----------------------------------------------------------------- accounts
 
@@ -184,7 +184,7 @@ export const updateAccount = async (id: string, payload: Record<string, unknown>
     wrap("updating account", () => httpClient.patch<IAccount>(`/accounts/${id}`, payload))
 
 export const deleteAccount = async (id: string) =>
-    wrap("deleting account", () => httpClient.delete(`/accounts/${id}`))
+    wrap("deleting account", () => httpClient.delete<{ message: string }>(`/accounts/${id}`))
 
 // ----------------------------------------------------------------- invoices
 
@@ -201,7 +201,7 @@ export const updateInvoice = async (id: string, payload: Record<string, unknown>
     wrap("updating invoice", () => httpClient.patch<IInvoice>(`/invoices/${id}`, payload))
 
 export const deleteInvoice = async (id: string) =>
-    wrap("deleting invoice", () => httpClient.delete(`/invoices/${id}`))
+    wrap("deleting invoice", () => httpClient.delete<{ message: string }>(`/invoices/${id}`))
 
 // ----------------------------------------------------------------- payments
 
@@ -215,7 +215,7 @@ export const updatePayment = async (id: string, payload: Record<string, unknown>
     wrap("updating payment", () => httpClient.patch<IPayment>(`/payments/${id}`, payload))
 
 export const deletePayment = async (id: string) =>
-    wrap("deleting payment", () => httpClient.delete(`/payments/${id}`))
+    wrap("deleting payment", () => httpClient.delete<{ message: string }>(`/payments/${id}`))
 
 // ---------------------------------------------------------------- exchanges
 
@@ -226,7 +226,7 @@ export const createExchange = async (payload: Record<string, unknown>) =>
     wrap("recording exchange", () => httpClient.post<IExchange>("/exchanges", payload))
 
 export const deleteExchange = async (id: string) =>
-    wrap("deleting exchange", () => httpClient.delete(`/exchanges/${id}`))
+    wrap("deleting exchange", () => httpClient.delete<{ message: string }>(`/exchanges/${id}`))
 
 // ----------------------------------------------------------------- expenses
 
@@ -240,7 +240,7 @@ export const updateExpenseCategory = async (id: string, payload: Record<string, 
     wrap("updating expense category", () => httpClient.patch<IExpenseCategory>(`/expense-categories/${id}`, payload))
 
 export const deleteExpenseCategory = async (id: string) =>
-    wrap("deleting expense category", () => httpClient.delete(`/expense-categories/${id}`))
+    wrap("deleting expense category", () => httpClient.delete<{ message: string }>(`/expense-categories/${id}`))
 
 export const getExpenses = async (queryString?: string) =>
     wrap("fetching expenses", () => httpClient.get<IExpense[]>("/expenses", { params: toParams(queryString) }))
@@ -252,7 +252,7 @@ export const updateExpense = async (id: string, payload: Record<string, unknown>
     wrap("updating expense", () => httpClient.patch<IExpense>(`/expenses/${id}`, payload))
 
 export const deleteExpense = async (id: string) =>
-    wrap("deleting expense", () => httpClient.delete(`/expenses/${id}`))
+    wrap("deleting expense", () => httpClient.delete<{ message: string }>(`/expenses/${id}`))
 
 // ------------------------------------------------------- payouts, withdrawals
 
@@ -263,7 +263,7 @@ export const createTeamPayout = async (payload: Record<string, unknown>) =>
     wrap("recording payout", () => httpClient.post<ITeamPayout>("/team-payouts", payload))
 
 export const deleteTeamPayout = async (id: string) =>
-    wrap("deleting payout", () => httpClient.delete(`/team-payouts/${id}`))
+    wrap("deleting payout", () => httpClient.delete<{ message: string }>(`/team-payouts/${id}`))
 
 export const getOwnerWithdrawals = async (queryString?: string) =>
     wrap("fetching withdrawals", () =>
@@ -274,7 +274,7 @@ export const createOwnerWithdrawal = async (payload: Record<string, unknown>) =>
     wrap("recording withdrawal", () => httpClient.post<IOwnerWithdrawal>("/owner-withdrawals", payload))
 
 export const deleteOwnerWithdrawal = async (id: string) =>
-    wrap("deleting withdrawal", () => httpClient.delete(`/owner-withdrawals/${id}`))
+    wrap("deleting withdrawal", () => httpClient.delete<{ message: string }>(`/owner-withdrawals/${id}`))
 
 // ------------------------------------------------------------- due payments
 
@@ -293,7 +293,7 @@ export const createDueTransaction = async (payload: Record<string, unknown>) =>
     wrap("recording due transaction", () => httpClient.post<IDueTransaction>("/due-payments/transactions", payload))
 
 export const deleteDueTransaction = async (id: string) =>
-    wrap("deleting due transaction", () => httpClient.delete(`/due-payments/transactions/${id}`))
+    wrap("deleting due transaction", () => httpClient.delete<{ message: string }>(`/due-payments/transactions/${id}`))
 
 // -------------------------------------------------------------------- vault
 
@@ -314,7 +314,7 @@ export const getCredentialAccessLog = async (id: string) =>
     wrap("fetching access log", () => httpClient.get<ICredentialAccessEntry[]>(`/vault/${id}/access-log`))
 
 export const deleteCredential = async (id: string) =>
-    wrap("deleting credential", () => httpClient.delete(`/vault/${id}`))
+    wrap("deleting credential", () => httpClient.delete<{ message: string }>(`/vault/${id}`))
 
 // ----------------------------------------------------------------- settings
 
@@ -644,7 +644,11 @@ export const removePlatformAdmin = async (id: string) =>
 /** Returns `join_url` — the only time the token is readable. */
 export const createPlatformInvite = async (payload: Record<string, unknown>) =>
     wrap("inviting an operator", () =>
-        httpClient.post<{ invite: IPlatformInvite; join_url: string }>("/platform/invites", payload)
+        httpClient.post<{
+            invite: IPlatformInvite
+            join_url: string
+            email: { delivered: boolean; reason: string | null }
+        }>("/platform/invites", payload)
     )
 
 export const getPlatformInvites = async () =>
