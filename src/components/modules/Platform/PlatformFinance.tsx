@@ -9,13 +9,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { getPlatformExpenses, getPlatformFinance } from "@/services/platform.services"
-import type { IPlatformExpense, IPlatformFinance } from "@/types/platform.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { endOfMonth, format, parseISO, startOfMonth } from "date-fns"
 import { Receipt, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { platformExpensesListQuery, platformFinanceQuery } from "@/queries/platform.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * AGENCIO's own money: what comes in from subscriptions, what goes out to run
@@ -44,22 +44,16 @@ const PlatformFinance = () => {
 
   const range = `from=${from}&to=${to}`
 
-  const { data: financeData, isLoading } = useQuery({
-    queryKey: ["platform-finance", range],
-    queryFn: () => getPlatformFinance(range),
-  })
+  const { data: financeData, isLoading } = useQuery(platformFinanceQuery(range))
 
-  const { data: expensesData } = useQuery({
-    queryKey: ["platform-expenses", range],
-    queryFn: () => getPlatformExpenses(range),
-  })
+  const { data: expensesData } = useQuery(platformExpensesListQuery(range))
 
-  const finance = financeData?.data as IPlatformFinance | undefined
-  const expenses = (expensesData?.data ?? []) as IPlatformExpense[]
+  const finance = financeData?.data
+  const expenses = expensesData?.data ?? []
 
   const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: ["platform-finance"] })
-    void queryClient.invalidateQueries({ queryKey: ["platform-expenses"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.platformFinance.all })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.platformExpenses.all })
   }
 
   const { mutate: add, isPending } = useMutation({

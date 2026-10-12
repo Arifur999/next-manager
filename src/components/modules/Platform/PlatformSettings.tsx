@@ -14,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { getPlatformSettings } from "@/services/platform.services"
 import type { IPlatformSettings } from "@/types/platform.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { formatDistanceToNow, parseISO } from "date-fns"
@@ -22,6 +21,8 @@ import { CircleAlert, CircleCheck, Mail } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 import { toast } from "sonner"
+import { platformSettingsQuery } from "@/queries/platform.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * How this installation is set up.
@@ -40,12 +41,9 @@ import { toast } from "sonner"
 const NO_PLAN = "__none__"
 
 const PlatformSettings = () => {
-  const { data, isLoading } = useQuery({
-    queryKey: ["platform-settings"],
-    queryFn: () => getPlatformSettings(),
-  })
+  const { data, isLoading } = useQuery(platformSettingsQuery())
 
-  const settings = data?.data as IPlatformSettings | undefined
+  const settings = data?.data
 
   if (isLoading || !settings) {
     return <div className="h-72 animate-pulse rounded-xl bg-muted/40" />
@@ -80,7 +78,7 @@ const SettingsForm = ({ settings }: { settings: IPlatformSettings }) => {
         return
       }
       toast.success("Settings saved")
-      void queryClient.invalidateQueries({ queryKey: ["platform-settings"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.platformSettings.all })
     },
   })
 

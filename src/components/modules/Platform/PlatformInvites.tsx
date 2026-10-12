@@ -11,7 +11,6 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { getPlatformInvites } from "@/services/platform.services"
 import Link from "next/link"
 import {
   PLATFORM_PERMISSIONS,
@@ -24,6 +23,8 @@ import { format, isPast, parseISO } from "date-fns"
 import { Check, Copy, MailPlus, Trash2, TriangleAlert } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { platformInvitesQuery } from "@/queries/platform.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * Inviting somebody onto the platform team.
@@ -51,12 +52,9 @@ const PlatformInvites = () => {
   const [mailed, setMailed] = useState<{ delivered: boolean; reason: string | null } | null>(null)
   const [copied, setCopied] = useState(false)
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["platform-invites"],
-    queryFn: () => getPlatformInvites(),
-  })
+  const { data, isLoading } = useQuery(platformInvitesQuery())
 
-  const invites = (data?.data ?? []) as IPlatformInvite[]
+  const invites = data?.data ?? []
 
   const { mutate: invite, isPending } = useMutation({
     mutationFn: () =>
@@ -78,7 +76,7 @@ const PlatformInvites = () => {
       setCopied(false)
       setEmail("")
       setPermissions([])
-      void queryClient.invalidateQueries({ queryKey: ["platform-invites"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.platformInvites.all })
     },
   })
 
@@ -90,7 +88,7 @@ const PlatformInvites = () => {
         return
       }
       toast.success("Invite revoked — the link stops working immediately")
-      void queryClient.invalidateQueries({ queryKey: ["platform-invites"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.platformInvites.all })
     },
   })
 

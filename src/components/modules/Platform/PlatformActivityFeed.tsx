@@ -10,12 +10,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { getPlatformActivity } from "@/services/platform.services"
 import type { IPlatformActivity } from "@/types/platform.types"
 import { useQuery } from "@tanstack/react-query"
 import { format, formatDistanceToNow, isToday, isYesterday, parseISO } from "date-fns"
 import { History } from "lucide-react"
 import { useState } from "react"
+import { platformActivityQuery } from "@/queries/platform.queries"
 
 /**
  * What the platform team has been doing.
@@ -73,12 +73,9 @@ const PlatformActivityFeed = () => {
     .filter(Boolean)
     .join("&")
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["platform-activity", query],
-    queryFn: () => getPlatformActivity(query),
-  })
+  const { data, isLoading } = useQuery(platformActivityQuery(query))
 
-  const entries = (data?.data ?? []) as IPlatformActivity[]
+  const entries = data?.data ?? []
   const grouped = groupByDay(entries)
 
   return (

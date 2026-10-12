@@ -30,13 +30,14 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { getAnnouncements } from "@/services/platform.services"
 import type { IAnnouncement } from "@/types/platform.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { Eye, Mail, Megaphone, Send, Trash2, X } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { announcementsQuery } from "@/queries/platform.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * Writing to customers.
@@ -76,16 +77,13 @@ const CampaignBoard = () => {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [confirming, setConfirming] = useState<IAnnouncement | null>(null)
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["platform-announcements"],
-    queryFn: () => getAnnouncements(),
-  })
+  const { data, isLoading } = useQuery(announcementsQuery())
 
-  const announcements = (data?.data ?? []) as IAnnouncement[]
+  const announcements = data?.data ?? []
   const drafts = announcements.filter((row) => !row.published_at)
   const sent = announcements.filter((row) => row.published_at)
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ["platform-announcements"] })
+  const refresh = () => queryClient.invalidateQueries({ queryKey: queryKeys.platformAnnouncements.all })
 
   const reset = () => {
     setDraft(emptyDraft)

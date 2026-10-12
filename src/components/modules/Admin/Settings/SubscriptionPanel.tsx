@@ -2,10 +2,10 @@
 
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { getMySubscription } from "@/services/platform.services"
-import type { IMySubscription, SubscriptionStatus } from "@/types/platform.types"
+import type { SubscriptionStatus } from "@/types/platform.types"
 import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
+import { mySubscriptionQuery } from "@/queries/platform.queries"
 
 /**
  * The company's own standing with the platform.
@@ -76,12 +76,9 @@ const UsageBar = ({
 }
 
 const SubscriptionPanel = () => {
-  const { data, isLoading } = useQuery({
-    queryKey: ["my-subscription"],
-    queryFn: () => getMySubscription(),
-  })
+  const { data, isLoading } = useQuery(mySubscriptionQuery())
 
-  const result = data?.data as IMySubscription | undefined
+  const result = data?.data
 
   if (isLoading && !result) {
     return <div className="h-40 animate-pulse rounded-xl bg-muted/40" />

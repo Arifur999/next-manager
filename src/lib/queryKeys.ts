@@ -51,7 +51,6 @@ export const queryKeys = {
   payouts: createDomainKeys("payouts"),
   payroll: createDomainKeys("payroll"),
   permissions: createDomainKeys("permissions"),
-  plans: createDomainKeys("plans"),
   platformActivity: createDomainKeys("platform-activity"),
   platformAdmins: createDomainKeys("platform-admins"),
   platformAnnouncements: createDomainKeys("platform-announcements"),

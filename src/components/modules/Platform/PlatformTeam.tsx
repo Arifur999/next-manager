@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { getPlatformAdmins } from "@/services/platform.services"
 import {
   PLATFORM_PERMISSIONS,
   PLATFORM_PERMISSION_INFO,
@@ -22,6 +21,8 @@ import { format, parseISO } from "date-fns"
 import { ShieldCheck } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { platformAdminsQuery } from "@/queries/platform.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * Who is on the platform team and what each of them may do.
@@ -48,8 +49,8 @@ const AdminRow = ({ admin, canRemove }: { admin: IPlatformAdmin; canRemove: bool
   const [editing, setEditing] = useState(false)
 
   const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: ["platform-admins"] })
-    void queryClient.invalidateQueries({ queryKey: ["platform-activity"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.platformAdmins.all })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.platformActivity.all })
   }
 
   const { mutate: save, isPending } = useMutation({
@@ -217,12 +218,9 @@ const AdminRow = ({ admin, canRemove }: { admin: IPlatformAdmin; canRemove: bool
 }
 
 const PlatformTeam = () => {
-  const { data, isLoading } = useQuery({
-    queryKey: ["platform-admins"],
-    queryFn: () => getPlatformAdmins(),
-  })
+  const { data, isLoading } = useQuery(platformAdminsQuery())
 
-  const admins = (data?.data ?? []) as IPlatformAdmin[]
+  const admins = data?.data ?? []
   const activeCount = admins.filter((admin) => admin.status === "active").length
 
   return (

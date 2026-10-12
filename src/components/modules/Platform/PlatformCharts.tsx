@@ -2,8 +2,6 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { getPlatformTrend } from "@/services/platform.services"
-import type { IPlatformTrend } from "@/types/platform.types"
 import { useQuery } from "@tanstack/react-query"
 import { format, parse, parseISO } from "date-fns"
 import { CalendarClock, Table2, TrendingUp } from "lucide-react"
@@ -19,6 +17,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts"
+import { platformTrendQuery } from "@/queries/platform.queries"
 
 /**
  * The platform's own numbers, drawn.
@@ -147,12 +146,9 @@ const ChartCard = ({
 }
 
 const PlatformCharts = () => {
-  const { data, isLoading } = useQuery({
-    queryKey: ["platform-trend"],
-    queryFn: () => getPlatformTrend(),
-  })
+  const { data, isLoading } = useQuery(platformTrendQuery())
 
-  const trend = data?.data as IPlatformTrend | undefined
+  const trend = data?.data
 
   if (isLoading && !trend) {
     return <div className="h-64 animate-pulse rounded-xl bg-muted/40" />

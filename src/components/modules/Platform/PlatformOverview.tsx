@@ -3,11 +3,10 @@
 import MetricTile, { count, usd } from "@/components/shared/kpi/MetricTile"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { getPlatformOverview } from "@/services/platform.services"
-import type { IPlatformOverview } from "@/types/platform.types"
 import { useQuery } from "@tanstack/react-query"
 import { differenceInCalendarDays, format, parseISO } from "date-fns"
 import { CalendarClock } from "lucide-react"
+import { platformOverviewQuery } from "@/queries/platform.queries"
 
 /**
  * How the platform business is doing.
@@ -27,12 +26,9 @@ const urgency = (days: number | null): "destructive" | "outline" =>
   days !== null && days <= 2 ? "destructive" : "outline"
 
 const PlatformOverview = () => {
-  const { data, isLoading } = useQuery({
-    queryKey: ["platform-overview"],
-    queryFn: () => getPlatformOverview(),
-  })
+  const { data, isLoading } = useQuery(platformOverviewQuery())
 
-  const overview = data?.data as IPlatformOverview | undefined
+  const overview = data?.data
 
   if (isLoading && !overview) {
     return <div className="h-48 animate-pulse rounded-xl bg-muted/40" />

@@ -11,13 +11,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { getCompanies, getPlans } from "@/services/platform.services"
 import type { ICompanyRow, IPlan, SubscriptionStatus } from "@/types/platform.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { Building2 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { companiesListQuery, plansQuery } from "@/queries/platform.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * Every company on the platform, and what it is paying.
@@ -81,7 +82,7 @@ const CompanyRow = ({ company, plans }: { company: ICompanyRow; plans: IPlan[] }
         return
       }
       toast.success(`${company.name} updated`)
-      void queryClient.invalidateQueries({ queryKey: ["platform-companies"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.platformCompanies.all })
     },
   })
 
@@ -160,18 +161,12 @@ const CompanyRow = ({ company, plans }: { company: ICompanyRow; plans: IPlan[] }
 }
 
 const CompaniesBoard = () => {
-  const { data: companiesData, isLoading } = useQuery({
-    queryKey: ["platform-companies"],
-    queryFn: () => getCompanies(),
-  })
+  const { data: companiesData, isLoading } = useQuery(companiesListQuery())
 
-  const { data: plansData } = useQuery({
-    queryKey: ["platform-plans"],
-    queryFn: () => getPlans(),
-  })
+  const { data: plansData } = useQuery(plansQuery())
 
-  const companies = (companiesData?.data ?? []) as ICompanyRow[]
-  const plans = (plansData?.data ?? []) as IPlan[]
+  const companies = companiesData?.data ?? []
+  const plans = plansData?.data ?? []
 
   const atLimit = companies.filter(
     (company) =>

@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { getPlans } from "@/services/platform.services"
 import type { IPlan } from "@/types/platform.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { toast } from "sonner"
+import { plansQuery } from "@/queries/platform.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * The tiers a company can be sold.
@@ -49,9 +50,9 @@ const PlanRow = ({ plan }: { plan: IPlan }) => {
         return
       }
       toast.success(`${plan.name} updated`)
-      void queryClient.invalidateQueries({ queryKey: ["platform-plans"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.platformPlans.all })
       // Company rows show their plan's limits, so they are stale now too.
-      void queryClient.invalidateQueries({ queryKey: ["platform-companies"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.platformCompanies.all })
     },
   })
 
@@ -136,12 +137,9 @@ const PlansBoard = () => {
   const [name, setName] = useState("")
   const [price, setPrice] = useState("")
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["platform-plans"],
-    queryFn: () => getPlans(),
-  })
+  const { data, isLoading } = useQuery(plansQuery())
 
-  const plans = (data?.data ?? []) as IPlan[]
+  const plans = data?.data ?? []
 
   const { mutate: create, isPending } = useMutation({
     mutationFn: () =>
@@ -159,7 +157,7 @@ const PlansBoard = () => {
       setCode("")
       setName("")
       setPrice("")
-      void queryClient.invalidateQueries({ queryKey: ["platform-plans"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.platformPlans.all })
     },
   })
 

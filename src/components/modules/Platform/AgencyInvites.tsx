@@ -16,14 +16,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { getAgencyInvites, getPlans } from "@/services/platform.services"
-import type { IAgencyInvite, IPlan } from "@/types/platform.types"
+import type { IAgencyInvite } from "@/types/platform.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { format, isPast, parseISO } from "date-fns"
 import { Check, Copy, Send, Trash2, TriangleAlert } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 import { toast } from "sonner"
+import { agencyInvitesQuery, plansQuery } from "@/queries/platform.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * Bringing an agency on.
@@ -56,15 +57,12 @@ const AgencyInvites = () => {
   const [mailed, setMailed] = useState<{ delivered: boolean; reason: string | null } | null>(null)
   const [copied, setCopied] = useState(false)
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["agency-invites"],
-    queryFn: () => getAgencyInvites(),
-  })
+  const { data, isLoading } = useQuery(agencyInvitesQuery())
 
-  const { data: planData } = useQuery({ queryKey: ["plans"], queryFn: () => getPlans() })
+  const { data: planData } = useQuery(plansQuery())
 
-  const invites = (data?.data ?? []) as IAgencyInvite[]
-  const plans = ((planData?.data ?? []) as IPlan[]).filter((plan) => plan.is_active)
+  const invites = data?.data ?? []
+  const plans = ((planData?.data ?? [])).filter((plan) => plan.is_active)
 
   const { mutate: invite, isPending } = useMutation({
     mutationFn: () =>
@@ -91,7 +89,7 @@ const AgencyInvites = () => {
 
       setEmail("")
       setCompanyName("")
-      void queryClient.invalidateQueries({ queryKey: ["agency-invites"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.agencyInvites.all })
     },
   })
 
@@ -103,7 +101,7 @@ const AgencyInvites = () => {
         return
       }
       toast.success("Invite revoked — the link stops working immediately")
-      void queryClient.invalidateQueries({ queryKey: ["agency-invites"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.agencyInvites.all })
     },
   })
 

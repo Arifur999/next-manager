@@ -5,13 +5,13 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { getCompanies } from "@/services/platform.services"
-import type { ICompanyRow, SubscriptionStatus } from "@/types/platform.types"
+import type { SubscriptionStatus } from "@/types/platform.types"
 import { useQuery } from "@tanstack/react-query"
 import { differenceInCalendarDays, format, formatDistanceToNow, parseISO } from "date-fns"
 import { Building2, Search } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
+import { companiesListQuery } from "@/queries/platform.queries"
 
 /**
  * The people you sell to.
@@ -81,12 +81,9 @@ const CustomersBoard = ({ defaultFilter = ALL }: { defaultFilter?: string }) => 
     .filter(Boolean)
     .join("&")
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["platform-companies", query],
-    queryFn: () => getCompanies(query),
-  })
+  const { data, isLoading } = useQuery(companiesListQuery(query))
 
-  const companies = (data?.data ?? []) as ICompanyRow[]
+  const companies = data?.data ?? []
   const quiet = companies.filter((row) => activityOf(row.last_active_at).stale).length
 
   return (

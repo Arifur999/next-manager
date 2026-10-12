@@ -21,12 +21,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { getPlans } from "@/services/platform.services"
-import type { IPlan } from "@/types/platform.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { plansQuery } from "@/queries/platform.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * Provisioning a company by hand.
@@ -54,13 +54,9 @@ const CreateCompanyModal = () => {
   const [planId, setPlanId] = useState(DEFAULT_PLAN)
   const [trialDays, setTrialDays] = useState("14")
 
-  const { data: plansData } = useQuery({
-    queryKey: ["platform-plans"],
-    queryFn: () => getPlans(),
-    enabled: open,
-  })
+  const { data: plansData } = useQuery({ ...plansQuery(), enabled: open })
 
-  const plans = (plansData?.data ?? []) as IPlan[]
+  const plans = plansData?.data ?? []
 
   const { mutate: create, isPending } = useMutation({
     mutationFn: () =>
@@ -88,8 +84,8 @@ const CreateCompanyModal = () => {
       setAdminName("")
       setAdminEmail("")
       setPassword("")
-      void queryClient.invalidateQueries({ queryKey: ["platform-companies"] })
-      void queryClient.invalidateQueries({ queryKey: ["platform-overview"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.platformCompanies.all })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.platformOverview.all })
     },
   })
 
