@@ -184,7 +184,7 @@ const DataTable = <TData,>({
         </div>
       )}
 
-      <div className="rounded-lg border">
+      <div className="font-condensed rounded-lg border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((hg) => (

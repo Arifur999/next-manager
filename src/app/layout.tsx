@@ -1,41 +1,11 @@
 import { site } from "@/data/site"
 import { Toaster } from "@/components/ui/sonner";
 import type { Metadata } from "next";
-import localFont from "next/font/local";
 import "./globals.css";
 import QueryProviders from "./providers/QueryProvider";
 import ThemeProvider from "./providers/ThemeProvider";
+import { fontVariables } from "@/lib/fonts";
 import { headers } from "next/headers";
-
-// The font files live in this repo, not on Google's servers.
-//
-// next/font/google also self-hosts the result, but it fetches from
-// fonts.googleapis.com AT BUILD TIME - so a network hiccup on the build machine
-// is a failed build, which is exactly what happened here. Nothing about the
-// shipped page needed Google, only the build did, and that is a dependency
-// worth not having.
-//
-// Both files are the latin subset of the variable face, which carries the whole
-// 100..900 axis: every weight the UI asks for comes out of one file rather than
-// a download per weight. The variable name must stay
-// --font-roboto-condensed, which is what Tailwind's font-sans resolves to in
-// globals.css.
-const robotoCondensed = localFont({
-  src: [
-    {
-      path: "./fonts/RobotoCondensed-latin-variable.woff2",
-      style: "normal",
-      weight: "100 900",
-    },
-    {
-      path: "./fonts/RobotoCondensed-latin-variable-italic.woff2",
-      style: "italic",
-      weight: "100 900",
-    },
-  ],
-  variable: "--font-roboto-condensed",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: {
@@ -83,10 +53,10 @@ export default async function RootLayout({
     //
     // It suppresses the warning for THIS element's own attributes only - it
     // does not cascade - so a genuine mismatch anywhere inside still reports.
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={fontVariables}>
       <body
         suppressHydrationWarning
-        className={`${robotoCondensed.variable} antialiased font-sans`}
+        className="antialiased font-sans"
       >
         {/* Baseline keyboard accessibility - the first tab stop on every page. */}
         <a
