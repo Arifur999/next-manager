@@ -2,9 +2,8 @@
 
 import { getActionErrorMessage } from "@/lib/actionError"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
-import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
+import { getApiBaseUrl } from "@/env"
 
-const BASE_API_URL = SERVER_API_BASE_URL
 
 /**
  * Accept a platform invite.
@@ -24,7 +23,7 @@ export const acceptPlatformInviteAction = async (
 
     try {
         const res = await fetch(
-            `${BASE_API_URL}/platform-join/${encodeURIComponent(token)}/accept`,
+            `${getApiBaseUrl()}/platform-join/${encodeURIComponent(token)}/accept`,
             {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

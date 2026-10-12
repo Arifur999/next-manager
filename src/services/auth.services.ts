@@ -12,9 +12,8 @@ import { classifyMeResponse } from "@/lib/session"
 import { type IUser } from "@/types/user.types"
 import { cookies } from "next/headers"
 import { cache } from "react"
-import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
+import { getApiBaseUrl } from "@/env"
 
-const BASE_API_URL = SERVER_API_BASE_URL
 
 // null means signed out (no token, or the API refused it). An outage throws,
 // so the error boundary shows instead of a redirect to /login.
@@ -28,7 +27,7 @@ export const getUserInfo = cache(async (): Promise<IUser | null> => {
 
     let res: Response
     try {
-        res = await fetch(`${BASE_API_URL}/auth/me`, {
+        res = await fetch(`${getApiBaseUrl()}/auth/me`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",

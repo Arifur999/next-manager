@@ -12,6 +12,7 @@ import { allow } from "./lib/csp";
 import { jwtUtils, type VerifyResult } from "./lib/jwtUtils";
 import { getRefreshPlan, type AccessState } from "./lib/refreshPlan";
 import { isTokenExpiringSoon } from "./lib/tokenUtils";
+import { getEnv } from "@/env";
 import { getNewTokensWithRefreshToken } from "@/lib/refreshSession";
 import { toUserRole } from "./types/user.types";
 
@@ -51,7 +52,7 @@ export async function proxy(request: NextRequest) {
 
         const accessToken = request.cookies.get("accessToken")?.value;
         const refreshToken = request.cookies.get("refreshToken")?.value;
-        const secret = process.env.JWT_ACCESS_SECRET as string;
+        const secret = getEnv().JWT_ACCESS_SECRET;
 
         let verified = accessToken ? jwtUtils.verifyToken(accessToken, secret) : null;
         const accessState = toAccessState(accessToken, verified);

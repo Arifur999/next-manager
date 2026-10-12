@@ -13,16 +13,15 @@
  * lost by making it an ordinary function again.
  */
 
-import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
+import { getApiBaseUrl } from "@/env"
 import { forwardAuthCookies } from "@/lib/authCookies"
 
-const BASE_API_URL = SERVER_API_BASE_URL
 
 // Uses fetch rather than httpClient on purpose: httpClient calls back into this
 // module to refresh, so going through it here would recurse.
 export async function getNewTokensWithRefreshToken(refreshToken: string): Promise<boolean> {
     try {
-        const res = await fetch(`${BASE_API_URL}/auth/refresh-token`, {
+        const res = await fetch(`${getApiBaseUrl()}/auth/refresh-token`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

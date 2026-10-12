@@ -2,9 +2,8 @@
 
 import { getActionErrorMessage } from "@/lib/actionError"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
-import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
+import { getApiBaseUrl } from "@/env"
 
-const BASE_API_URL = SERVER_API_BASE_URL
 
 /**
  * Accept an invite.
@@ -25,7 +24,7 @@ export const acceptInviteAction = async (
     if (!token) return { success: false, message: "This invite link is incomplete" }
 
     try {
-        const res = await fetch(`${BASE_API_URL}/join/${encodeURIComponent(token)}/accept`, {
+        const res = await fetch(`${getApiBaseUrl()}/join/${encodeURIComponent(token)}/accept`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),

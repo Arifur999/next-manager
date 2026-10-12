@@ -2,9 +2,8 @@
 
 import { getActionErrorMessage } from "@/lib/actionError"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
-import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
+import { getApiBaseUrl } from "@/env"
 
-const BASE_API_URL = SERVER_API_BASE_URL
 
 /**
  * Open an agency from an invite.
@@ -26,7 +25,7 @@ export const acceptAgencyInviteAction = async (
 
     try {
         const res = await fetch(
-            `${BASE_API_URL}/agency-join/${encodeURIComponent(token)}/accept`,
+            `${getApiBaseUrl()}/agency-join/${encodeURIComponent(token)}/accept`,
             {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

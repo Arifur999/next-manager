@@ -2,12 +2,11 @@
 
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 import { type ILoginResponse } from "@/types/auth.types"
-import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
+import { getApiBaseUrl } from "@/env"
 import { forwardAuthCookies } from "@/lib/authCookies"
 import { getActionErrorMessage } from "@/lib/actionError"
 import { logout } from "@/services/logout"
 
-const BASE_API_URL = SERVER_API_BASE_URL
 
 export const loginAction = async (payload: {
   email: string
@@ -16,7 +15,7 @@ export const loginAction = async (payload: {
   try {
     // Plain fetch rather than httpClient: there are no cookies to forward yet,
     // and this is the request that creates them.
-    const res = await fetch(`${BASE_API_URL}/auth/login`, {
+    const res = await fetch(`${getApiBaseUrl()}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

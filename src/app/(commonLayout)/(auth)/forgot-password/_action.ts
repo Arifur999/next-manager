@@ -2,9 +2,8 @@
 
 import { getActionErrorMessage } from "@/lib/actionError"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
-import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
+import { getApiBaseUrl } from "@/env"
 
-const BASE_API_URL = SERVER_API_BASE_URL
 
 /**
  * Ask for a reset link.
@@ -19,7 +18,7 @@ export const forgotPasswordAction = async (payload: {
     email: string
 }): Promise<ApiResponse<{ message: string }> | ApiErrorResponse> => {
     try {
-        const res = await fetch(`${BASE_API_URL}/auth/forgot-password`, {
+        const res = await fetch(`${getApiBaseUrl()}/auth/forgot-password`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),

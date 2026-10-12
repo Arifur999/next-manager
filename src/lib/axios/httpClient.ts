@@ -2,7 +2,7 @@ import "server-only";
 
 import { logApiFailure } from "@/lib/apiFailure";
 import { AUTH_COOKIE_NAMES } from "@/lib/authCookies";
-import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl";
+import { getApiBaseUrl } from "@/env"
 import { getNewTokensWithRefreshToken } from "@/lib/refreshSession";
 import { isTokenExpiringSoon } from "@/lib/tokenUtils";
 import type { ApiResponse } from "@/types/api.types";
@@ -57,7 +57,7 @@ const send = async <TData>(
 
     try {
         const response = await axios.request<ApiResponse<TData>>({
-            baseURL: SERVER_API_BASE_URL,
+            baseURL: getApiBaseUrl(),
             url: endpoint,
             method,
             data: body,

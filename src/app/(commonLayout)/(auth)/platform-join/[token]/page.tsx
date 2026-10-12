@@ -1,6 +1,6 @@
 import PlatformJoinForm from "@/components/modules/Auth/PlatformJoinForm";
 import type { Metadata } from "next";
-import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
+import { getApiBaseUrl } from "@/env"
 
 export const metadata: Metadata = {
   title: "Join the platform team",
@@ -9,7 +9,6 @@ export const metadata: Metadata = {
 // Reads a token from the URL, so it must never be cached.
 export const dynamic = "force-dynamic";
 
-const BASE_API_URL = SERVER_API_BASE_URL
 
 /**
  * Validated server-side before anything renders, so a dead link says so
@@ -17,7 +16,7 @@ const BASE_API_URL = SERVER_API_BASE_URL
  */
 const loadInvite = async (token: string): Promise<{ email: string } | null> => {
   try {
-    const res = await fetch(`${BASE_API_URL}/platform-join/${encodeURIComponent(token)}`, {
+    const res = await fetch(`${getApiBaseUrl()}/platform-join/${encodeURIComponent(token)}`, {
       cache: "no-store",
     });
 

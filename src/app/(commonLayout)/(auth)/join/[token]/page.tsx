@@ -1,7 +1,7 @@
 import JoinForm from "@/components/modules/Auth/JoinForm";
 import type { IInvitePreview } from "@/types/agencio.types";
 import type { Metadata } from "next";
-import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
+import { getApiBaseUrl } from "@/env"
 
 export const metadata: Metadata = {
   title: "Join a team",
@@ -11,7 +11,6 @@ export const metadata: Metadata = {
 // show one person's invite to the next visitor.
 export const dynamic = "force-dynamic";
 
-const BASE_API_URL = SERVER_API_BASE_URL
 
 /**
  * Validated on the server before anything renders.
@@ -22,7 +21,7 @@ const BASE_API_URL = SERVER_API_BASE_URL
  */
 const loadInvite = async (token: string): Promise<IInvitePreview | null> => {
   try {
-    const res = await fetch(`${BASE_API_URL}/join/${encodeURIComponent(token)}`, {
+    const res = await fetch(`${getApiBaseUrl()}/join/${encodeURIComponent(token)}`, {
       cache: "no-store",
     });
 

@@ -1,6 +1,6 @@
 import AgencyJoinForm from "@/components/modules/Auth/AgencyJoinForm";
 import type { Metadata } from "next";
-import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
+import { getApiBaseUrl } from "@/env"
 
 export const metadata: Metadata = {
   title: "Open your agency",
@@ -9,7 +9,6 @@ export const metadata: Metadata = {
 // Reads a token from the URL, so it must never be cached.
 export const dynamic = "force-dynamic";
 
-const BASE_API_URL = SERVER_API_BASE_URL
 
 export interface AgencyInvite {
   email: string;
@@ -27,7 +26,7 @@ export interface AgencyInvite {
  */
 const loadInvite = async (token: string): Promise<AgencyInvite | null> => {
   try {
-    const res = await fetch(`${BASE_API_URL}/agency-join/${encodeURIComponent(token)}`, {
+    const res = await fetch(`${getApiBaseUrl()}/agency-join/${encodeURIComponent(token)}`, {
       cache: "no-store",
     });
 
