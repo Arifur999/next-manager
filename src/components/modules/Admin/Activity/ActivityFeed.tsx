@@ -11,11 +11,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import type { IActivityEntry } from "@/types/workspace.types"
-import { useQuery } from "@tanstack/react-query"
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 import { format, formatDistanceToNow, isToday, isYesterday, parseISO } from "date-fns"
 import { History } from "lucide-react"
 import { useState } from "react"
-import { activityFiltersQuery, activityQuery } from "@/queries/workspace.queries"
+import { activityFeedQuery, activityFiltersQuery } from "@/queries/workspace.queries"
 
 /**
  * Who did what, across the whole company.
@@ -61,23 +61,19 @@ const groupByDay = (entries: IActivityEntry[]) => {
 const ActivityFeed = () => {
   const [entityType, setEntityType] = useState(ALL)
   const [action, setAction] = useState(ALL)
-  const [limit, setLimit] = useState(50)
 
-  const query = [
-    `limit=${limit}`,
-    entityType === ALL ? "" : `entity_type=${entityType}`,
-    action === ALL ? "" : `action=${action}`,
-  ]
-    .filter(Boolean)
-    .join("&")
-
-  const { data, isLoading } = useQuery(activityQuery(query))
+  const feed = useInfiniteQuery(
+    activityFeedQuery({
+      entity_type: entityType === ALL ? undefined : entityType,
+      action: action === ALL ? undefined : action,
+    }),
+  )
 
   const { data: filterData } = useQuery(activityFiltersQuery())
 
-  const entries = data?.data ?? []
+  const entries = feed.data?.pages.flatMap((page) => page.data) ?? []
   const filters = filterData?.data
-  const total = data?.meta?.total ?? entries.length
+  const total = feed.data?.pages[0]?.meta?.total ?? entries.length
   const grouped = groupByDay(entries)
 
   return (
@@ -122,7 +118,7 @@ const ActivityFeed = () => {
         </div>
       </CardHeader>
 
-      {isLoading && entries.length === 0 ? (
+      {feed.isLoading && entries.length === 0 ? (
         <div className="h-40 animate-pulse bg-muted/40" />
       ) : entries.length === 0 ? (
         <p className="flex flex-col items-center gap-2 px-6 py-12 text-center text-sm text-muted-foreground">
@@ -171,10 +167,15 @@ const ActivityFeed = () => {
             </section>
           ))}
 
-          {entries.length >= limit && (
+          {feed.hasNextPage && (
             <div className="border-t px-5 py-4 text-center">
-              <Button type="button" variant="outline" onClick={() => setLimit((n) => n + 50)}>
-                Show more
+              <Button
+                type="button"
+                variant="outline"
+                disabled={feed.isFetchingNextPage}
+                onClick={() => feed.fetchNextPage()}
+              >
+                {feed.isFetchingNextPage ? "Loading..." : "Show more"}
               </Button>
             </div>
           )}

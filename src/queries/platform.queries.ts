@@ -1,6 +1,8 @@
 // One queryOptions per read; pages prefetch with the same builders components use.
-import { queryOptions } from "@tanstack/react-query"
+import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query"
+import { FEED_PAGE_SIZE, nextPageOf } from "@/lib/paging"
 import { queryKeys } from "@/lib/queryKeys"
+import { buildQueryString, type QueryRecord } from "@/lib/queryString"
 import { getAgencyInvites, getAnnouncements, getCompanies, getMySubscription, getPlans, getPlatformActivity, getPlatformAdmins, getPlatformExpenses, getPlatformFinance, getPlatformInvites, getPlatformOverview, getPlatformSettings, getPlatformTrend } from "@/services/platform.services"
 
 export const agencyInvitesQuery = () =>
@@ -18,8 +20,14 @@ export const mySubscriptionQuery = () =>
 export const plansQuery = () =>
   queryOptions({ queryKey: queryKeys.platformPlans.list(), queryFn: () => getPlans() })
 
-export const platformActivityQuery = (queryString = "") =>
-  queryOptions({ queryKey: queryKeys.platformActivity.list(queryString), queryFn: () => getPlatformActivity(queryString) })
+// Pages with page + limit, which /platform/activity accepts.
+export const platformActivityFeedQuery = (filters: QueryRecord) =>
+  infiniteQueryOptions({
+    queryKey: queryKeys.platformActivity.list(`feed:${buildQueryString(filters)}`),
+    queryFn: ({ pageParam }) => getPlatformActivity(buildQueryString({ ...filters, page: pageParam, limit: FEED_PAGE_SIZE })),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, _allPages, lastPageParam) => nextPageOf(lastPage, lastPageParam),
+  })
 
 export const platformAdminsQuery = () =>
   queryOptions({ queryKey: queryKeys.platformAdmins.list(), queryFn: () => getPlatformAdmins() })

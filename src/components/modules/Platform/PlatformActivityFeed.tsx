@@ -11,11 +11,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import type { IPlatformActivity } from "@/types/platform.types"
-import { useQuery } from "@tanstack/react-query"
+import { useInfiniteQuery } from "@tanstack/react-query"
 import { format, formatDistanceToNow, isToday, isYesterday, parseISO } from "date-fns"
 import { History } from "lucide-react"
 import { useState } from "react"
-import { platformActivityQuery } from "@/queries/platform.queries"
+import { platformActivityFeedQuery } from "@/queries/platform.queries"
 
 /**
  * What the platform team has been doing.
@@ -67,15 +67,12 @@ const groupByDay = (entries: IPlatformActivity[]) => {
 
 const PlatformActivityFeed = () => {
   const [entityType, setEntityType] = useState(ALL)
-  const [limit, setLimit] = useState(100)
 
-  const query = [`limit=${limit}`, entityType === ALL ? "" : `entity_type=${entityType}`]
-    .filter(Boolean)
-    .join("&")
+  const feed = useInfiniteQuery(
+    platformActivityFeedQuery({ entity_type: entityType === ALL ? undefined : entityType }),
+  )
 
-  const { data, isLoading } = useQuery(platformActivityQuery(query))
-
-  const entries = data?.data ?? []
+  const entries = feed.data?.pages.flatMap((page) => page.data) ?? []
   const grouped = groupByDay(entries)
 
   return (
@@ -104,7 +101,7 @@ const PlatformActivityFeed = () => {
         </Select>
       </CardHeader>
 
-      {isLoading && entries.length === 0 ? (
+      {feed.isLoading && entries.length === 0 ? (
         <div className="h-40 animate-pulse bg-muted/40" />
       ) : entries.length === 0 ? (
         <p className="flex flex-col items-center gap-2 px-6 py-12 text-center text-sm text-muted-foreground">
@@ -152,10 +149,15 @@ const PlatformActivityFeed = () => {
             </section>
           ))}
 
-          {entries.length >= limit && (
+          {feed.hasNextPage && (
             <div className="border-t px-5 py-4 text-center">
-              <Button type="button" variant="outline" onClick={() => setLimit((n) => n + 100)}>
-                Show more
+              <Button
+                type="button"
+                variant="outline"
+                disabled={feed.isFetchingNextPage}
+                onClick={() => feed.fetchNextPage()}
+              >
+                {feed.isFetchingNextPage ? "Loading..." : "Show more"}
               </Button>
             </div>
           )}
