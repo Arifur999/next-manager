@@ -1,7 +1,8 @@
 import AdminOverview from "@/components/modules/Dashboard/AdminOverview";
 import AgencyKpiBand from "@/components/modules/Dashboard/AgencyKpiBand";
 import DashboardOverview from "@/components/modules/Dashboard/DashboardOverview";
-import { getDashboard, getTaskReport, getWorkload } from "@/services/agencio.services";
+import { getDashboard } from "@/services/agencio.services";
+import { getTaskReport, getWorkload } from "@/services/work.services";
 import { getProjects } from "@/services/project.services";
 import { getClients } from "@/services/crm.services";
 import { getUserInfo } from "@/services/auth.services";

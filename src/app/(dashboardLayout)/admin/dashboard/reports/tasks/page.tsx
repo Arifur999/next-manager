@@ -1,5 +1,5 @@
 import TasksReport from "@/components/modules/Admin/Reports/TasksReport";
-import { getTaskReport } from "@/services/agencio.services";
+import { getTaskReport } from "@/services/work.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

@@ -19,9 +19,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { getWorkflowStatuses } from "@/services/agencio.services"
+import { getWorkflowStatuses } from "@/services/work.services"
 import { getClients } from "@/services/crm.services"
-import type { IWorkflowStatus } from "@/types/agencio.types"
+import type { IWorkflowStatus } from "@/types/work.types"
 import type { IProject } from "@/types/project.types"
 import type { IClient } from "@/types/crm.types"
 import { useForm } from "@tanstack/react-form"

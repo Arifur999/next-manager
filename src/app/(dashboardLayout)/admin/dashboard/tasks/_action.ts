@@ -1,8 +1,8 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { createTask, deleteTask, updateTask } from "@/services/agencio.services"
-import type { ITask } from "@/types/agencio.types"
+import { createTask, deleteTask, updateTask } from "@/services/work.services"
+import type { ITask } from "@/types/work.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 export const createTaskAction = async (

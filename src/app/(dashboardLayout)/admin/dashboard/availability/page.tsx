@@ -1,6 +1,6 @@
 import CapacityPanel from "@/components/modules/Admin/Team/CapacityPanel";
 import WorkloadBoard from "@/components/modules/Admin/Team/WorkloadBoard";
-import { getWorkload } from "@/services/agencio.services";
+import { getWorkload } from "@/services/work.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

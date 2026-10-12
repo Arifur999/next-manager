@@ -1,5 +1,5 @@
 import TaskBoard from "@/components/modules/Admin/Tasks/TaskBoard";
-import { getTasks, getWorkflowStatuses } from "@/services/agencio.services";
+import { getTasks, getWorkflowStatuses } from "@/services/work.services";
 import { getUserInfo } from "@/services/auth.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";

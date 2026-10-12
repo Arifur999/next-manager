@@ -2,7 +2,7 @@
 
 import { updateTaskAction } from "@/app/(dashboardLayout)/admin/dashboard/tasks/_action"
 import { Checkbox } from "@/components/ui/checkbox"
-import type { ITask, IWorkflowStatus } from "@/types/agencio.types"
+import type { ITask, IWorkflowStatus } from "@/types/work.types"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { format, isBefore, startOfToday } from "date-fns"
 import { toast } from "sonner"

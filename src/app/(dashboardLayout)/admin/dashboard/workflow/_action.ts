@@ -5,8 +5,8 @@ import {
     createWorkflowStatus,
     deleteWorkflowStatus,
     updateWorkflowStatus,
-} from "@/services/agencio.services"
-import type { IWorkflowStatus } from "@/types/agencio.types"
+} from "@/services/work.services"
+import type { IWorkflowStatus } from "@/types/work.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 export const createWorkflowStatusAction = async (

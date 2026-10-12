@@ -7,8 +7,8 @@ import {
     deleteTimeEntry,
     unapproveTimeEntry,
     updateTimeEntry,
-} from "@/services/agencio.services"
-import type { ITimeEntry } from "@/types/agencio.types"
+} from "@/services/work.services"
+import type { ITimeEntry } from "@/types/work.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 export const logTimeAction = async (

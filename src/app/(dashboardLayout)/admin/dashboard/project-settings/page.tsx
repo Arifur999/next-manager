@@ -1,5 +1,5 @@
 import WorkflowBoard from "@/components/modules/Admin/Workflow/WorkflowBoard";
-import { getWorkflowStatuses } from "@/services/agencio.services";
+import { getWorkflowStatuses } from "@/services/work.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

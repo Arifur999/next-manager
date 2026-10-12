@@ -7,7 +7,6 @@ import type {
     IActivityEntry,
     IActivityFilters,
     IAttendance,
-    ICapacityRow,
     ICredential,
     ICredentialAccessEntry,
     IDashboard,
@@ -35,8 +34,6 @@ import type {
     IPayrollRun,
     IServiceDetail,
     IShareholder,
-    ITaskReport,
-    IWorkload,
     IShareholderDistribution,
     IProfitAndLoss,
     IRateSettings,
@@ -45,13 +42,9 @@ import type {
     IServiceCategory,
     IServiceRevenue,
     IServiceTemplate,
-    ITask,
     ITeamInvite,
     ITeamPayout,
-    ITimeEntry,
-    ITimeSummary,
     ITransaction,
-    IWorkflowStatus,
 } from "@/types/agencio.types"
 import type { KpiScope } from "@/types/kpi.types"
 import type {
@@ -87,20 +80,6 @@ const wrap = async <T>(label: string, run: () => Promise<T>): Promise<T> => run(
 
 export const getDashboard = async () =>
     wrap("fetching dashboard", () => httpClient.get<IDashboard>("/dashboard"))
-
-// -------------------------------------------------------------------- tasks
-
-export const getTasks = async (queryString?: string) =>
-    wrap("fetching tasks", () => httpClient.get<ITask[]>("/tasks", { params: toParams(queryString) }))
-
-export const createTask = async (payload: Record<string, unknown>) =>
-    wrap("creating task", () => httpClient.post<ITask>("/tasks", payload))
-
-export const updateTask = async (id: string, payload: Record<string, unknown>) =>
-    wrap("updating task", () => httpClient.patch<ITask>(`/tasks/${id}`, payload))
-
-export const deleteTask = async (id: string) =>
-    wrap("deleting task", () => httpClient.delete<{ message: string }>(`/tasks/${id}`))
 
 // ----------------------------------------------------------------- accounts
 
@@ -289,54 +268,6 @@ export const getProjectProfitability = async (queryString?: string) =>
 
 export const getCashFlow = async (queryString?: string) =>
     wrap("fetching cash flow", () => httpClient.get("/reports/cash-flow", { params: toParams(queryString) }))
-
-// ------------------------------------------------------------- time tracking
-
-export const getTimeEntries = async (queryString?: string) =>
-    wrap("fetching time entries", () =>
-        httpClient.get<ITimeEntry[]>("/time-entries", { params: toParams(queryString) })
-    )
-
-export const getTimeSummary = async (queryString?: string) =>
-    wrap("fetching time summary", () =>
-        httpClient.get<ITimeSummary>("/time-entries/summary", { params: toParams(queryString) })
-    )
-
-export const createTimeEntry = async (payload: Record<string, unknown>) =>
-    wrap("logging time", () => httpClient.post<ITimeEntry>("/time-entries", payload))
-
-export const updateTimeEntry = async (id: string, payload: Record<string, unknown>) =>
-    wrap("updating time entry", () => httpClient.patch<ITimeEntry>(`/time-entries/${id}`, payload))
-
-export const deleteTimeEntry = async (id: string) =>
-    wrap("deleting time entry", () =>
-        httpClient.delete<{ message: string }>(`/time-entries/${id}`)
-    )
-
-export const approveTimeEntry = async (id: string) =>
-    wrap("approving time entry", () =>
-        httpClient.post<ITimeEntry>(`/time-entries/${id}/approve`, {})
-    )
-
-export const unapproveTimeEntry = async (id: string) =>
-    wrap("un-approving time entry", () =>
-        httpClient.post<ITimeEntry>(`/time-entries/${id}/unapprove`, {})
-    )
-
-export const getCapacities = async () =>
-    wrap("fetching capacities", () => httpClient.get<ICapacityRow[]>("/time-entries/capacity"))
-
-/**
- * Weekly hours, a bill rate, or both.
- *
- * Takes a payload rather than a single number so a rate can be set without
- * touching the hours — the server only writes the fields it is sent, and
- * passing a hardcoded weekly_hours here would have undone that.
- */
-export const setCapacity = async (userId: string, payload: Record<string, unknown>) =>
-    wrap("setting capacity", () =>
-        httpClient.patch<ICapacityRow>(`/time-entries/capacity/${userId}`, payload)
-    )
 
 // ---------------------------------------------------------------------------
 // Milestones
@@ -669,27 +600,6 @@ export const getLoginEvents = async (queryString?: string) =>
 
 // ---------------------------------------------------------------------------
 // The columns on an agency's boards
-// ---------------------------------------------------------------------------
-
-export const getWorkflowStatuses = async (queryString?: string) =>
-    wrap("fetching the board", () =>
-        httpClient.get<IWorkflowStatus[]>("/workflow-statuses", { params: toParams(queryString) })
-    )
-
-export const createWorkflowStatus = async (payload: Record<string, unknown>) =>
-    wrap("adding the status", () =>
-        httpClient.post<IWorkflowStatus>("/workflow-statuses", payload)
-    )
-
-export const updateWorkflowStatus = async (id: string, payload: Record<string, unknown>) =>
-    wrap("updating the status", () =>
-        httpClient.patch<IWorkflowStatus>(`/workflow-statuses/${id}`, payload)
-    )
-
-export const deleteWorkflowStatus = async (id: string) =>
-    wrap("removing the status", () =>
-        httpClient.delete<{ message: string }>(`/workflow-statuses/${id}`)
-    )
 
 // ---------------------------------------------------------------------------
 // What the agency sells
@@ -930,13 +840,3 @@ export const leaveConversation = async (id: string) =>
 
 export const getService = async (id: string) =>
     wrap("fetching the service", () => httpClient.get<IServiceDetail>(`/services/${id}`))
-
-export const getWorkload = async (queryString?: string) =>
-    wrap("fetching the workload", () =>
-        httpClient.get<IWorkload>("/time-entries/workload", { params: toParams(queryString) })
-    )
-
-export const getTaskReport = async (queryString?: string) =>
-    wrap("fetching the task report", () =>
-        httpClient.get<ITaskReport>("/tasks/report", { params: toParams(queryString) })
-    )

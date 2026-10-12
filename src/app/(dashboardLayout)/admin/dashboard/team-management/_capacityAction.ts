@@ -1,8 +1,8 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { setCapacity } from "@/services/agencio.services"
-import type { ICapacityRow } from "@/types/agencio.types"
+import { setCapacity } from "@/services/work.services"
+import type { ICapacityRow } from "@/types/work.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 export const setCapacityAction = async (

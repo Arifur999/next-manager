@@ -3,7 +3,7 @@
 import MonthGrid from "@/components/shared/calendar/MonthGrid"
 import { STATUS_TONE } from "@/components/shared/status/statusTone"
 import { cn } from "@/lib/utils"
-import type { ITask } from "@/types/agencio.types"
+import type { ITask } from "@/types/work.types"
 import { isBefore, parseISO, startOfToday } from "date-fns"
 
 /**
