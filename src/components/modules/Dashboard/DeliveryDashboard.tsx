@@ -4,6 +4,8 @@ import MetricTile, { count, hours, pct } from "@/components/shared/kpi/MetricTil
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import type { DeliveryKpi, DeliveryProjectRow, Metric } from "@/types/kpi.types"
+import ErrorState from "@/components/shared/state/ErrorState"
+import KpiSkeleton from "@/components/shared/kpi/KpiSkeleton"
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 import { kpiQuery } from "@/queries/insights.queries"
@@ -57,19 +59,22 @@ const MetricCell = ({
 }
 
 const DeliveryDashboard = ({ range }: { range: string }) => {
-  const { data, isLoading } = useQuery(kpiQuery<DeliveryKpi>("delivery", range))
+  const { data, isLoading, isError, isFetching, refetch } = useQuery(kpiQuery<DeliveryKpi>("delivery", range))
 
   const kpi = data?.data as DeliveryKpi | undefined
 
   if (isLoading && !kpi) {
-    return <div className="h-64 animate-pulse rounded-xl bg-muted/40" />
+    return <KpiSkeleton />
   }
 
-  if (!kpi) {
+  if (isError || !kpi) {
     return (
-      <p className="rounded-xl border border-dashed px-6 py-12 text-center text-sm text-muted-foreground">
-        Could not load the delivery numbers.
-      </p>
+      <ErrorState
+        className="rounded-xl border border-dashed"
+        message="The delivery numbers did not load."
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+      />
     )
   }
 

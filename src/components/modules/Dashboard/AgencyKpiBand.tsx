@@ -3,6 +3,8 @@
 import MetricTile, { bdt, hours, pct, usd, usd2 } from "@/components/shared/kpi/MetricTile"
 import { KpiRangePicker, useKpiRange } from "@/components/shared/kpi/KpiRange"
 import type { AgencyKpi } from "@/types/kpi.types"
+import ErrorState from "@/components/shared/state/ErrorState"
+import KpiSkeleton from "@/components/shared/kpi/KpiSkeleton"
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 import { kpiQuery } from "@/queries/insights.queries"
@@ -23,15 +25,24 @@ import { kpiQuery } from "@/queries/insights.queries"
 const AgencyKpiBand = () => {
   const { preset, setPreset, query, from, to } = useKpiRange()
 
-  const { data, isLoading } = useQuery(kpiQuery<AgencyKpi>("agency", query))
+  const { data, isLoading, isError, isFetching, refetch } = useQuery(kpiQuery<AgencyKpi>("agency", query))
 
   const kpi = data?.data as AgencyKpi | undefined
 
   if (isLoading && !kpi) {
-    return <div className="h-48 animate-pulse rounded-xl bg-muted/40" />
+    return <KpiSkeleton />
   }
 
-  if (!kpi) return null
+  if (isError || !kpi) {
+    return (
+      <ErrorState
+        className="rounded-xl border border-dashed"
+        message="Company health did not load."
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+      />
+    )
+  }
 
   const { context } = kpi
 

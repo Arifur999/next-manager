@@ -1,7 +1,7 @@
 "use client"
 
 import CountSection from "@/components/shared/dashboard/CountSection"
-import { useCount } from "@/components/shared/dashboard/useCount"
+import { countFields, queryFields, useCount } from "@/components/shared/dashboard/useCount"
 import { formatBdt, formatUsd } from "@/lib/currency"
 import { useQuery } from "@tanstack/react-query"
 import {
@@ -39,13 +39,16 @@ const AdminOverview = () => {
   const projects = useCount(projectsListQuery("limit=1"))
   const team = useCount(usersListQuery("limit=1"))
 
-  const { data: reportData } = useQuery(taskReportQuery())
+  const reportQuery = useQuery(taskReportQuery())
+  const reportData = reportQuery.data
   const report = reportData?.data
 
-  const { data: dashboardData } = useQuery(dashboardQuery())
+  const dashboardQueryResult = useQuery(dashboardQuery())
+  const dashboardData = dashboardQueryResult.data
   const money = dashboardData?.data
 
-  const { data: workloadData } = useQuery(workloadQuery())
+  const workloadQueryResult = useQuery(workloadQuery())
+  const workloadData = workloadQueryResult.data
   const workload = workloadData?.data
 
   // Somebody with nothing left of their week. Read from the same rows the
@@ -59,29 +62,29 @@ const AdminOverview = () => {
         counts={[
           {
             label: "Clients",
-            value: clients,
+            ...countFields(clients),
             href: "/admin/dashboard/clients",
-            hint: activeClients === undefined ? undefined : `${activeClients} active`,
+            hint: activeClients.value === undefined ? undefined : `${activeClients.value} active`,
             icon: <Users className="size-5" />,
             tone: 1,
           },
           {
             label: "Projects",
-            value: projects,
+            ...countFields(projects),
             href: "/admin/dashboard/projects",
             icon: <FolderKanban className="size-5" />,
             tone: 2,
           },
           {
             label: "Team",
-            value: team,
+            ...countFields(team),
             href: "/admin/dashboard/team-management",
             icon: <UsersRound className="size-5" />,
             tone: 3,
           },
           {
             label: "Tasks",
-            value: report?.total,
+            ...queryFields(reportQuery, report?.total),
             href: "/admin/dashboard/tasks",
             hint: report ? `${report.done_count} finished` : undefined,
             icon: <ListChecks className="size-5" />,
@@ -98,7 +101,7 @@ const AdminOverview = () => {
             // Held, not earned. Per currency and never summed — adding dollars
             // to taka needs a rate, and a rate baked into a headline is a
             // number nobody can check.
-            value: money ? formatUsd(money.balance_by_currency.USD) : undefined,
+            ...queryFields(dashboardQueryResult, money ? formatUsd(money.balance_by_currency.USD) : undefined),
             href: "/admin/dashboard/accounts",
             hint: money ? `and ${formatBdt(money.balance_by_currency.BDT)}` : undefined,
             icon: <Wallet className="size-5" />,
@@ -106,7 +109,7 @@ const AdminOverview = () => {
           },
           {
             label: "Income this month",
-            value: money ? formatUsd(money.month.revenue_usd) : undefined,
+            ...queryFields(dashboardQueryResult, money ? formatUsd(money.month.revenue_usd) : undefined),
             href: "/admin/dashboard/transactions?kind=income",
             hint: money ? `${money.month.payment_count} payments received` : undefined,
             icon: <TrendingUp className="size-5" />,
@@ -114,14 +117,14 @@ const AdminOverview = () => {
           },
           {
             label: "Expenses this month",
-            value: money ? formatBdt(money.month.expense_bdt) : undefined,
+            ...queryFields(dashboardQueryResult, money ? formatBdt(money.month.expense_bdt) : undefined),
             href: "/admin/dashboard/transactions?kind=expense",
             icon: <Receipt className="size-5" />,
             tone: 4,
           },
           {
             label: "Outstanding",
-            value: money ? formatUsd(money.outstanding_receivable_usd) : undefined,
+            ...queryFields(dashboardQueryResult, money ? formatUsd(money.outstanding_receivable_usd) : undefined),
             href: "/admin/dashboard/invoices",
             hint: "Invoiced and not yet received",
             icon: <ArrowDownLeft className="size-5" />,
@@ -135,14 +138,14 @@ const AdminOverview = () => {
         counts={[
           {
             label: "Active projects",
-            value: money?.active_projects,
+            ...queryFields(dashboardQueryResult, money?.active_projects),
             href: "/admin/dashboard/projects?status=Active",
             icon: <FolderKanban className="size-5" />,
             tone: 1,
           },
           {
             label: "Overdue tasks",
-            value: report?.overdue_count,
+            ...queryFields(reportQuery, report?.overdue_count),
             href: "/admin/dashboard/tasks?overdue=true",
             hint: "Past their date and still open",
             icon: <AlertTriangle className="size-5" />,
@@ -150,7 +153,7 @@ const AdminOverview = () => {
           },
           {
             label: "Unassigned tasks",
-            value: report?.unassigned_count,
+            ...queryFields(reportQuery, report?.unassigned_count),
             href: "/admin/dashboard/tasks",
             hint: "Nobody is doing these",
             icon: <ListChecks className="size-5" />,
@@ -158,7 +161,7 @@ const AdminOverview = () => {
           },
           {
             label: "Overloaded",
-            value: overloaded,
+            ...queryFields(workloadQueryResult, overloaded),
             href: "/admin/dashboard/workload",
             hint: "More logged than they had hours for",
             icon: <UsersRound className="size-5" />,

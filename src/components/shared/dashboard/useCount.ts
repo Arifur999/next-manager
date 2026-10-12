@@ -2,27 +2,41 @@
 
 import { useQuery, type QueryKey, type UseQueryOptions } from "@tanstack/react-query"
 
+export interface ICountResult {
+  /** Undefined while loading: a dash or a skeleton, never a zero that was not measured. */
+  value: number | undefined
+  isError: boolean
+  retry: () => void
+}
+
 /**
  * How many rows a list endpoint would return, without fetching them.
  *
- * Every list here already reports `meta.total` for the whole filtered set, not
- * the page — so asking for ONE row gives the true count for the cost of one.
- * Counting by fetching everything would pull a thousand clients across the wire
- * to render the number 1000.
- *
- * The important property is not the saving, though: it is that the count comes
- * from the SAME endpoint, with the same filter, as the page the tile links to.
- * A dashboard that counted its own way is a dashboard that can disagree with
- * the list underneath it, and the person reading it has no way to tell which is
- * lying.
- *
- * Undefined while loading, and undefined stays undefined — the tile shows a
- * dash rather than a zero, because zero is an answer and showing it before one
- * is known says the business is empty when it is merely slow.
+ * Every list reports `meta.total` for the whole filtered set, so asking for ONE
+ * row gives the true count for the cost of one. The count comes from the SAME
+ * endpoint, with the same filter, as the page the tile links to, so the tile
+ * and the list cannot disagree.
  */
 export const useCount = <TData extends { meta?: { total?: number } }, TKey extends QueryKey>(
   options: UseQueryOptions<TData, Error, TData, TKey>
-): number | undefined => {
-  const { data } = useQuery(options)
-  return data?.meta?.total
+): ICountResult => {
+  const { data, isError, refetch } = useQuery(options)
+  return { value: data?.meta?.total, isError, retry: () => void refetch() }
 }
+
+/** Spreads a count into a CountSection entry: value plus its error state. */
+export const countFields = (count: ICountResult) => ({
+  value: count.value,
+  isError: count.isError,
+  onRetry: count.retry,
+})
+
+/** The same fields for a figure read out of any query (a report, a dashboard). */
+export const queryFields = <TValue>(
+  query: { isError: boolean; refetch: () => unknown },
+  value: TValue,
+) => ({
+  value,
+  isError: query.isError,
+  onRetry: () => void query.refetch(),
+})

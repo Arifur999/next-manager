@@ -10,18 +10,21 @@ import type { ReactNode } from "react"
  * often when somebody is new, so it is the last place inconsistency should
  * show.
  *
- * `hint` is for the sentence that says what to do about it. An empty state that
+ * `hint` is for the sentence that says what to do about it, and `action` for the
+ * one thing to do (only when the reader's role can do it). An empty state that
  * only reports emptiness leaves the reader where it found them.
  */
 const EmptyState = ({
   icon: Icon,
   children,
   hint,
+  action,
   className = "",
 }: {
   icon: LucideIcon
   children: ReactNode
   hint?: ReactNode
+  action?: ReactNode
   className?: string
 }) => (
   <div
@@ -30,6 +33,7 @@ const EmptyState = ({
     <Icon className="size-7" aria-hidden="true" />
     <p>{children}</p>
     {hint && <p className="max-w-md text-xs">{hint}</p>}
+    {action && <div className="mt-2">{action}</div>}
   </div>
 )
 

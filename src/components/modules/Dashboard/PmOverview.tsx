@@ -1,8 +1,9 @@
 "use client"
 
 import CountSection from "@/components/shared/dashboard/CountSection"
-import { useCount } from "@/components/shared/dashboard/useCount"
+import { countFields, queryFields, useCount } from "@/components/shared/dashboard/useCount"
 import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { useQuery } from "@tanstack/react-query"
 import { format, isBefore, parseISO, startOfToday } from "date-fns"
@@ -30,10 +31,12 @@ const PmOverview = () => {
   const review = useCount(projectsListQuery("status=Review&limit=1"))
   const completed = useCount(projectsListQuery("status=Completed&limit=1"))
 
-  const { data: reportData } = useQuery(taskReportQuery())
+  const reportQuery = useQuery(taskReportQuery())
+  const reportData = reportQuery.data
   const report = reportData?.data
 
-  const { data: workloadData } = useQuery(workloadQuery())
+  const workloadQueryResult = useQuery(workloadQuery())
+  const workloadData = workloadQueryResult.data
   const workload = workloadData?.data
 
   // Three readings of one row, from the query the Workload page uses. Somebody
@@ -47,7 +50,8 @@ const PmOverview = () => {
 
   // The deadlines themselves, not a count of them: a date is something to act
   // on, and "three due soon" tells nobody which three.
-  const { data: dueData } = useQuery(projectsListQuery("status=Active&limit=50"))
+  const dueQuery = useQuery(projectsListQuery("status=Active&limit=50"))
+  const dueData = dueQuery.data
   const today = startOfToday()
   const deadlines = ((dueData?.data ?? []))
     .filter((project) => project.end_date)
@@ -61,21 +65,21 @@ const PmOverview = () => {
         counts={[
           {
             label: "Planning",
-            value: planning,
+            ...countFields(planning),
             href: "/admin/dashboard/projects?status=Planning",
             icon: <FolderKanban className="size-5" />,
             tone: 2,
           },
           {
             label: "Active",
-            value: active,
+            ...countFields(active),
             href: "/admin/dashboard/projects?status=Active",
             icon: <FolderKanban className="size-5" />,
             tone: 1,
           },
           {
             label: "In review",
-            value: review,
+            ...countFields(review),
             href: "/admin/dashboard/projects?status=Review",
             hint: "Done, not signed off",
             icon: <UserCheck className="size-5" />,
@@ -83,7 +87,7 @@ const PmOverview = () => {
           },
           {
             label: "Completed",
-            value: completed,
+            ...countFields(completed),
             href: "/admin/dashboard/projects?status=Completed",
             icon: <CheckCircle2 className="size-5" />,
             tone: 3,
@@ -96,28 +100,28 @@ const PmOverview = () => {
         counts={[
           {
             label: "All tasks",
-            value: report?.total,
+            ...queryFields(reportQuery, report?.total),
             href: "/admin/dashboard/tasks",
             icon: <ListChecks className="size-5" />,
             tone: 1,
           },
           {
             label: "In review",
-            value: report?.by_status.find((row) => row.status?.name === "In review")?.count,
+            ...queryFields(reportQuery, report?.by_status.find((row) => row.status?.name === "In review")?.count),
             href: "/admin/dashboard/tasks?status=In review",
             icon: <UserCheck className="size-5" />,
             tone: 2,
           },
           {
             label: "Overdue",
-            value: report?.overdue_count,
+            ...queryFields(reportQuery, report?.overdue_count),
             href: "/admin/dashboard/tasks?overdue=true",
             icon: <AlertTriangle className="size-5" />,
             tone: 4,
           },
           {
             label: "Finished",
-            value: report?.done_count,
+            ...queryFields(reportQuery, report?.done_count),
             href: "/admin/dashboard/reports/tasks",
             hint: "Read by what a status means, not its name",
             icon: <CheckCircle2 className="size-5" />,
@@ -131,7 +135,7 @@ const PmOverview = () => {
         counts={[
           {
             label: "Have room",
-            value: available,
+            ...queryFields(workloadQueryResult, available),
             href: "/admin/dashboard/availability",
             hint: "More than four hours left",
             icon: <UsersRound className="size-5" />,
@@ -139,14 +143,14 @@ const PmOverview = () => {
           },
           {
             label: "Nearly full",
-            value: busy,
+            ...queryFields(workloadQueryResult, busy),
             href: "/admin/dashboard/workload",
             icon: <UsersRound className="size-5" />,
             tone: 2,
           },
           {
             label: "Overloaded",
-            value: overloaded,
+            ...queryFields(workloadQueryResult, overloaded),
             href: "/admin/dashboard/workload",
             hint: "More logged than they had hours for",
             icon: <UsersRound className="size-5" />,
@@ -154,7 +158,7 @@ const PmOverview = () => {
           },
           {
             label: "Unassigned tasks",
-            value: report?.unassigned_count,
+            ...queryFields(reportQuery, report?.unassigned_count),
             href: "/admin/dashboard/tasks",
             hint: "Nobody is doing these",
             icon: <ListChecks className="size-5" />,
@@ -171,9 +175,16 @@ const PmOverview = () => {
           </p>
         </CardHeader>
 
-        {deadlines.length === 0 ? (
-          <EmptyState icon={CalendarDays}>No active project has an end date.</EmptyState>
-        ) : (
+        <PanelState
+          query={dueQuery}
+          errorMessage="Project deadlines did not load."
+          isEmpty={deadlines.length === 0}
+          empty={
+            <EmptyState icon={CalendarDays} hint="Give an active project an end date and it appears here, soonest first.">
+              No active project has an end date.
+            </EmptyState>
+          }
+        >
           <ul className="divide-y">
             {deadlines.map((project) => {
               const due = parseISO(project.end_date!)
@@ -204,7 +215,7 @@ const PmOverview = () => {
               )
             })}
           </ul>
-        )}
+        </PanelState>
       </Card>
     </div>
   )

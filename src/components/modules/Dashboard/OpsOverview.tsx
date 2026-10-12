@@ -1,8 +1,9 @@
 "use client"
 
 import CountSection from "@/components/shared/dashboard/CountSection"
-import { useCount } from "@/components/shared/dashboard/useCount"
+import { countFields, useCount } from "@/components/shared/dashboard/useCount"
 import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { STATUS_TONE } from "@/components/shared/status/statusTone"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
@@ -32,7 +33,8 @@ const OpsOverview = () => {
 
   // Today's work itself, not a count of it: this is the list somebody actually
   // works from, and the number above only tells them how long it is.
-  const { data: todayData } = useQuery(tasksListQuery("mine=true&due=today"))
+  const todayQuery = useQuery(tasksListQuery("mine=true&due=today"))
+  const todayData = todayQuery.data
   const todaysWork = todayData?.data ?? []
 
   return (
@@ -42,21 +44,21 @@ const OpsOverview = () => {
         counts={[
           {
             label: "My tasks",
-            value: mine,
+            ...countFields(mine),
             href: "/dashboard/tasks",
             icon: <ListChecks className="size-5" />,
             tone: 1,
           },
           {
             label: "Due today",
-            value: today,
+            ...countFields(today),
             href: "/dashboard/tasks?due=today",
             icon: <CalendarCheck className="size-5" />,
             tone: 2,
           },
           {
             label: "Overdue",
-            value: overdue,
+            ...countFields(overdue),
             href: "/dashboard/tasks?overdue=true",
             hint: "Past their date and still open",
             icon: <AlertTriangle className="size-5" />,
@@ -64,7 +66,7 @@ const OpsOverview = () => {
           },
           {
             label: "Completed",
-            value: done,
+            ...countFields(done),
             href: "/dashboard/tasks?completed=true",
             icon: <CheckCircle2 className="size-5" />,
             tone: 3,
@@ -77,7 +79,7 @@ const OpsOverview = () => {
         counts={[
           {
             label: "Projects I am on",
-            value: projects,
+            ...countFields(projects),
             href: "/admin/dashboard/projects?mine=true",
             hint: "Only the ones you are a member of",
             icon: <FolderKanban className="size-5" />,
@@ -95,9 +97,16 @@ const OpsOverview = () => {
           </p>
         </CardHeader>
 
-        {todaysWork.length === 0 ? (
-          <EmptyState icon={CalendarCheck}>Nothing is due today.</EmptyState>
-        ) : (
+        <PanelState
+          query={todayQuery}
+          errorMessage="Today's work did not load."
+          isEmpty={todaysWork.length === 0}
+          empty={
+            <EmptyState icon={CalendarCheck} hint="Tasks given today as their due date appear here.">
+              Nothing is due today.
+            </EmptyState>
+          }
+        >
           <ul className="divide-y">
             {todaysWork.map((task) => (
               <li
@@ -122,7 +131,7 @@ const OpsOverview = () => {
               </li>
             ))}
           </ul>
-        )}
+        </PanelState>
 
         <div className="border-t px-5 py-3">
           <Link href="/dashboard/tasks" className="text-sm text-muted-foreground hover:underline">

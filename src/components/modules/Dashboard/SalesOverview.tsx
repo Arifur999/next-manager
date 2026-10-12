@@ -1,8 +1,10 @@
 "use client"
 
 import CountSection from "@/components/shared/dashboard/CountSection"
-import { useCount } from "@/components/shared/dashboard/useCount"
+import { countFields, queryFields, useCount } from "@/components/shared/dashboard/useCount"
 import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
+import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { useQuery } from "@tanstack/react-query"
 import { formatDistanceToNow, parseISO } from "date-fns"
@@ -30,12 +32,14 @@ const SalesOverview = () => {
   const planning = useCount(projectsListQuery("status=Planning&limit=1"))
   const activeProjects = useCount(projectsListQuery("status=Active&limit=1"))
 
-  const { data: reportData } = useQuery(taskReportQuery())
+  const reportQuery = useQuery(taskReportQuery())
+  const reportData = reportQuery.data
   const report = reportData?.data
 
   // The list, not just the number: "recently added" is a thing to act on, and a
   // count of it would say nothing useful.
-  const { data: recentData } = useQuery(clientsListQuery("limit=5"))
+  const recentQuery = useQuery(clientsListQuery("limit=5"))
+  const recentData = recentQuery.data
   const recent = recentData?.data ?? []
 
   return (
@@ -45,21 +49,21 @@ const SalesOverview = () => {
         counts={[
           {
             label: "Total clients",
-            value: clients,
+            ...countFields(clients),
             href: "/admin/dashboard/clients",
             icon: <Users className="size-5" />,
             tone: 1,
           },
           {
             label: "Active clients",
-            value: active,
+            ...countFields(active),
             href: "/admin/dashboard/clients?status=active",
             icon: <UserCheck className="size-5" />,
             tone: 3,
           },
           {
             label: "Inactive",
-            value: inactive,
+            ...countFields(inactive),
             href: "/admin/dashboard/clients?status=inactive",
             hint: "Worth a call",
             icon: <Users className="size-5" />,
@@ -67,7 +71,7 @@ const SalesOverview = () => {
           },
           {
             label: "Services",
-            value: services,
+            ...countFields(services),
             href: "/admin/dashboard/services",
             hint: "What there is to sell",
             icon: <Package className="size-5" />,
@@ -83,7 +87,7 @@ const SalesOverview = () => {
             label: "Awaiting a PM",
             // Planning means opened and not started. The salesperson who
             // brought it in is the one who notices before the client does.
-            value: planning,
+            ...countFields(planning),
             href: "/admin/dashboard/projects?status=Planning",
             hint: "Opened, not started",
             icon: <FolderKanban className="size-5" />,
@@ -91,21 +95,21 @@ const SalesOverview = () => {
           },
           {
             label: "Active projects",
-            value: activeProjects,
+            ...countFields(activeProjects),
             href: "/admin/dashboard/projects?status=Active",
             icon: <FolderKanban className="size-5" />,
             tone: 1,
           },
           {
             label: "My tasks",
-            value: report?.total,
+            ...queryFields(reportQuery, report?.total),
             href: "/dashboard/tasks",
             icon: <ListChecks className="size-5" />,
             tone: 2,
           },
           {
             label: "Overdue",
-            value: report?.overdue_count,
+            ...queryFields(reportQuery, report?.overdue_count),
             href: "/dashboard/tasks?overdue=true",
             icon: <ListChecks className="size-5" />,
             tone: 5,
@@ -121,9 +125,24 @@ const SalesOverview = () => {
           </p>
         </CardHeader>
 
-        {recent.length === 0 ? (
-          <EmptyState icon={UserPlus}>No clients yet.</EmptyState>
-        ) : (
+        <PanelState
+          query={recentQuery}
+          errorMessage="Recent clients did not load."
+          isEmpty={recent.length === 0}
+          empty={
+            <EmptyState
+              icon={UserPlus}
+              hint="Clients you add, and leads you win, show up here newest first."
+              action={
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/admin/dashboard/clients">Add a client</Link>
+                </Button>
+              }
+            >
+              No clients yet.
+            </EmptyState>
+          }
+        >
           <ul className="divide-y">
             {recent.map((client) => (
               <li key={client.id}>
@@ -144,7 +163,7 @@ const SalesOverview = () => {
               </li>
             ))}
           </ul>
-        )}
+        </PanelState>
       </Card>
     </div>
   )

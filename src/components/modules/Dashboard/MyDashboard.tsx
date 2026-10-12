@@ -3,6 +3,8 @@
 import MetricTile, { count, hours, pct } from "@/components/shared/kpi/MetricTile"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import type { MeKpi } from "@/types/kpi.types"
+import ErrorState from "@/components/shared/state/ErrorState"
+import KpiSkeleton from "@/components/shared/kpi/KpiSkeleton"
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 import { kpiQuery } from "@/queries/insights.queries"
@@ -21,19 +23,22 @@ import { kpiQuery } from "@/queries/insights.queries"
  */
 
 const MyDashboard = ({ range }: { range: string }) => {
-  const { data, isLoading } = useQuery(kpiQuery<MeKpi>("me", range))
+  const { data, isLoading, isError, isFetching, refetch } = useQuery(kpiQuery<MeKpi>("me", range))
 
   const kpi = data?.data as MeKpi | undefined
 
   if (isLoading && !kpi) {
-    return <div className="h-64 animate-pulse rounded-xl bg-muted/40" />
+    return <KpiSkeleton />
   }
 
-  if (!kpi) {
+  if (isError || !kpi) {
     return (
-      <p className="rounded-xl border border-dashed px-6 py-12 text-center text-sm text-muted-foreground">
-        Could not load your numbers.
-      </p>
+      <ErrorState
+        className="rounded-xl border border-dashed"
+        message="Your numbers did not load."
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+      />
     )
   }
 

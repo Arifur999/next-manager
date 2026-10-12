@@ -1,10 +1,12 @@
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
 type StatTileProps = {
   label: string;
-  value: string;
+  /** Undefined while loading: a skeleton in the value's place. */
+  value: string | undefined;
   /** A second figure under the main one — never a converted version of it. */
   secondary?: string;
   hint?: string;
@@ -58,7 +60,11 @@ const StatTile = ({
           <p className="truncate text-sm text-muted-foreground">{label}</p>
           {/* tabular-nums so figures line up column to column instead of
               jittering as digits change width. */}
-          <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
+          {value === undefined ? (
+            <Skeleton aria-label="Loading" className="mt-2 h-8 w-24 rounded-md" />
+          ) : (
+            <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
+          )}
           {secondary && (
             <p className="mt-1 text-sm text-muted-foreground tabular-nums">{secondary}</p>
           )}

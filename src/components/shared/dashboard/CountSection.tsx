@@ -1,6 +1,9 @@
 "use client"
 
 import StatTile from "@/components/shared/StatTile"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { RotateCw } from "lucide-react"
 import type { ReactNode } from "react"
 
 /**
@@ -31,7 +34,24 @@ export type Count = {
   hint?: string
   icon?: ReactNode
   tone?: 1 | 2 | 3 | 4 | 5
+  /** The request behind this figure failed; the tile says so and offers Retry. */
+  isError?: boolean
+  onRetry?: () => void
 }
+
+// Scoped to one tile, so one failed figure never blanks the whole row.
+const FailedTile = ({ label, onRetry }: { label: string; onRetry?: () => void }) => (
+  <Card role="alert" className="gap-0 p-5">
+    <p className="truncate text-sm text-muted-foreground">{label}</p>
+    <p className="mt-2 text-sm font-medium">This figure did not load.</p>
+    {onRetry && (
+      <Button type="button" variant="outline" size="sm" className="mt-3 w-fit" onClick={onRetry}>
+        <RotateCw aria-hidden="true" className="size-3.5" />
+        Retry
+      </Button>
+    )}
+  </Card>
+)
 
 const CountSection = ({ title, counts }: { title: string; counts: Count[] }) => (
   <section className="space-y-3">
@@ -40,20 +60,24 @@ const CountSection = ({ title, counts }: { title: string; counts: Count[] }) => 
     </h2>
 
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {counts.map((count) => (
+      {counts.map((count) =>
+        count.isError ? (
+          <FailedTile key={count.label} label={count.label} onRetry={count.onRetry} />
+        ) : (
         <StatTile
           key={count.label}
           label={count.label}
-          // A dash rather than a zero while it loads. Zero is an answer, and
-          // showing it before one is known is how a dashboard tells somebody
-          // their pipeline is empty when it is merely slow.
-          value={count.value === null || count.value === undefined ? "—" : String(count.value)}
+          // A skeleton rather than a zero while it loads. Zero is an answer, and
+          // showing it before one is known says the business is empty when it
+          // is merely slow.
+          value={count.value === null || count.value === undefined ? undefined : String(count.value)}
           hint={count.hint}
           href={count.href}
           icon={count.icon}
           tone={count.tone}
         />
-      ))}
+        ),
+      )}
     </div>
   </section>
 )
