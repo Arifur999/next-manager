@@ -1,9 +1,9 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { createExpenseCategory, deleteExpenseCategory } from "@/services/agencio.services"
+import { createExpenseCategory, deleteExpenseCategory } from "@/services/spending.services"
 import { refreshRate, setDefaultRate } from "@/services/finance.services"
-import type { IExpenseCategory } from "@/types/agencio.types"
+import type { IExpenseCategory } from "@/types/spending.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 export const setDefaultRateAction = async (

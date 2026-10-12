@@ -1,7 +1,7 @@
 import DateCell from "@/components/shared/cell/DateCell"
 import { Badge } from "@/components/ui/badge"
 import { formatBdt } from "@/lib/currency"
-import type { IOwnerWithdrawal } from "@/types/agencio.types"
+import type { IOwnerWithdrawal } from "@/types/spending.types"
 import { ColumnDef } from "@tanstack/react-table"
 
 export const withdrawalsColumns: ColumnDef<IOwnerWithdrawal>[] = [

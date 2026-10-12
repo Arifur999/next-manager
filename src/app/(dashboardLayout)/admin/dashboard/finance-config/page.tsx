@@ -1,5 +1,5 @@
 import FinanceConfiguration from "@/components/modules/Admin/Settings/FinanceConfiguration";
-import { getExpenseCategories } from "@/services/agencio.services";
+import { getExpenseCategories } from "@/services/spending.services";
 import { getRateSettings } from "@/services/finance.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";

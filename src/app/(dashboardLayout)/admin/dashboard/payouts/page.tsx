@@ -1,5 +1,5 @@
 import PayoutsTable from "@/components/modules/Admin/Payouts/PayoutsTable";
-import { getTeamPayouts } from "@/services/agencio.services";
+import { getTeamPayouts } from "@/services/spending.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

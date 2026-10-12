@@ -1,5 +1,5 @@
 import ExpensesTable from "@/components/modules/Admin/Expenses/ExpensesTable";
-import { getExpenses } from "@/services/agencio.services";
+import { getExpenses } from "@/services/spending.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

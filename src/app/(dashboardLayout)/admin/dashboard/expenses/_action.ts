@@ -6,8 +6,8 @@ import {
     createExpenseCategory,
     deleteExpense,
     deleteExpenseCategory,
-} from "@/services/agencio.services"
-import type { IExpense, IExpenseCategory } from "@/types/agencio.types"
+} from "@/services/spending.services"
+import type { IExpense, IExpenseCategory } from "@/types/spending.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 export const createExpenseAction = async (

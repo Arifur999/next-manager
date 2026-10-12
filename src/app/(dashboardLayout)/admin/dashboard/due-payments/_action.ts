@@ -5,8 +5,8 @@ import {
     createDuePerson,
     createDueTransaction,
     deleteDueTransaction,
-} from "@/services/agencio.services"
-import type { IDuePerson, IDueTransaction } from "@/types/agencio.types"
+} from "@/services/spending.services"
+import type { IDuePerson, IDueTransaction } from "@/types/spending.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 export const createDuePersonAction = async (

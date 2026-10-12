@@ -5,8 +5,8 @@ import { payoutsColumns } from "@/components/modules/Admin/Payouts/payoutsColumn
 import StatTile from "@/components/shared/StatTile"
 import DataTable from "@/components/shared/table/DataTable"
 import { formatBdt } from "@/lib/currency"
-import { getTeamPayouts } from "@/services/agencio.services"
-import type { ITeamPayout } from "@/types/agencio.types"
+import { getTeamPayouts } from "@/services/spending.services"
+import type { ITeamPayout } from "@/types/spending.types"
 import { useQuery } from "@tanstack/react-query"
 import { HandCoins } from "lucide-react"
 

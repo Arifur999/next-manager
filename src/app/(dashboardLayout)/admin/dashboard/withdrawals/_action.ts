@@ -1,8 +1,8 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { createOwnerWithdrawal, deleteOwnerWithdrawal } from "@/services/agencio.services"
-import type { IOwnerWithdrawal } from "@/types/agencio.types"
+import { createOwnerWithdrawal, deleteOwnerWithdrawal } from "@/services/spending.services"
+import type { IOwnerWithdrawal } from "@/types/spending.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 export const createWithdrawalAction = async (

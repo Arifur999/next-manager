@@ -16,8 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { formatBdt } from "@/lib/currency"
-import { getExpenseCategories } from "@/services/agencio.services"
-import type { IExpenseCategory } from "@/types/agencio.types"
+import { getExpenseCategories } from "@/services/spending.services"
+import type { IExpenseCategory } from "@/types/spending.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Trash2 } from "lucide-react"
 import { useState } from "react"

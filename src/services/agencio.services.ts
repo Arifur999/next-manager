@@ -10,10 +10,6 @@ import type {
     ICredentialAccessEntry,
     IDashboard,
     IDepartment,
-    IDuePerson,
-    IDueTransaction,
-    IExpense,
-    IExpenseCategory,
     IKpiTarget,
     ILeaveBalance,
     ILeaveRequest,
@@ -23,7 +19,6 @@ import type {
     IMonthlyPoint,
     INotificationRule,
     IOrganization,
-    IOwnerWithdrawal,
     IMessage,
     IPayrollRun,
     IServiceDetail,
@@ -34,7 +29,6 @@ import type {
     IServiceRevenue,
     IServiceTemplate,
     ITeamInvite,
-    ITeamPayout,
 } from "@/types/agencio.types"
 import type { KpiScope } from "@/types/kpi.types"
 import type {
@@ -70,73 +64,6 @@ const wrap = async <T>(label: string, run: () => Promise<T>): Promise<T> => run(
 
 export const getDashboard = async () =>
     wrap("fetching dashboard", () => httpClient.get<IDashboard>("/dashboard"))
-
-// ----------------------------------------------------------------- expenses
-
-export const getExpenseCategories = async () =>
-    wrap("fetching expense categories", () => httpClient.get<IExpenseCategory[]>("/expense-categories"))
-
-export const createExpenseCategory = async (payload: Record<string, unknown>) =>
-    wrap("creating expense category", () => httpClient.post<IExpenseCategory>("/expense-categories", payload))
-
-export const updateExpenseCategory = async (id: string, payload: Record<string, unknown>) =>
-    wrap("updating expense category", () => httpClient.patch<IExpenseCategory>(`/expense-categories/${id}`, payload))
-
-export const deleteExpenseCategory = async (id: string) =>
-    wrap("deleting expense category", () => httpClient.delete<{ message: string }>(`/expense-categories/${id}`))
-
-export const getExpenses = async (queryString?: string) =>
-    wrap("fetching expenses", () => httpClient.get<IExpense[]>("/expenses", { params: toParams(queryString) }))
-
-export const createExpense = async (payload: Record<string, unknown>) =>
-    wrap("recording expense", () => httpClient.post<IExpense>("/expenses", payload))
-
-export const updateExpense = async (id: string, payload: Record<string, unknown>) =>
-    wrap("updating expense", () => httpClient.patch<IExpense>(`/expenses/${id}`, payload))
-
-export const deleteExpense = async (id: string) =>
-    wrap("deleting expense", () => httpClient.delete<{ message: string }>(`/expenses/${id}`))
-
-// ------------------------------------------------------- payouts, withdrawals
-
-export const getTeamPayouts = async (queryString?: string) =>
-    wrap("fetching payouts", () => httpClient.get<ITeamPayout[]>("/team-payouts", { params: toParams(queryString) }))
-
-export const createTeamPayout = async (payload: Record<string, unknown>) =>
-    wrap("recording payout", () => httpClient.post<ITeamPayout>("/team-payouts", payload))
-
-export const deleteTeamPayout = async (id: string) =>
-    wrap("deleting payout", () => httpClient.delete<{ message: string }>(`/team-payouts/${id}`))
-
-export const getOwnerWithdrawals = async (queryString?: string) =>
-    wrap("fetching withdrawals", () =>
-        httpClient.get<IOwnerWithdrawal[]>("/owner-withdrawals", { params: toParams(queryString) })
-    )
-
-export const createOwnerWithdrawal = async (payload: Record<string, unknown>) =>
-    wrap("recording withdrawal", () => httpClient.post<IOwnerWithdrawal>("/owner-withdrawals", payload))
-
-export const deleteOwnerWithdrawal = async (id: string) =>
-    wrap("deleting withdrawal", () => httpClient.delete<{ message: string }>(`/owner-withdrawals/${id}`))
-
-// ------------------------------------------------------------- due payments
-
-export const getDuePeople = async (queryString?: string) =>
-    wrap("fetching due people", () => httpClient.get<IDuePerson[]>("/due-payments", { params: toParams(queryString) }))
-
-export const createDuePerson = async (payload: Record<string, unknown>) =>
-    wrap("creating due person", () => httpClient.post<IDuePerson>("/due-payments", payload))
-
-export const getDueTransactions = async (queryString?: string) =>
-    wrap("fetching due transactions", () =>
-        httpClient.get<IDueTransaction[]>("/due-payments/transactions", { params: toParams(queryString) })
-    )
-
-export const createDueTransaction = async (payload: Record<string, unknown>) =>
-    wrap("recording due transaction", () => httpClient.post<IDueTransaction>("/due-payments/transactions", payload))
-
-export const deleteDueTransaction = async (id: string) =>
-    wrap("deleting due transaction", () => httpClient.delete<{ message: string }>(`/due-payments/transactions/${id}`))
 
 // -------------------------------------------------------------------- vault
 

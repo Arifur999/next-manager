@@ -18,7 +18,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt } from "@/lib/currency"
 import { getAccounts } from "@/services/finance.services"
-import type { IDuePerson } from "@/types/agencio.types"
+import type { IDuePerson } from "@/types/spending.types"
 import type { IAccount } from "@/types/finance.types"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"

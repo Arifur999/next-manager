@@ -1,5 +1,5 @@
 import DuePaymentsBoard from "@/components/modules/Admin/DuePayments/DuePaymentsBoard";
-import { getDuePeople, getDueTransactions } from "@/services/agencio.services";
+import { getDuePeople, getDueTransactions } from "@/services/spending.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

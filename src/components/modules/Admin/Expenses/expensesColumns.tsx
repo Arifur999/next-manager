@@ -1,7 +1,7 @@
 import DateCell from "@/components/shared/cell/DateCell"
 import { Badge } from "@/components/ui/badge"
 import { formatBdt } from "@/lib/currency"
-import type { IExpense } from "@/types/agencio.types"
+import type { IExpense } from "@/types/spending.types"
 import { ColumnDef } from "@tanstack/react-table"
 
 export const expensesColumns: ColumnDef<IExpense>[] = [

@@ -1,8 +1,8 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { createTeamPayout, deleteTeamPayout } from "@/services/agencio.services"
-import type { ITeamPayout } from "@/types/agencio.types"
+import { createTeamPayout, deleteTeamPayout } from "@/services/spending.services"
+import type { ITeamPayout } from "@/types/spending.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 export const createTeamPayoutAction = async (
