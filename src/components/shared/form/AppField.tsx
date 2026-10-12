@@ -21,7 +21,10 @@ const getErrorMessage = (error: unknown): string => {
 type AppFieldProps = {
     field: AnyFieldApi;
     label: string;
-    type?: "text" | "email" | "password" | "number" | "date" | "time";
+    type?: "text" | "email" | "password" | "number" | "date" | "time" | "tel";
+    /** Lets browsers and password managers fill the field (email, current-password, new-password, organization...). */
+    autoComplete?: string;
+    inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
     placeholder?: string;
     append?: React.ReactNode;
     prepend?: React.ReactNode;
@@ -38,6 +41,8 @@ const AppField = ({
     prepend,
     className,
     disabled = false,
+    autoComplete,
+    inputMode,
 }: AppFieldProps) => {
     // Only after touch, and only the first one: showing "required" the instant a
     // form opens tells the user off for something they have not done yet.
@@ -67,6 +72,8 @@ const AppField = ({
                     type={type}
                     value={field.state.value ?? ""}
                     placeholder={placeholder}
+                    autoComplete={autoComplete}
+                    inputMode={inputMode}
                     onBlur={field.handleBlur}
                     onChange={(event) => field.handleChange(event.target.value)}
                     disabled={disabled}

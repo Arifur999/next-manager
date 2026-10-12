@@ -17,7 +17,8 @@ import { useMutation } from "@tanstack/react-query"
 import { Eye, EyeOff } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { focusFirstInvalid } from "@/lib/focusFirstInvalid"
+import { useRef, useState } from "react"
 import { toast } from "sonner"
 
 /**
@@ -44,6 +45,7 @@ const defaultValues: IRegisterFormValues = {
 const RegisterForm = () => {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: (values: IRegisterFormValues) => registerAction(values),
@@ -51,6 +53,7 @@ const RegisterForm = () => {
 
   const form = useForm({
     defaultValues,
+    onSubmitInvalid: () => focusFirstInvalid(formRef.current),
     onSubmit: async ({ value }) => {
       const result = await mutateAsync(value)
 
@@ -85,6 +88,7 @@ const RegisterForm = () => {
 
         <CardContent>
           <form
+            ref={formRef}
             method="POST"
             action="#"
             noValidate
@@ -103,6 +107,7 @@ const RegisterForm = () => {
                 <AppField
                   field={field}
                   label="Company name"
+                  autoComplete="organization"
                   placeholder="Northwind Studio"
                   disabled={isPending}
                 />
@@ -117,6 +122,7 @@ const RegisterForm = () => {
                 <AppField
                   field={field}
                   label="Your name"
+                  autoComplete="name"
                   placeholder="Alex Morgan"
                   disabled={isPending}
                 />
@@ -132,6 +138,7 @@ const RegisterForm = () => {
                   field={field}
                   label="Email"
                   type="email"
+                  autoComplete="email"
                   placeholder="you@company.com"
                   disabled={isPending}
                 />
@@ -143,6 +150,9 @@ const RegisterForm = () => {
                 <AppField
                   field={field}
                   label="Phone (optional)"
+                  type="tel"
+                  autoComplete="tel"
+                  inputMode="tel"
                   disabled={isPending}
                 />
               )}
@@ -158,6 +168,7 @@ const RegisterForm = () => {
                     field={field}
                     label="Password"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
                     placeholder="At least 8 characters, with a letter and a number"
                     disabled={isPending}
                   />

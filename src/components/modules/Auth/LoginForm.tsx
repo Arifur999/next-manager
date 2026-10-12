@@ -16,10 +16,11 @@ import { toUserRole } from "@/types/user.types"
 import { loginFormZodSchema, type ILoginFormValues } from "@/zod/auth.validation"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, Info } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useState } from "react"
+import { focusFirstInvalid } from "@/lib/focusFirstInvalid"
+import { useRef, useState } from "react"
 import { toast } from "sonner"
 
 const LoginForm = () => {
@@ -27,6 +28,9 @@ const LoginForm = () => {
   const searchParams = useSearchParams()
   const queryClient = useQueryClient()
   const [showPassword, setShowPassword] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
+  // The dashboard layout sends a revoked session here with this reason (C08).
+  const sessionEnded = searchParams.get("reason") === "session-expired"
 
   // Registering sends the new admin here with their email attached, so they
   // are not asked to type it again thirty seconds after choosing it. The
@@ -43,6 +47,7 @@ const LoginForm = () => {
 
   const form = useForm({
     defaultValues,
+    onSubmitInvalid: () => focusFirstInvalid(formRef.current),
     onSubmit: async ({ value }) => {
       const result = await mutateAsync(value)
 
@@ -74,7 +79,14 @@ const LoginForm = () => {
       </CardHeader>
 
       <CardContent>
+        {sessionEnded && (
+          <div role="alert" className="mb-5 flex gap-2.5 rounded-md border bg-info-subtle px-3 py-2.5 text-sm text-info-subtle-foreground">
+            <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            <p>Your session ended. Sign in again.</p>
+          </div>
+        )}
         <form
+          ref={formRef}
           method="POST"
           action="#"
           noValidate
@@ -91,6 +103,7 @@ const LoginForm = () => {
                 field={field}
                 label="Email"
                 type="email"
+                autoComplete="email"
                 placeholder="you@example.com"
                 disabled={isPending}
               />
@@ -103,6 +116,7 @@ const LoginForm = () => {
                 field={field}
                 label="Password"
                 type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
                 placeholder="Your password"
                 disabled={isPending}
                 append={
@@ -112,7 +126,7 @@ const LoginForm = () => {
                     className="text-muted-foreground transition-colors hover:text-foreground"
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
-                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    {showPassword ? <EyeOff aria-hidden="true" className="size-4" /> : <Eye aria-hidden="true" className="size-4" />}
                   </button>
                 }
               />

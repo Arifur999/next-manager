@@ -19,7 +19,8 @@ import { useMutation } from "@tanstack/react-query"
 import { Eye, EyeOff, LinkIcon } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useState } from "react"
+import { focusFirstInvalid } from "@/lib/focusFirstInvalid"
+import { useRef, useState } from "react"
 import { toast } from "sonner"
 
 /**
@@ -40,6 +41,7 @@ const ResetPasswordForm = () => {
   const token = searchParams.get("token") ?? ""
   const [showPassword, setShowPassword] = useState(false)
   const [confirm, setConfirm] = useState("")
+  const formRef = useRef<HTMLFormElement>(null)
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: (values: IResetPasswordFormValues) => resetPasswordAction(values),
@@ -47,6 +49,7 @@ const ResetPasswordForm = () => {
 
   const form = useForm({
     defaultValues: { token, new_password: "" } as IResetPasswordFormValues,
+    onSubmitInvalid: () => focusFirstInvalid(formRef.current),
     onSubmit: async ({ value }) => {
       const result = await mutateAsync(value)
 
@@ -103,6 +106,7 @@ const ResetPasswordForm = () => {
 
         <CardContent>
           <form
+            ref={formRef}
             method="POST"
             action="#"
             noValidate
@@ -124,6 +128,7 @@ const ResetPasswordForm = () => {
                     field={field}
                     label="New password"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
                     placeholder="At least 8 characters, with a letter and a number"
                     disabled={isPending}
                   />
