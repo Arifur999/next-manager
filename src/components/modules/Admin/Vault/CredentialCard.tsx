@@ -1,5 +1,6 @@
 "use client"
 
+import { toSafeExternalUrl } from "@/lib/safeUrl"
 import {
   getAccessLogAction,
   revealCredentialAction,
@@ -103,6 +104,8 @@ const CredentialCard = ({ credential }: { credential: ICredential }) => {
     }
   }
 
+  const safeUrl = toSafeExternalUrl(credential.url)
+
   return (
     <>
       <Card className="gap-0 p-5">
@@ -112,11 +115,14 @@ const CredentialCard = ({ credential }: { credential: ICredential }) => {
             <p className="truncate text-xs text-muted-foreground">
               {credential.client?.name ?? credential.project?.name ?? "Agency-internal"}
             </p>
+            {credential.url && !safeUrl && (
+              <p className="truncate text-xs text-muted-foreground">{credential.url}</p>
+            )}
           </div>
 
-          {credential.url && (
+          {safeUrl && (
             <Button asChild variant="ghost" size="icon" className="shrink-0">
-              <a href={credential.url} target="_blank" rel="noopener noreferrer">
+              <a href={safeUrl} target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="size-4" />
                 <span className="sr-only">Open {credential.label}</span>
               </a>

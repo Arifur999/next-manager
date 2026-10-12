@@ -1,5 +1,6 @@
 "use client"
 
+import { toSafeExternalUrl } from "@/lib/safeUrl"
 import { createCredentialAction } from "@/app/(dashboardLayout)/admin/dashboard/vault/_action"
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
@@ -29,7 +30,10 @@ const credentialFormSchema = z.object({
   label: z.string().min(1, "Label is required"),
   client_id: z.string().optional(),
   project_id: z.string().optional(),
-  url: z.string().optional(),
+  url: z
+    .string()
+    .optional()
+    .refine((value) => !value || toSafeExternalUrl(value) !== null, "Enter a full URL, including https://"),
   username: z.string().optional(),
   password: z.string().min(1, "Password is required"),
   notes: z.string().optional(),
@@ -152,7 +156,7 @@ const AddCredentialModal = () => {
                 )}
               </form.Field>
 
-              <form.Field name="url">
+              <form.Field name="url" validators={{ onChange: credentialFormSchema.shape.url }}>
                 {(field) => (
                   <AppField field={field} label="URL" placeholder="https://..." disabled={isPending} />
                 )}

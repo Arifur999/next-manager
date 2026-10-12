@@ -1,5 +1,6 @@
 "use client"
 
+import { toSafeExternalUrl } from "@/lib/safeUrl"
 import {
   addClientLinkAction,
   removeClientLinkAction,
@@ -136,39 +137,46 @@ const ClientLinksPanel = ({ clientId }: { clientId: string }) => {
         </p>
       ) : (
         <ul className="divide-y">
-          {links.map((link) => (
-            <li
-              key={link.id}
-              className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5"
-            >
-              <div className="min-w-0">
-                <a
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 truncate text-sm font-medium underline-offset-4 hover:underline"
-                >
-                  {link.label}
-                  <ExternalLink className="size-3.5 shrink-0" aria-hidden="true" />
-                </a>
-                <p className="truncate text-xs text-muted-foreground">
-                  {hostOf(link.url)}
-                  {link.notes ? ` · ${link.notes}` : ""}
-                </p>
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={isRemoving}
-                onClick={() => remove(link.id)}
+          {links.map((link) => {
+            const href = toSafeExternalUrl(link.url)
+            return (
+              <li
+                key={link.id}
+                className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5"
               >
-                <Trash2 className="size-3.5" />
-                <span className="sr-only">Remove {link.label}</span>
-              </Button>
-            </li>
-          ))}
+                <div className="min-w-0">
+                  {href ? (
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 truncate text-sm font-medium underline-offset-4 hover:underline"
+                    >
+                      {link.label}
+                      <ExternalLink className="size-3.5 shrink-0" aria-hidden="true" />
+                    </a>
+                  ) : (
+                    <p className="truncate text-sm font-medium">{link.label}</p>
+                  )}
+                  <p className="truncate text-xs text-muted-foreground">
+                    {hostOf(link.url)}
+                    {link.notes ? ` · ${link.notes}` : ""}
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isRemoving}
+                  onClick={() => remove(link.id)}
+                >
+                  <Trash2 className="size-3.5" />
+                  <span className="sr-only">Remove {link.label}</span>
+                </Button>
+              </li>
+            )
+          })}
         </ul>
       )}
     </Card>
