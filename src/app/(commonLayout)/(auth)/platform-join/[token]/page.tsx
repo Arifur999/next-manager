@@ -4,6 +4,7 @@ import { getApiBaseUrl } from "@/env"
 
 export const metadata: Metadata = {
   title: "Join the platform team",
+  robots: { index: false, follow: false },
 };
 
 // Reads a token from the URL, so it must never be cached.

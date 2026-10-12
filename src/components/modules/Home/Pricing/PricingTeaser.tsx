@@ -9,11 +9,9 @@ const limitText = (value: number | null, noun: string) =>
 
 const priceText = (price: number) => (price === 0 ? PRICING.free : formatUsd(price, { compact: Number.isInteger(price) }))
 
-// Renders only real plans from the API. The caller skips the section entirely
+// Renders only real plans from the API (the page passes at most PRICING.maxPlans). The caller skips the section entirely
 // when there are none, so nothing here is ever a placeholder price.
 const PricingTeaser = ({ plans }: { plans: PublicPlan[] }) => {
-  const shown = plans.slice(0, PRICING.maxPlans)
-
   return (
     <SectionShell id="pricing" labelledBy="pricing-title" className="border-b bg-muted/50">
       <div className="max-w-2xl">
@@ -23,8 +21,8 @@ const PricingTeaser = ({ plans }: { plans: PublicPlan[] }) => {
         <p className="mt-4 text-lg text-muted-foreground">{PRICING.body}</p>
       </div>
 
-      <ul className={cn("mt-12 grid gap-px overflow-hidden rounded-xl border bg-border sm:grid-cols-2", shown.length > 2 && "lg:grid-cols-4")}>
-        {shown.map((plan) => {
+      <ul className={cn("mt-12 grid gap-px overflow-hidden rounded-xl border bg-border sm:grid-cols-2", plans.length > 2 && "lg:grid-cols-4")}>
+        {plans.map((plan) => {
           const startsHere = plan.trial_days !== null
           return (
             <li key={plan.code} className={cn("flex flex-col p-6", startsHere ? "bg-card" : "bg-background")}>

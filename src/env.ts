@@ -53,3 +53,14 @@ export const getEnv = (): ServerEnv => {
 };
 
 export const getApiBaseUrl = () => getEnv().API_BASE_URL;
+
+/**
+ * The public site origin, for metadata, the sitemap and JSON-LD. Read on its
+ * own so pages that only need the URL do not depend on the API or JWT
+ * settings. Falls back to localhost when SITE_URL is unset; production sets it.
+ */
+export const getPublicSiteUrl = (): string => {
+  const parsed = z.url().safeParse(process.env.SITE_URL);
+  const url = parsed.success ? parsed.data : "http://localhost:3000";
+  return url.replace(/\/+$/, "");
+};
