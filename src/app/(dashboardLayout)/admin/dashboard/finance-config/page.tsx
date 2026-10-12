@@ -1,9 +1,9 @@
 import FinanceConfiguration from "@/components/modules/Admin/Settings/FinanceConfiguration";
-import { getExpenseCategories } from "@/services/spending.services";
 import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { rateSettingsQuery } from "@/queries/finance.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import { expenseCategoriesQuery } from "@/queries/spending.queries";
 
 export const metadata: Metadata = {
   title: "Finance Configuration",
@@ -13,10 +13,7 @@ const FinanceConfigurationPage = async () => {
 
   const prefetch = (queryClient: QueryClient) => Promise.all([
     queryClient.prefetchQuery(rateSettingsQuery()),
-    queryClient.prefetchQuery({
-      queryKey: ["expense-categories"],
-      queryFn: () => getExpenseCategories(),
-    }),
+    queryClient.prefetchQuery(expenseCategoriesQuery()),
   ]);
 
   return (

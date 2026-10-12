@@ -6,21 +6,18 @@ import StatTile from "@/components/shared/StatTile"
 import DataTable from "@/components/shared/table/DataTable"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
-import { getExpenses } from "@/services/spending.services"
 import type { IExpense } from "@/types/spending.types"
 import { useQuery } from "@tanstack/react-query"
 import { Receipt, Users } from "lucide-react"
 import { useState } from "react"
+import { expensesListQuery } from "@/queries/spending.queries"
 
 const ExpensesTable = () => {
   const [search, setSearch] = useState("")
 
-  const { data, isLoading, isFetching } = useQuery({
-    queryKey: ["expenses", search],
-    queryFn: () => getExpenses(search ? `search=${encodeURIComponent(search)}` : undefined),
-  })
+  const { data, isLoading, isFetching } = useQuery(expensesListQuery(search ? `search=${encodeURIComponent(search)}` : undefined))
 
-  const expenses = (data?.data ?? []) as IExpense[]
+  const expenses = data?.data ?? []
 
   // Split the way the reports do: employee-type costs sit alongside team
   // payouts, and folding them into operating expenses would double-count.

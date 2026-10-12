@@ -1,20 +1,16 @@
 import PayoutsTable from "@/components/modules/Admin/Payouts/PayoutsTable";
-import { getTeamPayouts } from "@/services/spending.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { teamPayoutsListQuery } from "@/queries/spending.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Team Payouts",
 };
 
 const PayoutsPage = async () => {
-  const queryClient = new QueryClient();
 
-  await queryClient.prefetchQuery({
-    queryKey: ["payouts"],
-    queryFn: () => getTeamPayouts(),
-    staleTime: 1000 * 30,
-  });
+  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(teamPayoutsListQuery());
 
   return (
     <div className="space-y-6">
@@ -26,9 +22,9 @@ const PayoutsPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <PayoutsTable />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

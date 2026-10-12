@@ -21,7 +21,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt } from "@/lib/currency"
-import { getExpenseCategories } from "@/services/spending.services"
 import { expenseFormZodSchema, toNumber, type IExpenseFormValues } from "@/zod/agencio.validation"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -32,6 +31,7 @@ import { toast } from "sonner"
 import { projectsListQuery } from "@/queries/project.queries"
 import { accountsQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
+import { expenseCategoriesQuery } from "@/queries/spending.queries"
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -51,11 +51,7 @@ const RecordExpenseModal = () => {
   const queryClient = useQueryClient()
   const router = useRouter()
 
-  const { data: categoriesData } = useQuery({
-    queryKey: ["expense-categories"],
-    queryFn: () => getExpenseCategories(),
-    enabled: open,
-  })
+  const { data: categoriesData } = useQuery({ ...expenseCategoriesQuery(), enabled: open })
   const { data: accountsData } = useQuery({ ...accountsQuery(), enabled: open })
   const { data: projectsData } = useQuery({ ...projectsListQuery(), enabled: open })
 
@@ -95,7 +91,7 @@ const RecordExpenseModal = () => {
       setOpen(false)
       form.reset()
 
-      void queryClient.invalidateQueries({ queryKey: ["expenses"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all })
       void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] })
       router.refresh()
@@ -115,7 +111,7 @@ const RecordExpenseModal = () => {
 
     toast.success("Category added")
     setNewCategory("")
-    await queryClient.invalidateQueries({ queryKey: ["expense-categories"] })
+    await queryClient.invalidateQueries({ queryKey: queryKeys.expenseCategories.all })
 
     // Select the category that was just created, so the user does not have to
     // go and find it in the list they just added to.

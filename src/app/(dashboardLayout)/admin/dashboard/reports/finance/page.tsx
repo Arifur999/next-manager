@@ -1,20 +1,20 @@
 import FinanceReport from "@/components/modules/Admin/Reports/FinanceReport";
 import { getCashFlow } from "@/services/insights.services";
-import { getExpenses } from "@/services/spending.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { expensesListQuery } from "@/queries/spending.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Finance report",
 };
 
 const FinanceReportPage = async () => {
-  const queryClient = new QueryClient();
 
-  await Promise.all([
+  const prefetch = (queryClient: QueryClient) => Promise.all([
     queryClient.prefetchQuery({ queryKey: ["report-cash-flow"], queryFn: () => getCashFlow() }),
     // Shares its key with the Expenses page, so arriving from there reuses it.
-    queryClient.prefetchQuery({ queryKey: ["expenses", ""], queryFn: () => getExpenses() }),
+    queryClient.prefetchQuery(expensesListQuery()),
   ]);
 
   return (
@@ -26,9 +26,9 @@ const FinanceReportPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <FinanceReport />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

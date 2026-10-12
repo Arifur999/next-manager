@@ -4,11 +4,10 @@ import ShareRow from "@/components/modules/Admin/Reports/ShareRow"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt, formatUsd } from "@/lib/currency"
 import { getCashFlow } from "@/services/insights.services"
-import { getExpenses } from "@/services/spending.services"
-import type { IExpense } from "@/types/spending.types"
 import type { Currency } from "@/types/common.types"
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
+import { expensesListQuery } from "@/queries/spending.queries"
 
 /**
  * Where the money went.
@@ -45,13 +44,10 @@ const FinanceReport = () => {
   // The category breakdown endpoint exists, but the expense list already
   // carries category on each row and this page loads it anyway — grouping here
   // saves a round-trip rather than duplicating a query.
-  const { data: expenseData } = useQuery({
-    queryKey: ["expenses", ""],
-    queryFn: () => getExpenses(),
-  })
+  const { data: expenseData } = useQuery(expensesListQuery())
 
   const cash = cashData?.data as CashFlow | undefined
-  const expenses = (expenseData?.data ?? []) as IExpense[]
+  const expenses = expenseData?.data ?? []
 
   const byCategory = Object.values(
     expenses.reduce<Record<string, { name: string; type: string; total: number; count: number }>>(

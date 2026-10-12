@@ -20,6 +20,7 @@ import { UserPlus } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 import { z } from "zod"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * Informal lending, in and out.
@@ -51,7 +52,7 @@ const AddPersonModal = () => {
       toast.success("Person added")
       setOpen(false)
       form.reset()
-      void queryClient.invalidateQueries({ queryKey: ["due-people"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.duePeople.all })
     },
   })
 

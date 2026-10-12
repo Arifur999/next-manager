@@ -93,8 +93,8 @@ const RecordTransactionModal = ({ people }: { people: IDuePerson[] }) => {
       setOpen(false)
       form.reset()
 
-      void queryClient.invalidateQueries({ queryKey: ["due-people"] })
-      void queryClient.invalidateQueries({ queryKey: ["due-transactions"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.duePeople.all })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dueTransactions.all })
       void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
     },
   })

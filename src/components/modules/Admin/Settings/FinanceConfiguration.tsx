@@ -16,12 +16,13 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { formatBdt } from "@/lib/currency"
-import { getExpenseCategories } from "@/services/spending.services"
 import type { IExpenseCategory } from "@/types/spending.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Trash2 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { expenseCategoriesQuery } from "@/queries/spending.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * The two settings that change what every money figure means.
@@ -36,12 +37,9 @@ const CategorySettings = () => {
   const [name, setName] = useState("")
   const [type, setType] = useState<"general" | "employee">("general")
 
-  const { data } = useQuery({
-    queryKey: ["expense-categories"],
-    queryFn: () => getExpenseCategories(),
-  })
+  const { data } = useQuery(expenseCategoriesQuery())
 
-  const categories = (data?.data ?? []) as IExpenseCategory[]
+  const categories = data?.data ?? []
 
   const { mutateAsync: create, isPending: isCreating } = useMutation({
     mutationFn: () => createCategoryAction({ name: name.trim(), type }),
@@ -63,7 +61,7 @@ const CategorySettings = () => {
 
     toast.success("Category added")
     setName("")
-    void queryClient.invalidateQueries({ queryKey: ["expense-categories"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.expenseCategories.all })
   }
 
   const handleDelete = async (category: IExpenseCategory) => {
@@ -77,7 +75,7 @@ const CategorySettings = () => {
     }
 
     toast.success("Category deleted")
-    void queryClient.invalidateQueries({ queryKey: ["expense-categories"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.expenseCategories.all })
   }
 
   return (

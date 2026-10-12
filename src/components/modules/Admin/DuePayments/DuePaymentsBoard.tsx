@@ -5,11 +5,10 @@ import RecordTransactionModal from "@/components/modules/Admin/DuePayments/Recor
 import StatTile from "@/components/shared/StatTile"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
-import { getDuePeople, getDueTransactions } from "@/services/spending.services"
-import type { IDuePerson, IDueTransaction } from "@/types/spending.types"
 import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { ArrowDownLeft, ArrowUpRight, Scale } from "lucide-react"
+import { duePeopleQuery, dueTransactionsListQuery } from "@/queries/spending.queries"
 
 /**
  * Informal lending, in and out.
@@ -21,17 +20,11 @@ import { ArrowDownLeft, ArrowUpRight, Scale } from "lucide-react"
  */
 
 const DuePaymentsBoard = () => {
-  const { data: peopleData, isLoading } = useQuery({
-    queryKey: ["due-people"],
-    queryFn: () => getDuePeople(),
-  })
-  const { data: transactionsData } = useQuery({
-    queryKey: ["due-transactions"],
-    queryFn: () => getDueTransactions(),
-  })
+  const { data: peopleData, isLoading } = useQuery(duePeopleQuery())
+  const { data: transactionsData } = useQuery(dueTransactionsListQuery())
 
-  const people = (peopleData?.data ?? []) as IDuePerson[]
-  const transactions = (transactionsData?.data ?? []) as IDueTransaction[]
+  const people = peopleData?.data ?? []
+  const transactions = transactionsData?.data ?? []
 
   const owedByAgency = people
     .filter((person) => person.balance_bdt > 0)

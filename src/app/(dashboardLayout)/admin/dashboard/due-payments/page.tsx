@@ -1,21 +1,18 @@
 import DuePaymentsBoard from "@/components/modules/Admin/DuePayments/DuePaymentsBoard";
-import { getDuePeople, getDueTransactions } from "@/services/spending.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { duePeopleQuery, dueTransactionsListQuery } from "@/queries/spending.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Due Payments",
 };
 
 const DuePaymentsPage = async () => {
-  const queryClient = new QueryClient();
 
-  await Promise.all([
-    queryClient.prefetchQuery({ queryKey: ["due-people"], queryFn: () => getDuePeople() }),
-    queryClient.prefetchQuery({
-      queryKey: ["due-transactions"],
-      queryFn: () => getDueTransactions(),
-    }),
+  const prefetch = (queryClient: QueryClient) => Promise.all([
+    queryClient.prefetchQuery(duePeopleQuery()),
+    queryClient.prefetchQuery(dueTransactionsListQuery()),
   ]);
 
   return (
@@ -28,9 +25,9 @@ const DuePaymentsPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <DuePaymentsBoard />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt } from "@/lib/currency"
-import { getOwnerWithdrawals } from "@/services/spending.services"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { PiggyBank, Plus, ShieldAlert } from "lucide-react"
@@ -31,6 +30,7 @@ import { toast } from "sonner"
 import { z } from "zod"
 import { accountsQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
+import { ownerWithdrawalsListQuery } from "@/queries/spending.queries"
 
 const withdrawalFormSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date"),
@@ -85,7 +85,7 @@ const RecordWithdrawalModal = () => {
       setOpen(false)
       form.reset()
 
-      void queryClient.invalidateQueries({ queryKey: ["withdrawals"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.withdrawals.all })
       void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] })
       router.refresh()
@@ -218,13 +218,9 @@ const RecordWithdrawalModal = () => {
 }
 
 const WithdrawalsBoard = () => {
-  const { data, isLoading, isFetching, error } = useQuery({
-    queryKey: ["withdrawals"],
-    queryFn: () => getOwnerWithdrawals(),
-    // The route is owner-only, so anyone else gets a 403. One retry is enough
+  const { data, isLoading, isFetching, error } = useQuery({ ...ownerWithdrawalsListQuery(), // The route is owner-only, so anyone else gets a 403. One retry is enough
     // to rule out a blip without hammering a wall that will not move.
-    retry: 1,
-  })
+    retry: 1 })
 
   const withdrawals = data?.data ?? []
 

@@ -5,18 +5,14 @@ import { payoutsColumns } from "@/components/modules/Admin/Payouts/payoutsColumn
 import StatTile from "@/components/shared/StatTile"
 import DataTable from "@/components/shared/table/DataTable"
 import { formatBdt } from "@/lib/currency"
-import { getTeamPayouts } from "@/services/spending.services"
-import type { ITeamPayout } from "@/types/spending.types"
 import { useQuery } from "@tanstack/react-query"
 import { HandCoins } from "lucide-react"
+import { teamPayoutsListQuery } from "@/queries/spending.queries"
 
 const PayoutsTable = () => {
-  const { data, isLoading, isFetching } = useQuery({
-    queryKey: ["payouts"],
-    queryFn: () => getTeamPayouts(),
-  })
+  const { data, isLoading, isFetching } = useQuery(teamPayoutsListQuery())
 
-  const payouts = (data?.data ?? []) as ITeamPayout[]
+  const payouts = data?.data ?? []
   const total = payouts.reduce((running, row) => running + row.amount_bdt, 0)
   const people = new Set(payouts.map((row) => row.user_id)).size
 

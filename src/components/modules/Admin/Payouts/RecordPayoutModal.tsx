@@ -105,7 +105,7 @@ const RecordPayoutModal = () => {
       setOpen(false)
       form.reset()
 
-      void queryClient.invalidateQueries({ queryKey: ["payouts"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.payouts.all })
       void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] })
       router.refresh()
