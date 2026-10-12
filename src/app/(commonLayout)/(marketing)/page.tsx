@@ -1,3 +1,4 @@
+import Faq from "@/components/modules/Home/Faq/Faq"
 import Features from "@/components/modules/Home/Features/Features"
 import Hero from "@/components/modules/Home/Hero/Hero"
 import LedgerTrace from "@/components/modules/Home/LedgerTrace/LedgerTrace"
@@ -24,6 +25,7 @@ const HomePage = async () => {
       <Workflow />
       <Roles />
       {plans.length > 0 && <PricingTeaser plans={plans} />}
+      <Faq />
     </>
   )
 }
