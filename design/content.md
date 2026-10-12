@@ -20,7 +20,7 @@ Copy in page order. When a section is built its copy moves into `src/data/home/*
 - h2: One job, traced from the first call to the bank.
 - Intro: Most tools hold one part of a project. Here a single job moves through every module, and each step leaves a row the next step reads.
 - Frames and captions:
-  1. Lead: "Won. Northwind Studio asks for a site rebuild; sales moves the lead to Won and it becomes a client."
+  1. Lead: "Won. A dental practice asks for a site rebuild; sales moves the lead to Won and it becomes a client."
   2. Project: "Opened with three milestones. The first is submitted, and the client accepts it."
   3. Hours: "Logged against the milestone. A project manager approves 12.5 hours."
   4. Invoice: "Billed in USD. Approved hours and the accepted milestone go on one invoice."
