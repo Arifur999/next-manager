@@ -1,75 +1,60 @@
-# Naxified Management — Frontend
+# Naxified Management (web)
 
-Next.js 16 (App Router) + TypeScript + shadcn/ui + TanStack Query/Form/Table,
-built on the `component → _action → service → httpClient` pattern.
+The web frontend of Naxified Management, a multi-tenant SaaS in which a service business runs its client work and its money in one workspace: leads and clients, service packages, projects with milestones, tasks on custom workflow columns, timesheets with approval, invoices and payments, expenses, payouts, withdrawals, dues, loans and shareholders, USD and BDT accounts with recorded rates, profit and loss, cash flow, KPI targets, attendance, leave, payroll, departments, a credential vault and team chat. Four workspace roles (admin, sales, project manager, operations) plus a per-person permission grid decide who sees what. A separate platform console lets the super admin sell plans to workspaces. The public landing page lives at `/`.
+
+The API is the sibling repo `next-manager-backend` (Express, Prisma, PostgreSQL, cookie JWT).
+
+## Prerequisites
+
+- Node.js 22 or newer (the Docker image uses 24) and npm (one lockfile: `package-lock.json`).
+- The backend running on http://localhost:5000 with its database migrated and seeded (see its README).
 
 ## Setup
 
-```bash
+PowerShell, one command per line:
+
+```powershell
 npm install
-cp .env.example .env.local     # then set the API URL and JWT secret
-npm run dev                    # http://localhost:3000
+Copy-Item .env.example .env.local
+npm run dev
 ```
 
-`JWT_ACCESS_SECRET` must match the backend's `ACCESS_TOKEN_SECRET` exactly —
-`src/proxy.ts` verifies the access token locally before letting a route render.
-Run the backend (`naxified_backend`) on port 5000 first.
+Then open http://localhost:3000 and sign in with a seeded account (local credentials are in `D:\dev\CREDENTIALS.txt`).
 
-## Layout
+## Environment
 
-```
-src/
-  app/
-    layout.tsx                      fonts, providers, Toaster
-    providers/                      QueryProvider, ThemeProvider
-    (commonLayout)/                 public site
-      page.tsx
-      (auth)/login/{page.tsx,_action.ts}
-    (dashboardLayout)/              sidebar + navbar shell, force-dynamic
-      admin/dashboard/              owner / manager area
-        team-management/{page.tsx,_action.ts,loading.tsx}
-      dashboard/                    staff area
-  components/
-    ui/                             shadcn primitives (generated)
-    shared/                         DataTable, AppField, AppSubmitButton, cells
-    modules/<Domain>/<Feature>/     feature components
-  hooks/                            useRowActionModalState
-  lib/                              httpClient, authUtils, navItem, iconMapper
-  services/<feature>.services.ts    "use server", thin httpClient calls
-  types/  zod/                      one file per domain, kept in sync
-  proxy.ts                          route protection (Next 16 renamed middleware)
-```
+| Variable | Needed | What it is |
+|---|---|---|
+| `API_BASE_URL` | production (dev defaults to `http://localhost:5000/api/v1`) | Server-side route to the API. `API_INTERNAL_URL` is still accepted as a deprecated alias. |
+| `JWT_ACCESS_SECRET` | always | Must equal the backend's `ACCESS_TOKEN_SECRET`: `src/proxy.ts` verifies access tokens locally. |
+| `SITE_URL` | production | Public origin for metadata, canonical links, the sitemap and JSON-LD. Defaults to `http://localhost:3000`. |
+| `LOG_LEVEL` | optional | `debug`, `info` (default), `warn` or `error`. |
+| `NEXT_PUBLIC_DEV_WS_URL` | development only | Chat socket address while `next dev` and the API run on different ports. In production the socket is `/ws` on the page origin. |
 
-## Adding a feature
-
-1. `src/types/<f>.types.ts` — `I<Name>` matching the API response
-2. `src/zod/<f>.validation.ts` — create + edit schemas, inferred value types
-3. `src/services/<f>.services.ts` — `"use server"`, thin `httpClient` calls
-4. `app/.../<f>-management/_action.ts` — wraps each service, normalizes errors
-5. `components/modules/<Domain>/<Feature>/<f>Columns.tsx`
-6. `…/<Feature>Table.tsx` — `useQuery` + `useRowActionModalState` + `DataTable`
-7. `Create…FormModal`, `Edit…FormModal`, `Delete…ConfirmationDialog`
-8. `page.tsx` (prefetch + `HydrationBoundary`) and `loading.tsx`
-
-Rules that are not optional: a component never imports `httpClient`; every
-action returns `ApiResponse<T> | ApiErrorResponse` and never throws; the
-`page.tsx` prefetch and the table's `useQuery` share one query key; after a
-successful mutation always `toast` → close → `reset` → `invalidateQueries` →
-`router.refresh()`.
+`src/env.ts` validates these at boot (`src/instrumentation.ts`): a production server missing `API_BASE_URL` or `JWT_ACCESS_SECRET` logs "Invalid server environment" naming the variable and answers every request with 500.
 
 ## Scripts
 
-| Command | What it does |
-|---|---|
-| `npm run dev` | dev server |
-| `npm run build` | production build |
-| `npm run start` | serve the production build |
-| `npm run lint` | eslint (Next 16 removed `next lint`) |
+| Command | What it does | Needs |
+|---|---|---|
+| `npm run dev` | Dev server on port 3000 | backend on 5000 |
+| `npm test` | Vitest, every `src/**/*.test.ts`, pinned to UTC | nothing |
+| `npm run lint` | ESLint, including `no-console` and the query key rule | nothing |
+| `npm run verify` | Production build into `.next-check`, safe while `npm run dev` runs | `.env.local` not required |
+| `npm run build` / `npm start` | Production build and server | env as above |
+| `npm run qa:contrast` | Checks every colour token pair in `src/app/globals.css`, light and dark | nothing |
+| `npm run test:nav` | Opens every dashboard route for every role | running app and backend, seeded users in `.env` |
+| `npm run test:matrix` | Compares live route access with `scripts/role-matrix.expected.txt` | same |
+| `npm run test:routing`, `test:permission-grid`, `test:login-flow`, `test:journeys` | Live routing, permission grid, sign-in and journey checks | same |
 
-## Route protection
+Type checking is `npx tsc --noEmit`.
 
-`src/lib/authUtils.ts` declares route ownership as data; `src/proxy.ts` resolves
-it in a fixed order — proactive token refresh, signed-in users off the auth
-pages, public routes through, anonymous users to `/login?redirect=…`, then the
-role check. Adding a protected area means adding a pattern to `authUtils`, not
-writing a new check.
+## Architecture
+
+`component -> _action.ts -> "use server" service -> server-only httpClient`. The browser never sees the API address or a token; route access is one table in `src/lib/authUtils.ts`, enforced in `src/proxy.ts`. Rules, folder map and backend contracts are in [AGENTS.md](AGENTS.md).
+
+Design records live in `design/`: `brief.md`, `direction.md`, `content.md`, `motion.md` and `qa.md`. `/styleguide` (noindex) renders every token and core component in light and dark.
+
+## Docker
+
+`Dockerfile` builds Next's standalone output and runs `node server.js` as the `node` user on port 3000, with a health check on `/login`. Nothing is baked in at build time: pass `API_BASE_URL`, `JWT_ACCESS_SECRET` and `SITE_URL` as runtime environment. The backend repo's `docker-compose.yml` builds and runs this image as its `web` service; at the time of writing it still passes the deprecated `API_INTERNAL_URL` (accepted) and the unused `NEXT_PUBLIC_API_BASE_URL` build argument, and does not yet pass `SITE_URL`.
