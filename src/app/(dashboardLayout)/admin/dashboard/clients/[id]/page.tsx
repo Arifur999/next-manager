@@ -1,10 +1,10 @@
 import ClientDetail from "@/components/modules/Admin/Clients/ClientDetail";
-import { getInvoices, getPayments } from "@/services/billing.services";
 import { getUserInfo } from "@/services/auth.services";
 import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { clientDetailQuery, clientFinancialsQuery } from "@/queries/crm.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import { invoicesListQuery, paymentsListQuery } from "@/queries/billing.queries";
 
 export const metadata: Metadata = {
   title: "Client",
@@ -27,8 +27,8 @@ const ClientDetailPage = async ({ params }: { params: Promise<{ id: string }> })
           queryClient.prefetchQuery(clientFinancialsQuery(id)),
           // These two share their cache keys with the list pages, so navigating
           // here from Payments or Invoices reuses what is already loaded.
-          queryClient.prefetchQuery({ queryKey: ["payments", ""], queryFn: () => getPayments() }),
-          queryClient.prefetchQuery({ queryKey: ["invoices", ""], queryFn: () => getInvoices() }),
+          queryClient.prefetchQuery(paymentsListQuery()),
+          queryClient.prefetchQuery(invoicesListQuery()),
         ]
       : []),
   ]);

@@ -27,6 +27,7 @@ import { useCallback, useState } from "react"
 import { toast } from "sonner"
 import { clientsListQuery } from "@/queries/crm.queries"
 import { projectsListQuery } from "@/queries/project.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -95,9 +96,9 @@ const RecordPaymentModal = () => {
       form.reset()
 
       // Balances, the dashboard and any invoice this settled all move.
-      void queryClient.invalidateQueries({ queryKey: ["payments"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.payments.all })
       void queryClient.invalidateQueries({ queryKey: ["accounts"] })
-      void queryClient.invalidateQueries({ queryKey: ["invoices"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all })
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] })
       router.refresh()
     },

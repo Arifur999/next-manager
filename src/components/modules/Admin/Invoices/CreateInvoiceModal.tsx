@@ -28,6 +28,7 @@ import { toast } from "sonner"
 import { z } from "zod"
 import { clientsListQuery } from "@/queries/crm.queries"
 import { projectsListQuery } from "@/queries/project.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * Creating an invoice.
@@ -114,7 +115,7 @@ const CreateInvoiceModal = () => {
       setOpen(false)
       form.reset()
 
-      void queryClient.invalidateQueries({ queryKey: ["invoices"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all })
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] })
       router.refresh()
     },

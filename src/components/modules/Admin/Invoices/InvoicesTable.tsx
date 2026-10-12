@@ -5,23 +5,19 @@ import { invoicesColumns } from "@/components/modules/Admin/Invoices/invoicesCol
 import StatTile from "@/components/shared/StatTile"
 import DataTable from "@/components/shared/table/DataTable"
 import { formatUsd } from "@/lib/currency"
-import { getInvoices } from "@/services/billing.services"
-import type { IInvoice } from "@/types/billing.types"
 import { useQuery } from "@tanstack/react-query"
 import { AlertTriangle, FileText } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { invoicesListQuery } from "@/queries/billing.queries"
 
 const InvoicesTable = () => {
   const router = useRouter()
   const [search, setSearch] = useState("")
 
-  const { data, isLoading, isFetching } = useQuery({
-    queryKey: ["invoices", search],
-    queryFn: () => getInvoices(search ? `search=${encodeURIComponent(search)}` : undefined),
-  })
+  const { data, isLoading, isFetching } = useQuery(invoicesListQuery(search ? `search=${encodeURIComponent(search)}` : undefined))
 
-  const invoices = (data?.data ?? []) as IInvoice[]
+  const invoices = data?.data ?? []
 
   // Only what is actually owing counts as outstanding — a draft is not a claim
   // on anyone, and a cancelled one never was.

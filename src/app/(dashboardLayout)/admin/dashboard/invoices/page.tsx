@@ -1,20 +1,16 @@
 import InvoicesTable from "@/components/modules/Admin/Invoices/InvoicesTable";
-import { getInvoices } from "@/services/billing.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { invoicesListQuery } from "@/queries/billing.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Invoices",
 };
 
 const InvoicesPage = async () => {
-  const queryClient = new QueryClient();
 
-  await queryClient.prefetchQuery({
-    queryKey: ["invoices", ""],
-    queryFn: () => getInvoices(),
-    staleTime: 1000 * 30,
-  });
+  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(invoicesListQuery());
 
   return (
     <div className="space-y-6">
@@ -26,9 +22,9 @@ const InvoicesPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <InvoicesTable />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

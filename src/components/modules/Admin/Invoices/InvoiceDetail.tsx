@@ -5,27 +5,22 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatUsd } from "@/lib/currency"
 import { getOrganization } from "@/services/workspace.services"
-import { getInvoice } from "@/services/billing.services"
-import type { IOrganization } from "@/types/workspace.types"
-import type { IInvoice } from "@/types/billing.types"
 import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { Printer } from "lucide-react"
 import Link from "next/link"
+import { invoiceDetailQuery } from "@/queries/billing.queries"
 
 const InvoiceDetail = ({ invoiceId }: { invoiceId: string }) => {
-  const { data, isLoading } = useQuery({
-    queryKey: ["invoice", invoiceId],
-    queryFn: () => getInvoice(invoiceId),
-  })
+  const { data, isLoading } = useQuery(invoiceDetailQuery(invoiceId))
 
   const { data: orgData } = useQuery({
     queryKey: ["organization"],
     queryFn: () => getOrganization(),
   })
 
-  const invoice = data?.data as IInvoice | undefined
-  const organization = orgData?.data as IOrganization | undefined
+  const invoice = data?.data
+  const organization = orgData?.data
 
   if (isLoading && !invoice) {
     return <Card className="h-64 animate-pulse bg-muted/40" />

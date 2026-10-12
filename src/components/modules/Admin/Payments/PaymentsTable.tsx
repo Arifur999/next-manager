@@ -5,21 +5,17 @@ import { paymentsColumns } from "@/components/modules/Admin/Payments/paymentsCol
 import DataTable from "@/components/shared/table/DataTable"
 import StatTile from "@/components/shared/StatTile"
 import { formatBdt, formatUsd } from "@/lib/currency"
-import { getPayments } from "@/services/billing.services"
-import type { IPayment } from "@/types/billing.types"
 import { useQuery } from "@tanstack/react-query"
 import { ArrowDownLeft } from "lucide-react"
 import { useState } from "react"
+import { paymentsListQuery } from "@/queries/billing.queries"
 
 const PaymentsTable = () => {
   const [search, setSearch] = useState("")
 
-  const { data, isLoading, isFetching } = useQuery({
-    queryKey: ["payments", search],
-    queryFn: () => getPayments(search ? `search=${encodeURIComponent(search)}` : undefined),
-  })
+  const { data, isLoading, isFetching } = useQuery(paymentsListQuery(search ? `search=${encodeURIComponent(search)}` : undefined))
 
-  const payments = (data?.data ?? []) as IPayment[]
+  const payments = data?.data ?? []
 
   const totalUsd = payments.reduce((running, payment) => running + payment.amount_usd, 0)
   const totalBdt = payments.reduce((running, payment) => running + payment.amount_bdt_reporting, 0)
