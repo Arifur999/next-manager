@@ -12,7 +12,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { assignProjectMember, removeProjectMember } from "@/services/project.services"
-import { getAllUsers } from "@/services/user.services"
 import type { IProjectMember } from "@/types/project.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { UserMinus, UserPlus } from "lucide-react"
@@ -20,6 +19,7 @@ import { useState } from "react"
 import { toast } from "sonner"
 import { projectMembersQuery } from "@/queries/project.queries"
 import { queryKeys } from "@/lib/queryKeys"
+import { usersListQuery } from "@/queries/people.queries"
 
 const initialsOf = (name: string) =>
   name
@@ -43,10 +43,7 @@ const ProjectTeamPanel = ({
   const [roleOnProject, setRoleOnProject] = useState("")
 
   const { data: membersData } = useQuery(projectMembersQuery(projectId))
-  const { data: usersData } = useQuery({
-    queryKey: ["users"],
-    queryFn: () => getAllUsers(),
-  })
+  const { data: usersData } = useQuery(usersListQuery())
 
   const members = membersData?.data ?? []
   const users = ((usersData?.data ?? [])).filter((user) => user.status === "active")

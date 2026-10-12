@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt } from "@/lib/currency"
-import { getAllUsers } from "@/services/user.services"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
@@ -28,6 +27,7 @@ import { z } from "zod"
 import { projectsListQuery } from "@/queries/project.queries"
 import { accountsQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
+import { usersListQuery } from "@/queries/people.queries"
 
 const payoutFormSchema = z.object({
   user_id: z.string().min(1, "Choose a team member"),
@@ -69,11 +69,7 @@ const RecordPayoutModal = () => {
   const queryClient = useQueryClient()
   const router = useRouter()
 
-  const { data: usersData } = useQuery({
-    queryKey: ["users"],
-    queryFn: () => getAllUsers(),
-    enabled: open,
-  })
+  const { data: usersData } = useQuery({ ...usersListQuery(), enabled: open })
   const { data: accountsData } = useQuery({ ...accountsQuery(), enabled: open })
   const { data: projectsData } = useQuery({ ...projectsListQuery(), enabled: open })
 

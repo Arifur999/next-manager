@@ -38,6 +38,7 @@ import { useForm } from "@tanstack/react-form"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { queryKeys } from "@/lib/queryKeys"
 
 type EditUserFormModalProps = {
   open: boolean
@@ -88,7 +89,7 @@ const EditUserForm = ({ user, onOpenChange }: { user: IUser; onOpenChange: (open
       toast.success(result.message || "Team member updated successfully")
       onOpenChange(false)
 
-      void queryClient.invalidateQueries({ queryKey: ["users"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.users.all })
       router.refresh()
     },
   })

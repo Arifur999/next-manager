@@ -1,10 +1,10 @@
 "use client"
 
 import MonthGrid from "@/components/shared/calendar/MonthGrid"
-import { getLeaveRequests } from "@/services/people.services"
 import type { ILeaveRequest } from "@/types/people.types"
 import { useQuery } from "@tanstack/react-query"
 import { eachDayOfInterval, parseISO } from "date-fns"
+import { leaveRequestsListQuery } from "@/queries/people.queries"
 
 /**
  * Who is away, and when.
@@ -24,12 +24,9 @@ import { eachDayOfInterval, parseISO } from "date-fns"
 type Day = { request: ILeaveRequest; date: Date }
 
 const LeaveCalendar = () => {
-  const { data } = useQuery({
-    queryKey: ["leave-requests"],
-    queryFn: () => getLeaveRequests(),
-  })
+  const { data } = useQuery(leaveRequestsListQuery())
 
-  const requests = ((data?.data ?? []) as ILeaveRequest[]).filter(
+  const requests = ((data?.data ?? [])).filter(
     (request) => request.status === "approved"
   )
 

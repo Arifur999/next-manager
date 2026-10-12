@@ -1,23 +1,20 @@
 import LeaveBoard from "@/components/modules/Admin/People/LeaveBoard";
-import { getLeaveRequests, getLeaveTypes } from "@/services/people.services";
 import { getUserInfo } from "@/services/auth.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { leaveRequestsListQuery, leaveTypesQuery } from "@/queries/people.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Leave",
 };
 
 const LeavePage = async () => {
-  const queryClient = new QueryClient();
+  const user = await getUserInfo();
 
-  const [user] = await Promise.all([
-    getUserInfo(),
-    queryClient.prefetchQuery({
-      queryKey: ["leave-requests"],
-      queryFn: () => getLeaveRequests(),
-    }),
-    queryClient.prefetchQuery({ queryKey: ["leave-types"], queryFn: () => getLeaveTypes() }),
+  const prefetch = (queryClient: QueryClient) => Promise.all([
+    queryClient.prefetchQuery(leaveRequestsListQuery()),
+    queryClient.prefetchQuery(leaveTypesQuery()),
   ]);
 
   // Decided here, from the role this page rendered for, rather than guessed in
@@ -37,9 +34,9 @@ const LeavePage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <LeaveBoard canDecide={canDecide} />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

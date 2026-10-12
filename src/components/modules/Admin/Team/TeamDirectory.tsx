@@ -5,11 +5,10 @@ import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { getAllUsers } from "@/services/user.services"
-import type { IUser } from "@/types/user.types"
 import { useQuery } from "@tanstack/react-query"
 import { UsersRound } from "lucide-react"
 import { useState } from "react"
+import { usersListQuery } from "@/queries/people.queries"
 
 /**
  * Who works here, and how to reach them.
@@ -27,8 +26,8 @@ import { useState } from "react"
 const TeamDirectory = () => {
   const [term, setTerm] = useState("")
 
-  const { data, isLoading } = useQuery({ queryKey: ["users"], queryFn: () => getAllUsers() })
-  const people = (data?.data ?? []) as IUser[]
+  const { data, isLoading } = useQuery(usersListQuery())
+  const people = data?.data ?? []
 
   const needle = term.trim().toLowerCase()
   const shown = needle

@@ -10,13 +10,14 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { getDepartments } from "@/services/people.services"
 import type { IDepartment } from "@/types/people.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Network, Plus, Power, Trash2, X } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 import { toast } from "sonner"
+import { departmentsQuery } from "@/queries/people.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * The teams inside the agency.
@@ -37,13 +38,10 @@ const DepartmentsBoard = () => {
   const [description, setDescription] = useState("")
   const [editingId, setEditingId] = useState<string | null>(null)
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["departments"],
-    queryFn: () => getDepartments(),
-  })
+  const { data, isLoading } = useQuery(departmentsQuery())
 
-  const departments = (data?.data ?? []) as IDepartment[]
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ["departments"] })
+  const departments = data?.data ?? []
+  const refresh = () => queryClient.invalidateQueries({ queryKey: queryKeys.departments.all })
 
   const reset = () => {
     setName("")

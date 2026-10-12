@@ -81,7 +81,6 @@ export const queryKeys = {
   taskReport: createDomainKeys("task-report"),
   tasks: createDomainKeys("tasks"),
   teamInvites: createDomainKeys("team-invites"),
-  teamPayouts: createDomainKeys("team-payouts"),
   timeEntries: createDomainKeys("time-entries"),
   timeSummary: createDomainKeys("time-summary"),
   transactions: createDomainKeys("transactions"),

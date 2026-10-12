@@ -10,10 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { getAllUsers } from "@/services/user.services"
-import type { IUser } from "@/types/user.types"
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
+import { usersListQuery } from "@/queries/people.queries"
 
 /**
  * Starting a conversation.
@@ -36,8 +35,8 @@ const NewConversationCard = ({
   const [name, setName] = useState("")
   const [selected, setSelected] = useState<string[]>([])
 
-  const { data } = useQuery({ queryKey: ["users"], queryFn: () => getAllUsers() })
-  const people = ((data?.data ?? []) as IUser[]).filter(
+  const { data } = useQuery(usersListQuery())
+  const people = ((data?.data ?? [])).filter(
     (person) => person.status === "active" && person.id !== meId
   )
 

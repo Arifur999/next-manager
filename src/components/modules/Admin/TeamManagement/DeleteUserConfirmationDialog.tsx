@@ -15,6 +15,7 @@ import { type IUser } from "@/types/user.types"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { queryKeys } from "@/lib/queryKeys"
 
 type DeleteUserConfirmationDialogProps = {
   open: boolean
@@ -48,7 +49,7 @@ const DeleteUserConfirmationDialog = ({
     onOpenChange(false)
 
     // invalidate for the client cache, refresh for the server-rendered part.
-    void queryClient.invalidateQueries({ queryKey: ["users"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.users.all })
     router.refresh()
   }
 

@@ -6,13 +6,13 @@ import {
 } from "@/app/(dashboardLayout)/admin/dashboard/team-management/_inviteAction"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { getAllUsers } from "@/services/user.services"
-import type { IUser } from "@/types/user.types"
 import { ROLE_LABELS } from "@/zod/user.validation"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { formatDistanceToNow, parseISO } from "date-fns"
 import { UserCheck } from "lucide-react"
 import { toast } from "sonner"
+import { usersListQuery } from "@/queries/people.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * People who joined through an invite and are waiting to be let in.
@@ -29,15 +29,12 @@ import { toast } from "sonner"
 const PendingApprovals = () => {
   const queryClient = useQueryClient()
 
-  const { data } = useQuery({
-    queryKey: ["users", "status=pending"],
-    queryFn: () => getAllUsers("status=pending"),
-  })
+  const { data } = useQuery(usersListQuery("status=pending"))
 
-  const pending = (data?.data ?? []) as IUser[]
+  const pending = data?.data ?? []
 
   const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: ["users"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.users.all })
     void queryClient.invalidateQueries({ queryKey: ["activity"] })
   }
 

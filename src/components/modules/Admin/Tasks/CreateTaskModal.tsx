@@ -16,7 +16,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { getAllUsers } from "@/services/user.services"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
@@ -26,6 +25,7 @@ import { z } from "zod"
 import { projectsListQuery } from "@/queries/project.queries"
 import { workflowStatusesListQuery } from "@/queries/work.queries"
 import { queryKeys } from "@/lib/queryKeys"
+import { usersListQuery } from "@/queries/people.queries"
 
 const taskFormSchema = z.object({
   project_id: z.string().min(1, "Choose a project"),
@@ -44,11 +44,7 @@ const CreateTaskModal = () => {
   const queryClient = useQueryClient()
 
   const { data: projectsData } = useQuery({ ...projectsListQuery(), enabled: open })
-  const { data: usersData } = useQuery({
-    queryKey: ["users"],
-    queryFn: () => getAllUsers(),
-    enabled: open,
-  })
+  const { data: usersData } = useQuery({ ...usersListQuery(), enabled: open })
 
   const projects = projectsData?.data ?? []
   const users = ((usersData?.data ?? [])).filter((user) => user.status === "active")

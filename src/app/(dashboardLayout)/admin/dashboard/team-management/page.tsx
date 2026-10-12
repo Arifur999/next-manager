@@ -4,12 +4,11 @@ import InvitesPanel from "@/components/modules/Admin/TeamManagement/InvitesPanel
 import PendingApprovals from "@/components/modules/Admin/TeamManagement/PendingApprovals";
 import TeamTable from "@/components/modules/Admin/TeamManagement/TeamTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getDepartments } from "@/services/people.services";
-import { getAllUsers } from "@/services/user.services";
 import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { assignmentOverviewQuery } from "@/queries/project.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import { departmentsQuery, usersListQuery } from "@/queries/people.queries";
 
 export const metadata: Metadata = {
   title: "Team",
@@ -18,10 +17,10 @@ export const metadata: Metadata = {
 const TeamManagementPage = async () => {
 
   const prefetch = (queryClient: QueryClient) => Promise.all([
-    queryClient.prefetchQuery({ queryKey: ["users", ""], queryFn: () => getAllUsers() }),
+    queryClient.prefetchQuery(usersListQuery()),
     // Without this the department filter pops in after hydration, and the
     // first paint of the team list has no way to be filtered.
-    queryClient.prefetchQuery({ queryKey: ["departments"], queryFn: () => getDepartments() }),
+    queryClient.prefetchQuery(departmentsQuery()),
     queryClient.prefetchQuery(assignmentOverviewQuery()),
   ]);
 

@@ -7,12 +7,12 @@ import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { getAttendance } from "@/services/people.services"
-import type { IAttendance } from "@/types/people.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { CalendarCheck, LogIn, LogOut } from "lucide-react"
 import { toast } from "sonner"
+import { attendanceQuery } from "@/queries/people.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * Who was here.
@@ -39,12 +39,9 @@ const hoursBetween = (from: string | null, to: string | null) => {
 const AttendanceBoard = ({ canRecord = false }: { canRecord?: boolean }) => {
   const queryClient = useQueryClient()
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["attendance"],
-    queryFn: () => getAttendance(),
-  })
+  const { data, isLoading } = useQuery(attendanceQuery())
 
-  const rows = (data?.data ?? []) as IAttendance[]
+  const rows = data?.data ?? []
 
   const { mutate: clock, isPending } = useMutation({
     mutationFn: () => clockAction(),
@@ -56,7 +53,7 @@ const AttendanceBoard = ({ canRecord = false }: { canRecord?: boolean }) => {
       // The server says which happened — asking the client to guess is how the
       // button ends up claiming the opposite of what was stored.
       toast.success(result.message)
-      void queryClient.invalidateQueries({ queryKey: ["attendance"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.attendance.all })
     },
   })
 

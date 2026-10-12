@@ -8,10 +8,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { getDepartments } from "@/services/people.services"
-import type { IDepartment } from "@/types/people.types"
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
+import { departmentsQuery } from "@/queries/people.queries"
 
 /**
  * The department picker, shared by the create and edit forms.
@@ -40,8 +39,8 @@ const DepartmentField = ({
   onChange: (value: string) => void
   disabled?: boolean
 }) => {
-  const { data } = useQuery({ queryKey: ["departments"], queryFn: () => getDepartments() })
-  const all = (data?.data ?? []) as IDepartment[]
+  const { data } = useQuery(departmentsQuery())
+  const all = data?.data ?? []
 
   // Keep a retired department visible while it is the one selected, so opening
   // somebody's row does not silently move them out of it on save.

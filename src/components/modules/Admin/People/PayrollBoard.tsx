@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { getPayrollRuns } from "@/services/people.services"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { endOfMonth, format, startOfMonth } from "date-fns"
 import { Wallet } from "lucide-react"
@@ -21,6 +20,7 @@ import { useState } from "react"
 import { toast } from "sonner"
 import { accountsQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
+import { payrollRunsQuery } from "@/queries/people.queries"
 
 /**
  * A month's salaries.
@@ -35,7 +35,7 @@ const PayrollBoard = () => {
   const queryClient = useQueryClient()
   const [month, setMonth] = useState(format(new Date(), "yyyy-MM"))
 
-  const { data, isLoading } = useQuery({ queryKey: ["payroll"], queryFn: () => getPayrollRuns() })
+  const { data, isLoading } = useQuery(payrollRunsQuery())
   const { data: accountData } = useQuery(accountsQuery())
 
   const runs = data?.data ?? []
@@ -45,9 +45,9 @@ const PayrollBoard = () => {
   )
 
   const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: ["payroll"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.payroll.all })
     // Completing a run writes team payouts and moves the ledger.
-    void queryClient.invalidateQueries({ queryKey: ["team-payouts"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.payouts.all })
     void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
     void queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all })
   }

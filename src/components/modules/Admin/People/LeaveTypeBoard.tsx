@@ -12,12 +12,13 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { getLeaveTypes } from "@/services/people.services"
 import type { ILeaveType } from "@/types/people.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { CalendarOff, Power } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { leaveTypesQuery } from "@/queries/people.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * The kinds of leave an agency gives.
@@ -39,13 +40,13 @@ const LeaveTypeBoard = () => {
   const [days, setDays] = useState("")
   const [isPaid, setIsPaid] = useState(true)
 
-  const { data, isLoading } = useQuery({ queryKey: ["leave-types"], queryFn: () => getLeaveTypes() })
-  const types = (data?.data ?? []) as ILeaveType[]
+  const { data, isLoading } = useQuery(leaveTypesQuery())
+  const types = data?.data ?? []
 
   const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: ["leave-types"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.leaveTypes.all })
     // A renamed or retired kind changes what the balance card can offer.
-    void queryClient.invalidateQueries({ queryKey: ["leave-balance"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.leaveBalance.all })
   }
 
   const { mutate: add, isPending } = useMutation({

@@ -1,19 +1,16 @@
 import LeaveTypeBoard from "@/components/modules/Admin/People/LeaveTypeBoard";
-import { getLeaveTypes } from "@/services/people.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { leaveTypesQuery } from "@/queries/people.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Leave Settings",
 };
 
 const LeaveSettingsPage = async () => {
-  const queryClient = new QueryClient();
 
-  await queryClient.prefetchQuery({
-    queryKey: ["leave-types"],
-    queryFn: () => getLeaveTypes(),
-  });
+  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(leaveTypesQuery());
 
   return (
     <div className="space-y-6">
@@ -26,9 +23,9 @@ const LeaveSettingsPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <LeaveTypeBoard />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

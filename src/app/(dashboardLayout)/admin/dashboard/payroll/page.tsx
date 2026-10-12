@@ -1,9 +1,9 @@
 import PayrollBoard from "@/components/modules/Admin/People/PayrollBoard";
-import { getPayrollRuns } from "@/services/people.services";
 import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { accountsQuery } from "@/queries/finance.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import { payrollRunsQuery } from "@/queries/people.queries";
 
 export const metadata: Metadata = {
   title: "Payroll",
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 const PayrollPage = async () => {
 
   const prefetch = (queryClient: QueryClient) => Promise.all([
-    queryClient.prefetchQuery({ queryKey: ["payroll"], queryFn: () => getPayrollRuns() }),
+    queryClient.prefetchQuery(payrollRunsQuery()),
     queryClient.prefetchQuery(accountsQuery()),
   ]);
 

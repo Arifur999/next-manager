@@ -3,9 +3,6 @@
 import { Button } from "@/components/ui/button"
 import DataTable from "@/components/shared/table/DataTable"
 import { useRowActionModalState } from "@/hooks/useRowActionModalState"
-import { getDepartments } from "@/services/people.services"
-import { getAllUsers } from "@/services/user.services"
-import type { IDepartment } from "@/types/people.types"
 import { type IUser } from "@/types/user.types"
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
@@ -13,6 +10,7 @@ import CreateUserFormModal from "./CreateUserFormModal"
 import DeleteUserConfirmationDialog from "./DeleteUserConfirmationDialog"
 import EditUserFormModal from "./EditUserFormModal"
 import { teamColumns } from "./teamColumns"
+import { departmentsQuery, usersListQuery } from "@/queries/people.queries"
 
 const ALL = "__all__"
 
@@ -33,18 +31,12 @@ const TeamTable = () => {
   // filtering the page that arrived would hide people rather than find them.
   const query = department === ALL ? "" : `department_id=${department}`
 
-  const { data: usersResponse, isLoading, isFetching } = useQuery({
-    queryKey: ["users", query],
-    queryFn: () => getAllUsers(query),
-  })
+  const { data: usersResponse, isLoading, isFetching } = useQuery(usersListQuery(query))
 
-  const { data: departmentResponse } = useQuery({
-    queryKey: ["departments"],
-    queryFn: () => getDepartments(),
-  })
+  const { data: departmentResponse } = useQuery(departmentsQuery())
 
   const users = usersResponse?.data ?? []
-  const departments = ((departmentResponse?.data ?? []) as IDepartment[]).filter(
+  const departments = ((departmentResponse?.data ?? [])).filter(
     (row) => row.is_active
   )
 

@@ -1,19 +1,16 @@
 import DepartmentsBoard from "@/components/modules/Admin/Departments/DepartmentsBoard";
-import { getDepartments } from "@/services/people.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { departmentsQuery } from "@/queries/people.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Departments",
 };
 
 const DepartmentsPage = async () => {
-  const queryClient = new QueryClient();
 
-  await queryClient.prefetchQuery({
-    queryKey: ["departments"],
-    queryFn: () => getDepartments(),
-  });
+  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(departmentsQuery());
 
   return (
     <div className="space-y-6">
@@ -26,9 +23,9 @@ const DepartmentsPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <DepartmentsBoard />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

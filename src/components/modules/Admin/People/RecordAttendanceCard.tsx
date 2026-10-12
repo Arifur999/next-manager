@@ -12,12 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { getAllUsers } from "@/services/user.services"
-import type { IUser } from "@/types/user.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { useState } from "react"
 import { toast } from "sonner"
+import { usersListQuery } from "@/queries/people.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * Writing down somebody else's day.
@@ -39,8 +39,8 @@ const RecordAttendanceCard = () => {
   const [checkIn, setCheckIn] = useState("")
   const [checkOut, setCheckOut] = useState("")
 
-  const { data } = useQuery({ queryKey: ["users"], queryFn: () => getAllUsers() })
-  const members = ((data?.data ?? []) as IUser[]).filter((member) => member.status === "active")
+  const { data } = useQuery(usersListQuery())
+  const members = ((data?.data ?? [])).filter((member) => member.status === "active")
 
   const { mutate: save, isPending } = useMutation({
     mutationFn: () =>
@@ -60,7 +60,7 @@ const RecordAttendanceCard = () => {
       toast.success("Recorded")
       setCheckIn("")
       setCheckOut("")
-      void queryClient.invalidateQueries({ queryKey: ["attendance"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.attendance.all })
     },
   })
 

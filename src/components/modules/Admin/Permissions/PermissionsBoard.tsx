@@ -12,11 +12,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { getAllUsers } from "@/services/user.services"
 import { ROLE_LABEL, titleise } from "@/types/permission.types"
-import type { IUser } from "@/types/user.types"
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
+import { usersListQuery } from "@/queries/people.queries"
 
 /**
  * Who may do what, as a grid rather than a list of capabilities.
@@ -38,14 +37,11 @@ const PermissionsBoard = () => {
   const roleGrid = usePermissionGrid()
   const personGrid = usePermissionGrid(personId || undefined)
 
-  const { data: userData } = useQuery({
-    queryKey: ["users", ""],
-    queryFn: () => getAllUsers(),
-  })
+  const { data: userData } = useQuery(usersListQuery())
 
   // An admin passes every check by design, so an override stored against one
   // would look like a restriction and enforce nothing.
-  const people = ((userData?.data ?? []) as IUser[]).filter((user) => user.role !== "admin")
+  const people = ((userData?.data ?? [])).filter((user) => user.role !== "admin")
 
   if (roleGrid.isLoading && !roleGrid.grid) {
     return <div className="h-96 animate-pulse rounded-xl bg-muted/40" />

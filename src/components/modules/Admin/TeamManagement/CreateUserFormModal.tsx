@@ -39,6 +39,7 @@ import { Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
+import { queryKeys } from "@/lib/queryKeys"
 
 const defaultValues: ICreateUserFormValues = {
   full_name: "",
@@ -76,7 +77,7 @@ const CreateUserFormModal = () => {
       setOpen(false)
       form.reset()
 
-      void queryClient.invalidateQueries({ queryKey: ["users"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.users.all })
       router.refresh()
     },
   })

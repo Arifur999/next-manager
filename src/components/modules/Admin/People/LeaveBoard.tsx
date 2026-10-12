@@ -20,13 +20,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { getLeaveRequests, getLeaveTypes } from "@/services/people.services"
-import type { ILeaveRequest, ILeaveType, LeaveStatus } from "@/types/people.types"
+import type { LeaveStatus } from "@/types/people.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { differenceInCalendarDays, format, parseISO } from "date-fns"
 import { CalendarOff } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { leaveRequestsListQuery, leaveTypesQuery } from "@/queries/people.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * Asking to be away, and deciding.
@@ -52,18 +53,15 @@ const LeaveBoard = ({ canDecide }: { canDecide: boolean }) => {
   const [to, setTo] = useState("")
   const [reason, setReason] = useState("")
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["leave-requests"],
-    queryFn: () => getLeaveRequests(),
-  })
-  const { data: typeData } = useQuery({ queryKey: ["leave-types"], queryFn: () => getLeaveTypes() })
+  const { data, isLoading } = useQuery(leaveRequestsListQuery())
+  const { data: typeData } = useQuery(leaveTypesQuery())
 
-  const requests = (data?.data ?? []) as ILeaveRequest[]
-  const types = ((typeData?.data ?? []) as ILeaveType[]).filter((type) => type.is_active)
+  const requests = data?.data ?? []
+  const types = ((typeData?.data ?? [])).filter((type) => type.is_active)
 
   const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: ["leave-requests"] })
-    void queryClient.invalidateQueries({ queryKey: ["leave-balance"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.leaveRequests.all })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.leaveBalance.all })
   }
 
   // Counted from the dates as a starting point only. What actually counts as a

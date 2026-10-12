@@ -9,13 +9,14 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { getInvites } from "@/services/people.services"
 import type { ITeamInvite } from "@/types/people.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { format, isPast, parseISO } from "date-fns"
 import { Check, Copy, MailPlus, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { invitesQuery } from "@/queries/people.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * Inviting operations members.
@@ -44,12 +45,9 @@ const InvitesPanel = () => {
   const [freshLink, setFreshLink] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["team-invites"],
-    queryFn: () => getInvites(),
-  })
+  const { data, isLoading } = useQuery(invitesQuery())
 
-  const invites = (data?.data ?? []) as ITeamInvite[]
+  const invites = data?.data ?? []
 
   const { mutate: create, isPending } = useMutation({
     mutationFn: () => createInviteAction({ email: email.trim() }),
@@ -63,7 +61,7 @@ const InvitesPanel = () => {
       setFreshLink(url ?? null)
       setCopied(false)
       setEmail("")
-      void queryClient.invalidateQueries({ queryKey: ["team-invites"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.teamInvites.all })
     },
   })
 
@@ -75,7 +73,7 @@ const InvitesPanel = () => {
         return
       }
       toast.success("Invite revoked — the link stops working immediately")
-      void queryClient.invalidateQueries({ queryKey: ["team-invites"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.teamInvites.all })
     },
   })
 

@@ -17,14 +17,13 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { getKpiTargets } from "@/services/insights.services"
-import { getAllUsers } from "@/services/user.services"
 import type { IKpiTarget, KpiMetric, KpiPeriod } from "@/types/insights.types"
-import type { IUser } from "@/types/user.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { format, startOfMonth, startOfQuarter, startOfYear } from "date-fns"
 import { Target as TargetIcon, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { usersListQuery } from "@/queries/people.queries"
 
 /**
  * The numbers the company commits to.
@@ -146,13 +145,10 @@ const TargetsBoard = () => {
     queryFn: () => getKpiTargets(),
   })
 
-  const { data: usersData } = useQuery({
-    queryKey: ["users", ""],
-    queryFn: () => getAllUsers(),
-  })
+  const { data: usersData } = useQuery(usersListQuery())
 
-  const targets = (targetsData?.data ?? []) as IKpiTarget[]
-  const users = (usersData?.data ?? []) as IUser[]
+  const targets = targetsData?.data ?? []
+  const users = usersData?.data ?? []
   const spec = METRICS.find((entry) => entry.metric === metric) as MetricSpec
 
   const refresh = () => {

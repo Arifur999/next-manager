@@ -1,9 +1,8 @@
 "use client"
 
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { getLeaveBalance } from "@/services/people.services"
-import type { ILeaveBalance } from "@/types/people.types"
 import { useQuery } from "@tanstack/react-query"
+import { leaveBalanceQuery } from "@/queries/people.queries"
 
 /**
  * What is left of somebody's allowance this year.
@@ -16,8 +15,8 @@ import { useQuery } from "@tanstack/react-query"
  * on pending requests would drop and jump back when one was turned down.
  */
 const LeaveBalanceCard = () => {
-  const { data } = useQuery({ queryKey: ["leave-balance"], queryFn: () => getLeaveBalance() })
-  const balances = (data?.data ?? []) as ILeaveBalance[]
+  const { data } = useQuery(leaveBalanceQuery())
+  const balances = data?.data ?? []
 
   if (balances.length === 0) return null
 

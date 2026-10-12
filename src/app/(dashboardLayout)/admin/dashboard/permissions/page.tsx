@@ -1,22 +1,22 @@
 import PermissionsBoard from "@/components/modules/Admin/Permissions/PermissionsBoard";
 import { getPermissionGrid } from "@/services/permission.services";
-import { getAllUsers } from "@/services/user.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { usersListQuery } from "@/queries/people.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Roles & Permissions",
 };
 
 const PermissionsPage = async () => {
-  const queryClient = new QueryClient();
 
   // Both prefetched together, and the board rendered inside the one boundary
   // that carries them. A component reading a key from outside the boundary
   // registers an empty entry, and hydration then declines to overwrite it.
-  await Promise.all([
+  const prefetch = (queryClient: QueryClient) => Promise.all([
     queryClient.prefetchQuery({ queryKey: ["permissions", ""], queryFn: () => getPermissionGrid() }),
-    queryClient.prefetchQuery({ queryKey: ["users", ""], queryFn: () => getAllUsers() }),
+    queryClient.prefetchQuery(usersListQuery()),
   ]);
 
   return (
@@ -31,9 +31,9 @@ const PermissionsPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <PermissionsBoard />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

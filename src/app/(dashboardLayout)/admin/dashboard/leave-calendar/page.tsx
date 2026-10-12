@@ -1,19 +1,16 @@
 import LeaveCalendar from "@/components/modules/Admin/Team/LeaveCalendar";
-import { getLeaveRequests } from "@/services/people.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { leaveRequestsListQuery } from "@/queries/people.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Leave calendar",
 };
 
 const LeaveCalendarPage = async () => {
-  const queryClient = new QueryClient();
 
-  await queryClient.prefetchQuery({
-    queryKey: ["leave-requests"],
-    queryFn: () => getLeaveRequests(),
-  });
+  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(leaveRequestsListQuery());
 
   return (
     <div className="space-y-6">
@@ -26,9 +23,9 @@ const LeaveCalendarPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <LeaveCalendar />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };
