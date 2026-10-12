@@ -13,7 +13,9 @@ interface ISectionShellProps {
 }
 
 // One rhythm for every landing section. Variants change the padding and the
-// surface so consecutive sections do not all breathe the same way.
+// surface so consecutive sections do not all breathe the same way. Every
+// section here sits below the hero, so each one renders only when it nears
+// the viewport (render-when-near in globals.css).
 const OUTER: Record<SectionVariant, string> = {
   contained: "py-16 md:py-24",
   dense: "py-12 md:py-16",
@@ -21,7 +23,7 @@ const OUTER: Record<SectionVariant, string> = {
 }
 
 const SectionShell = ({ id, labelledBy, variant = "contained", className, innerClassName, children }: ISectionShellProps) => (
-  <section id={id} aria-labelledby={labelledBy} className={cn("scroll-mt-20", OUTER[variant], className)}>
+  <section id={id} aria-labelledby={labelledBy} className={cn("render-when-near scroll-mt-20", OUTER[variant], className)}>
     <div className={cn("mx-auto w-full max-w-content px-4 sm:px-6 lg:px-8", innerClassName)}>{children}</div>
   </section>
 )

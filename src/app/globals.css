@@ -364,6 +364,15 @@
   font-stretch: 87%;
 }
 
+/* Landing sections below the hero: the browser skips their style, layout and
+   paint until they come near the viewport, so the first paint costs one
+   screen of work instead of the whole page. The intrinsic size is a guess
+   that `auto` replaces with the real height once a section has rendered. */
+@utility render-when-near {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
+
 /* Reveal targets start transparent only when scripts run and motion is
    allowed, so the page is complete with JavaScript off or reduced motion.
    FadeIn and SplitReveal show them once GSAP loads (useLazyGsap). Opacity,
