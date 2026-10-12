@@ -73,11 +73,13 @@ const JoinForm = ({ token, invite }: { token: string; invite: IInvitePreview | n
   // server does not tell them apart and neither should this.
   if (!invite) {
     return (
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6 py-12">
+      <div className="w-full">
         <Card>
           <CardHeader className="items-center text-center">
             <LinkIcon className="size-8 text-muted-foreground" aria-hidden="true" />
-            <CardTitle className="text-2xl">This invite is no longer valid</CardTitle>
+            <CardTitle>
+              <h1 className="text-2xl font-semibold tracking-tight">This invite is no longer valid</h1>
+            </CardTitle>
             <CardDescription>
               It may have expired, been used already, or been withdrawn. Ask whoever
               invited you for a fresh link.
@@ -95,11 +97,13 @@ const JoinForm = ({ token, invite }: { token: string; invite: IInvitePreview | n
 
   if (submitted) {
     return (
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6 py-12">
+      <div className="w-full">
         <Card>
           <CardHeader className="items-center text-center">
             <Clock className="size-8 text-muted-foreground" aria-hidden="true" />
-            <CardTitle className="text-2xl">Waiting on {invite.organization_name}</CardTitle>
+            <CardTitle>
+              <h1 className="text-2xl font-semibold tracking-tight">Waiting on {invite.organization_name}</h1>
+            </CardTitle>
             <CardDescription>
               Your account is set up. An admin has to approve it before you can sign in —
               you will not be able to get in until they do.
@@ -120,10 +124,12 @@ const JoinForm = ({ token, invite }: { token: string; invite: IInvitePreview | n
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6 py-12">
+    <div className="w-full">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Join {invite.organization_name}</CardTitle>
+          <CardTitle>
+            <h1 className="text-2xl font-semibold tracking-tight">Join {invite.organization_name}</h1>
+          </CardTitle>
           <CardDescription>
             Choose a name and a password. An admin approves your account before you can
             sign in.

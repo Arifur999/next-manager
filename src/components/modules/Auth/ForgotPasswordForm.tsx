@@ -48,13 +48,15 @@ const ForgotPasswordForm = () => {
   })
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6 py-12">
+    <div className="w-full">
       <Card>
         {sent ? (
           <>
             <CardHeader className="items-center text-center">
               <MailCheck className="size-8 text-muted-foreground" aria-hidden="true" />
-              <CardTitle className="text-2xl">Check your email</CardTitle>
+              <CardTitle>
+                <h1 className="text-2xl font-semibold tracking-tight">Check your email</h1>
+              </CardTitle>
               <CardDescription>
                 If that address has an account, a reset link is on its way. It works once
                 and expires in 30 minutes.
@@ -76,7 +78,9 @@ const ForgotPasswordForm = () => {
         ) : (
           <>
             <CardHeader>
-              <CardTitle className="text-2xl">Forgot your password</CardTitle>
+              <CardTitle>
+                <h1 className="text-2xl font-semibold tracking-tight">Forgot your password</h1>
+              </CardTitle>
               <CardDescription>
                 Enter the email you sign in with and we will send a link to set a new
                 password.

@@ -71,10 +71,12 @@ const RegisterForm = () => {
   })
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6 py-12">
+    <div className="w-full">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Create your workspace</CardTitle>
+          <CardTitle>
+            <h1 className="text-2xl font-semibold tracking-tight">Create your workspace</h1>
+          </CardTitle>
           <CardDescription>
             This sets up a new company and makes you its admin. Your team joins by
             invitation from inside it.

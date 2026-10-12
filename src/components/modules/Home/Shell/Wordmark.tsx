@@ -12,8 +12,8 @@ const Wordmark = ({ className, inverse = false }: { className?: string; inverse?
     )}
   >
     <span className="font-semibold tracking-tight">{site.shortName}</span>
-    <span aria-hidden="true" className={cn("h-3.5 w-px self-center", inverse ? "bg-background/30" : "bg-border")} />
-    <span className={cn("font-normal", inverse ? "text-background/70" : "text-muted-foreground")}>Management</span>
+    <span aria-hidden="true" className={cn("h-3.5 w-px self-center", inverse ? "bg-band-foreground/30" : "bg-border")} />
+    <span className={cn("font-normal", inverse ? "text-band-foreground/70" : "text-muted-foreground")}>Management</span>
     <span className="sr-only">, home</span>
   </Link>
 )

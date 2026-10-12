@@ -64,11 +64,13 @@ const ResetPasswordForm = () => {
 
   if (!token) {
     return (
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6 py-12">
+      <div className="w-full">
         <Card>
           <CardHeader className="items-center text-center">
             <LinkIcon className="size-8 text-muted-foreground" aria-hidden="true" />
-            <CardTitle className="text-2xl">This link is incomplete</CardTitle>
+            <CardTitle>
+              <h1 className="text-2xl font-semibold tracking-tight">This link is incomplete</h1>
+            </CardTitle>
             <CardDescription>
               It is missing the part that identifies your request — usually a mail client
               breaking the link across two lines. Ask for a fresh one.
@@ -87,10 +89,12 @@ const ResetPasswordForm = () => {
   const mismatch = confirm.length > 0 && form.state.values.new_password !== confirm
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6 py-12">
+    <div className="w-full">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Set a new password</CardTitle>
+          <CardTitle>
+            <h1 className="text-2xl font-semibold tracking-tight">Set a new password</h1>
+          </CardTitle>
           <CardDescription>
             This signs you out everywhere, including any session left open on another
             device.

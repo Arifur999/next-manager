@@ -89,11 +89,13 @@ const AgencyJoinForm = ({
 
   if (!invite) {
     return (
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6 py-12">
+      <div className="w-full">
         <Card>
           <CardHeader className="items-center text-center">
             <LinkIcon className="size-8 text-muted-foreground" aria-hidden="true" />
-            <CardTitle className="text-2xl">This invite is no longer valid</CardTitle>
+            <CardTitle>
+              <h1 className="text-2xl font-semibold tracking-tight">This invite is no longer valid</h1>
+            </CardTitle>
             <CardDescription>
               It may have expired, been used already, or been withdrawn. Ask whoever
               invited you for a fresh link.
@@ -111,11 +113,13 @@ const AgencyJoinForm = ({
 
   if (opened) {
     return (
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6 py-12">
+      <div className="w-full">
         <Card>
           <CardHeader className="items-center text-center">
             <CircleCheck className="size-8 text-muted-foreground" aria-hidden="true" />
-            <CardTitle className="text-2xl">{opened} is open</CardTitle>
+            <CardTitle>
+              <h1 className="text-2xl font-semibold tracking-tight">{opened} is open</h1>
+            </CardTitle>
             <CardDescription>
               You own it. Sign in and add your team — sales people, project managers and
               your operations crew all get their own accounts, and you decide who sees
@@ -133,11 +137,11 @@ const AgencyJoinForm = ({
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6 py-12">
+    <div className="w-full">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">
-            {nameIsFixed ? `Open ${invite.company_name}` : "Open your agency"}
+          <CardTitle>
+            <h1 className="text-2xl font-semibold tracking-tight">{nameIsFixed ? `Open ${invite.company_name}` : "Open your agency"}</h1>
           </CardTitle>
           <CardDescription>
             {/* Said before the password, not after: somebody about to open an

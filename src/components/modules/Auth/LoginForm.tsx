@@ -67,7 +67,9 @@ const LoginForm = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl">Welcome back</CardTitle>
+        <CardTitle>
+          <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
+        </CardTitle>
         <CardDescription>Sign in to your Naxified workspace.</CardDescription>
       </CardHeader>
 

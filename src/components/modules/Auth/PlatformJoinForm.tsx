@@ -71,11 +71,13 @@ const PlatformJoinForm = ({
 
   if (!invite) {
     return (
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6 py-12">
+      <div className="w-full">
         <Card>
           <CardHeader className="items-center text-center">
             <LinkIcon className="size-8 text-muted-foreground" aria-hidden="true" />
-            <CardTitle className="text-2xl">This invite is no longer valid</CardTitle>
+            <CardTitle>
+              <h1 className="text-2xl font-semibold tracking-tight">This invite is no longer valid</h1>
+            </CardTitle>
             <CardDescription>
               It may have expired, been used already, or been withdrawn. Ask whoever
               invited you for a fresh link.
@@ -93,11 +95,13 @@ const PlatformJoinForm = ({
 
   if (submitted) {
     return (
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6 py-12">
+      <div className="w-full">
         <Card>
           <CardHeader className="items-center text-center">
             <Clock className="size-8 text-muted-foreground" aria-hidden="true" />
-            <CardTitle className="text-2xl">Waiting for approval</CardTitle>
+            <CardTitle>
+              <h1 className="text-2xl font-semibold tracking-tight">Waiting for approval</h1>
+            </CardTitle>
             <CardDescription>
               Your account is set up. An existing operator has to approve it before you can
               sign in — a platform account can reach every customer, so it is not granted
@@ -119,10 +123,12 @@ const PlatformJoinForm = ({
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6 py-12">
+    <div className="w-full">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Join the platform team</CardTitle>
+          <CardTitle>
+            <h1 className="text-2xl font-semibold tracking-tight">Join the platform team</h1>
+          </CardTitle>
           <CardDescription>
             Choose a name and a password. An existing operator approves your account before
             you can sign in.
