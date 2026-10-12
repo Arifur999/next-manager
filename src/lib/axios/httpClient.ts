@@ -1,215 +1,89 @@
-import { getNewTokensWithRefreshToken } from '@/lib/refreshSession';
-import { ApiResponse } from '@/types/api.types';
-import axios from 'axios';
-import { cookies, headers } from 'next/headers';
-import { cache } from 'react';
-import { isTokenExpiringSoon } from '../tokenUtils';
-import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
+import "server-only";
+
 import { logApiFailure } from "@/lib/apiFailure";
-
-// Server-side, so it takes the server's route to the API. Why there are two
-// routes, and which wins, is explained once in lib/apiBaseUrl.ts.
-const API_BASE_URL = SERVER_API_BASE_URL
-
-/**
- * At most one refresh attempt per request tree.
- *
- * React's cache() memoises on the arguments for the life of one request, so
- * the sidebar, the navbar and the page content share a single call instead of
- * three.
- *
- * The x-token-refreshed header alone could not do this. It is set in exactly
- * one place - the proxy - and headers() here is READ-ONLY, so this function
- * could never set it for the component rendering next to it. On any request
- * the proxy did not refresh (a next/link prefetch, which the matcher skips)
- * the flag was simply absent and every component fired its own rotation. The
- * header is still honoured, because when the proxy HAS refreshed there is
- * nothing left to do.
- */
-const refreshOncePerRequest = cache(async (refreshToken: string): Promise<void> => {
-    // No try here. getNewTokensWithRefreshToken catches its own failures and
-    // returns false rather than throwing, so a catch would be unreachable -
-    // and it duplicated a console.error that already exists one level down,
-    // so the one time it could have fired it would have logged twice.
-    await getNewTokensWithRefreshToken(refreshToken);
-});
-
-async function tryRefreshToken(accessToken: string, refreshToken: string): Promise<void> {
-    if (!isTokenExpiringSoon(accessToken)) {
-        return;
-    }
-
-    const requestHeader = await headers();
-
-    // The proxy already did it for this request.
-    if (requestHeader.get("x-token-refreshed") === "1") {
-        return;
-    }
-
-    await refreshOncePerRequest(refreshToken);
-}
-
-const buildCookieHeader = async () => {
-    const cookieStore = await cookies();
-    // e.g. "accessToken=abc123; refreshToken=def456"
-    return cookieStore
-        .getAll()
-        .map((cookie) => `${cookie.name}=${cookie.value}`)
-        .join("; ");
-};
-
-const axiosInstance = async () => {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get("accessToken")?.value;
-    const refreshToken = cookieStore.get("refreshToken")?.value;
-
-    if (accessToken && refreshToken) {
-        await tryRefreshToken(accessToken, refreshToken);
-    }
-
-    return axios.create({
-        baseURL: API_BASE_URL,
-        timeout: 30000,
-        headers: {
-            'Content-Type': 'application/json',
-            Cookie: await buildCookieHeader(),
-        },
-    });
-};
-
-// Same as above minus Content-Type: axios has to set the multipart boundary
-// itself, and an explicit header would overwrite it with one that has no
-// boundary at all.
-const multipartAxiosInstance = async () => {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get("accessToken")?.value;
-    const refreshToken = cookieStore.get("refreshToken")?.value;
-
-    if (accessToken && refreshToken) {
-        await tryRefreshToken(accessToken, refreshToken);
-    }
-
-    return axios.create({
-        baseURL: API_BASE_URL,
-        timeout: 30000,
-        headers: { Cookie: await buildCookieHeader() },
-    });
-};
-
-// Query strings can carry search terms, so logs get the path only.
-const withoutQuery = (endpoint: string) => endpoint.split("?")[0];
+import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl";
+import { getNewTokensWithRefreshToken } from "@/lib/refreshSession";
+import { isTokenExpiringSoon } from "@/lib/tokenUtils";
+import type { ApiResponse } from "@/types/api.types";
+import axios, { type Method } from "axios";
+import { cookies, headers } from "next/headers";
+import { cache } from "react";
 
 export interface ApiRequestOptions {
     params?: Record<string, unknown>;
     headers?: Record<string, string>;
 }
 
-const httpGet = async <TData>(endpoint: string, options?: ApiRequestOptions): Promise<ApiResponse<TData>> => {
+// React's cache() makes the sidebar, navbar and page share one refresh per request.
+const refreshOncePerRequest = cache(async (refreshToken: string): Promise<void> => {
+    await getNewTokensWithRefreshToken(refreshToken);
+});
+
+const refreshIfExpiring = async (accessToken: string, refreshToken: string) => {
+    if (!isTokenExpiringSoon(accessToken)) return;
+    // The proxy already refreshed for this request.
+    if ((await headers()).get("x-token-refreshed") === "1") return;
+    await refreshOncePerRequest(refreshToken);
+};
+
+const buildCookieHeader = async () => {
+    const cookieStore = await cookies();
+    return cookieStore
+        .getAll()
+        .map((cookie) => `${cookie.name}=${cookie.value}`)
+        .join("; ");
+};
+
+// Query strings can carry search terms, so logs get the path only.
+const withoutQuery = (endpoint: string) => endpoint.split("?")[0];
+
+const send = async <TData>(
+    method: Method,
+    endpoint: string,
+    body: unknown,
+    options: ApiRequestOptions = {},
+    isMultipart = false
+): Promise<ApiResponse<TData>> => {
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get("accessToken")?.value;
+    const refreshToken = cookieStore.get("refreshToken")?.value;
+    if (accessToken && refreshToken) await refreshIfExpiring(accessToken, refreshToken);
+
+    // Multipart leaves Content-Type to axios so it can add the boundary.
+    const baseHeaders: Record<string, string> = { Cookie: await buildCookieHeader() };
+    if (!isMultipart) baseHeaders["Content-Type"] = "application/json";
+
     try {
-        const instance = await axiosInstance();
-        const response = await instance.get<ApiResponse<TData>>(endpoint, {
-            params: options?.params,
-            headers: options?.headers,
+        const response = await axios.request<ApiResponse<TData>>({
+            baseURL: SERVER_API_BASE_URL,
+            url: endpoint,
+            method,
+            data: body,
+            params: options.params,
+            timeout: 30000,
+            headers: { ...baseHeaders, ...options.headers },
         });
         return response.data;
     } catch (error) {
-        logApiFailure(`GET ${withoutQuery(endpoint)}`, error);
+        logApiFailure(`${method} ${withoutQuery(endpoint)}`, error);
         throw error;
     }
 };
 
-const httpPost = async <TData>(endpoint: string, data: unknown, options?: ApiRequestOptions): Promise<ApiResponse<TData>> => {
-    try {
-        const instance = await axiosInstance();
-        const response = await instance.post<ApiResponse<TData>>(endpoint, data, {
-            params: options?.params,
-            headers: options?.headers,
-        });
-        return response.data;
-    } catch (error) {
-        logApiFailure(`POST ${withoutQuery(endpoint)}`, error);
-        throw error;
-    }
-};
-
-const httpPut = async <TData>(endpoint: string, data: unknown, options?: ApiRequestOptions): Promise<ApiResponse<TData>> => {
-    try {
-        const instance = await axiosInstance();
-        const response = await instance.put<ApiResponse<TData>>(endpoint, data, {
-            params: options?.params,
-            headers: options?.headers,
-        });
-        return response.data;
-    } catch (error) {
-        logApiFailure(`PUT ${withoutQuery(endpoint)}`, error);
-        throw error;
-    }
-};
-
-const httpPatch = async <TData>(endpoint: string, data: unknown, options?: ApiRequestOptions): Promise<ApiResponse<TData>> => {
-    try {
-        const instance = await axiosInstance();
-        const response = await instance.patch<ApiResponse<TData>>(endpoint, data, {
-            params: options?.params,
-            headers: options?.headers,
-        });
-        return response.data;
-    } catch (error) {
-        logApiFailure(`PATCH ${withoutQuery(endpoint)}`, error);
-        throw error;
-    }
-};
-
-const httpDelete = async <TData>(endpoint: string, options?: ApiRequestOptions): Promise<ApiResponse<TData>> => {
-    try {
-        const instance = await axiosInstance();
-        const response = await instance.delete<ApiResponse<TData>>(endpoint, {
-            params: options?.params,
-            headers: options?.headers,
-        });
-        return response.data;
-    } catch (error) {
-        logApiFailure(`DELETE ${withoutQuery(endpoint)}`, error);
-        throw error;
-    }
-};
-
-const httpPostFormData = async <TData>(endpoint: string, formData: FormData, options?: ApiRequestOptions): Promise<ApiResponse<TData>> => {
-    try {
-        const instance = await multipartAxiosInstance();
-        const response = await instance.post<ApiResponse<TData>>(endpoint, formData, {
-            params: options?.params,
-            headers: options?.headers,
-        });
-        return response.data;
-    } catch (error) {
-        logApiFailure(`POST ${withoutQuery(endpoint)}`, error);
-        throw error;
-    }
-};
-
-const httpPatchFormData = async <TData>(endpoint: string, formData: FormData, options?: ApiRequestOptions): Promise<ApiResponse<TData>> => {
-    try {
-        const instance = await multipartAxiosInstance();
-        const response = await instance.patch<ApiResponse<TData>>(endpoint, formData, {
-            params: options?.params,
-            headers: options?.headers,
-        });
-        return response.data;
-    } catch (error) {
-        logApiFailure(`PATCH ${withoutQuery(endpoint)}`, error);
-        throw error;
-    }
-};
-
-// Every verb logs an allowlisted summary and re-throws. Turning an axios error into a message the user
-// should see is the action layer's job, not this file's.
+// Turning an error into a message for the user is the action layer's job.
 export const httpClient = {
-    get: httpGet,
-    post: httpPost,
-    put: httpPut,
-    patch: httpPatch,
-    delete: httpDelete,
-    postFormData: httpPostFormData,
-    patchFormData: httpPatchFormData,
+    get: <TData>(endpoint: string, options?: ApiRequestOptions) =>
+        send<TData>("GET", endpoint, undefined, options),
+    post: <TData>(endpoint: string, data: unknown, options?: ApiRequestOptions) =>
+        send<TData>("POST", endpoint, data, options),
+    put: <TData>(endpoint: string, data: unknown, options?: ApiRequestOptions) =>
+        send<TData>("PUT", endpoint, data, options),
+    patch: <TData>(endpoint: string, data: unknown, options?: ApiRequestOptions) =>
+        send<TData>("PATCH", endpoint, data, options),
+    delete: <TData>(endpoint: string, options?: ApiRequestOptions) =>
+        send<TData>("DELETE", endpoint, undefined, options),
+    postFormData: <TData>(endpoint: string, formData: FormData, options?: ApiRequestOptions) =>
+        send<TData>("POST", endpoint, formData, options, true),
+    patchFormData: <TData>(endpoint: string, formData: FormData, options?: ApiRequestOptions) =>
+        send<TData>("PATCH", endpoint, formData, options, true),
 };
