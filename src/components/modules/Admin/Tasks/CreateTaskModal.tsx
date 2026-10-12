@@ -16,9 +16,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { getProjects, getWorkflowStatuses } from "@/services/agencio.services"
+import { getWorkflowStatuses } from "@/services/agencio.services"
+import { getProjects } from "@/services/project.services"
 import { getAllUsers } from "@/services/user.services"
-import type { IProject, IWorkflowStatus } from "@/types/agencio.types"
+import type { IWorkflowStatus } from "@/types/agencio.types"
+import type { IProject } from "@/types/project.types"
 import type { IUser } from "@/types/user.types"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"

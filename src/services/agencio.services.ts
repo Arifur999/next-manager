@@ -6,7 +6,6 @@ import type {
     IAccount,
     IActivityEntry,
     IActivityFilters,
-    IAssignmentRow,
     IAttendance,
     ICapacityRow,
     ICredential,
@@ -27,7 +26,6 @@ import type {
     ILoan,
     ILoanSummary,
     ILoginEvent,
-    IMilestone,
     IMonthlyPoint,
     INotificationRule,
     IOrganization,
@@ -41,10 +39,6 @@ import type {
     IWorkload,
     IShareholderDistribution,
     IProfitAndLoss,
-    IProject,
-    IProjectLink,
-    IProjectFinancials,
-    IProjectMember,
     IRateSettings,
     IRevealedCredential,
     IService,
@@ -93,26 +87,6 @@ const wrap = async <T>(label: string, run: () => Promise<T>): Promise<T> => run(
 
 export const getDashboard = async () =>
     wrap("fetching dashboard", () => httpClient.get<IDashboard>("/dashboard"))
-
-// ----------------------------------------------------------------- projects
-
-export const getProjects = async (queryString?: string) =>
-    wrap("fetching projects", () => httpClient.get<IProject[]>("/projects", { params: toParams(queryString) }))
-
-export const getProject = async (id: string) =>
-    wrap("fetching project", () => httpClient.get<IProject>(`/projects/${id}`))
-
-export const getProjectFinancials = async (id: string) =>
-    wrap("fetching project financials", () => httpClient.get<IProjectFinancials>(`/projects/${id}/financials`))
-
-export const createProject = async (payload: Record<string, unknown>) =>
-    wrap("creating project", () => httpClient.post<IProject>("/projects", payload))
-
-export const updateProject = async (id: string, payload: Record<string, unknown>) =>
-    wrap("updating project", () => httpClient.patch<IProject>(`/projects/${id}`, payload))
-
-export const deleteProject = async (id: string) =>
-    wrap("deleting project", () => httpClient.delete<{ message: string }>(`/projects/${id}`))
 
 // -------------------------------------------------------------------- tasks
 
@@ -316,24 +290,6 @@ export const getProjectProfitability = async (queryString?: string) =>
 export const getCashFlow = async (queryString?: string) =>
     wrap("fetching cash flow", () => httpClient.get("/reports/cash-flow", { params: toParams(queryString) }))
 
-// ------------------------------------------------------- project assignments
-
-export const getProjectMembers = async (projectId: string) =>
-    wrap("fetching project members", () =>
-        httpClient.get<IProjectMember[]>(`/project-members/${projectId}`)
-    )
-
-export const getAssignmentOverview = async () =>
-    wrap("fetching assignments", () => httpClient.get<IAssignmentRow[]>("/project-members/overview"))
-
-export const assignProjectMember = async (payload: Record<string, unknown>) =>
-    wrap("assigning to project", () => httpClient.post<IProjectMember>("/project-members", payload))
-
-export const removeProjectMember = async (id: string) =>
-    wrap("removing from project", () =>
-        httpClient.delete<{ message: string }>(`/project-members/${id}`)
-    )
-
 // ------------------------------------------------------------- time tracking
 
 export const getTimeEntries = async (queryString?: string) =>
@@ -384,38 +340,6 @@ export const setCapacity = async (userId: string, payload: Record<string, unknow
 
 // ---------------------------------------------------------------------------
 // Milestones
-// ---------------------------------------------------------------------------
-
-export const getMilestones = async (queryString?: string) =>
-    wrap("fetching milestones", () =>
-        httpClient.get<IMilestone[]>("/milestones", { params: toParams(queryString) })
-    )
-
-export const createMilestone = async (payload: Record<string, unknown>) =>
-    wrap("creating a milestone", () => httpClient.post<IMilestone>("/milestones", payload))
-
-export const updateMilestone = async (id: string, payload: Record<string, unknown>) =>
-    wrap("updating a milestone", () => httpClient.patch<IMilestone>(`/milestones/${id}`, payload))
-
-export const submitMilestone = async (id: string) =>
-    wrap("submitting a milestone", () =>
-        httpClient.post<IMilestone>(`/milestones/${id}/submit`, {})
-    )
-
-export const acceptMilestone = async (id: string) =>
-    wrap("accepting a milestone", () =>
-        httpClient.post<IMilestone>(`/milestones/${id}/accept`, {})
-    )
-
-export const reopenMilestone = async (id: string) =>
-    wrap("reopening a milestone", () =>
-        httpClient.post<IMilestone>(`/milestones/${id}/reopen`, {})
-    )
-
-export const deleteMilestone = async (id: string) =>
-    wrap("deleting a milestone", () =>
-        httpClient.delete<{ message: string }>(`/milestones/${id}`)
-    )
 
 // ---------------------------------------------------------------------------
 // KPI targets
@@ -446,18 +370,6 @@ export const deleteKpiTarget = async (id: string) =>
 export const getKpi = async <T>(scope: KpiScope, queryString?: string) =>
     wrap(`fetching ${scope} KPIs`, () =>
         httpClient.get<T>(`/kpi/${scope}`, { params: toParams(queryString) })
-    )
-
-/**
- * Freeze the plan a project is measured against.
- *
- * Separate from updateProject on purpose — the contract value is meant to move
- * and the baseline is not, and one endpoint for both would let the baseline
- * drift on every save.
- */
-export const setProjectBaseline = async (projectId: string, payload: Record<string, unknown>) =>
-    wrap("setting the baseline", () =>
-        httpClient.post<IProject>(`/projects/${projectId}/baseline`, payload)
     )
 
 // ---------------------------------------------------------------------------
@@ -1027,17 +939,4 @@ export const getWorkload = async (queryString?: string) =>
 export const getTaskReport = async (queryString?: string) =>
     wrap("fetching the task report", () =>
         httpClient.get<ITaskReport>("/tasks/report", { params: toParams(queryString) })
-    )
-
-export const getProjectLinks = async (queryString?: string) =>
-    wrap("fetching project links", () =>
-        httpClient.get<IProjectLink[]>("/project-links", { params: toParams(queryString) })
-    )
-
-export const createProjectLink = async (payload: Record<string, unknown>) =>
-    wrap("adding a link", () => httpClient.post<IProjectLink>("/project-links", payload))
-
-export const deleteProjectLink = async (id: string) =>
-    wrap("removing a link", () =>
-        httpClient.delete<{ message: string }>(`/project-links/${id}`)
     )

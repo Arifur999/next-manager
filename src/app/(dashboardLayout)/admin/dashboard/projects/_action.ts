@@ -1,8 +1,8 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { createProject, deleteProject, updateProject } from "@/services/agencio.services"
-import type { IProject } from "@/types/agencio.types"
+import { createProject, deleteProject, updateProject } from "@/services/project.services"
+import type { IProject } from "@/types/project.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 export const createProjectAction = async (

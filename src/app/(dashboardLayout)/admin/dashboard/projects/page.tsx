@@ -1,5 +1,5 @@
 import ProjectsTable from "@/components/modules/Admin/Projects/ProjectsTable";
-import { getProjects } from "@/services/agencio.services";
+import { getProjects } from "@/services/project.services";
 import { getUserInfo } from "@/services/auth.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";

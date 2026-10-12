@@ -4,7 +4,8 @@ import InvitesPanel from "@/components/modules/Admin/TeamManagement/InvitesPanel
 import PendingApprovals from "@/components/modules/Admin/TeamManagement/PendingApprovals";
 import TeamTable from "@/components/modules/Admin/TeamManagement/TeamTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getAssignmentOverview, getDepartments } from "@/services/agencio.services";
+import { getDepartments } from "@/services/agencio.services";
+import { getAssignmentOverview } from "@/services/project.services";
 import { getAllUsers } from "@/services/user.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";

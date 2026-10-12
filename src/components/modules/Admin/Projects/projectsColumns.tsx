@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge"
 import { formatUsd } from "@/lib/currency"
 import { STATUS_TONE } from "@/components/shared/status/statusTone"
-import type { IProject } from "@/types/agencio.types"
+import type { IProject } from "@/types/project.types"
 import { ColumnDef } from "@tanstack/react-table"
 
 // Status carries meaning, so it gets colour rather than the same outline for

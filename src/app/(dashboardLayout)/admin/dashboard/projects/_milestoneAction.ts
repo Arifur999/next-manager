@@ -9,8 +9,8 @@ import {
     setProjectBaseline,
     submitMilestone,
     updateMilestone,
-} from "@/services/agencio.services"
-import type { IMilestone, IProject } from "@/types/agencio.types"
+} from "@/services/project.services"
+import type { IMilestone, IProject } from "@/types/project.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 type MilestoneResult = ApiResponse<IMilestone> | ApiErrorResponse

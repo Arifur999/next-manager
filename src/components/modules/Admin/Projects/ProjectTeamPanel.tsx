@@ -15,9 +15,9 @@ import {
   assignProjectMember,
   getProjectMembers,
   removeProjectMember,
-} from "@/services/agencio.services"
+} from "@/services/project.services"
 import { getAllUsers } from "@/services/user.services"
-import type { IProjectMember } from "@/types/agencio.types"
+import type { IProjectMember } from "@/types/project.types"
 import type { IUser } from "@/types/user.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { UserMinus, UserPlus } from "lucide-react"

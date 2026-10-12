@@ -3,8 +3,8 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
-import { getAssignmentOverview } from "@/services/agencio.services"
-import type { IAssignmentRow } from "@/types/agencio.types"
+import { getAssignmentOverview } from "@/services/project.services"
+import type { IAssignmentRow } from "@/types/project.types"
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 
