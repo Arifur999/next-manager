@@ -5,6 +5,7 @@ import { cookies, headers } from 'next/headers';
 import { cache } from 'react';
 import { isTokenExpiringSoon } from '../tokenUtils';
 import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
+import { logApiFailure } from "@/lib/apiFailure";
 
 // Server-side, so it takes the server's route to the API. Why there are two
 // routes, and which wins, is explained once in lib/apiBaseUrl.ts.
@@ -95,6 +96,9 @@ const multipartAxiosInstance = async () => {
     });
 };
 
+// Query strings can carry search terms, so logs get the path only.
+const withoutQuery = (endpoint: string) => endpoint.split("?")[0];
+
 export interface ApiRequestOptions {
     params?: Record<string, unknown>;
     headers?: Record<string, string>;
@@ -109,7 +113,7 @@ const httpGet = async <TData>(endpoint: string, options?: ApiRequestOptions): Pr
         });
         return response.data;
     } catch (error) {
-        console.error(`GET request to ${endpoint} failed:`, error);
+        logApiFailure(`GET ${withoutQuery(endpoint)}`, error);
         throw error;
     }
 };
@@ -123,7 +127,7 @@ const httpPost = async <TData>(endpoint: string, data: unknown, options?: ApiReq
         });
         return response.data;
     } catch (error) {
-        console.error(`POST request to ${endpoint} failed:`, error);
+        logApiFailure(`POST ${withoutQuery(endpoint)}`, error);
         throw error;
     }
 };
@@ -137,7 +141,7 @@ const httpPut = async <TData>(endpoint: string, data: unknown, options?: ApiRequ
         });
         return response.data;
     } catch (error) {
-        console.error(`PUT request to ${endpoint} failed:`, error);
+        logApiFailure(`PUT ${withoutQuery(endpoint)}`, error);
         throw error;
     }
 };
@@ -151,7 +155,7 @@ const httpPatch = async <TData>(endpoint: string, data: unknown, options?: ApiRe
         });
         return response.data;
     } catch (error) {
-        console.error(`PATCH request to ${endpoint} failed:`, error);
+        logApiFailure(`PATCH ${withoutQuery(endpoint)}`, error);
         throw error;
     }
 };
@@ -165,7 +169,7 @@ const httpDelete = async <TData>(endpoint: string, options?: ApiRequestOptions):
         });
         return response.data;
     } catch (error) {
-        console.error(`DELETE request to ${endpoint} failed:`, error);
+        logApiFailure(`DELETE ${withoutQuery(endpoint)}`, error);
         throw error;
     }
 };
@@ -179,7 +183,7 @@ const httpPostFormData = async <TData>(endpoint: string, formData: FormData, opt
         });
         return response.data;
     } catch (error) {
-        console.error(`Multipart POST request to ${endpoint} failed:`, error);
+        logApiFailure(`POST ${withoutQuery(endpoint)}`, error);
         throw error;
     }
 };
@@ -193,12 +197,12 @@ const httpPatchFormData = async <TData>(endpoint: string, formData: FormData, op
         });
         return response.data;
     } catch (error) {
-        console.error(`Multipart PATCH request to ${endpoint} failed:`, error);
+        logApiFailure(`PATCH ${withoutQuery(endpoint)}`, error);
         throw error;
     }
 };
 
-// Every verb logs and re-throws. Turning an axios error into a message the user
+// Every verb logs an allowlisted summary and re-throws. Turning an axios error into a message the user
 // should see is the action layer's job, not this file's.
 export const httpClient = {
     get: httpGet,
