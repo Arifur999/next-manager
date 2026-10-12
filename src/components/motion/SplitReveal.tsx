@@ -1,8 +1,9 @@
 "use client"
 
-import { DEV_MARKERS, gsap, SplitText, useGSAP } from "@/lib/gsap"
+import { DEV_MARKERS } from "@/lib/gsap"
 import { MQ } from "@/lib/motion"
 import { useRef, type ReactNode } from "react"
+import { useLazyGsap } from "./useLazyGsap"
 
 // Masked word reveal for one heading. The heading stays real server HTML passed
 // as children; SplitText's aria handling reads it once as whole words.
@@ -10,12 +11,9 @@ import { useRef, type ReactNode } from "react"
 export function SplitReveal({ children, className }: { children: ReactNode; className?: string }) {
   const ref = useRef<HTMLDivElement>(null)
 
-  useGSAP(
-    () => {
-      const root = ref.current
-      if (!root) return
-      const mm = gsap.matchMedia()
-
+  useLazyGsap(
+    ref,
+    ({ gsap, SplitText, mm }, root) => {
       mm.add(MQ.reduce, () => {
         gsap.set(root, { autoAlpha: 1 })
       })
@@ -38,7 +36,7 @@ export function SplitReveal({ children, className }: { children: ReactNode; clas
         })
       })
     },
-    { scope: ref },
+    [],
   )
 
   return (

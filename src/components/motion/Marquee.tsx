@@ -1,9 +1,10 @@
 "use client"
 
-import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap"
+import type { GsapKit } from "@/lib/gsap"
 import { MQ } from "@/lib/motion"
 import { Pause, Play } from "lucide-react"
 import { useRef, useState, type ReactNode } from "react"
+import { useLazyGsap } from "./useLazyGsap"
 
 type MarqueeProps = {
   /** <li> items. Rendered twice; the copy is aria-hidden and inert. */
@@ -20,19 +21,19 @@ const GROUP = "flex shrink-0 items-center gap-2 pr-2 motion-reduce:shrink motion
 // wrapped list with no copy.
 export function Marquee({ children, label, duration = 60 }: MarqueeProps) {
   const root = useRef<HTMLDivElement>(null)
-  const loop = useRef<gsap.core.Tween | null>(null)
+  const loop = useRef<ReturnType<GsapKit["gsap"]["to"]> | null>(null)
   const userPaused = useRef(false)
   const [paused, setPaused] = useState(false)
 
-  useGSAP(
-    () => {
-      const mm = gsap.matchMedia()
+  useLazyGsap(
+    root,
+    ({ gsap, ScrollTrigger, mm }, el) => {
       mm.add(MQ.motionOK, () => {
-        const groups = gsap.utils.toArray<HTMLElement>("[data-marquee-group]", root.current)
+        const groups = gsap.utils.toArray<HTMLElement>("[data-marquee-group]", el)
         const tween = gsap.fromTo(groups, { xPercent: 0 }, { xPercent: -100, duration, ease: "none", repeat: -1 })
         loop.current = tween
         ScrollTrigger.create({
-          trigger: root.current,
+          trigger: el,
           start: "top bottom",
           end: "bottom top",
           onToggle(self) {
@@ -46,7 +47,7 @@ export function Marquee({ children, label, duration = 60 }: MarqueeProps) {
         }
       })
     },
-    { scope: root, dependencies: [duration], revertOnUpdate: true },
+    [duration],
   )
 
   // Pausing and playing an existing tween creates nothing, so these handlers

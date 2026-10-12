@@ -19,7 +19,6 @@
     "qa:contrast": "tsx scripts/check-contrast.ts"
   },
   "dependencies": {
-    "@gsap/react": "2.1.2",
     "@hugeicons/core-free-icons": "^4.3.0",
     "@hugeicons/react": "^1.1.10",
     "@tanstack/react-form": "^1.33.5",

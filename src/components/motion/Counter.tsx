@@ -1,8 +1,8 @@
 "use client"
 
-import { gsap, useGSAP } from "@/lib/gsap"
 import { MQ } from "@/lib/motion"
 import { useRef } from "react"
+import { useLazyGsap } from "./useLazyGsap"
 
 // The final value is in the server HTML and in an sr-only copy; the visible
 // count runs once on scroll, and not at all with reduced motion.
@@ -10,11 +10,9 @@ export function Counter({ to, className }: { to: number; className?: string }) {
   const ref = useRef<HTMLSpanElement>(null)
   const final = String(to)
 
-  useGSAP(
-    () => {
-      const el = ref.current
-      if (!el) return
-      const mm = gsap.matchMedia()
+  useLazyGsap(
+    ref,
+    ({ gsap, mm }, el) => {
       mm.add(MQ.motionOK, () => {
         const state = { value: 0 }
         const render = () => {
@@ -33,7 +31,7 @@ export function Counter({ to, className }: { to: number; className?: string }) {
         }
       })
     },
-    { dependencies: [to, final], revertOnUpdate: true },
+    [to, final],
   )
 
   return (

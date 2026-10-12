@@ -1,8 +1,9 @@
 "use client"
 
-import { DEV_MARKERS, gsap, useGSAP } from "@/lib/gsap"
+import { DEV_MARKERS } from "@/lib/gsap"
 import { DURATION, MQ } from "@/lib/motion"
 import { useRef, type ReactNode } from "react"
+import { useLazyGsap } from "./useLazyGsap"
 
 type FadeInProps = {
   children: ReactNode
@@ -21,12 +22,10 @@ type FadeInProps = {
 export function FadeIn({ children, className, items, y = 16, stagger = 0 }: FadeInProps) {
   const ref = useRef<HTMLDivElement>(null)
 
-  useGSAP(
-    () => {
-      const el = ref.current
-      if (!el) return
+  useLazyGsap(
+    ref,
+    ({ gsap, mm }, el) => {
       const targets = stagger > 0 ? (items ? gsap.utils.toArray<Element>(items, el) : Array.from(el.children)) : [el]
-      const mm = gsap.matchMedia()
 
       mm.add(MQ.reduce, () => {
         gsap.set([el, ...targets], { autoAlpha: 1 })
@@ -51,7 +50,7 @@ export function FadeIn({ children, className, items, y = 16, stagger = 0 }: Fade
         return () => el.removeEventListener("focusin", finish)
       })
     },
-    { scope: ref },
+    [items, y, stagger],
   )
 
   return (

@@ -364,11 +364,14 @@
   font-stretch: 87%;
 }
 
-/* Reveal targets start hidden only when scripts run, so the page is complete
-   with JavaScript off. FadeIn and SplitReveal un-hide them on mount. */
-@media (scripting: enabled) {
+/* Reveal targets start transparent only when scripts run and motion is
+   allowed, so the page is complete with JavaScript off or reduced motion.
+   FadeIn and SplitReveal show them once GSAP loads (useLazyGsap). Opacity,
+   not visibility: content stays focusable and readable by screen readers
+   before the animation code arrives, and focus inside shows it at once. */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
   [data-reveal] {
-    visibility: hidden;
+    opacity: 0;
   }
 }
 
