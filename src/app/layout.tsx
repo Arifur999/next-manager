@@ -2,7 +2,6 @@ import { site } from "@/data/site"
 import { Toaster } from "@/components/ui/sonner";
 import type { Metadata } from "next";
 import "./globals.css";
-import QueryProviders from "./providers/QueryProvider";
 import ThemeProvider from "./providers/ThemeProvider";
 import { fontVariables } from "@/lib/fonts";
 import { getSiteUrl } from "@/lib/siteUrl";
@@ -77,10 +76,8 @@ export default async function RootLayout({
           Skip to main content
         </a>
         <ThemeProvider nonce={nonce}>
-          <QueryProviders>
-            {children}
-            <Toaster position="top-right" richColors />
-          </QueryProviders>
+          {children}
+          <Toaster position="top-right" richColors />
         </ThemeProvider>
       </body>
     </html>
