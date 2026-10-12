@@ -1,3 +1,4 @@
+import { site } from "@/data/site"
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
@@ -8,11 +9,11 @@ const HomePage = () => {
         Business management, modular
       </p>
 
-      <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">Naxified</h1>
+      <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">{site.name}</h1>
 
       <p className="max-w-xl text-balance text-muted-foreground">
-        Run your team, inventory, sales and finance from one workspace. Every module is
-        self-contained, so the system grows one feature at a time.
+        Run clients, projects, time, invoices and the money behind them from one
+        workspace.
       </p>
 
       <div className="flex flex-wrap items-center justify-center gap-3">

@@ -1,5 +1,6 @@
 "use client"
 
+import { site } from "@/data/site"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -111,7 +112,7 @@ const NotificationBell = () => {
           <div className="h-24 animate-pulse bg-muted/40" />
         ) : notifications.length === 0 ? (
           <p className="px-4 py-10 text-center text-sm text-muted-foreground">
-            Nothing yet. Work assigned to you, and notices from AGENCIO, show up here.
+            Nothing yet. Work assigned to you, and notices from {site.name}, show up here.
           </p>
         ) : (
           <ScrollArea className="max-h-96">
@@ -127,7 +128,7 @@ const NotificationBell = () => {
                         from your own team need different reactions. */}
                     {notification.source === "platform" && (
                       <Badge variant="outline" className="shrink-0 text-[10px]">
-                        AGENCIO
+                        {site.shortName}
                       </Badge>
                     )}
                     {!notification.read_at && (

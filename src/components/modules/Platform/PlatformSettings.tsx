@@ -1,5 +1,6 @@
 "use client"
 
+import { site } from "@/data/site"
 import { updateSettingsAction } from "@/app/(dashboardLayout)/platform/_settingsAction"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -108,7 +109,7 @@ const SettingsForm = ({ settings }: { settings: IPlatformSettings }) => {
             />
             <p className="text-xs text-muted-foreground">
               Appears in subject lines, so keep it short. The app&apos;s own screens
-              still read AGENCIO from the code — this is the name on outgoing mail.
+              still show {site.name}; this is the name on outgoing mail.
             </p>
           </div>
 

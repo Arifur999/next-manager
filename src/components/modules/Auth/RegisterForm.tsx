@@ -101,7 +101,7 @@ const RegisterForm = () => {
                 <AppField
                   field={field}
                   label="Company name"
-                  placeholder="Naxified Agency"
+                  placeholder="Northwind Studio"
                   disabled={isPending}
                 />
               )}
@@ -115,7 +115,7 @@ const RegisterForm = () => {
                 <AppField
                   field={field}
                   label="Your name"
-                  placeholder="Habib Rahman"
+                  placeholder="Alex Morgan"
                   disabled={isPending}
                 />
               )}
@@ -130,7 +130,7 @@ const RegisterForm = () => {
                   field={field}
                   label="Email"
                   type="email"
-                  placeholder="you@agency.com"
+                  placeholder="you@company.com"
                   disabled={isPending}
                 />
               )}

@@ -1,5 +1,6 @@
 "use client"
 
+import { site } from "@/data/site"
 import { setNotificationRuleAction } from "@/app/(dashboardLayout)/admin/dashboard/notifications/_action"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -154,7 +155,7 @@ const NotificationRules = () => {
 
       <p className="flex items-center gap-2 px-1 text-sm text-muted-foreground">
         <BellRing className="size-4 shrink-0" aria-hidden="true" />
-        These arrive in the same bell as notices from AGENCIO, so there is one place to
+        These arrive in the same bell as notices from {site.name}, so there is one place to
         look and one count to clear. Announcements to your own clients are a different
         thing —{" "}
         <Link

@@ -156,7 +156,7 @@ const JoinForm = ({ token, invite }: { token: string; invite: IInvitePreview | n
                 <AppField
                   field={field}
                   label="Your name"
-                  placeholder="Habib Rahman"
+                  placeholder="Alex Morgan"
                   disabled={isPending}
                 />
               )}

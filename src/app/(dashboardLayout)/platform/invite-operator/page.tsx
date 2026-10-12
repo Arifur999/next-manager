@@ -1,3 +1,4 @@
+import { site } from "@/data/site"
 import PlatformInvites from "@/components/modules/Platform/PlatformInvites";
 import type { Metadata } from "next";
 
@@ -19,7 +20,7 @@ const InviteOperatorPage = () => (
     <div>
       <h1 className="text-2xl font-semibold tracking-tight">Invite an operator</h1>
       <p className="text-sm text-muted-foreground">
-        Somebody who helps you run AGENCIO — they see every customer and can suspend any
+        Somebody who helps you run {site.name}: they see every customer and can suspend any
         of them. They choose their own password and you approve them; a link alone does
         not create an operator.
       </p>

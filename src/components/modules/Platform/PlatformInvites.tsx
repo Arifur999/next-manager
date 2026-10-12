@@ -1,5 +1,6 @@
 "use client"
 
+import { site } from "@/data/site"
 import {
   invitePlatformAdminAction,
   revokePlatformInviteAction,
@@ -115,7 +116,7 @@ const PlatformInvites = () => {
         <CardHeader className="border-b px-5 py-4">
           <CardTitle className="text-base">Invite an operator</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Somebody who runs AGENCIO with you — not the admin of a customer’s agency,
+            Somebody who runs {site.name} with you, not the admin of a customer’s agency,
             who is created together with their company on the{" "}
             <Link href="/platform/customers" className="text-primary underline-offset-4 hover:underline">
               customers screen

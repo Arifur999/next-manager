@@ -188,7 +188,7 @@ const AgencyJoinForm = ({
                   <AppField
                     field={field}
                     label="Your agency's name"
-                    placeholder="Naxified Media"
+                    placeholder="Northwind Studio"
                     disabled={isPending}
                   />
                 )}
@@ -200,7 +200,7 @@ const AgencyJoinForm = ({
                 <AppField
                   field={field}
                   label="Your name"
-                  placeholder="Habib Rahman"
+                  placeholder="Alex Morgan"
                   disabled={isPending}
                 />
               )}

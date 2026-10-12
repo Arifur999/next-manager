@@ -1,3 +1,4 @@
+import { site } from "@/data/site"
 import { Toaster } from "@/components/ui/sonner";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
@@ -38,11 +39,10 @@ const robotoCondensed = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: "Naxified — Business Management",
-    template: "%s | Naxified",
+    default: site.name,
+    template: `%s | ${site.name}`,
   },
-  description:
-    "Naxified is a modular management platform for running a business: team, inventory, sales and finance in one workspace.",
+  description: site.description,
 };
 
 export default async function RootLayout({

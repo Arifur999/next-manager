@@ -1,3 +1,4 @@
+import { site } from "@/data/site"
 import BusinessProfile from "@/components/modules/Admin/Settings/BusinessProfile";
 import SubscriptionPanel from "@/components/modules/Admin/Settings/SubscriptionPanel";
 import { getOrganization } from "@/services/agencio.services";
@@ -21,7 +22,7 @@ const BusinessInformationPage = async () => {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Business Information</h1>
         <p className="text-sm text-muted-foreground">
-          Who the agency is on paper, and what it is on AGENCIO.
+          Who the agency is on paper, and what it is on {site.name}.
         </p>
       </div>
 

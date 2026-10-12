@@ -104,7 +104,7 @@ const ForgotPasswordForm = () => {
                       field={field}
                       label="Email"
                       type="email"
-                      placeholder="you@agency.com"
+                      placeholder="you@company.com"
                       disabled={isPending}
                     />
                   )}
