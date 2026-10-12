@@ -2,10 +2,10 @@
 
 import MetricTile, { count, hours, pct } from "@/components/shared/kpi/MetricTile"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { getKpi } from "@/services/insights.services"
 import type { MeKpi } from "@/types/kpi.types"
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
+import { kpiQuery } from "@/queries/insights.queries"
 
 /**
  * One person's own week.
@@ -21,10 +21,7 @@ import Link from "next/link"
  */
 
 const MyDashboard = ({ range }: { range: string }) => {
-  const { data, isLoading } = useQuery({
-    queryKey: ["kpi", "me", range],
-    queryFn: () => getKpi<MeKpi>("me", range),
-  })
+  const { data, isLoading } = useQuery(kpiQuery<MeKpi>("me", range))
 
   const kpi = data?.data as MeKpi | undefined
 

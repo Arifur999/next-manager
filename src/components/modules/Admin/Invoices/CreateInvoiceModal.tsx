@@ -116,7 +116,7 @@ const CreateInvoiceModal = () => {
       form.reset()
 
       void queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all })
-      void queryClient.invalidateQueries({ queryKey: ["dashboard"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
       router.refresh()
     },
   })

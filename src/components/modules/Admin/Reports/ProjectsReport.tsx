@@ -2,8 +2,8 @@
 
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
-import { getProjectProfitability } from "@/services/insights.services"
 import { useQuery } from "@tanstack/react-query"
+import { projectProfitabilityQuery } from "@/queries/insights.queries"
 
 /**
  * Which projects made money.
@@ -22,10 +22,7 @@ type ProjectRow = {
 }
 
 const ProjectsReport = () => {
-  const { data } = useQuery({
-    queryKey: ["report-project-profitability"],
-    queryFn: () => getProjectProfitability(),
-  })
+  const { data } = useQuery(projectProfitabilityQuery())
 
   const projects = (data?.data ?? []) as ProjectRow[]
 

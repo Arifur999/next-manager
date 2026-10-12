@@ -3,7 +3,6 @@
 import CountSection from "@/components/shared/dashboard/CountSection"
 import { useCount } from "@/components/shared/dashboard/useCount"
 import { formatBdt, formatUsd } from "@/lib/currency"
-import { getDashboard } from "@/services/insights.services"
 import { useQuery } from "@tanstack/react-query"
 import {
   AlertTriangle,
@@ -20,6 +19,7 @@ import { clientsListQuery } from "@/queries/crm.queries"
 import { projectsListQuery } from "@/queries/project.queries"
 import { taskReportQuery, workloadQuery } from "@/queries/work.queries"
 import { usersListQuery } from "@/queries/people.queries"
+import { dashboardQuery } from "@/queries/insights.queries"
 
 /**
  * What an admin opens the morning with.
@@ -42,7 +42,7 @@ const AdminOverview = () => {
   const { data: reportData } = useQuery(taskReportQuery())
   const report = reportData?.data
 
-  const { data: dashboardData } = useQuery({ queryKey: ["dashboard"], queryFn: () => getDashboard() })
+  const { data: dashboardData } = useQuery(dashboardQuery())
   const money = dashboardData?.data
 
   const { data: workloadData } = useQuery(workloadQuery())

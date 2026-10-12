@@ -92,7 +92,7 @@ const CreateTaskModal = () => {
       form.reset()
 
       void queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all })
-      void queryClient.invalidateQueries({ queryKey: ["dashboard"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
     },
   })
 

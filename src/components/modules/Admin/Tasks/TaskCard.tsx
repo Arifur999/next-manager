@@ -59,7 +59,7 @@ const TaskCard = ({ task, statuses }: { task: ITask; statuses: IWorkflowStatus[]
     }
 
     void queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all })
-    void queryClient.invalidateQueries({ queryKey: ["dashboard"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
   }
 
   return (

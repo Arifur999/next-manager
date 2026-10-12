@@ -1,22 +1,20 @@
 import ClientsReport from "@/components/modules/Admin/Reports/ClientsReport";
-import { getClientRevenue } from "@/services/insights.services";
 import { getUserInfo } from "@/services/auth.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { clientRevenueQuery } from "@/queries/insights.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Client report",
 };
 
 const ClientsReportPage = async () => {
-  const queryClient = new QueryClient();
 
-  const [user] = await Promise.all([
-    getUserInfo(),
-    queryClient.prefetchQuery({
-      queryKey: ["report-client-revenue"],
-      queryFn: () => getClientRevenue(),
-    }),
+  const user = await getUserInfo();
+
+  const prefetch = (queryClient: QueryClient) => Promise.all([
+    queryClient.prefetchQuery(clientRevenueQuery()),
   ]);
 
   // Only the wording changes here. The narrowing is done by the server,
@@ -37,9 +35,9 @@ const ClientsReportPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <ClientsReport />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

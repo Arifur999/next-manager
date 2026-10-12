@@ -1,20 +1,17 @@
 import ProjectsReport from "@/components/modules/Admin/Reports/ProjectsReport";
-import { getProjectProfitability } from "@/services/insights.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { projectProfitabilityQuery } from "@/queries/insights.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Project report",
 };
 
 const ProjectsReportPage = async () => {
-  const queryClient = new QueryClient();
 
-  await Promise.all([
-    queryClient.prefetchQuery({
-      queryKey: ["report-project-profitability"],
-      queryFn: () => getProjectProfitability(),
-    }),
+  const prefetch = (queryClient: QueryClient) => Promise.all([
+    queryClient.prefetchQuery(projectProfitabilityQuery()),
   ]);
 
   return (
@@ -26,9 +23,9 @@ const ProjectsReportPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <ProjectsReport />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

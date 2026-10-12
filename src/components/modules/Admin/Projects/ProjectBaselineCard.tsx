@@ -53,7 +53,7 @@ const ProjectBaselineCard = ({ projectId }: { projectId: string }) => {
       setValue("")
       setReplacing(false)
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all })
-      void queryClient.invalidateQueries({ queryKey: ["kpi"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.kpi.all })
     },
   })
 

@@ -121,7 +121,7 @@ const ProjectForm = ({ project, onDone }: { project?: IProject | null; onDone: (
       onDone()
 
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all })
-      void queryClient.invalidateQueries({ queryKey: ["dashboard"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
       router.refresh()
     },
   })

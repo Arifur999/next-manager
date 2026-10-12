@@ -3,8 +3,8 @@
 import ShareRow from "@/components/modules/Admin/Reports/ShareRow"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt, formatUsd } from "@/lib/currency"
-import { getClientRevenue } from "@/services/insights.services"
 import { useQuery } from "@tanstack/react-query"
+import { clientRevenueQuery } from "@/queries/insights.queries"
 
 /**
  * Who actually pays.
@@ -22,10 +22,7 @@ type ClientRevenueRow = {
 }
 
 const ClientsReport = () => {
-  const { data } = useQuery({
-    queryKey: ["report-client-revenue"],
-    queryFn: () => getClientRevenue(),
-  })
+  const { data } = useQuery(clientRevenueQuery())
 
   const clients = (data?.data ?? []) as ClientRevenueRow[]
   const top = clients[0]?.revenue_usd ?? 1

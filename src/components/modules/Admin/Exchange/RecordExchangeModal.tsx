@@ -91,7 +91,7 @@ const RecordExchangeModal = () => {
 
       void queryClient.invalidateQueries({ queryKey: queryKeys.exchanges.all })
       void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
-      void queryClient.invalidateQueries({ queryKey: ["dashboard"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
       router.refresh()
     },
   })

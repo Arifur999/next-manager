@@ -1,20 +1,17 @@
 import TeamReport from "@/components/modules/Admin/Reports/TeamReport";
-import { getKpi } from "@/services/insights.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { kpiQuery } from "@/queries/insights.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Team report",
 };
 
 const TeamReportPage = async () => {
-  const queryClient = new QueryClient();
 
-  await Promise.all([
-    queryClient.prefetchQuery({
-      queryKey: ["kpi", "delivery"],
-      queryFn: () => getKpi("delivery"),
-    }),
+  const prefetch = (queryClient: QueryClient) => Promise.all([
+    queryClient.prefetchQuery(kpiQuery("delivery")),
   ]);
 
   return (
@@ -26,9 +23,9 @@ const TeamReportPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <TeamReport />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

@@ -3,9 +3,9 @@
 import ShareRow from "@/components/modules/Admin/Reports/ShareRow"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
-import { getKpi } from "@/services/insights.services"
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
+import { kpiQuery } from "@/queries/insights.queries"
 
 /**
  * What each team spent its time on, and what it cost.
@@ -27,10 +27,7 @@ type DepartmentRow = {
 }
 
 const TeamReport = () => {
-  const { data } = useQuery({
-    queryKey: ["kpi", "delivery"],
-    queryFn: () => getKpi<{ by_department?: DepartmentRow[] }>("delivery"),
-  })
+  const { data } = useQuery(kpiQuery<{ by_department?: DepartmentRow[] }>("delivery"))
 
   const rows = (data?.data?.by_department ?? []) as DepartmentRow[]
 

@@ -1,7 +1,6 @@
 import AdminOverview from "@/components/modules/Dashboard/AdminOverview";
 import AgencyKpiBand from "@/components/modules/Dashboard/AgencyKpiBand";
 import DashboardOverview from "@/components/modules/Dashboard/DashboardOverview";
-import { getDashboard } from "@/services/insights.services";
 import { getUserInfo } from "@/services/auth.services";
 import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
@@ -10,6 +9,7 @@ import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import { projectsListQuery } from "@/queries/project.queries";
 import { taskReportQuery, workloadQuery } from "@/queries/work.queries";
 import { usersListQuery } from "@/queries/people.queries";
+import { dashboardQuery } from "@/queries/insights.queries";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -29,11 +29,7 @@ const AdminDashboardPage = async () => {
   // the analytical half underneath silently renders nothing. Two components
   // reading one key have to share one cache.
   const prefetch = (queryClient: QueryClient) => Promise.all([
-    queryClient.prefetchQuery({
-      queryKey: ["dashboard"],
-      queryFn: () => getDashboard(),
-      staleTime: 1000 * 30,
-    }),
+    queryClient.prefetchQuery(dashboardQuery()),
     queryClient.prefetchQuery(taskReportQuery()),
     queryClient.prefetchQuery(workloadQuery()),
     queryClient.prefetchQuery(clientsListQuery("limit=1")),

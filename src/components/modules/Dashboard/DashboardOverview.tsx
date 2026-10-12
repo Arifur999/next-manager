@@ -4,12 +4,11 @@ import StatTile from "@/components/shared/StatTile"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt, formatUsd } from "@/lib/currency"
-import { getDashboard } from "@/services/insights.services"
-import type { IDashboard } from "@/types/insights.types"
 import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { ArrowDownLeft, FileText, FolderKanban, Wallet } from "lucide-react"
 import Link from "next/link"
+import { dashboardQuery } from "@/queries/insights.queries"
 
 const PRIORITY_TONE: Record<string, string> = {
   urgent: "bg-destructive/12 text-destructive",
@@ -23,12 +22,9 @@ const EmptyRow = ({ children }: { children: React.ReactNode }) => (
 )
 
 const DashboardOverview = () => {
-  const { data, isLoading } = useQuery({
-    queryKey: ["dashboard"],
-    queryFn: () => getDashboard(),
-  })
+  const { data, isLoading } = useQuery(dashboardQuery())
 
-  const dashboard = data?.data as IDashboard | undefined
+  const dashboard = data?.data
 
   if (isLoading && !dashboard) {
     return (

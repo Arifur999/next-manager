@@ -1,18 +1,18 @@
 import BusinessReport from "@/components/modules/Admin/Reports/BusinessReport";
-import { getMonthlySeries, getProfitAndLoss } from "@/services/insights.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { monthlySeriesQuery, profitAndLossListQuery } from "@/queries/insights.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Business report",
 };
 
 const BusinessReportPage = async () => {
-  const queryClient = new QueryClient();
 
-  await Promise.all([
-    queryClient.prefetchQuery({ queryKey: ["report-pl"], queryFn: () => getProfitAndLoss() }),
-    queryClient.prefetchQuery({ queryKey: ["report-monthly"], queryFn: () => getMonthlySeries(12) }),
+  const prefetch = (queryClient: QueryClient) => Promise.all([
+    queryClient.prefetchQuery(profitAndLossListQuery()),
+    queryClient.prefetchQuery(monthlySeriesQuery(12)),
   ]);
 
   return (
@@ -25,9 +25,9 @@ const BusinessReportPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <BusinessReport />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

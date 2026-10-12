@@ -3,10 +3,9 @@
 import MonthlyChart from "@/components/modules/Admin/Reports/MonthlyChart"
 import StatTile from "@/components/shared/StatTile"
 import { formatBdt, formatPercent, formatUsd } from "@/lib/currency"
-import { getMonthlySeries, getProfitAndLoss } from "@/services/insights.services"
-import type { IMonthlyPoint, IProfitAndLoss } from "@/types/insights.types"
 import { useQuery } from "@tanstack/react-query"
 import { ArrowDownLeft, Receipt, TrendingUp, Wallet } from "lucide-react"
+import { monthlySeriesQuery, profitAndLossListQuery } from "@/queries/insights.queries"
 
 /**
  * How the business is doing, in four numbers and one chart.
@@ -16,17 +15,11 @@ import { ArrowDownLeft, Receipt, TrendingUp, Wallet } from "lucide-react"
  * answers is one nobody reads to the bottom of.
  */
 const BusinessReport = () => {
-  const { data: plData } = useQuery({
-    queryKey: ["report-pl"],
-    queryFn: () => getProfitAndLoss(),
-  })
-  const { data: monthlyData } = useQuery({
-    queryKey: ["report-monthly"],
-    queryFn: () => getMonthlySeries(12),
-  })
+  const { data: plData } = useQuery(profitAndLossListQuery())
+  const { data: monthlyData } = useQuery(monthlySeriesQuery(12))
 
-  const pl = plData?.data as IProfitAndLoss | undefined
-  const monthly = (monthlyData?.data ?? []) as IMonthlyPoint[]
+  const pl = plData?.data
+  const monthly = monthlyData?.data ?? []
 
   return (
     <div className="space-y-6">

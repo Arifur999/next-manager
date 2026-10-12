@@ -3,10 +3,10 @@
 import MetricTile, { count, hours, pct } from "@/components/shared/kpi/MetricTile"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { getKpi } from "@/services/insights.services"
 import type { DeliveryKpi, DeliveryProjectRow, Metric } from "@/types/kpi.types"
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
+import { kpiQuery } from "@/queries/insights.queries"
 
 /**
  * The project manager's screen: is the work landing when it was promised, at
@@ -57,10 +57,7 @@ const MetricCell = ({
 }
 
 const DeliveryDashboard = ({ range }: { range: string }) => {
-  const { data, isLoading } = useQuery({
-    queryKey: ["kpi", "delivery", range],
-    queryFn: () => getKpi<DeliveryKpi>("delivery", range),
-  })
+  const { data, isLoading } = useQuery(kpiQuery<DeliveryKpi>("delivery", range))
 
   const kpi = data?.data as DeliveryKpi | undefined
 

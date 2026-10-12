@@ -2,10 +2,10 @@
 
 import MetricTile, { bdt, hours, pct, usd, usd2 } from "@/components/shared/kpi/MetricTile"
 import { KpiRangePicker, useKpiRange } from "@/components/shared/kpi/KpiRange"
-import { getKpi } from "@/services/insights.services"
 import type { AgencyKpi } from "@/types/kpi.types"
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
+import { kpiQuery } from "@/queries/insights.queries"
 
 /**
  * Company health, above the money screen rather than replacing it.
@@ -23,10 +23,7 @@ import Link from "next/link"
 const AgencyKpiBand = () => {
   const { preset, setPreset, query, from, to } = useKpiRange()
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["kpi", "agency", query],
-    queryFn: () => getKpi<AgencyKpi>("agency", query),
-  })
+  const { data, isLoading } = useQuery(kpiQuery<AgencyKpi>("agency", query))
 
   const kpi = data?.data as AgencyKpi | undefined
 

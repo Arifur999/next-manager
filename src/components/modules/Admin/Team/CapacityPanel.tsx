@@ -51,7 +51,7 @@ const CapacityRow = ({ row }: { row: ICapacityRow }) => {
       toast.success(`${row.user.full_name} updated`)
       void queryClient.invalidateQueries({ queryKey: queryKeys.capacities.all })
       // Every utilization and realization figure divides by this.
-      void queryClient.invalidateQueries({ queryKey: ["kpi"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.kpi.all })
     },
   })
 

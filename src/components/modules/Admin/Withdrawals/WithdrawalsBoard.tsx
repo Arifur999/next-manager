@@ -87,7 +87,7 @@ const RecordWithdrawalModal = () => {
 
       void queryClient.invalidateQueries({ queryKey: queryKeys.withdrawals.all })
       void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
-      void queryClient.invalidateQueries({ queryKey: ["dashboard"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
       router.refresh()
     },
   })

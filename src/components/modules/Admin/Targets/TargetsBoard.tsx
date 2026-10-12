@@ -16,7 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { getKpiTargets } from "@/services/insights.services"
 import type { IKpiTarget, KpiMetric, KpiPeriod } from "@/types/insights.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { format, startOfMonth, startOfQuarter, startOfYear } from "date-fns"
@@ -24,6 +23,8 @@ import { Target as TargetIcon, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 import { usersListQuery } from "@/queries/people.queries"
+import { kpiTargetsListQuery } from "@/queries/insights.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * The numbers the company commits to.
@@ -140,10 +141,7 @@ const TargetsBoard = () => {
   const [owner, setOwner] = useState<string>(AGENCY_WIDE)
   const [value, setValue] = useState("")
 
-  const { data: targetsData, isLoading } = useQuery({
-    queryKey: ["kpi-targets"],
-    queryFn: () => getKpiTargets(),
-  })
+  const { data: targetsData, isLoading } = useQuery(kpiTargetsListQuery())
 
   const { data: usersData } = useQuery(usersListQuery())
 
@@ -152,9 +150,9 @@ const TargetsBoard = () => {
   const spec = METRICS.find((entry) => entry.metric === metric) as MetricSpec
 
   const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: ["kpi-targets"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.kpiTargets.all })
     // Every dashboard scores against these, so they are all stale now.
-    void queryClient.invalidateQueries({ queryKey: ["kpi"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.kpi.all })
   }
 
   const { mutate: save, isPending: isSaving } = useMutation({

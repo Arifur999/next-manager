@@ -1,9 +1,9 @@
 import FinanceReport from "@/components/modules/Admin/Reports/FinanceReport";
-import { getCashFlow } from "@/services/insights.services";
 import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { expensesListQuery } from "@/queries/spending.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import { cashFlowQuery } from "@/queries/insights.queries";
 
 export const metadata: Metadata = {
   title: "Finance report",
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 const FinanceReportPage = async () => {
 
   const prefetch = (queryClient: QueryClient) => Promise.all([
-    queryClient.prefetchQuery({ queryKey: ["report-cash-flow"], queryFn: () => getCashFlow() }),
+    queryClient.prefetchQuery(cashFlowQuery()),
     // Shares its key with the Expenses page, so arriving from there reuses it.
     queryClient.prefetchQuery(expensesListQuery()),
   ]);

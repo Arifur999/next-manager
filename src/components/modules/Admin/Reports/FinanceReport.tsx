@@ -3,11 +3,11 @@
 import ShareRow from "@/components/modules/Admin/Reports/ShareRow"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt, formatUsd } from "@/lib/currency"
-import { getCashFlow } from "@/services/insights.services"
 import type { Currency } from "@/types/common.types"
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 import { expensesListQuery } from "@/queries/spending.queries"
+import { cashFlowQuery } from "@/queries/insights.queries"
 
 /**
  * Where the money went.
@@ -36,10 +36,7 @@ const SOURCE_LABEL: Record<string, string> = {
 }
 
 const FinanceReport = () => {
-  const { data: cashData } = useQuery({
-    queryKey: ["report-cash-flow"],
-    queryFn: () => getCashFlow(),
-  })
+  const { data: cashData } = useQuery(cashFlowQuery())
 
   // The category breakdown endpoint exists, but the expense list already
   // carries category on each row and this page loads it anyway — grouping here

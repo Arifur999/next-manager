@@ -9,10 +9,10 @@ import MetricTile, {
 } from "@/components/shared/kpi/MetricTile"
 import WhereWorkComesFrom from "@/components/modules/Dashboard/WhereWorkComesFrom"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { getKpi } from "@/services/insights.services"
 import type { SalesKpi } from "@/types/kpi.types"
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
+import { kpiQuery } from "@/queries/insights.queries"
 
 /**
  * The salesperson's own screen.
@@ -28,10 +28,7 @@ import Link from "next/link"
  */
 
 const SalesDashboard = ({ range }: { range: string }) => {
-  const { data, isLoading } = useQuery({
-    queryKey: ["kpi", "sales", range],
-    queryFn: () => getKpi<SalesKpi>("sales", range),
-  })
+  const { data, isLoading } = useQuery(kpiQuery<SalesKpi>("sales", range))
 
   const kpi = data?.data as SalesKpi | undefined
 
