@@ -1,31 +1,6 @@
-import { site } from "@/data/site"
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import Hero from "@/components/modules/Home/Hero/Hero"
 
-const HomePage = () => {
-  return (
-    <section className="mx-auto flex min-h-[70vh] w-full max-w-3xl flex-col items-center justify-center gap-6 px-6 text-center">
-      <p className="rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground">
-        Business management, modular
-      </p>
+// Composes the landing sections in page order. Copy lives in src/data/home.
+const HomePage = () => <Hero trialDays={null} />
 
-      <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">{site.name}</h1>
-
-      <p className="max-w-xl text-balance text-muted-foreground">
-        Run clients, projects, time, invoices and the money behind them from one
-        workspace.
-      </p>
-
-      <div className="flex flex-wrap items-center justify-center gap-3">
-        <Button asChild>
-          <Link href="/login">Sign in</Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href="/register">Create an account</Link>
-        </Button>
-      </div>
-    </section>
-  );
-};
-
-export default HomePage;
+export default HomePage
