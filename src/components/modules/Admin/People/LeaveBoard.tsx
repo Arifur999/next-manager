@@ -20,8 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { getLeaveRequests, getLeaveTypes } from "@/services/agencio.services"
-import type { ILeaveRequest, ILeaveType, LeaveStatus } from "@/types/agencio.types"
+import { getLeaveRequests, getLeaveTypes } from "@/services/people.services"
+import type { ILeaveRequest, ILeaveType, LeaveStatus } from "@/types/people.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { differenceInCalendarDays, format, parseISO } from "date-fns"
 import { CalendarOff } from "lucide-react"

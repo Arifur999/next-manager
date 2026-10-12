@@ -1,5 +1,5 @@
 import AttendanceBoard from "@/components/modules/Admin/People/AttendanceBoard";
-import { getAttendance } from "@/services/agencio.services";
+import { getAttendance } from "@/services/people.services";
 import { getUserInfo } from "@/services/auth.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";

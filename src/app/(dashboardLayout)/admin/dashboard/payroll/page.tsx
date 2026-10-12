@@ -1,5 +1,5 @@
 import PayrollBoard from "@/components/modules/Admin/People/PayrollBoard";
-import { getPayrollRuns } from "@/services/agencio.services";
+import { getPayrollRuns } from "@/services/people.services";
 import { getAccounts } from "@/services/finance.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";

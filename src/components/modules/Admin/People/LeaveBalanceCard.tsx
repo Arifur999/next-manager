@@ -1,8 +1,8 @@
 "use client"
 
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { getLeaveBalance } from "@/services/agencio.services"
-import type { ILeaveBalance } from "@/types/agencio.types"
+import { getLeaveBalance } from "@/services/people.services"
+import type { ILeaveBalance } from "@/types/people.types"
 import { useQuery } from "@tanstack/react-query"
 
 /**

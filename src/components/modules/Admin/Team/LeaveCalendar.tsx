@@ -1,8 +1,8 @@
 "use client"
 
 import MonthGrid from "@/components/shared/calendar/MonthGrid"
-import { getLeaveRequests } from "@/services/agencio.services"
-import type { ILeaveRequest } from "@/types/agencio.types"
+import { getLeaveRequests } from "@/services/people.services"
+import type { ILeaveRequest } from "@/types/people.types"
 import { useQuery } from "@tanstack/react-query"
 import { eachDayOfInterval, parseISO } from "date-fns"
 

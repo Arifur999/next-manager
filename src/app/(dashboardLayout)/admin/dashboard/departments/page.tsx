@@ -1,5 +1,5 @@
 import DepartmentsBoard from "@/components/modules/Admin/Departments/DepartmentsBoard";
-import { getDepartments } from "@/services/agencio.services";
+import { getDepartments } from "@/services/people.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

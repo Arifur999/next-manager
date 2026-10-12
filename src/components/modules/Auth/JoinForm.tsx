@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import type { IInvitePreview } from "@/types/agencio.types"
+import type { IInvitePreview } from "@/types/people.types"
 import { useForm } from "@tanstack/react-form"
 import { useMutation } from "@tanstack/react-query"
 import { Clock, Eye, EyeOff, LinkIcon } from "lucide-react"

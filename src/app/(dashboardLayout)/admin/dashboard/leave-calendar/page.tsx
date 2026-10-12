@@ -1,5 +1,5 @@
 import LeaveCalendar from "@/components/modules/Admin/Team/LeaveCalendar";
-import { getLeaveRequests } from "@/services/agencio.services";
+import { getLeaveRequests } from "@/services/people.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

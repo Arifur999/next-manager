@@ -6,8 +6,8 @@ import {
     createPayrollRun,
     deletePayrollRun,
     setPayrollItems,
-} from "@/services/agencio.services"
-import type { IPayrollRun } from "@/types/agencio.types"
+} from "@/services/people.services"
+import type { IPayrollRun } from "@/types/people.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 type Result = ApiResponse<IPayrollRun> | ApiErrorResponse

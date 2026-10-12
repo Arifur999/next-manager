@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { formatBdt } from "@/lib/currency"
-import type { IPayrollRun } from "@/types/agencio.types"
+import type { IPayrollRun } from "@/types/people.types"
 import type { IAccount } from "@/types/finance.types"
 import { format, parseISO } from "date-fns"
 import { Trash2 } from "lucide-react"

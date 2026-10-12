@@ -1,5 +1,5 @@
 import JoinForm from "@/components/modules/Auth/JoinForm";
-import type { IInvitePreview } from "@/types/agencio.types";
+import type { IInvitePreview } from "@/types/people.types";
 import type { Metadata } from "next";
 import { getApiBaseUrl } from "@/env"
 

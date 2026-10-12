@@ -1,5 +1,5 @@
 import LeaveTypeBoard from "@/components/modules/Admin/People/LeaveTypeBoard";
-import { getLeaveTypes } from "@/services/agencio.services";
+import { getLeaveTypes } from "@/services/people.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

@@ -1,13 +1,8 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import {
-    approveMember,
-    createInvite,
-    rejectMember,
-    revokeInvite,
-} from "@/services/agencio.services"
-import type { ITeamInvite } from "@/types/agencio.types"
+import { approveMember, createInvite, rejectMember, revokeInvite } from "@/services/people.services"
+import type { ITeamInvite } from "@/types/people.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 export const createInviteAction = async (

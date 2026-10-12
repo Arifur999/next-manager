@@ -1,8 +1,8 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { cancelLeave, decideLeave, requestLeave } from "@/services/agencio.services"
-import type { ILeaveRequest } from "@/types/agencio.types"
+import { cancelLeave, decideLeave, requestLeave } from "@/services/people.services"
+import type { ILeaveRequest } from "@/types/people.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 type Result = ApiResponse<ILeaveRequest> | ApiErrorResponse

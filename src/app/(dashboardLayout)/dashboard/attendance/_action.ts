@@ -1,8 +1,8 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { clockAttendance, recordAttendance } from "@/services/agencio.services"
-import type { IAttendance } from "@/types/agencio.types"
+import { clockAttendance, recordAttendance } from "@/services/people.services"
+import type { IAttendance } from "@/types/people.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 type Result = ApiResponse<IAttendance> | ApiErrorResponse

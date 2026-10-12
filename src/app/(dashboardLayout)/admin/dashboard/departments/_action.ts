@@ -1,8 +1,8 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { createDepartment, deleteDepartment, updateDepartment } from "@/services/agencio.services"
-import type { IDepartment } from "@/types/agencio.types"
+import { createDepartment, deleteDepartment, updateDepartment } from "@/services/people.services"
+import type { IDepartment } from "@/types/people.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 export const createDepartmentAction = async (

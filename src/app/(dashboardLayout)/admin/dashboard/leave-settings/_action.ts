@@ -1,8 +1,8 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { createLeaveType, updateLeaveType } from "@/services/agencio.services"
-import type { ILeaveType } from "@/types/agencio.types"
+import { createLeaveType, updateLeaveType } from "@/services/people.services"
+import type { ILeaveType } from "@/types/people.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 type Result = ApiResponse<ILeaveType> | ApiErrorResponse

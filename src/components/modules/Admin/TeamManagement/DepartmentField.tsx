@@ -8,8 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { getDepartments } from "@/services/agencio.services"
-import type { IDepartment } from "@/types/agencio.types"
+import { getDepartments } from "@/services/people.services"
+import type { IDepartment } from "@/types/people.types"
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 

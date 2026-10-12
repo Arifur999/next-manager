@@ -5,22 +5,16 @@ import { toParams } from "@/lib/queryString"
 import type {
     IActivityEntry,
     IActivityFilters,
-    IAttendance,
     ICredential,
     ICredentialAccessEntry,
     IDashboard,
-    IDepartment,
     IKpiTarget,
-    ILeaveBalance,
-    ILeaveRequest,
     IConversation,
-    ILeaveType,
     ILoginEvent,
     IMonthlyPoint,
     INotificationRule,
     IOrganization,
     IMessage,
-    IPayrollRun,
     IServiceDetail,
     IProfitAndLoss,
     IRevealedCredential,
@@ -28,7 +22,6 @@ import type {
     IServiceCategory,
     IServiceRevenue,
     IServiceTemplate,
-    ITeamInvite,
 } from "@/types/agencio.types"
 import type { KpiScope } from "@/types/kpi.types"
 import type {
@@ -207,31 +200,6 @@ export const createCompany = async (payload: Record<string, unknown>) =>
 
 // ---------------------------------------------------------------------------
 // Team invites and the pending queue
-// ---------------------------------------------------------------------------
-
-/** Returns `join_url` — the only time the token is ever readable. */
-export const createInvite = async (payload: Record<string, unknown>) =>
-    wrap("creating an invite", () =>
-        httpClient.post<{ invite: ITeamInvite; join_url: string }>("/team-invites", payload)
-    )
-
-export const getInvites = async () =>
-    wrap("fetching invites", () => httpClient.get<ITeamInvite[]>("/team-invites"))
-
-export const revokeInvite = async (id: string) =>
-    wrap("revoking an invite", () =>
-        httpClient.delete<{ message: string }>(`/team-invites/${id}`)
-    )
-
-export const approveMember = async (id: string) =>
-    wrap("approving a member", () =>
-        httpClient.post(`/team-invites/members/${id}/approve`, {})
-    )
-
-export const rejectMember = async (id: string, payload: Record<string, unknown>) =>
-    wrap("turning down a request", () =>
-        httpClient.post(`/team-invites/members/${id}/reject`, payload)
-    )
 
 // ---------------------------------------------------------------------------
 // Lead sources (where the work is landed) and client links
@@ -394,25 +362,6 @@ export const revokeAgencyInvite = async (id: string) =>
 
 // ---------------------------------------------------------------------------
 // Departments — which part of the business somebody is in
-// ---------------------------------------------------------------------------
-
-export const getDepartments = async () =>
-    wrap("fetching departments", () => httpClient.get<IDepartment[]>("/departments"))
-
-export const createDepartment = async (payload: Record<string, unknown>) =>
-    wrap("creating the department", () =>
-        httpClient.post<IDepartment>("/departments", payload)
-    )
-
-export const updateDepartment = async (id: string, payload: Record<string, unknown>) =>
-    wrap("updating the department", () =>
-        httpClient.patch<IDepartment>(`/departments/${id}`, payload)
-    )
-
-export const deleteDepartment = async (id: string) =>
-    wrap("deleting the department", () =>
-        httpClient.delete<{ message: string }>(`/departments/${id}`)
-    )
 
 // ---------------------------------------------------------------------------
 // The ledger, read as a ledger
@@ -503,73 +452,6 @@ export const deleteServiceTemplate = async (id: string) =>
 
 // ---------------------------------------------------------------------------
 // People: attendance, leave and payroll
-// ---------------------------------------------------------------------------
-
-export const getAttendance = async (queryString?: string) =>
-    wrap("fetching attendance", () =>
-        httpClient.get<IAttendance[]>("/hr/attendance", { params: toParams(queryString) })
-    )
-
-export const clockAttendance = async () =>
-    wrap("clocking in", () => httpClient.post<IAttendance>("/hr/attendance/clock", {}))
-
-export const recordAttendance = async (payload: Record<string, unknown>) =>
-    wrap("recording attendance", () => httpClient.post<IAttendance>("/hr/attendance", payload))
-
-export const getLeaveTypes = async () =>
-    wrap("fetching leave types", () => httpClient.get<ILeaveType[]>("/hr/leave-types"))
-
-export const createLeaveType = async (payload: Record<string, unknown>) =>
-    wrap("adding the leave type", () => httpClient.post<ILeaveType>("/hr/leave-types", payload))
-
-// Retiring a kind is `is_active: false`, never a delete: leave already
-// approved against it has to keep saying what it was for.
-export const updateLeaveType = async (id: string, payload: Record<string, unknown>) =>
-    wrap("updating the leave type", () =>
-        httpClient.patch<ILeaveType>(`/hr/leave-types/${id}`, payload)
-    )
-
-export const getLeaveRequests = async (queryString?: string) =>
-    wrap("fetching leave requests", () =>
-        httpClient.get<ILeaveRequest[]>("/hr/leave", { params: toParams(queryString) })
-    )
-
-export const getLeaveBalance = async (queryString?: string) =>
-    wrap("fetching the leave balance", () =>
-        httpClient.get<ILeaveBalance[]>("/hr/leave/balance", { params: toParams(queryString) })
-    )
-
-export const requestLeave = async (payload: Record<string, unknown>) =>
-    wrap("asking for leave", () => httpClient.post<ILeaveRequest>("/hr/leave", payload))
-
-export const cancelLeave = async (id: string) =>
-    wrap("withdrawing the request", () =>
-        httpClient.post<ILeaveRequest>(`/hr/leave/${id}/cancel`, {})
-    )
-
-export const decideLeave = async (id: string, payload: Record<string, unknown>) =>
-    wrap("deciding the request", () =>
-        httpClient.post<ILeaveRequest>(`/hr/leave/${id}/decide`, payload)
-    )
-
-export const getPayrollRuns = async () =>
-    wrap("fetching payroll", () => httpClient.get<IPayrollRun[]>("/hr/payroll"))
-
-export const createPayrollRun = async (payload: Record<string, unknown>) =>
-    wrap("opening payroll", () => httpClient.post<IPayrollRun>("/hr/payroll", payload))
-
-export const setPayrollItems = async (id: string, payload: Record<string, unknown>) =>
-    wrap("saving payroll", () => httpClient.patch<IPayrollRun>(`/hr/payroll/${id}/items`, payload))
-
-export const completePayroll = async (id: string, payload: Record<string, unknown>) =>
-    wrap("paying the salaries", () =>
-        httpClient.post<IPayrollRun>(`/hr/payroll/${id}/complete`, payload)
-    )
-
-export const deletePayrollRun = async (id: string) =>
-    wrap("discarding the draft", () =>
-        httpClient.delete<{ message: string }>(`/hr/payroll/${id}`)
-    )
 
 // ---------------------------------------------------------------- chat
 
