@@ -4,7 +4,6 @@ import CountSection from "@/components/shared/dashboard/CountSection"
 import { useCount } from "@/components/shared/dashboard/useCount"
 import EmptyState from "@/components/shared/state/EmptyState"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { getServices } from "@/services/catalog.services"
 import { useQuery } from "@tanstack/react-query"
 import { formatDistanceToNow, parseISO } from "date-fns"
 import { FolderKanban, ListChecks, Package, UserCheck, UserPlus, Users } from "lucide-react"
@@ -12,6 +11,7 @@ import Link from "next/link"
 import { clientsListQuery } from "@/queries/crm.queries"
 import { projectsListQuery } from "@/queries/project.queries"
 import { taskReportQuery } from "@/queries/work.queries"
+import { servicesListQuery } from "@/queries/catalog.queries"
 
 /**
  * What a salesperson opens the morning with.
@@ -25,7 +25,7 @@ const SalesOverview = () => {
   const clients = useCount(clientsListQuery("limit=1"))
   const active = useCount(clientsListQuery("status=active&limit=1"))
   const inactive = useCount(clientsListQuery("status=inactive&limit=1"))
-  const services = useCount({ queryKey: ["services", "count"], queryFn: () => getServices("limit=1") })
+  const services = useCount(servicesListQuery("limit=1"))
 
   const planning = useCount(projectsListQuery("status=Planning&limit=1"))
   const activeProjects = useCount(projectsListQuery("status=Active&limit=1"))

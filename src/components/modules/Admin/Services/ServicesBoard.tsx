@@ -11,11 +11,12 @@ import ServiceFormCard, {
   type ServiceDraft,
 } from "@/components/modules/Admin/Services/ServiceFormCard"
 import ServiceList from "@/components/modules/Admin/Services/ServiceList"
-import { getServiceCategories, getServices } from "@/services/catalog.services"
-import type { IService, IServiceCategory } from "@/types/catalog.types"
+import type { IService } from "@/types/catalog.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { toast } from "sonner"
+import { serviceCategoriesQuery, servicesListQuery } from "@/queries/catalog.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * The catalogue: a form on the left, the list on the right.
@@ -36,16 +37,13 @@ const ServicesBoard = ({ canManage = true }: { canManage?: boolean }) => {
   const [draft, setDraft] = useState<ServiceDraft>(emptyService)
   const [editingId, setEditingId] = useState<string | null>(null)
 
-  const { data, isLoading } = useQuery({ queryKey: ["services"], queryFn: () => getServices() })
-  const { data: categoryData } = useQuery({
-    queryKey: ["service-categories"],
-    queryFn: () => getServiceCategories(),
-  })
+  const { data, isLoading } = useQuery(servicesListQuery())
+  const { data: categoryData } = useQuery(serviceCategoriesQuery())
 
-  const services = (data?.data ?? []) as IService[]
-  const categories = (categoryData?.data ?? []) as IServiceCategory[]
+  const services = data?.data ?? []
+  const categories = categoryData?.data ?? []
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ["services"] })
+  const refresh = () => queryClient.invalidateQueries({ queryKey: queryKeys.services.all })
   const reset = () => {
     setDraft(emptyService)
     setEditingId(null)

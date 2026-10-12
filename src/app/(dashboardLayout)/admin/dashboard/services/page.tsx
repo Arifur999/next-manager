@@ -1,15 +1,15 @@
 import ServicesBoard from "@/components/modules/Admin/Services/ServicesBoard";
-import { getServiceCategories, getServices } from "@/services/catalog.services";
 import { getUserInfo } from "@/services/auth.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { serviceCategoriesQuery, servicesListQuery } from "@/queries/catalog.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Services",
 };
 
 const ServicesPage = async () => {
-  const queryClient = new QueryClient();
   const user = await getUserInfo();
 
   // The same two the API lets write the catalogue. A project manager reads
@@ -17,12 +17,9 @@ const ServicesPage = async () => {
   // a form that always failed would only teach them the app is broken.
   const canManage = user?.role === "admin" || user?.role === "sales";
 
-  await Promise.all([
-    queryClient.prefetchQuery({ queryKey: ["services"], queryFn: () => getServices() }),
-    queryClient.prefetchQuery({
-      queryKey: ["service-categories"],
-      queryFn: () => getServiceCategories(),
-    }),
+  const prefetch = (queryClient: QueryClient) => Promise.all([
+    queryClient.prefetchQuery(servicesListQuery()),
+    queryClient.prefetchQuery(serviceCategoriesQuery()),
   ]);
 
   return (
@@ -35,9 +32,9 @@ const ServicesPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <ServicesBoard canManage={canManage} />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

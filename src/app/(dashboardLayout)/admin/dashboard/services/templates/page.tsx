@@ -1,18 +1,18 @@
 import TemplatesBoard from "@/components/modules/Admin/Services/TemplatesBoard";
-import { getServiceTemplates, getServices } from "@/services/catalog.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { serviceTemplatesQuery, servicesListQuery } from "@/queries/catalog.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Service packages",
 };
 
 const TemplatesBoardPage = async () => {
-  const queryClient = new QueryClient();
 
-  await Promise.all([
-    queryClient.prefetchQuery({ queryKey: ["service-templates"], queryFn: () => getServiceTemplates() }),
-    queryClient.prefetchQuery({ queryKey: ["services"], queryFn: () => getServices() }),
+  const prefetch = (queryClient: QueryClient) => Promise.all([
+    queryClient.prefetchQuery(serviceTemplatesQuery()),
+    queryClient.prefetchQuery(servicesListQuery()),
   ]);
 
   return (
@@ -24,9 +24,9 @@ const TemplatesBoardPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <TemplatesBoard />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

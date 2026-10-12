@@ -1,7 +1,8 @@
 import ServiceDetail from "@/components/modules/Admin/Services/ServiceDetail";
-import { getService } from "@/services/catalog.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { serviceDetailQuery } from "@/queries/catalog.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Service",
@@ -9,17 +10,13 @@ export const metadata: Metadata = {
 
 const ServiceDetailPage = async ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
-  const queryClient = new QueryClient();
 
-  await queryClient.prefetchQuery({
-    queryKey: ["service", id],
-    queryFn: () => getService(id),
-  });
+  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(serviceDetailQuery(id));
 
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
+    <QueryPrefetch prefetch={prefetch}>
       <ServiceDetail serviceId={id} />
-    </HydrationBoundary>
+    </QueryPrefetch>
   );
 };
 

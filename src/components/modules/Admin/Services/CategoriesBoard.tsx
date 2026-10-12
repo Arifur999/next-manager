@@ -11,12 +11,13 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { getServiceCategories } from "@/services/catalog.services"
 import type { IServiceCategory } from "@/types/catalog.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { FolderTree, Power, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { serviceCategoriesQuery } from "@/queries/catalog.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * How the catalogue is grouped.
@@ -30,16 +31,13 @@ const CategoriesBoard = () => {
   const queryClient = useQueryClient()
   const [name, setName] = useState("")
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["service-categories"],
-    queryFn: () => getServiceCategories(),
-  })
+  const { data, isLoading } = useQuery(serviceCategoriesQuery())
 
-  const categories = (data?.data ?? []) as IServiceCategory[]
+  const categories = data?.data ?? []
   const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: ["service-categories"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.serviceCategories.all })
     // The catalogue shows each service's category, so it moves with this.
-    void queryClient.invalidateQueries({ queryKey: ["services"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.services.all })
   }
 
   const { mutate: add, isPending } = useMutation({

@@ -13,13 +13,14 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { formatUsd } from "@/lib/currency"
-import { getServiceTemplates, getServices } from "@/services/catalog.services"
-import type { IService, IServiceTemplate } from "@/types/catalog.types"
+import type { IService } from "@/types/catalog.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Boxes, Trash2 } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 import { toast } from "sonner"
+import { serviceTemplatesQuery, servicesListQuery } from "@/queries/catalog.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * Named bundles, so a repeat offer is one pick rather than five.
@@ -34,16 +35,13 @@ const TemplatesBoard = () => {
   const [name, setName] = useState("")
   const [picked, setPicked] = useState<Record<string, number>>({})
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["service-templates"],
-    queryFn: () => getServiceTemplates(),
-  })
-  const { data: serviceData } = useQuery({ queryKey: ["services"], queryFn: () => getServices() })
+  const { data, isLoading } = useQuery(serviceTemplatesQuery())
+  const { data: serviceData } = useQuery(servicesListQuery())
 
-  const templates = (data?.data ?? []) as IServiceTemplate[]
-  const services = ((serviceData?.data ?? []) as IService[]).filter((service) => service.is_active)
+  const templates = data?.data ?? []
+  const services = ((serviceData?.data ?? [])).filter((service) => service.is_active)
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ["service-templates"] })
+  const refresh = () => queryClient.invalidateQueries({ queryKey: queryKeys.serviceTemplates.all })
 
   const { mutate: create, isPending } = useMutation({
     mutationFn: () =>

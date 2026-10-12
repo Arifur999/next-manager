@@ -4,11 +4,10 @@ import EmptyState from "@/components/shared/state/EmptyState"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatUsd } from "@/lib/currency"
-import { getService } from "@/services/catalog.services"
-import type { IServiceDetail } from "@/types/catalog.types"
 import { useQuery } from "@tanstack/react-query"
 import { FolderKanban, Users } from "lucide-react"
 import Link from "next/link"
+import { serviceDetailQuery } from "@/queries/catalog.queries"
 
 /**
  * One service, and where it is actually being sold.
@@ -22,12 +21,9 @@ import Link from "next/link"
  * admin's revenue-by-service report.
  */
 const ServiceDetail = ({ serviceId }: { serviceId: string }) => {
-  const { data, isLoading } = useQuery({
-    queryKey: ["service", serviceId],
-    queryFn: () => getService(serviceId),
-  })
+  const { data, isLoading } = useQuery(serviceDetailQuery(serviceId))
 
-  const service = data?.data as IServiceDetail | undefined
+  const service = data?.data
 
   if (isLoading && !service) return <Card className="h-64 animate-pulse bg-muted/40" />
   if (!service) return null
