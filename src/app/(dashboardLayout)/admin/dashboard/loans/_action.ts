@@ -8,8 +8,8 @@ import {
     reverseLoanInstalment,
     setLoanInstalments,
     updateLoan,
-} from "@/services/agencio.services"
-import type { ILoan } from "@/types/agencio.types"
+} from "@/services/finance.services"
+import type { ILoan } from "@/types/finance.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 type Result = ApiResponse<ILoan> | ApiErrorResponse

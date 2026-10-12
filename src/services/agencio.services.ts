@@ -3,7 +3,6 @@
 import { httpClient } from "@/lib/axios/httpClient"
 import { toParams } from "@/lib/queryString"
 import type {
-    IAccount,
     IActivityEntry,
     IActivityFilters,
     IAttendance,
@@ -13,7 +12,6 @@ import type {
     IDepartment,
     IDuePerson,
     IDueTransaction,
-    IExchange,
     IExpense,
     IExpenseCategory,
     IKpiTarget,
@@ -21,8 +19,6 @@ import type {
     ILeaveRequest,
     IConversation,
     ILeaveType,
-    ILoan,
-    ILoanSummary,
     ILoginEvent,
     IMonthlyPoint,
     INotificationRule,
@@ -31,10 +27,7 @@ import type {
     IMessage,
     IPayrollRun,
     IServiceDetail,
-    IShareholder,
-    IShareholderDistribution,
     IProfitAndLoss,
-    IRateSettings,
     IRevealedCredential,
     IService,
     IServiceCategory,
@@ -42,7 +35,6 @@ import type {
     IServiceTemplate,
     ITeamInvite,
     ITeamPayout,
-    ITransaction,
 } from "@/types/agencio.types"
 import type { KpiScope } from "@/types/kpi.types"
 import type {
@@ -78,31 +70,6 @@ const wrap = async <T>(label: string, run: () => Promise<T>): Promise<T> => run(
 
 export const getDashboard = async () =>
     wrap("fetching dashboard", () => httpClient.get<IDashboard>("/dashboard"))
-
-// ----------------------------------------------------------------- accounts
-
-export const getAccounts = async () =>
-    wrap("fetching accounts", () => httpClient.get<IAccount[]>("/accounts"))
-
-export const createAccount = async (payload: Record<string, unknown>) =>
-    wrap("creating account", () => httpClient.post<IAccount>("/accounts", payload))
-
-export const updateAccount = async (id: string, payload: Record<string, unknown>) =>
-    wrap("updating account", () => httpClient.patch<IAccount>(`/accounts/${id}`, payload))
-
-export const deleteAccount = async (id: string) =>
-    wrap("deleting account", () => httpClient.delete<{ message: string }>(`/accounts/${id}`))
-
-// ---------------------------------------------------------------- exchanges
-
-export const getExchanges = async (queryString?: string) =>
-    wrap("fetching exchanges", () => httpClient.get<IExchange[]>("/exchanges", { params: toParams(queryString) }))
-
-export const createExchange = async (payload: Record<string, unknown>) =>
-    wrap("recording exchange", () => httpClient.post<IExchange>("/exchanges", payload))
-
-export const deleteExchange = async (id: string) =>
-    wrap("deleting exchange", () => httpClient.delete<{ message: string }>(`/exchanges/${id}`))
 
 // ----------------------------------------------------------------- expenses
 
@@ -199,19 +166,6 @@ export const getOrganization = async () =>
 
 export const updateOrganization = async (payload: Record<string, unknown>) =>
     wrap("updating organization", () => httpClient.patch<IOrganization>("/settings/organization", payload))
-
-export const getRateSettings = async () =>
-    wrap("fetching rate settings", () => httpClient.get<IRateSettings>("/settings/exchange-rates"))
-
-export const setDefaultRate = async (rate: number | null) =>
-    wrap("setting default rate", () =>
-        httpClient.patch("/settings/exchange-rates/default", { default_usd_rate: rate })
-    )
-
-export const refreshRate = async () =>
-    wrap("refreshing rate", () =>
-        httpClient.post<{ rate: number; provider: string }>("/settings/exchange-rates/refresh", {})
-    )
 
 // ------------------------------------------------------------------ reports
 
@@ -535,12 +489,6 @@ export const deleteDepartment = async (id: string) =>
 
 // ---------------------------------------------------------------------------
 // The ledger, read as a ledger
-// ---------------------------------------------------------------------------
-
-export const getTransactions = async (queryString?: string) =>
-    wrap("fetching transactions", () =>
-        httpClient.get<ITransaction[]>("/transactions", { params: toParams(queryString) })
-    )
 
 // ---------------------------------------------------------------------------
 // What the company notifies itself about
@@ -694,76 +642,6 @@ export const completePayroll = async (id: string, payload: Record<string, unknow
 export const deletePayrollRun = async (id: string) =>
     wrap("discarding the draft", () =>
         httpClient.delete<{ message: string }>(`/hr/payroll/${id}`)
-    )
-
-// ---------------------------------------------------------------- loans
-
-export const getLoans = async (queryString?: string) =>
-    wrap("fetching loans", () => httpClient.get<ILoan[]>("/loans", { params: toParams(queryString) }))
-
-export const getLoan = async (id: string) =>
-    wrap("fetching the loan", () => httpClient.get<ILoan>(`/loans/${id}`))
-
-export const getLoanSummary = async () =>
-    wrap("fetching the loan summary", () => httpClient.get<ILoanSummary>("/loans/summary"))
-
-export const createLoan = async (payload: Record<string, unknown>) =>
-    wrap("recording the loan", () => httpClient.post<ILoan>("/loans", payload))
-
-export const updateLoan = async (id: string, payload: Record<string, unknown>) =>
-    wrap("updating the loan", () => httpClient.patch<ILoan>(`/loans/${id}`, payload))
-
-export const setLoanInstalments = async (id: string, payload: Record<string, unknown>) =>
-    wrap("saving the schedule", () =>
-        httpClient.patch<ILoan>(`/loans/${id}/instalments`, payload)
-    )
-
-export const payLoanInstalment = async (instalmentId: string, payload: Record<string, unknown>) =>
-    wrap("paying the instalment", () =>
-        httpClient.patch<ILoan>(`/loans/instalments/${instalmentId}/pay`, payload)
-    )
-
-export const reverseLoanInstalment = async (instalmentId: string) =>
-    wrap("reversing the instalment", () =>
-        httpClient.patch<ILoan>(`/loans/instalments/${instalmentId}/reverse`, {})
-    )
-
-export const deleteLoan = async (id: string) =>
-    wrap("deleting the loan", () => httpClient.delete<{ message: string }>(`/loans/${id}`))
-
-// ---------------------------------------------------------------- shareholders
-
-export const getShareholders = async () =>
-    wrap("fetching shareholders", () => httpClient.get<IShareholder[]>("/shareholders"))
-
-export const createShareholder = async (payload: Record<string, unknown>) =>
-    wrap("adding the shareholder", () => httpClient.post<IShareholder>("/shareholders", payload))
-
-export const updateShareholder = async (id: string, payload: Record<string, unknown>) =>
-    wrap("updating the shareholder", () =>
-        httpClient.patch<IShareholder>(`/shareholders/${id}`, payload)
-    )
-
-export const deleteShareholder = async (id: string) =>
-    wrap("deleting the shareholder", () =>
-        httpClient.delete<{ message: string }>(`/shareholders/${id}`)
-    )
-
-export const getDistributions = async (queryString?: string) =>
-    wrap("fetching distributions", () =>
-        httpClient.get<IShareholderDistribution[]>("/shareholders/distributions", {
-            params: toParams(queryString),
-        })
-    )
-
-export const createDistribution = async (payload: Record<string, unknown>) =>
-    wrap("recording the distribution", () =>
-        httpClient.post<IShareholderDistribution>("/shareholders/distributions", payload)
-    )
-
-export const deleteDistribution = async (id: string) =>
-    wrap("deleting the distribution", () =>
-        httpClient.delete<{ message: string }>(`/shareholders/distributions/${id}`)
     )
 
 // ---------------------------------------------------------------- chat

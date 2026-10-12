@@ -1,8 +1,8 @@
 import TransactionsBoard from "@/components/modules/Admin/Transactions/TransactionsBoard";
-import { getTransactions } from "@/services/agencio.services";
+import { getTransactions } from "@/services/finance.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import { buildQueryString, pickAllowed } from "@/lib/queryString";
-import { TRANSACTION_KINDS } from "@/types/agencio.types";
+import { TRANSACTION_KINDS } from "@/types/finance.types";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

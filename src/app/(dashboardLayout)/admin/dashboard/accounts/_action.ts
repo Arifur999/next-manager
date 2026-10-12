@@ -1,12 +1,8 @@
 "use server"
 
-import {
-    createAccount,
-    deleteAccount,
-    updateAccount,
-} from "@/services/agencio.services"
+import { createAccount, deleteAccount, updateAccount } from "@/services/finance.services"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
-import type { IAccount } from "@/types/agencio.types"
+import type { IAccount } from "@/types/finance.types"
 import { getActionErrorMessage } from "@/lib/actionError"
 
 export const createAccountAction = async (

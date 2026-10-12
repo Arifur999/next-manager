@@ -2,9 +2,9 @@
 
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { getTransactions } from "@/services/agencio.services"
+import { getTransactions } from "@/services/finance.services"
 import { buildQueryString, pickAllowed } from "@/lib/queryString"
-import { TRANSACTION_KINDS, type ITransaction, type LedgerSource } from "@/types/agencio.types"
+import { TRANSACTION_KINDS, type ITransaction, type LedgerSource } from "@/types/finance.types"
 import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { Scale } from "lucide-react"

@@ -17,8 +17,8 @@ import {
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt, formatRate, formatUsd } from "@/lib/currency"
-import { getAccounts, getRateSettings } from "@/services/agencio.services"
-import type { IAccount, IRateSettings } from "@/types/agencio.types"
+import { getAccounts, getRateSettings } from "@/services/finance.services"
+import type { IAccount, IRateSettings } from "@/types/finance.types"
 import {
   exchangeFormFields,
   exchangeFormZodSchema,

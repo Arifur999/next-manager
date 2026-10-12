@@ -1,4 +1,4 @@
-import type { IAccount } from "@/types/agencio.types";
+import type { IAccount } from "@/types/finance.types";
 import type { IClient } from "@/types/crm.types";
 import type { IProject } from "@/types/project.types";
 

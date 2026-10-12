@@ -7,8 +7,8 @@ import {
     deleteDistribution,
     deleteShareholder,
     updateShareholder,
-} from "@/services/agencio.services"
-import type { IShareholder, IShareholderDistribution } from "@/types/agencio.types"
+} from "@/services/finance.services"
+import type { IShareholder, IShareholderDistribution } from "@/types/finance.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 type Result = ApiResponse<IShareholder> | ApiErrorResponse

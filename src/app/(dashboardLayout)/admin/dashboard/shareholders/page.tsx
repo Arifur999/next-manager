@@ -1,9 +1,5 @@
 import ShareholdersBoard from "@/components/modules/Admin/Loans/ShareholdersBoard";
-import {
-  getAccounts,
-  getDistributions,
-  getShareholders,
-} from "@/services/agencio.services";
+import { getAccounts, getDistributions, getShareholders } from "@/services/finance.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

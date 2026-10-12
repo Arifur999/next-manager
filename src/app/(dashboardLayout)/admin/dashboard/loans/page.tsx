@@ -1,5 +1,5 @@
 import LoansBoard from "@/components/modules/Admin/Loans/LoansBoard";
-import { getAccounts, getLoanSummary, getLoans } from "@/services/agencio.services";
+import { getAccounts, getLoanSummary, getLoans } from "@/services/finance.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

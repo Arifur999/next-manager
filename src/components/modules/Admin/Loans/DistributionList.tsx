@@ -5,7 +5,7 @@ import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
-import type { IShareholderDistribution } from "@/types/agencio.types"
+import type { IShareholderDistribution } from "@/types/finance.types"
 import { format, parseISO } from "date-fns"
 import { HandCoins, Trash2 } from "lucide-react"
 

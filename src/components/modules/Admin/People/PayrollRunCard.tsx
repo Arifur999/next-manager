@@ -12,7 +12,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { formatBdt } from "@/lib/currency"
-import type { IAccount, IPayrollRun } from "@/types/agencio.types"
+import type { IPayrollRun } from "@/types/agencio.types"
+import type { IAccount } from "@/types/finance.types"
 import { format, parseISO } from "date-fns"
 import { Trash2 } from "lucide-react"
 import { useState } from "react"

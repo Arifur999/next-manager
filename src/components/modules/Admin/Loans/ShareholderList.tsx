@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
-import type { IShareholder } from "@/types/agencio.types"
+import type { IShareholder } from "@/types/finance.types"
 import { PieChart, Power, Trash2 } from "lucide-react"
 
 /**

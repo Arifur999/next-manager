@@ -5,8 +5,8 @@ import { exchangeColumns } from "@/components/modules/Admin/Exchange/exchangeCol
 import StatTile from "@/components/shared/StatTile"
 import DataTable from "@/components/shared/table/DataTable"
 import { formatBdt, formatRate, formatUsd } from "@/lib/currency"
-import { getExchanges } from "@/services/agencio.services"
-import type { IExchange } from "@/types/agencio.types"
+import { getExchanges } from "@/services/finance.services"
+import type { IExchange } from "@/types/finance.types"
 import { useQuery } from "@tanstack/react-query"
 import { ArrowLeftRight, TrendingDown } from "lucide-react"
 

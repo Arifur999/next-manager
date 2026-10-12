@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { formatBdt } from "@/lib/currency"
-import type { IAccount, ILoanInstalment } from "@/types/agencio.types"
+import type { IAccount, ILoanInstalment } from "@/types/finance.types"
 import { format, isBefore, parseISO, startOfToday } from "date-fns"
 import { Undo2 } from "lucide-react"
 import { useState } from "react"

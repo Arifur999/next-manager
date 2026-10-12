@@ -1,5 +1,5 @@
 import ExchangeTable from "@/components/modules/Admin/Exchange/ExchangeTable";
-import { getExchanges } from "@/services/agencio.services";
+import { getExchanges } from "@/services/finance.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

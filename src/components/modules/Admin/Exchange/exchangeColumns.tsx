@@ -1,7 +1,7 @@
 import DateCell from "@/components/shared/cell/DateCell"
 import { Badge } from "@/components/ui/badge"
 import { formatBdt, formatRate, formatUsd } from "@/lib/currency"
-import type { IExchange } from "@/types/agencio.types"
+import type { IExchange } from "@/types/finance.types"
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowRight } from "lucide-react"
 

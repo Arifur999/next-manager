@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import type { IAccount } from "@/types/agencio.types"
+import type { IAccount } from "@/types/finance.types"
 import { format } from "date-fns"
 import { useState } from "react"
 

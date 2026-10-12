@@ -20,16 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  getAccounts,
-  getDistributions,
-  getShareholders,
-} from "@/services/agencio.services"
-import type {
-  IAccount,
-  IShareholder,
-  IShareholderDistribution,
-} from "@/types/agencio.types"
+import { getAccounts, getDistributions, getShareholders } from "@/services/finance.services"
+import type { IAccount, IShareholder, IShareholderDistribution } from "@/types/finance.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { useState } from "react"

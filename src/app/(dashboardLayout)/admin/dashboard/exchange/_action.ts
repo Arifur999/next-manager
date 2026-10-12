@@ -1,8 +1,8 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { createExchange, deleteExchange } from "@/services/agencio.services"
-import type { IExchange } from "@/types/agencio.types"
+import { createExchange, deleteExchange } from "@/services/finance.services"
+import type { IExchange } from "@/types/finance.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 export const createExchangeAction = async (
