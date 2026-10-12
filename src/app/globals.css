@@ -65,9 +65,12 @@
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  /* The radix-maia primitives use 4xl for controls (buttons, inputs, badges)
+     and 2xl for surfaces (cards, popovers). Remapped so controls sit at the
+     base radius and surfaces one step softer, instead of pills everywhere. */
+  --radius-2xl: calc(var(--radius) * 1.6667);
+  --radius-3xl: calc(var(--radius) * 2);
+  --radius-4xl: var(--radius);
 }
 
 /* Direction: Ledger ink (design/direction.md)
@@ -115,8 +118,8 @@
 
   --p-green-100: oklch(0.962 0.044 157);
   --p-green-300: oklch(0.871 0.15 154);
-  --p-green-500: oklch(0.723 0.219 150);
-  --p-green-700: oklch(0.527 0.154 150);
+  --p-green-500: oklch(0.74 0.16 152);
+  --p-green-700: oklch(0.51 0.13 152);
   --p-green-800: oklch(0.448 0.119 151);
   --p-amber-100: oklch(0.962 0.059 96);
   --p-amber-300: oklch(0.879 0.169 92);
@@ -126,8 +129,8 @@
   --p-amber-950: oklch(0.279 0.077 46);
   --p-red-100: oklch(0.936 0.032 18);
   --p-red-300: oklch(0.808 0.114 20);
-  --p-red-400: oklch(0.704 0.191 22);
-  --p-red-600: oklch(0.577 0.245 27);
+  --p-red-400: oklch(0.7 0.15 22);
+  --p-red-600: oklch(0.515 0.19 27);
   --p-red-800: oklch(0.444 0.177 27);
 }
 
@@ -220,11 +223,11 @@
 
   --destructive: var(--p-red-400);
   --destructive-foreground: var(--p-night-950);
-  --destructive-subtle: oklch(0.704 0.191 22 / 15%);
+  --destructive-subtle: oklch(0.7 0.15 22 / 15%);
   --destructive-subtle-foreground: var(--p-red-300);
   --success: var(--p-green-500);
   --success-foreground: var(--p-night-950);
-  --success-subtle: oklch(0.723 0.219 150 / 15%);
+  --success-subtle: oklch(0.74 0.16 152 / 15%);
   --success-subtle-foreground: var(--p-green-300);
   --warning: var(--p-amber-400);
   --warning-foreground: var(--p-amber-950);
