@@ -31,7 +31,7 @@ Note on data: the local database holds 134 active plans left by backend E2E runs
 | Token contrast (light and dark) | `npm run qa:contrast` | pass | exit 0, every pair including band and marker |
 | Lighthouse a11y >= 0.95 | lighthouse mobile | pass | 1.00 on `/` and `/login` |
 | Lighthouse CLS <= 0.1 | lighthouse mobile | pass | 0 on both |
-| Lighthouse LCP <= 2.5 s, perf >= 0.9 (mobile, marketing) | lighthouse mobile | FAIL on `/` | `/`: LCP 2.9 to 3.6 s, perf 0.79 to 0.81, TBT 360 to 610 ms across two runs. `/login`: LCP 1.4 to 2.8 s, perf 0.94 to 0.99 |
+| Lighthouse LCP <= 2.5 s, perf >= 0.9 (mobile, marketing) | lighthouse mobile | perf pass; LCP borderline on `/` (see Performance pass) | after the performance pass (`6b7966e`), `/` 5-run median: perf 0.96, LCP 2.57 s (2.25 to 2.99), TBT 93 ms; with applied throttling LCP 2.0 s. Before (`13eea5a`, same session): perf 0.85, LCP 3.22 s, TBT 330 ms. `/login`: perf 0.96, LCP 1.68 s |
 | typecheck, lint, test, build | repo scripts | pass | 177 tests |
 
 ### 2. Rubric
@@ -63,10 +63,10 @@ Note on data: the local database holds 134 active plans left by backend E2E runs
 | 23 | (A) Targets | 4 | axe `target-size` fixed | password eye button raised to 28 px; text links in sentences rely on line height |
 | 24 | (A) Reduced motion | 5 | harness emulates reduce; Chromium check | everything visible, no split, marquee static and wrapped |
 | 25 | Responsive | 5 | 375 / 768 / 1536 parts | no sideways scroll; 1536 is contained, not stretched |
-| 26 | Performance | 3 | Lighthouse | CLS 0 and fonts self-hosted, but mobile LCP on `/` is over 2.5 s and TBT is high (framework plus GSAP chunks under 4x CPU) |
+| 26 | Performance | 4 | Lighthouse, Performance pass below | perf 0.96 and TBT 93 ms on mobile, CLS 0, GSAP off the initial bundle; simulated LCP median 2.57 s still sits on the 2.5 s line because the runs split on whether hydration lands before first paint |
 | 27 | Edge cases | 4 | long client names truncate with title, empty pricing hides itself, API-down run | dashboard states built but not screenshotted (need a session) |
 
-Average: 4.56 . Lowest: #4 = 3, #26 = 3 . (A) items 20 to 24 all >= 4: yes
+Average: 4.59 (was 4.56 before the performance pass) . Lowest: #4 = 3 . (A) items 20 to 24 all >= 4: yes
 
 ### 3. Generic-AI check
 
@@ -83,7 +83,9 @@ Signature element present and doing real work: yes, the ledger trace answers "wi
 
 ### 4. Verdict
 
-FAIL on one machine gate: Lighthouse mobile performance on `/` (perf 0.79 to 0.81, LCP 2.9 to 3.6 s). Every other gate and the rubric rules pass. Auth pages pass all gates.
+Iteration 2: FAIL on one machine gate, Lighthouse mobile performance on `/` (perf 0.79 to 0.81, LCP 2.9 to 3.6 s).
+
+After the performance pass: the performance score and TBT gates pass with margin (perf 0.96, TBT 93 ms, CLS 0). LCP passes under applied throttling (2.0 s) but the simulated 5-run median is 2.57 s, so that line stays open; see the Performance pass section for why and what is left. Every other gate and the rubric rules pass. Auth pages pass all gates.
 
 ### 5. Fix list
 
@@ -94,10 +96,36 @@ FAIL on one machine gate: Lighthouse mobile performance on `/` (perf 0.79 to 0.8
 | 3 | register, forgot-password | `link-in-text-block` | inline links underlined, `primary-strong` | fixed |
 | 4 | home 375 | invoice number broke at the hyphen | `whitespace-nowrap` | fixed |
 | 5 | home all | italic font preloaded but unused | upright face only | fixed (LCP 4.0 to 2.9-3.6 s) |
-| 6 | home mobile | LCP over 2.5 s, TBT 360 to 610 ms | candidates: load the GSAP islands after idle or on view, trim the shared client chunk (Toaster, QueryProvider on a static marketing page) | open, needs a decision on loading the marketing page without the app providers |
+| 6 | home mobile | LCP over 2.5 s, TBT 360 to 610 ms | Performance pass: lazy GSAP, providers off the landing page, toaster and error UI on demand, instanced font, content-visibility below the hero, menu panel and FAQ without Radix | perf and TBT fixed; simulated LCP median 2.57 s, open (see below) |
 | 7 | home | pricing shows E2E plans locally | none in code; clean the local plans table | environment |
 
 ### 6. Iteration log
 
 - Iteration 1: 4 serious axe findings (scroll regions, target size, two inline link blocks), 404 console entries judged correct. Fixed #1 to #4.
 - Iteration 2: all axe, overflow, h1 and focus gates pass; Lighthouse measured; italic preload removed (#5); performance gate still open (#6).
+- Performance pass (`746ecac` to `6b7966e`): see below. Harness re-run on home, login and register in both schemes: no overflow, no console errors, one h1, zero axe violations, focus probe clean; Lighthouse accessibility, best practices and SEO 1.00 on `/`.
+
+## Performance pass (mobile, `/`)
+
+Run: 2026-10-12 . builds `13eea5a` (before) and `6b7966e` (after), each `next build` into `.next-check` and `next start`, the local API up . Lighthouse 12, mobile preset, simulated throttling unless noted, 5 runs back to back, median.
+
+| Metric | Before `13eea5a` | After `6b7966e` | Gate |
+|---|---|---|---|
+| Performance | 0.85 (0.78 to 0.88) | 0.96 (0.94 to 0.98) | >= 0.90, pass |
+| LCP, simulated | 3.22 s (3.11 to 3.50) | 2.57 s (2.25 to 2.99) | < 2.5 s, borderline |
+| TBT | 330 ms (257 to 489) | 93 ms (57 to 128) | < 200 ms, pass |
+| FCP | 1.41 s | 1.38 s | |
+| CLS | 0 | 0 | <= 0.1, pass |
+| LCP, applied throttling (3 runs) | 2.17 s | 2.02 s | < 2.5 s, pass |
+| TBT, applied throttling (3 runs) | 730 ms | 209 ms | |
+| Scripts loaded during the Lighthouse run (transfer) | 255 KB in 17 requests, GSAP included | 152 KB in 11 requests | |
+| Preloaded font | 65 KB | 49 KB | |
+
+What changed, one commit each: GSAP, ScrollTrigger and SplitText load when an animated section nears the viewport or on the first scroll, key or touch (`746ecac`); TanStack Query sits in the auth and dashboard layouts, not the root (`63a5803`); the toaster loads after hydration and not on `/` (`fc8dad9`); Plex Sans instanced to weight 400 to 700 and width 87 to 100 (`31edf5c`); sections below the hero use `content-visibility: auto` (`1d69e87`); the mobile menu panel loads on demand (`654e7eb`); the FAQ uses a small disclosure list instead of Radix Accordion (`d8935ce`); the root error UI loads only when shown (`6b7966e`). Motion is unchanged: the same eight patterns run, checked in Chromium (reveals, split heading, counters, marquee and its pause button, reduced motion, keyboard focus never inside transparent content).
+
+Why LCP is still on the line. The LCP element is the hero subhead and it is static. Lighthouse's simulation counts every script that finished downloading and ran before the observed LCP. On localhost the 11 scripts arrive in about 100 ms, so whether React hydrates before or after the first paint is a race: when it lands after, the run reports 2.25 to 2.4 s; when before, 2.9 to 3.0 s. Five runs split both ways. The same page under applied throttling (real 4x CPU and slow 4G, not simulated) paints the hero at 2.0 s in every run. Production behind HTTP/2 also removes most of the per-request cost the simulation charges for 11 scripts over HTTP/1.1.
+
+Left, if the simulated number must clear 2.5 s every run: split the Tailwind output so the landing page does not load the dashboard's rules (CSS is 110 KB raw, 19 KB gzip, for the whole app), or move the theme script ahead of the stylesheet so body parsing does not wait for CSS. Both touch every route and were not done here.
+
+Harness note: `render-when-near` sections are not painted in a beyond-viewport (full page) capture. The visual-qa spec now injects `.render-when-near{content-visibility:visible!important}` before the slices; scrolled viewport captures with and without it were compared at 375 and 1280 in both schemes and match apart from sub-pixel text offsets.
+
