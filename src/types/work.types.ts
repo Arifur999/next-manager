@@ -1,4 +1,4 @@
-import type { IChatPerson } from "@/types/agencio.types";
+import type { IChatPerson } from "@/types/workspace.types";
 import type { IStatusRef, StatusCategory } from "@/types/common.types";
 import type { IProject } from "@/types/project.types";
 

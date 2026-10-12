@@ -4,7 +4,7 @@ import EmptyState from "@/components/shared/state/EmptyState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import type { IConversation } from "@/types/agencio.types"
+import type { IConversation } from "@/types/workspace.types"
 import { formatDistanceToNowStrict, parseISO } from "date-fns"
 import { MessagesSquare } from "lucide-react"
 

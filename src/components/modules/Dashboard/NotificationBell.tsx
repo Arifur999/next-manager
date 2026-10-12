@@ -10,7 +10,7 @@ import {
   getUnreadCount,
   markAllNotificationsRead,
   markNotificationRead,
-} from "@/services/agencio.services"
+} from "@/services/workspace.services"
 import type { INotification } from "@/types/platform.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { formatDistanceToNow, parseISO } from "date-fns"

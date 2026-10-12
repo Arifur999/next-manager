@@ -1,5 +1,5 @@
 import ChatBoard from "@/components/modules/Admin/Chat/ChatBoard";
-import { getConversations } from "@/services/agencio.services";
+import { getConversations } from "@/services/workspace.services";
 import { getUserInfo } from "@/services/auth.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";

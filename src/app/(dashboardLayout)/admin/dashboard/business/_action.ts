@@ -1,8 +1,8 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { updateOrganization } from "@/services/agencio.services"
-import type { IOrganization } from "@/types/agencio.types"
+import { updateOrganization } from "@/services/workspace.services"
+import type { IOrganization } from "@/types/workspace.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 export const updateOrganizationAction = async (

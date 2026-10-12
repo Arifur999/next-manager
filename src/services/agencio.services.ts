@@ -2,29 +2,13 @@
 
 import { httpClient } from "@/lib/axios/httpClient"
 import { toParams } from "@/lib/queryString"
-import type {
-    IActivityEntry,
-    IActivityFilters,
-    ICredential,
-    ICredentialAccessEntry,
-    IDashboard,
-    IKpiTarget,
-    IConversation,
-    ILoginEvent,
-    IMonthlyPoint,
-    INotificationRule,
-    IOrganization,
-    IMessage,
-    IProfitAndLoss,
-    IRevealedCredential,
-} from "@/types/agencio.types"
+import type { IDashboard, IKpiTarget, IMonthlyPoint, IProfitAndLoss } from "@/types/agencio.types"
 import type { KpiScope } from "@/types/kpi.types"
 import type {
     IAgencyInvite,
     IAnnouncement,
     ICompanyRow,
     IMySubscription,
-    INotification,
     IPlatformActivity,
     IPlatformExpense,
     IPlatformFinance,
@@ -52,35 +36,6 @@ const wrap = async <T>(label: string, run: () => Promise<T>): Promise<T> => run(
 
 export const getDashboard = async () =>
     wrap("fetching dashboard", () => httpClient.get<IDashboard>("/dashboard"))
-
-// -------------------------------------------------------------------- vault
-
-export const getCredentials = async (queryString?: string) =>
-    wrap("fetching credentials", () => httpClient.get<ICredential[]>("/vault", { params: toParams(queryString) }))
-
-export const createCredential = async (payload: Record<string, unknown>) =>
-    wrap("creating credential", () => httpClient.post<ICredential>("/vault", payload))
-
-export const updateCredential = async (id: string, payload: Record<string, unknown>) =>
-    wrap("updating credential", () => httpClient.patch<ICredential>(`/vault/${id}`, payload))
-
-/** The only call that returns a real password — and the server logs every one. */
-export const revealCredential = async (id: string) =>
-    wrap("revealing credential", () => httpClient.get<IRevealedCredential>(`/vault/${id}/reveal`))
-
-export const getCredentialAccessLog = async (id: string) =>
-    wrap("fetching access log", () => httpClient.get<ICredentialAccessEntry[]>(`/vault/${id}/access-log`))
-
-export const deleteCredential = async (id: string) =>
-    wrap("deleting credential", () => httpClient.delete<{ message: string }>(`/vault/${id}`))
-
-// ----------------------------------------------------------------- settings
-
-export const getOrganization = async () =>
-    wrap("fetching organization", () => httpClient.get<IOrganization>("/settings/organization"))
-
-export const updateOrganization = async (payload: Record<string, unknown>) =>
-    wrap("updating organization", () => httpClient.patch<IOrganization>("/settings/organization", payload))
 
 // ------------------------------------------------------------------ reports
 
@@ -174,16 +129,6 @@ export const setSubscription = async (organizationId: string, payload: Record<st
 // Activity (audit trail). Read-only by design — there is no write here because
 // there is no write endpoint.
 // ---------------------------------------------------------------------------
-
-export const getActivity = async (queryString?: string) =>
-    wrap("fetching activity", () =>
-        httpClient.get<IActivityEntry[]>("/activity", { params: toParams(queryString) })
-    )
-
-export const getActivityFilters = async () =>
-    wrap("fetching activity filters", () =>
-        httpClient.get<IActivityFilters>("/activity/filters")
-    )
 
 export const getPlatformOverview = async () =>
     wrap("fetching platform overview", () =>
@@ -302,22 +247,6 @@ export const deleteAnnouncement = async (id: string) =>
         httpClient.delete<{ id: string }>(`/platform/announcements/${id}`)
     )
 
-export const getNotifications = async () =>
-    wrap("fetching notifications", () => httpClient.get<INotification[]>("/notifications"))
-
-export const getUnreadCount = async () =>
-    wrap("fetching the unread count", () =>
-        httpClient.get<{ unread: number }>("/notifications/unread-count")
-    )
-
-export const markNotificationRead = async (id: string) =>
-    wrap("marking it read", () => httpClient.post<{ id: string }>(`/notifications/${id}/read`, {}))
-
-export const markAllNotificationsRead = async () =>
-    wrap("marking everything read", () =>
-        httpClient.post<{ marked: number }>("/notifications/read-all", {})
-    )
-
 // ---------------------------------------------------------------------------
 // How this installation is set up
 // ---------------------------------------------------------------------------
@@ -363,26 +292,9 @@ export const revokeAgencyInvite = async (id: string) =>
 
 // ---------------------------------------------------------------------------
 // What the company notifies itself about
-// ---------------------------------------------------------------------------
-
-export const getNotificationRules = async () =>
-    wrap("fetching notification settings", () =>
-        httpClient.get<INotificationRule[]>("/notification-rules")
-    )
-
-export const setNotificationRule = async (event: string, payload: Record<string, unknown>) =>
-    wrap("saving the notification setting", () =>
-        httpClient.patch<INotificationRule>(`/notification-rules/${event}`, payload)
-    )
 
 // ---------------------------------------------------------------------------
 // Who tried to sign in
-// ---------------------------------------------------------------------------
-
-export const getLoginEvents = async (queryString?: string) =>
-    wrap("fetching the login history", () =>
-        httpClient.get<ILoginEvent[]>("/security/login-events", { params: toParams(queryString) })
-    )
 
 // ---------------------------------------------------------------------------
 // The columns on an agency's boards
@@ -392,42 +304,3 @@ export const getLoginEvents = async (queryString?: string) =>
 
 // ---------------------------------------------------------------------------
 // People: attendance, leave and payroll
-
-// ---------------------------------------------------------------- chat
-
-export const getConversations = async (queryString?: string) =>
-    wrap("fetching conversations", () =>
-        httpClient.get<IConversation[]>("/chat", { params: toParams(queryString) })
-    )
-
-export const getUnreadTotal = async () =>
-    wrap("fetching the unread count", () =>
-        httpClient.get<{ unread_count: number }>("/chat/unread")
-    )
-
-export const createConversation = async (payload: Record<string, unknown>) =>
-    wrap("starting the conversation", () =>
-        httpClient.post<{ id: string }>("/chat", payload)
-    )
-
-export const getMessages = async (id: string) =>
-    wrap("fetching messages", () => httpClient.get<IMessage[]>(`/chat/${id}/messages`))
-
-export const sendMessage = async (id: string, payload: Record<string, unknown>) =>
-    wrap("sending the message", () =>
-        httpClient.post<IMessage>(`/chat/${id}/messages`, payload)
-    )
-
-export const markConversationRead = async (id: string) =>
-    wrap("marking it read", () => httpClient.post<{ message: string }>(`/chat/${id}/read`, {}))
-
-export const addConversationMembers = async (id: string, payload: Record<string, unknown>) =>
-    wrap("adding them", () => httpClient.post<{ message: string }>(`/chat/${id}/members`, payload))
-
-export const setConversationArchived = async (id: string, archived: boolean) =>
-    wrap("archiving it", () =>
-        httpClient.post<{ message: string }>(`/chat/${id}/archive`, { archived })
-    )
-
-export const leaveConversation = async (id: string) =>
-    wrap("leaving it", () => httpClient.post<{ message: string }>(`/chat/${id}/leave`, {}))

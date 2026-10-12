@@ -6,8 +6,12 @@ import {
     deleteCredential,
     getCredentialAccessLog,
     revealCredential,
-} from "@/services/agencio.services"
-import type { ICredential, ICredentialAccessEntry, IRevealedCredential } from "@/types/agencio.types"
+} from "@/services/workspace.services"
+import type {
+    ICredential,
+    ICredentialAccessEntry,
+    IRevealedCredential,
+} from "@/types/workspace.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 export const createCredentialAction = async (

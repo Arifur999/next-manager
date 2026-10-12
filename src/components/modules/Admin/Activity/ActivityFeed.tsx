@@ -10,8 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { getActivity, getActivityFilters } from "@/services/agencio.services"
-import type { IActivityEntry, IActivityFilters } from "@/types/agencio.types"
+import { getActivity, getActivityFilters } from "@/services/workspace.services"
+import type { IActivityEntry, IActivityFilters } from "@/types/workspace.types"
 import { useQuery } from "@tanstack/react-query"
 import { format, formatDistanceToNow, isToday, isYesterday, parseISO } from "date-fns"
 import { History } from "lucide-react"

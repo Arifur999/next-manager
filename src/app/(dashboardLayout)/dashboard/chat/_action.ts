@@ -6,8 +6,8 @@ import {
     markConversationRead,
     sendMessage,
     setConversationArchived,
-} from "@/services/agencio.services"
-import type { IMessage } from "@/types/agencio.types"
+} from "@/services/workspace.services"
+import type { IMessage } from "@/types/workspace.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 type Simple = ApiResponse<{ message: string }> | ApiErrorResponse

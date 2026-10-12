@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import type { ICredential, ICredentialAccessEntry } from "@/types/agencio.types"
+import type { ICredential, ICredentialAccessEntry } from "@/types/workspace.types"
 import { useMutation } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { Check, Copy, ExternalLink, Eye, EyeOff, History, User } from "lucide-react"

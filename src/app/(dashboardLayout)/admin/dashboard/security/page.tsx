@@ -1,5 +1,5 @@
 import LoginHistory from "@/components/modules/Admin/Security/LoginHistory";
-import { getLoginEvents } from "@/services/agencio.services";
+import { getLoginEvents } from "@/services/workspace.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

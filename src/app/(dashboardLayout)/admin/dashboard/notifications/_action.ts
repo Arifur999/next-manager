@@ -1,8 +1,8 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { setNotificationRule } from "@/services/agencio.services"
-import type { INotificationRule } from "@/types/agencio.types"
+import { setNotificationRule } from "@/services/workspace.services"
+import type { INotificationRule } from "@/types/workspace.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 export const setNotificationRuleAction = async (

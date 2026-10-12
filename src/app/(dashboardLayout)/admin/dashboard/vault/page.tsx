@@ -1,5 +1,5 @@
 import VaultBoard from "@/components/modules/Admin/Vault/VaultBoard";
-import { getCredentials } from "@/services/agencio.services";
+import { getCredentials } from "@/services/workspace.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

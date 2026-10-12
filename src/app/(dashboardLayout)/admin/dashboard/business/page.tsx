@@ -1,7 +1,7 @@
 import { site } from "@/data/site"
 import BusinessProfile from "@/components/modules/Admin/Settings/BusinessProfile";
 import SubscriptionPanel from "@/components/modules/Admin/Settings/SubscriptionPanel";
-import { getOrganization } from "@/services/agencio.services";
+import { getOrganization } from "@/services/workspace.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

@@ -1,5 +1,5 @@
 import NotificationRules from "@/components/modules/Admin/Notifications/NotificationRules";
-import { getNotificationRules } from "@/services/agencio.services";
+import { getNotificationRules } from "@/services/workspace.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 
