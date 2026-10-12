@@ -1,6 +1,6 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, type QueryKey, type UseQueryOptions } from "@tanstack/react-query"
 
 /**
  * How many rows a list endpoint would return, without fetching them.
@@ -20,10 +20,9 @@ import { useQuery } from "@tanstack/react-query"
  * dash rather than a zero, because zero is an answer and showing it before one
  * is known says the business is empty when it is merely slow.
  */
-export const useCount = (
-  key: readonly unknown[],
-  fetcher: () => Promise<{ meta?: { total?: number } }>
+export const useCount = <TData extends { meta?: { total?: number } }, TKey extends QueryKey>(
+  options: UseQueryOptions<TData, Error, TData, TKey>
 ): number | undefined => {
-  const { data } = useQuery({ queryKey: key, queryFn: fetcher })
+  const { data } = useQuery(options)
   return data?.meta?.total
 }

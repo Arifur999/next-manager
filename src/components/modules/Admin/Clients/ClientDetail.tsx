@@ -8,15 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { formatBdt, formatUsd } from "@/lib/currency"
 import { getCredentials } from "@/services/workspace.services"
 import { getInvoices, getPayments } from "@/services/billing.services"
-import { getClient, getClientFinancials } from "@/services/crm.services"
-import type { ICredential } from "@/types/workspace.types"
-import type { IInvoice, IPayment } from "@/types/billing.types"
 import type { IProject } from "@/types/project.types"
-import type { IClient, IClientFinancials } from "@/types/crm.types"
+import type { IClient } from "@/types/crm.types"
 import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { ArrowDownLeft, FileText, FolderKanban, TrendingUp } from "lucide-react"
 import Link from "next/link"
+import { clientDetailQuery, clientFinancialsQuery } from "@/queries/crm.queries"
 
 /**
  * One client, and how much of them somebody may see.
@@ -35,16 +33,9 @@ const ClientDetail = ({
   clientId: string
   canSeeMoney?: boolean
 }) => {
-  const { data: clientData, isLoading } = useQuery({
-    queryKey: ["client", clientId],
-    queryFn: () => getClient(clientId),
-  })
+  const { data: clientData, isLoading } = useQuery(clientDetailQuery(clientId))
 
-  const { data: financeData } = useQuery({
-    queryKey: ["client-financials", clientId],
-    queryFn: () => getClientFinancials(clientId),
-    enabled: canSeeMoney,
-  })
+  const { data: financeData } = useQuery({ ...clientFinancialsQuery(clientId), enabled: canSeeMoney })
 
   // Payments and invoices still come back unfiltered - those two endpoints
   // filter by search text rather than client id - so they are narrowed here.
@@ -65,15 +56,15 @@ const ClientDetail = ({
   })
 
   const client = clientData?.data as (IClient & { projects?: IProject[] }) | undefined
-  const finance = financeData?.data as IClientFinancials | undefined
+  const finance = financeData?.data
 
-  const payments = ((paymentsData?.data ?? []) as IPayment[]).filter(
+  const payments = ((paymentsData?.data ?? [])).filter(
     (payment) => payment.client_id === clientId,
   )
-  const invoices = ((invoicesData?.data ?? []) as IInvoice[]).filter(
+  const invoices = ((invoicesData?.data ?? [])).filter(
     (invoice) => invoice.client_id === clientId,
   )
-  const credentials = (credentialsData?.data ?? []) as ICredential[]
+  const credentials = credentialsData?.data ?? []
 
   if (isLoading && !client) {
     return <Card className="h-64 animate-pulse bg-muted/40" />

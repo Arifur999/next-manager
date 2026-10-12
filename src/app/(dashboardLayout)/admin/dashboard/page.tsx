@@ -4,11 +4,12 @@ import DashboardOverview from "@/components/modules/Dashboard/DashboardOverview"
 import { getDashboard } from "@/services/insights.services";
 import { getTaskReport, getWorkload } from "@/services/work.services";
 import { getProjects } from "@/services/project.services";
-import { getClients } from "@/services/crm.services";
 import { getUserInfo } from "@/services/auth.services";
 import { getAllUsers } from "@/services/user.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { clientsListQuery } from "@/queries/crm.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -19,7 +20,6 @@ const AdminDashboardPage = async () => {
   // already made in this same request.
   const user = await getUserInfo();
 
-  const queryClient = new QueryClient();
 
   // Everything both halves of the page read, prefetched together.
   //
@@ -28,7 +28,7 @@ const AdminDashboardPage = async () => {
   // entry before hydration runs, hydration then declines to overwrite it, and
   // the analytical half underneath silently renders nothing. Two components
   // reading one key have to share one cache.
-  await Promise.all([
+  const prefetch = (queryClient: QueryClient) => Promise.all([
     queryClient.prefetchQuery({
       queryKey: ["dashboard"],
       queryFn: () => getDashboard(),
@@ -36,14 +36,8 @@ const AdminDashboardPage = async () => {
     }),
     queryClient.prefetchQuery({ queryKey: ["task-report"], queryFn: () => getTaskReport() }),
     queryClient.prefetchQuery({ queryKey: ["workload"], queryFn: () => getWorkload() }),
-    queryClient.prefetchQuery({
-      queryKey: ["clients", "count"],
-      queryFn: () => getClients("limit=1"),
-    }),
-    queryClient.prefetchQuery({
-      queryKey: ["clients", "count", "active"],
-      queryFn: () => getClients("status=active&limit=1"),
-    }),
+    queryClient.prefetchQuery(clientsListQuery("limit=1")),
+    queryClient.prefetchQuery(clientsListQuery("status=active&limit=1")),
     queryClient.prefetchQuery({
       queryKey: ["projects", "count"],
       queryFn: () => getProjects("limit=1"),
@@ -65,7 +59,7 @@ const AdminDashboardPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         {/* Counts first: what is there, before how it is going. The analytical
             half keeps its place underneath rather than being thrown away. */}
         <AdminOverview />
@@ -73,7 +67,7 @@ const AdminDashboardPage = async () => {
         <AgencyKpiBand />
 
         <DashboardOverview />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

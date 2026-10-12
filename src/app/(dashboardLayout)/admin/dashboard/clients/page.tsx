@@ -1,10 +1,11 @@
 import ClientsTable from "@/components/modules/Admin/Clients/ClientsTable";
-import { getClients } from "@/services/crm.services";
 import { getUserInfo } from "@/services/auth.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import { buildQueryString, pickAllowed } from "@/lib/queryString";
 import { CLIENT_STATUSES } from "@/types/crm.types";
 import type { Metadata } from "next";
+import { clientsListQuery } from "@/queries/crm.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Clients",
@@ -16,7 +17,6 @@ const ClientsPage = async ({
   searchParams: Promise<{ status?: string | string[] }>;
 }) => {
   const status = pickAllowed((await searchParams).status, CLIENT_STATUSES);
-  const queryClient = new QueryClient();
   const user = await getUserInfo();
 
   // The two the API lets add and edit a client. Operations gets neither, and
@@ -30,11 +30,7 @@ const ClientsPage = async ({
   // one frame and then corrects itself — a flash of the wrong answer.
   const query = buildQueryString({ status });
 
-  await queryClient.prefetchQuery({
-    queryKey: ["clients", query],
-    queryFn: () => getClients(query || undefined),
-    staleTime: 1000 * 30,
-  });
+  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(clientsListQuery(query));
 
   return (
     <div className="space-y-6">
@@ -49,9 +45,9 @@ const ClientsPage = async ({
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <ClientsTable canManage={canManage} canOpen={canOpen} />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

@@ -5,12 +5,12 @@ import DeleteClientDialog from "@/components/modules/Admin/Clients/DeleteClientD
 import { clientsColumns } from "@/components/modules/Admin/Clients/clientsColumns"
 import DataTable from "@/components/shared/table/DataTable"
 import { useRowActionModalState } from "@/hooks/useRowActionModalState"
-import { getClients } from "@/services/crm.services"
 import { buildQueryString, pickAllowed } from "@/lib/queryString"
 import { CLIENT_STATUSES, type IClient } from "@/types/crm.types"
 import { useQuery } from "@tanstack/react-query"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
+import { clientsListQuery } from "@/queries/crm.queries"
 
 /**
  * The client list, and its four sidebar entries.
@@ -57,12 +57,9 @@ const ClientsTable = ({
   // Same builder and key order as the page's prefetch, so the keys match.
   const query = buildQueryString({ search, status })
 
-  const { data, isLoading, isFetching } = useQuery({
-    queryKey: ["clients", query],
-    queryFn: () => getClients(query || undefined),
-  })
+  const { data, isLoading, isFetching } = useQuery(clientsListQuery(query))
 
-  const clients = (data?.data ?? []) as IClient[]
+  const clients = data?.data ?? []
 
   return (
     <>

@@ -16,14 +16,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { getLeadSources } from "@/services/crm.services"
-import type { ILeadSource, LeadStage } from "@/types/crm.types"
+import type { LeadStage } from "@/types/crm.types"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
 import { z } from "zod"
+import { leadSourcesQuery } from "@/queries/crm.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 const leadFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -51,15 +52,11 @@ const CreateLeadModal = () => {
   const [open, setOpen] = useState(false)
   const queryClient = useQueryClient()
 
-  const { data: sourcesData } = useQuery({
-    queryKey: ["lead-sources"],
-    queryFn: () => getLeadSources(),
-    enabled: open,
-  })
+  const { data: sourcesData } = useQuery({ ...leadSourcesQuery(), enabled: open })
 
   // Retired marketplaces stay out of the picker but keep their history on the
   // leads that already point at them.
-  const activeSources = ((sourcesData?.data ?? []) as ILeadSource[]).filter(
+  const activeSources = ((sourcesData?.data ?? [])).filter(
     (source) => source.is_active,
   )
 
@@ -97,7 +94,7 @@ const CreateLeadModal = () => {
       toast.success("Lead added")
       setOpen(false)
       form.reset()
-      void queryClient.invalidateQueries({ queryKey: ["leads"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.leads.all })
     },
   })
 

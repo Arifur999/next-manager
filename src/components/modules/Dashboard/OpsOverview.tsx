@@ -8,7 +8,6 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { getTasks } from "@/services/work.services"
 import { getProjects } from "@/services/project.services"
-import type { ITask } from "@/types/work.types"
 import { useQuery } from "@tanstack/react-query"
 import { AlertTriangle, CalendarCheck, CheckCircle2, FolderKanban, ListChecks } from "lucide-react"
 import Link from "next/link"
@@ -25,17 +24,11 @@ import Link from "next/link"
  * query does not say "mine" is how a scope quietly stops being one.
  */
 const OpsOverview = () => {
-  const mine = useCount(["tasks", "count", "mine"], () => getTasks("mine=true&limit=1"))
-  const today = useCount(["tasks", "count", "today"], () =>
-    getTasks("mine=true&due=today&limit=1")
-  )
-  const overdue = useCount(["tasks", "count", "overdue"], () =>
-    getTasks("mine=true&overdue=true&limit=1")
-  )
-  const done = useCount(["tasks", "count", "done"], () =>
-    getTasks("mine=true&completed=true&limit=1")
-  )
-  const projects = useCount(["projects", "count", "mine"], () => getProjects("mine=true&limit=1"))
+  const mine = useCount({ queryKey: ["tasks", "count", "mine"], queryFn: () => getTasks("mine=true&limit=1") })
+  const today = useCount({ queryKey: ["tasks", "count", "today"], queryFn: () => getTasks("mine=true&due=today&limit=1") })
+  const overdue = useCount({ queryKey: ["tasks", "count", "overdue"], queryFn: () => getTasks("mine=true&overdue=true&limit=1") })
+  const done = useCount({ queryKey: ["tasks", "count", "done"], queryFn: () => getTasks("mine=true&completed=true&limit=1") })
+  const projects = useCount({ queryKey: ["projects", "count", "mine"], queryFn: () => getProjects("mine=true&limit=1") })
 
   // Today's work itself, not a count of it: this is the list somebody actually
   // works from, and the number above only tells them how long it is.
@@ -43,7 +36,7 @@ const OpsOverview = () => {
     queryKey: ["tasks", "mine=true&due=today"],
     queryFn: () => getTasks("mine=true&due=today"),
   })
-  const todaysWork = (todayData?.data ?? []) as ITask[]
+  const todaysWork = todayData?.data ?? []
 
   return (
     <div className="space-y-6">

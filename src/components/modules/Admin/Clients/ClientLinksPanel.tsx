@@ -9,12 +9,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { getClientLinks } from "@/services/crm.services"
-import type { IClientLink } from "@/types/crm.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ExternalLink, FolderOpen, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { clientLinksListQuery } from "@/queries/crm.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * Where this client's work actually lives.
@@ -44,15 +44,12 @@ const ClientLinksPanel = ({ clientId }: { clientId: string }) => {
   const [label, setLabel] = useState("")
   const [url, setUrl] = useState("")
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["client-links", clientId],
-    queryFn: () => getClientLinks(`client_id=${clientId}`),
-  })
+  const { data, isLoading } = useQuery(clientLinksListQuery(`client_id=${clientId}`))
 
-  const links = (data?.data ?? []) as IClientLink[]
+  const links = data?.data ?? []
 
   const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: ["client-links", clientId] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.clientLinks.all })
   }
 
   const { mutate: add, isPending } = useMutation({

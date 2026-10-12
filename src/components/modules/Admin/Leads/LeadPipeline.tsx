@@ -6,20 +6,17 @@ import LeadCard from "@/components/modules/Admin/Leads/LeadCard"
 import StatTile from "@/components/shared/StatTile"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatUsd } from "@/lib/currency"
-import { getLeadPipeline } from "@/services/crm.services"
-import type { ILeadPipeline, LeadStage } from "@/types/crm.types"
+import type { LeadStage } from "@/types/crm.types"
 import { useQuery } from "@tanstack/react-query"
 import { Target, TrendingUp } from "lucide-react"
+import { leadPipelineQuery } from "@/queries/crm.queries"
 
 // Only the open stages get a column. Won and lost are outcomes, not places work
 // sits, and giving them columns would make the board grow forever.
 const LeadPipeline = () => {
-  const { data, isLoading } = useQuery({
-    queryKey: ["leads"],
-    queryFn: () => getLeadPipeline(),
-  })
+  const { data, isLoading } = useQuery(leadPipelineQuery())
 
-  const pipeline = data?.data as ILeadPipeline | undefined
+  const pipeline = data?.data
   const byStage = (stage: LeadStage) =>
     pipeline?.stages.find((entry) => entry.stage === stage)?.leads ?? []
 

@@ -15,6 +15,7 @@ import type { IClient } from "@/types/crm.types"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { queryKeys } from "@/lib/queryKeys"
 
 type DeleteClientDialogProps = {
   open: boolean
@@ -46,7 +47,7 @@ const DeleteClientDialog = ({ open, onOpenChange, client }: DeleteClientDialogPr
     toast.success(result.message || "Client deleted successfully")
     onOpenChange(false)
 
-    void queryClient.invalidateQueries({ queryKey: ["clients"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.clients.all })
     router.refresh()
   }
 

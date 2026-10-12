@@ -6,10 +6,7 @@ import { formatBdt, formatUsd } from "@/lib/currency"
 import { getDashboard } from "@/services/insights.services"
 import { getTaskReport, getWorkload } from "@/services/work.services"
 import { getProjects } from "@/services/project.services"
-import { getClients } from "@/services/crm.services"
 import { getAllUsers } from "@/services/user.services"
-import type { IDashboard } from "@/types/insights.types"
-import type { ITaskReport, IWorkload } from "@/types/work.types"
 import { useQuery } from "@tanstack/react-query"
 import {
   AlertTriangle,
@@ -22,6 +19,7 @@ import {
   UsersRound,
   Wallet,
 } from "lucide-react"
+import { clientsListQuery } from "@/queries/crm.queries"
 
 /**
  * What an admin opens the morning with.
@@ -36,24 +34,22 @@ import {
  * sends you to.
  */
 const AdminOverview = () => {
-  const clients = useCount(["clients", "count"], () => getClients("limit=1"))
-  const activeClients = useCount(["clients", "count", "active"], () =>
-    getClients("status=active&limit=1")
-  )
-  const projects = useCount(["projects", "count"], () => getProjects("limit=1"))
-  const team = useCount(["users", "count"], () => getAllUsers("limit=1"))
+  const clients = useCount(clientsListQuery("limit=1"))
+  const activeClients = useCount(clientsListQuery("status=active&limit=1"))
+  const projects = useCount({ queryKey: ["projects", "count"], queryFn: () => getProjects("limit=1") })
+  const team = useCount({ queryKey: ["users", "count"], queryFn: () => getAllUsers("limit=1") })
 
   const { data: reportData } = useQuery({
     queryKey: ["task-report"],
     queryFn: () => getTaskReport(),
   })
-  const report = reportData?.data as ITaskReport | undefined
+  const report = reportData?.data
 
   const { data: dashboardData } = useQuery({ queryKey: ["dashboard"], queryFn: () => getDashboard() })
-  const money = dashboardData?.data as IDashboard | undefined
+  const money = dashboardData?.data
 
   const { data: workloadData } = useQuery({ queryKey: ["workload"], queryFn: () => getWorkload() })
-  const workload = workloadData?.data as IWorkload | undefined
+  const workload = workloadData?.data
 
   // Somebody with nothing left of their week. Read from the same rows the
   // Workload page shows, so the tile and that page cannot disagree.

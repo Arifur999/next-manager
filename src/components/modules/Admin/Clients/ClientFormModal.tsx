@@ -35,6 +35,7 @@ import { Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * One modal for create and edit.
@@ -93,7 +94,7 @@ const ClientForm = ({ client, onDone }: { client?: IClient | null; onDone: () =>
       toast.success(result.message || `Client ${isEdit ? "updated" : "created"} successfully`)
       onDone()
 
-      void queryClient.invalidateQueries({ queryKey: ["clients"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.clients.all })
       router.refresh()
     },
   })

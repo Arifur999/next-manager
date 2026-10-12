@@ -19,10 +19,6 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt, formatRate } from "@/lib/currency"
 import { getAccounts, getRateSettings } from "@/services/finance.services"
 import { getProjects } from "@/services/project.services"
-import { getClients } from "@/services/crm.services"
-import type { IAccount, IRateSettings } from "@/types/finance.types"
-import type { IProject } from "@/types/project.types"
-import type { IClient } from "@/types/crm.types"
 import { paymentFormZodSchema, toNumber, type IPaymentFormValues } from "@/zod/agencio.validation"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -30,6 +26,7 @@ import { Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
+import { clientsListQuery } from "@/queries/crm.queries"
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -50,11 +47,7 @@ const RecordPaymentModal = () => {
   const router = useRouter()
 
   // Only fetched once the dialog opens — three lists nobody needs until then.
-  const { data: clientsData } = useQuery({
-    queryKey: ["clients", ""],
-    queryFn: () => getClients(),
-    enabled: open,
-  })
+  const { data: clientsData } = useQuery({ ...clientsListQuery(), enabled: open })
   const { data: projectsData } = useQuery({
     queryKey: ["projects", ""],
     queryFn: () => getProjects(),
@@ -71,10 +64,10 @@ const RecordPaymentModal = () => {
     enabled: open,
   })
 
-  const clients = (clientsData?.data ?? []) as IClient[]
-  const projects = (projectsData?.data ?? []) as IProject[]
-  const accounts = (accountsData?.data ?? []) as IAccount[]
-  const rates = rateData?.data as IRateSettings | undefined
+  const clients = clientsData?.data ?? []
+  const projects = projectsData?.data ?? []
+  const accounts = accountsData?.data ?? []
+  const rates = rateData?.data
 
   // A payment is USD by definition, so a BDT wallet is never a valid choice.
   // Filtering here means the mistake cannot be made rather than being caught

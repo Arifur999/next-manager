@@ -6,8 +6,6 @@ import EmptyState from "@/components/shared/state/EmptyState"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { getTaskReport, getWorkload } from "@/services/work.services"
 import { getProjects } from "@/services/project.services"
-import type { ITaskReport, IWorkload } from "@/types/work.types"
-import type { IProject } from "@/types/project.types"
 import { useQuery } from "@tanstack/react-query"
 import { format, isBefore, parseISO, startOfToday } from "date-fns"
 import { AlertTriangle, CalendarDays, CheckCircle2, FolderKanban, ListChecks, UserCheck, UsersRound } from "lucide-react"
@@ -27,27 +25,19 @@ import Link from "next/link"
  * the same one the sidebar already makes.
  */
 const PmOverview = () => {
-  const planning = useCount(["projects", "count", "planning"], () =>
-    getProjects("status=Planning&limit=1")
-  )
-  const active = useCount(["projects", "count", "active"], () =>
-    getProjects("status=Active&limit=1")
-  )
-  const review = useCount(["projects", "count", "review"], () =>
-    getProjects("status=Review&limit=1")
-  )
-  const completed = useCount(["projects", "count", "completed"], () =>
-    getProjects("status=Completed&limit=1")
-  )
+  const planning = useCount({ queryKey: ["projects", "count", "planning"], queryFn: () => getProjects("status=Planning&limit=1") })
+  const active = useCount({ queryKey: ["projects", "count", "active"], queryFn: () => getProjects("status=Active&limit=1") })
+  const review = useCount({ queryKey: ["projects", "count", "review"], queryFn: () => getProjects("status=Review&limit=1") })
+  const completed = useCount({ queryKey: ["projects", "count", "completed"], queryFn: () => getProjects("status=Completed&limit=1") })
 
   const { data: reportData } = useQuery({
     queryKey: ["task-report"],
     queryFn: () => getTaskReport(),
   })
-  const report = reportData?.data as ITaskReport | undefined
+  const report = reportData?.data
 
   const { data: workloadData } = useQuery({ queryKey: ["workload"], queryFn: () => getWorkload() })
-  const workload = workloadData?.data as IWorkload | undefined
+  const workload = workloadData?.data
 
   // Three readings of one row, from the query the Workload page uses. Somebody
   // with hours to spare, somebody near the line, somebody past it.
@@ -65,7 +55,7 @@ const PmOverview = () => {
     queryFn: () => getProjects("status=Active&limit=50"),
   })
   const today = startOfToday()
-  const deadlines = ((dueData?.data ?? []) as IProject[])
+  const deadlines = ((dueData?.data ?? []))
     .filter((project) => project.end_date)
     .sort((a, b) => parseISO(a.end_date!).getTime() - parseISO(b.end_date!).getTime())
     .slice(0, 5)

@@ -7,13 +7,11 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { getServices } from "@/services/catalog.services"
 import { getTaskReport } from "@/services/work.services"
 import { getProjects } from "@/services/project.services"
-import { getClients } from "@/services/crm.services"
-import type { ITaskReport } from "@/types/work.types"
-import type { IClient } from "@/types/crm.types"
 import { useQuery } from "@tanstack/react-query"
 import { formatDistanceToNow, parseISO } from "date-fns"
 import { FolderKanban, ListChecks, Package, UserCheck, UserPlus, Users } from "lucide-react"
 import Link from "next/link"
+import { clientsListQuery } from "@/queries/crm.queries"
 
 /**
  * What a salesperson opens the morning with.
@@ -24,35 +22,24 @@ import Link from "next/link"
  * salesperson who notices before the client does.
  */
 const SalesOverview = () => {
-  const clients = useCount(["clients", "count"], () => getClients("limit=1"))
-  const active = useCount(["clients", "count", "active"], () =>
-    getClients("status=active&limit=1")
-  )
-  const inactive = useCount(["clients", "count", "inactive"], () =>
-    getClients("status=inactive&limit=1")
-  )
-  const services = useCount(["services", "count"], () => getServices("limit=1"))
+  const clients = useCount(clientsListQuery("limit=1"))
+  const active = useCount(clientsListQuery("status=active&limit=1"))
+  const inactive = useCount(clientsListQuery("status=inactive&limit=1"))
+  const services = useCount({ queryKey: ["services", "count"], queryFn: () => getServices("limit=1") })
 
-  const planning = useCount(["projects", "count", "planning"], () =>
-    getProjects("status=Planning&limit=1")
-  )
-  const activeProjects = useCount(["projects", "count", "active"], () =>
-    getProjects("status=Active&limit=1")
-  )
+  const planning = useCount({ queryKey: ["projects", "count", "planning"], queryFn: () => getProjects("status=Planning&limit=1") })
+  const activeProjects = useCount({ queryKey: ["projects", "count", "active"], queryFn: () => getProjects("status=Active&limit=1") })
 
   const { data: reportData } = useQuery({
     queryKey: ["task-report"],
     queryFn: () => getTaskReport(),
   })
-  const report = reportData?.data as ITaskReport | undefined
+  const report = reportData?.data
 
   // The list, not just the number: "recently added" is a thing to act on, and a
   // count of it would say nothing useful.
-  const { data: recentData } = useQuery({
-    queryKey: ["clients", "recent"],
-    queryFn: () => getClients("limit=5"),
-  })
-  const recent = (recentData?.data ?? []) as IClient[]
+  const { data: recentData } = useQuery(clientsListQuery("limit=5"))
+  const recent = recentData?.data ?? []
 
   return (
     <div className="space-y-6">

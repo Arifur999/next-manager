@@ -18,15 +18,13 @@ import {
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { getProjects } from "@/services/project.services"
-import { getClients } from "@/services/crm.services"
-import type { IProject } from "@/types/project.types"
-import type { IClient } from "@/types/crm.types"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Eye, EyeOff, Plus } from "lucide-react"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
 import { z } from "zod"
+import { clientsListQuery } from "@/queries/crm.queries"
 
 const credentialFormSchema = z.object({
   label: z.string().min(1, "Label is required"),
@@ -58,19 +56,15 @@ const AddCredentialModal = () => {
   const [showPassword, setShowPassword] = useState(false)
   const queryClient = useQueryClient()
 
-  const { data: clientsData } = useQuery({
-    queryKey: ["clients", ""],
-    queryFn: () => getClients(),
-    enabled: open,
-  })
+  const { data: clientsData } = useQuery({ ...clientsListQuery(), enabled: open })
   const { data: projectsData } = useQuery({
     queryKey: ["projects", ""],
     queryFn: () => getProjects(),
     enabled: open,
   })
 
-  const clients = (clientsData?.data ?? []) as IClient[]
-  const projects = (projectsData?.data ?? []) as IProject[]
+  const clients = clientsData?.data ?? []
+  const projects = projectsData?.data ?? []
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: (values: CredentialFormValues) =>

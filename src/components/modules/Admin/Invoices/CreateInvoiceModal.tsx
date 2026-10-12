@@ -20,9 +20,6 @@ import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatUsd } from "@/lib/currency"
 import { getProjects } from "@/services/project.services"
-import { getClients } from "@/services/crm.services"
-import type { IProject } from "@/types/project.types"
-import type { IClient } from "@/types/crm.types"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus, Trash2 } from "lucide-react"
@@ -30,6 +27,7 @@ import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
 import { z } from "zod"
+import { clientsListQuery } from "@/queries/crm.queries"
 
 /**
  * Creating an invoice.
@@ -79,19 +77,15 @@ const CreateInvoiceModal = () => {
   const queryClient = useQueryClient()
   const router = useRouter()
 
-  const { data: clientsData } = useQuery({
-    queryKey: ["clients", ""],
-    queryFn: () => getClients(),
-    enabled: open,
-  })
+  const { data: clientsData } = useQuery({ ...clientsListQuery(), enabled: open })
   const { data: projectsData } = useQuery({
     queryKey: ["projects", ""],
     queryFn: () => getProjects(),
     enabled: open,
   })
 
-  const clients = (clientsData?.data ?? []) as IClient[]
-  const projects = (projectsData?.data ?? []) as IProject[]
+  const clients = clientsData?.data ?? []
+  const projects = projectsData?.data ?? []
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: (values: InvoiceFormValues) =>

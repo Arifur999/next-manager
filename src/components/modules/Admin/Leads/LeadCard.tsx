@@ -16,6 +16,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { MoreHorizontal } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { queryKeys } from "@/lib/queryKeys"
 
 // Only the open stages get a column. Won and lost are outcomes, not places work
 // sits, and giving them columns would make the board grow forever.
@@ -37,7 +38,7 @@ const LeadCard = ({ lead }: { lead: ILead }) => {
       toast.error(result.message || "Failed to move lead")
       return
     }
-    void queryClient.invalidateQueries({ queryKey: ["leads"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.leads.all })
   }
 
   const handleConvert = async () => {
@@ -49,8 +50,8 @@ const LeadCard = ({ lead }: { lead: ILead }) => {
     }
 
     toast.success("Converted to a client")
-    void queryClient.invalidateQueries({ queryKey: ["leads"] })
-    void queryClient.invalidateQueries({ queryKey: ["clients"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.leads.all })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.clients.all })
     router.push("/admin/dashboard/clients")
   }
 

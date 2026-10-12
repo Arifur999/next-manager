@@ -1,20 +1,16 @@
 import LeadPipeline from "@/components/modules/Admin/Leads/LeadPipeline";
-import { getLeadPipeline } from "@/services/crm.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { leadPipelineQuery } from "@/queries/crm.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Leads",
 };
 
 const LeadsPage = async () => {
-  const queryClient = new QueryClient();
 
-  await queryClient.prefetchQuery({
-    queryKey: ["leads"],
-    queryFn: () => getLeadPipeline(),
-    staleTime: 1000 * 30,
-  });
+  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(leadPipelineQuery());
 
   return (
     <div className="space-y-6">
@@ -26,9 +22,9 @@ const LeadsPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <LeadPipeline />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };
