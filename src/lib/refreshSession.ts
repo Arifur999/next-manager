@@ -15,6 +15,7 @@
 
 import { getApiBaseUrl } from "@/env"
 import { forwardAuthCookies } from "@/lib/authCookies"
+import { errorFields, logger } from "@/lib/logger"
 
 
 // Uses fetch rather than httpClient on purpose: httpClient calls back into this
@@ -46,7 +47,7 @@ export async function getNewTokensWithRefreshToken(refreshToken: string): Promis
         // Nothing was stored, so nothing downstream should be told otherwise.
         return (await forwardAuthCookies(res)) === "set"
     } catch (error) {
-        console.error("Error refreshing token:", error)
+        logger.error("Token refresh failed", errorFields(error))
         return false
     }
 }

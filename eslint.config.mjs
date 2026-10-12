@@ -5,6 +5,9 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  // Logs go through src/lib/logger.ts, which never prints tokens or raw errors.
+  { rules: { "no-console": "error" } },
+  { files: ["src/lib/logger.ts", "scripts/**"], rules: { "no-console": "off" } },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

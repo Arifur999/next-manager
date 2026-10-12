@@ -13,6 +13,7 @@ import { jwtUtils, type VerifyResult } from "./lib/jwtUtils";
 import { getRefreshPlan, type AccessState } from "./lib/refreshPlan";
 import { isTokenExpiringSoon } from "./lib/tokenUtils";
 import { getEnv } from "@/env";
+import { errorFields, logger } from "@/lib/logger";
 import { getNewTokensWithRefreshToken } from "@/lib/refreshSession";
 import { toUserRole } from "./types/user.types";
 
@@ -23,7 +24,7 @@ async function refreshTokenInProxy(refreshToken: string): Promise<boolean> {
     try {
         return await getNewTokensWithRefreshToken(refreshToken);
     } catch (error) {
-        console.error("Error refreshing token in proxy:", error);
+        logger.error("Proxy refresh failed", errorFields(error));
         return false;
     }
 }
@@ -126,7 +127,7 @@ export async function proxy(request: NextRequest) {
 
         return allow(request, requestHeaders, { refreshed });
     } catch (error) {
-        console.error("Error in proxy:", error);
+        logger.error("Proxy failed", errorFields(error));
 
         // Fail CLOSED on a protected route.
         //

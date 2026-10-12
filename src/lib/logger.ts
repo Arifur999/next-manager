@@ -37,6 +37,14 @@ const write = (level: LogLevel, message: string, fields?: LogFields) => {
   else console.log(line);
 };
 
+// For errors that are not API failures: name and code only, never the message
+// or the object, which can carry URLs, tokens or request data.
+export const errorFields = (error: unknown): LogFields => {
+  if (!(error instanceof Error)) return { name: typeof error };
+  const code = (error as Error & { code?: unknown }).code;
+  return { name: error.name, code: typeof code === "string" ? code : undefined };
+};
+
 export const logger = {
   debug: (message: string, fields?: LogFields) => write("debug", message, fields),
   info: (message: string, fields?: LogFields) => write("info", message, fields),
