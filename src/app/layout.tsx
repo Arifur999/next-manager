@@ -1,5 +1,5 @@
 import { site } from "@/data/site"
-import { Toaster } from "@/components/ui/sonner";
+import AppToaster from "@/components/shared/AppToaster";
 import type { Metadata } from "next";
 import "./globals.css";
 import ThemeProvider from "./providers/ThemeProvider";
@@ -77,7 +77,7 @@ export default async function RootLayout({
         </a>
         <ThemeProvider nonce={nonce}>
           {children}
-          <Toaster position="top-right" richColors />
+          <AppToaster />
         </ThemeProvider>
       </body>
     </html>
