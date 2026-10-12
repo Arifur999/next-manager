@@ -11,7 +11,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { getPlatformInvites } from "@/services/agencio.services"
+import { getPlatformInvites } from "@/services/platform.services"
 import Link from "next/link"
 import {
   PLATFORM_PERMISSIONS,

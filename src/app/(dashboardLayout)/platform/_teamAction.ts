@@ -7,7 +7,7 @@ import {
     removePlatformAdmin,
     revokePlatformInvite,
     setAdminPermissions,
-} from "@/services/agencio.services"
+} from "@/services/platform.services"
 import type { IPlatformAdmin, IPlatformInvite } from "@/types/platform.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 

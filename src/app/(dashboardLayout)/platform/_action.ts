@@ -1,7 +1,12 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { createCompany, createPlan, setSubscription, updatePlan } from "@/services/agencio.services"
+import {
+    createCompany,
+    createPlan,
+    setSubscription,
+    updatePlan,
+} from "@/services/platform.services"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 import type { IPlan, ISubscription } from "@/types/platform.types"
 

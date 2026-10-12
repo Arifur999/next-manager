@@ -1,7 +1,7 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { createPlatformExpense, deletePlatformExpense } from "@/services/agencio.services"
+import { createPlatformExpense, deletePlatformExpense } from "@/services/platform.services"
 import type { IPlatformExpense } from "@/types/platform.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 

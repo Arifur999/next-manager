@@ -1,7 +1,7 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { createAgencyInvite, revokeAgencyInvite } from "@/services/agencio.services"
+import { createAgencyInvite, revokeAgencyInvite } from "@/services/platform.services"
 import type { IAgencyInvite } from "@/types/platform.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 

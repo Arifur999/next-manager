@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { getAgencyInvites, getPlans } from "@/services/agencio.services"
+import { getAgencyInvites, getPlans } from "@/services/platform.services"
 import type { IAgencyInvite, IPlan } from "@/types/platform.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { format, isPast, parseISO } from "date-fns"

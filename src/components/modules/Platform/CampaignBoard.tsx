@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { getAnnouncements } from "@/services/agencio.services"
+import { getAnnouncements } from "@/services/platform.services"
 import type { IAnnouncement } from "@/types/platform.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"

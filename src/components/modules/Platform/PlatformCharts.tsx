@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { getPlatformTrend } from "@/services/agencio.services"
+import { getPlatformTrend } from "@/services/platform.services"
 import type { IPlatformTrend } from "@/types/platform.types"
 import { useQuery } from "@tanstack/react-query"
 import { format, parse, parseISO } from "date-fns"

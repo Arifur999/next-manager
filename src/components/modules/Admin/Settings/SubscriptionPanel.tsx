@@ -2,7 +2,7 @@
 
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { getMySubscription } from "@/services/agencio.services"
+import { getMySubscription } from "@/services/platform.services"
 import type { IMySubscription, SubscriptionStatus } from "@/types/platform.types"
 import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"

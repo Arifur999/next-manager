@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { getPlatformActivity } from "@/services/agencio.services"
+import { getPlatformActivity } from "@/services/platform.services"
 import type { IPlatformActivity } from "@/types/platform.types"
 import { useQuery } from "@tanstack/react-query"
 import { format, formatDistanceToNow, isToday, isYesterday, parseISO } from "date-fns"

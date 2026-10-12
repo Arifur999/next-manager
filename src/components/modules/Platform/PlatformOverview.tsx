@@ -3,7 +3,7 @@
 import MetricTile, { count, usd } from "@/components/shared/kpi/MetricTile"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { getPlatformOverview } from "@/services/agencio.services"
+import { getPlatformOverview } from "@/services/platform.services"
 import type { IPlatformOverview } from "@/types/platform.types"
 import { useQuery } from "@tanstack/react-query"
 import { differenceInCalendarDays, format, parseISO } from "date-fns"

@@ -6,7 +6,7 @@ import {
     deleteAnnouncement,
     publishAnnouncement,
     updateAnnouncement,
-} from "@/services/agencio.services"
+} from "@/services/platform.services"
 import type { IAnnouncement, IPublishResult } from "@/types/platform.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 

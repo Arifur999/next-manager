@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { getPlatformSettings } from "@/services/agencio.services"
+import { getPlatformSettings } from "@/services/platform.services"
 import type { IPlatformSettings } from "@/types/platform.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { formatDistanceToNow, parseISO } from "date-fns"

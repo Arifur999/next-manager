@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { getPlatformAdmins } from "@/services/agencio.services"
+import { getPlatformAdmins } from "@/services/platform.services"
 import {
   PLATFORM_PERMISSIONS,
   PLATFORM_PERMISSION_INFO,

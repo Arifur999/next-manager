@@ -1,7 +1,7 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { updatePlatformSettings } from "@/services/agencio.services"
+import { updatePlatformSettings } from "@/services/platform.services"
 import type { IPlatformSettings } from "@/types/platform.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
