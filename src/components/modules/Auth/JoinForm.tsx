@@ -112,7 +112,7 @@ const JoinForm = ({ token, invite }: { token: string; invite: IInvitePreview | n
           <CardContent className="text-center text-sm text-muted-foreground">
             <p>
               Once approved, sign in at{" "}
-              <Link href="/login" className="text-primary underline-offset-4 hover:underline">
+              <Link href="/login" className="text-primary-strong underline underline-offset-4 hover:decoration-2">
                 the login page
               </Link>{" "}
               with the password you just chose.

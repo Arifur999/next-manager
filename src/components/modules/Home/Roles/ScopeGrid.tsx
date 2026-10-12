@@ -13,7 +13,7 @@ const TONE: Record<PermissionScope, string> = {
 // workspace starts from.
 const ScopeGrid = () => (
   <div className="min-w-0 overflow-hidden rounded-xl border bg-card shadow-frame">
-    <div className="overflow-x-auto">
+    <div role="region" aria-label="Scope grid, scrolls sideways" tabIndex={0} className="overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring">
       <table className="w-full min-w-[34rem] text-sm font-condensed">
         <caption className="border-b bg-muted/60 px-4 py-2.5 text-left text-xs font-medium">
           Who sees how much: the default view scope per role

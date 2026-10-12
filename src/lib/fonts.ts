@@ -5,10 +5,9 @@ import localFont from "next/font/local"
 // Plex Sans is one variable file carrying weight (100 to 700) and width (75 to
 // 100), so dense tables narrow with `font-stretch` instead of a second family.
 const plexSans = localFont({
-  src: [
-    { path: "../app/fonts/IBMPlexSans-var.woff2", weight: "100 700", style: "normal" },
-    { path: "../app/fonts/IBMPlexSans-var-italic.woff2", weight: "100 700", style: "italic" },
-  ],
+  // Upright only: italic appears in one muted label, and preloading a second
+  // 76 KB file for it delayed the landing page's LCP on mobile.
+  src: [{ path: "../app/fonts/IBMPlexSans-var.woff2", weight: "100 700", style: "normal" }],
   variable: "--ff-sans",
   display: "swap",
   declarations: [{ prop: "font-stretch", value: "75% 100%" }],

@@ -15,7 +15,7 @@ const DeliveryCrop = () => (
         <span className="text-muted-foreground">Submitted, waiting for the client</span>
       </p>
     </div>
-    <div className="overflow-x-auto">
+    <div role="region" aria-label="Task board, scrolls sideways" tabIndex={0} className="overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring">
       <div className="grid min-w-[36rem] grid-cols-4 gap-3 p-3 text-xs">
         {COLUMNS.map((column) => (
           <div key={column.name} className="min-w-0 rounded-md bg-muted/60 p-2">

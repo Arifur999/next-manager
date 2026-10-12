@@ -10,7 +10,7 @@ const COLUMNS = [
 
 const PipelineCrop = () => (
   <FrameChrome title="Leads / Pipeline" label="A lead pipeline with four stages, sample data">
-    <div className="overflow-x-auto">
+    <div role="region" aria-label="Lead pipeline, scrolls sideways" tabIndex={0} className="overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring">
       <div className="grid min-w-[40rem] grid-cols-4 divide-x text-xs">
         {COLUMNS.map((column) => (
           <div key={column.stage} className="min-w-0 p-3">

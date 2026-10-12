@@ -123,7 +123,7 @@ const LoginForm = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword((previous) => !previous)}
-                    className="text-muted-foreground transition-colors hover:text-foreground"
+                    className="-mr-1.5 inline-flex size-7 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? <EyeOff aria-hidden="true" className="size-4" /> : <Eye aria-hidden="true" className="size-4" />}
@@ -152,7 +152,7 @@ const LoginForm = () => {
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Don&apos;t have an account?{" "}
-          <Button asChild variant="link" className="h-auto p-0">
+          <Button asChild variant="link" className="h-auto p-0 underline underline-offset-4">
             <Link href="/register">Create one</Link>
           </Button>
         </p>

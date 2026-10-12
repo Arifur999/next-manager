@@ -193,7 +193,7 @@ const RegisterForm = () => {
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Already have one?{" "}
-            <Link href="/login" className="text-primary underline-offset-4 hover:underline">
+            <Link href="/login" className="text-primary-strong underline underline-offset-4 hover:decoration-2">
               Sign in
             </Link>
           </p>

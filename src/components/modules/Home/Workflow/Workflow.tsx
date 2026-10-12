@@ -27,7 +27,7 @@ const Workflow = () => (
           </div>
           <div className="min-w-0 md:col-span-6 md:self-center">
             <p className="sr-only">Record left by this step:</p>
-            <ul className="flex flex-wrap overflow-hidden rounded-md border bg-card text-xs shadow-frame font-condensed">
+            <ul className="inline-flex max-w-full flex-wrap overflow-hidden rounded-md border bg-card text-xs shadow-frame font-condensed">
               {step.row.map((cell, cellIndex) => (
                 <li
                   key={cell}

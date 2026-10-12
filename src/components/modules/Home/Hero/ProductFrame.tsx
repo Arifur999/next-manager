@@ -53,7 +53,7 @@ const ProductFrame = () => (
                   {invoice.client}
                 </p>
                 <p className="font-mono text-xs text-muted-foreground">
-                  {invoice.number}
+                  <span className="whitespace-nowrap">{invoice.number}</span>
                   <span className="ml-2 font-sans whitespace-nowrap">Due {invoice.due}</span>
                 </p>
               </td>
