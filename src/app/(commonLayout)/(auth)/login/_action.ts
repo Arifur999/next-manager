@@ -23,6 +23,12 @@ export const loginAction = async (payload: {
       cache: "no-store",
     })
 
+    // nginx answers a dead upstream with an HTML 502, which is not JSON.
+    const isJson = res.headers.get("content-type")?.includes("application/json") ?? false
+    if (!isJson) {
+      return { success: false, message: "Failed to sign in" }
+    }
+
     const body = await res.json()
 
     if (!res.ok || !body?.success) {
