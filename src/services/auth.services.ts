@@ -3,7 +3,12 @@
 // would keep publishing getUserInfo, updateMe and changePassword as endpoints
 // that skip the actions wrapping them.
 
+import "server-only"
+
+import { logApiFailure } from "@/lib/apiFailure"
 import { httpClient } from "@/lib/axios/httpClient"
+import { logger } from "@/lib/logger"
+import { classifyMeResponse } from "@/lib/session"
 import { type IUser } from "@/types/user.types"
 import { cookies } from "next/headers"
 import { cache } from "react"
@@ -11,16 +16,19 @@ import { SERVER_API_BASE_URL } from "@/lib/apiBaseUrl"
 
 const BASE_API_URL = SERVER_API_BASE_URL
 
+// null means signed out (no token, or the API refused it). An outage throws,
+// so the error boundary shows instead of a redirect to /login.
 export const getUserInfo = cache(async (): Promise<IUser | null> => {
+    const cookieStore = await cookies()
+    const accessToken = cookieStore.get("accessToken")?.value
+
+    if (!accessToken) {
+        return null
+    }
+
+    let res: Response
     try {
-        const cookieStore = await cookies()
-        const accessToken = cookieStore.get("accessToken")?.value
-
-        if (!accessToken) {
-            return null
-        }
-
-        const res = await fetch(`${BASE_API_URL}/auth/me`, {
+        res = await fetch(`${BASE_API_URL}/auth/me`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -28,17 +36,22 @@ export const getUserInfo = cache(async (): Promise<IUser | null> => {
             },
             cache: "no-store",
         })
-
-        if (!res.ok) {
-            return null
-        }
-
-        const { data } = await res.json()
-        return data as IUser
     } catch (error) {
-        console.error("Error fetching user info:", error)
+        logApiFailure("GET /auth/me", error)
+        throw new Error("The API could not be reached while loading the session")
+    }
+
+    const outcome = classifyMeResponse(res.status)
+    if (outcome === "unauthenticated") {
         return null
     }
+    if (outcome === "unavailable") {
+        logger.error("GET /auth/me failed", { status: res.status })
+        throw new Error(`The API answered ${res.status} while loading the session`)
+    }
+
+    const { data } = await res.json()
+    return data as IUser
 })
 
 /**
