@@ -1,18 +1,18 @@
 import FinanceConfiguration from "@/components/modules/Admin/Settings/FinanceConfiguration";
 import { getExpenseCategories } from "@/services/spending.services";
-import { getRateSettings } from "@/services/finance.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { rateSettingsQuery } from "@/queries/finance.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Finance Configuration",
 };
 
 const FinanceConfigurationPage = async () => {
-  const queryClient = new QueryClient();
 
-  await Promise.all([
-    queryClient.prefetchQuery({ queryKey: ["rate-settings"], queryFn: () => getRateSettings() }),
+  const prefetch = (queryClient: QueryClient) => Promise.all([
+    queryClient.prefetchQuery(rateSettingsQuery()),
     queryClient.prefetchQuery({
       queryKey: ["expense-categories"],
       queryFn: () => getExpenseCategories(),
@@ -29,9 +29,9 @@ const FinanceConfigurationPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <FinanceConfiguration />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

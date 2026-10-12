@@ -14,14 +14,13 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { getPayrollRuns } from "@/services/people.services"
-import { getAccounts } from "@/services/finance.services"
-import type { IPayrollRun } from "@/types/people.types"
-import type { IAccount } from "@/types/finance.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { endOfMonth, format, startOfMonth } from "date-fns"
 import { Wallet } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { accountsQuery } from "@/queries/finance.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * A month's salaries.
@@ -37,11 +36,11 @@ const PayrollBoard = () => {
   const [month, setMonth] = useState(format(new Date(), "yyyy-MM"))
 
   const { data, isLoading } = useQuery({ queryKey: ["payroll"], queryFn: () => getPayrollRuns() })
-  const { data: accountData } = useQuery({ queryKey: ["accounts"], queryFn: () => getAccounts() })
+  const { data: accountData } = useQuery(accountsQuery())
 
-  const runs = (data?.data ?? []) as IPayrollRun[]
+  const runs = data?.data ?? []
   // Salaries are BDT, like every other team payout.
-  const accounts = ((accountData?.data ?? []) as IAccount[]).filter(
+  const accounts = ((accountData?.data ?? [])).filter(
     (account) => account.currency === "BDT" && account.is_active
   )
 
@@ -49,8 +48,8 @@ const PayrollBoard = () => {
     void queryClient.invalidateQueries({ queryKey: ["payroll"] })
     // Completing a run writes team payouts and moves the ledger.
     void queryClient.invalidateQueries({ queryKey: ["team-payouts"] })
-    void queryClient.invalidateQueries({ queryKey: ["accounts"] })
-    void queryClient.invalidateQueries({ queryKey: ["transactions"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all })
   }
 
   const { mutate: open, isPending } = useMutation({

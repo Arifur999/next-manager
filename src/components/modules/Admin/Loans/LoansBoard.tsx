@@ -13,12 +13,12 @@ import EmptyState from "@/components/shared/state/EmptyState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Card } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
-import { getAccounts, getLoanSummary, getLoans } from "@/services/finance.services"
-import type { IAccount, ILoan, ILoanSummary } from "@/types/finance.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { Landmark } from "lucide-react"
 import { toast } from "sonner"
+import { accountsQuery, loanSummaryQuery, loansListQuery } from "@/queries/finance.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * What the agency owes, and to whom.
@@ -31,26 +31,23 @@ import { toast } from "sonner"
 const LoansBoard = () => {
   const queryClient = useQueryClient()
 
-  const { data, isLoading } = useQuery({ queryKey: ["loans"], queryFn: () => getLoans() })
-  const { data: summaryData } = useQuery({
-    queryKey: ["loan-summary"],
-    queryFn: () => getLoanSummary(),
-  })
-  const { data: accountData } = useQuery({ queryKey: ["accounts"], queryFn: () => getAccounts() })
+  const { data, isLoading } = useQuery(loansListQuery())
+  const { data: summaryData } = useQuery(loanSummaryQuery())
+  const { data: accountData } = useQuery(accountsQuery())
 
-  const loans = (data?.data ?? []) as ILoan[]
-  const summary = summaryData?.data as ILoanSummary | undefined
+  const loans = data?.data ?? []
+  const summary = summaryData?.data
   // Borrowing is in BDT, like every other record that is not a client payment.
-  const accounts = ((accountData?.data ?? []) as IAccount[]).filter(
+  const accounts = ((accountData?.data ?? [])).filter(
     (account) => account.currency === "BDT" && account.is_active
   )
 
   const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: ["loans"] })
-    void queryClient.invalidateQueries({ queryKey: ["loan-summary"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.loans.all })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.loanSummary.all })
     // Every one of these moves an account and writes the ledger.
-    void queryClient.invalidateQueries({ queryKey: ["accounts"] })
-    void queryClient.invalidateQueries({ queryKey: ["transactions"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all })
   }
 
   const settle = (fallback: string) => (result: { success: boolean; message?: string }) => {

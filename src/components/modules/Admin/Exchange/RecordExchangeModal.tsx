@@ -17,8 +17,6 @@ import {
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt, formatRate, formatUsd } from "@/lib/currency"
-import { getAccounts, getRateSettings } from "@/services/finance.services"
-import type { IAccount, IRateSettings } from "@/types/finance.types"
 import {
   exchangeFormFields,
   exchangeFormZodSchema,
@@ -31,6 +29,8 @@ import { ArrowLeftRight } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
+import { accountsQuery, rateSettingsQuery } from "@/queries/finance.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -49,19 +49,11 @@ const RecordExchangeModal = () => {
   const queryClient = useQueryClient()
   const router = useRouter()
 
-  const { data: accountsData } = useQuery({
-    queryKey: ["accounts"],
-    queryFn: () => getAccounts(),
-    enabled: open,
-  })
-  const { data: rateData } = useQuery({
-    queryKey: ["rate-settings"],
-    queryFn: () => getRateSettings(),
-    enabled: open,
-  })
+  const { data: accountsData } = useQuery({ ...accountsQuery(), enabled: open })
+  const { data: rateData } = useQuery({ ...rateSettingsQuery(), enabled: open })
 
-  const accounts = (accountsData?.data ?? []) as IAccount[]
-  const rates = rateData?.data as IRateSettings | undefined
+  const accounts = accountsData?.data ?? []
+  const rates = rateData?.data
 
   const usdAccounts = accounts.filter((a) => a.currency === "USD" && a.is_active)
   const bdtAccounts = accounts.filter((a) => a.currency === "BDT" && a.is_active)
@@ -97,8 +89,8 @@ const RecordExchangeModal = () => {
       setOpen(false)
       form.reset()
 
-      void queryClient.invalidateQueries({ queryKey: ["exchanges"] })
-      void queryClient.invalidateQueries({ queryKey: ["accounts"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.exchanges.all })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] })
       router.refresh()
     },

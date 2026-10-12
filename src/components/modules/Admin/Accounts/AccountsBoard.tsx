@@ -5,11 +5,11 @@ import StatTile from "@/components/shared/StatTile"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt, formatMoney, formatUsd } from "@/lib/currency"
-import { getAccounts } from "@/services/finance.services"
 import type { IAccount } from "@/types/finance.types"
 import type { Currency } from "@/types/common.types"
 import { useQuery } from "@tanstack/react-query"
 import { Banknote, Wallet } from "lucide-react"
+import { accountsQuery } from "@/queries/finance.queries"
 
 const sumBalances = (rows: IAccount[]) => rows.reduce((running, row) => running + row.balance, 0)
 
@@ -73,12 +73,9 @@ const CurrencyColumn = ({
  * addition this app refuses to do anywhere else.
  */
 const AccountsBoard = () => {
-  const { data, isLoading } = useQuery({
-    queryKey: ["accounts"],
-    queryFn: () => getAccounts(),
-  })
+  const { data, isLoading } = useQuery(accountsQuery())
 
-  const accounts = (data?.data ?? []) as IAccount[]
+  const accounts = data?.data ?? []
   const usd = accounts.filter((account) => account.currency === "USD")
   const bdt = accounts.filter((account) => account.currency === "BDT")
 

@@ -20,12 +20,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { getAccounts, getDistributions, getShareholders } from "@/services/finance.services"
-import type { IAccount, IShareholder, IShareholderDistribution } from "@/types/finance.types"
+import type { IShareholder } from "@/types/finance.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { useState } from "react"
 import { toast } from "sonner"
+import { accountsQuery, distributionsListQuery, shareholdersQuery } from "@/queries/finance.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * Who owns the agency, and what has been paid to them.
@@ -45,19 +46,13 @@ const ShareholdersBoard = () => {
   const [accountId, setAccountId] = useState("")
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"))
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["shareholders"],
-    queryFn: () => getShareholders(),
-  })
-  const { data: distributionData, isLoading: loadingDistributions } = useQuery({
-    queryKey: ["distributions"],
-    queryFn: () => getDistributions(),
-  })
-  const { data: accountData } = useQuery({ queryKey: ["accounts"], queryFn: () => getAccounts() })
+  const { data, isLoading } = useQuery(shareholdersQuery())
+  const { data: distributionData, isLoading: loadingDistributions } = useQuery(distributionsListQuery())
+  const { data: accountData } = useQuery(accountsQuery())
 
-  const shareholders = (data?.data ?? []) as IShareholder[]
-  const distributions = (distributionData?.data ?? []) as IShareholderDistribution[]
-  const accounts = ((accountData?.data ?? []) as IAccount[]).filter(
+  const shareholders = data?.data ?? []
+  const distributions = distributionData?.data ?? []
+  const accounts = ((accountData?.data ?? [])).filter(
     (account) => account.currency === "BDT" && account.is_active
   )
   // The server counts this across active holders; reading it back rather than
@@ -66,10 +61,10 @@ const ShareholdersBoard = () => {
     typeof data?.meta?.unallocated_pct === "number" ? data.meta.unallocated_pct : null
 
   const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: ["shareholders"] })
-    void queryClient.invalidateQueries({ queryKey: ["distributions"] })
-    void queryClient.invalidateQueries({ queryKey: ["accounts"] })
-    void queryClient.invalidateQueries({ queryKey: ["transactions"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.shareholders.all })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.distributions.all })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all })
   }
 
   const settle =

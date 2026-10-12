@@ -2,13 +2,13 @@
 
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { getTransactions } from "@/services/finance.services"
 import { buildQueryString, pickAllowed } from "@/lib/queryString"
-import { TRANSACTION_KINDS, type ITransaction, type LedgerSource } from "@/types/finance.types"
+import { TRANSACTION_KINDS, type LedgerSource } from "@/types/finance.types"
 import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { Scale } from "lucide-react"
 import { useSearchParams } from "next/navigation"
+import { transactionsListQuery } from "@/queries/finance.queries"
 
 /**
  * Every movement of money, in one list.
@@ -88,12 +88,9 @@ const TransactionsBoard = () => {
 
   const query = buildQueryString({ kind })
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["transactions", query],
-    queryFn: () => getTransactions(query || undefined),
-  })
+  const { data, isLoading } = useQuery(transactionsListQuery(query))
 
-  const rows = (data?.data ?? []) as ITransaction[]
+  const rows = data?.data ?? []
   const totals = data?.meta?.totals ?? []
 
   return (

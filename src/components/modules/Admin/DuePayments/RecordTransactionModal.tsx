@@ -17,15 +17,15 @@ import {
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt } from "@/lib/currency"
-import { getAccounts } from "@/services/finance.services"
 import type { IDuePerson } from "@/types/spending.types"
-import type { IAccount } from "@/types/finance.types"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
 import { z } from "zod"
+import { accountsQuery } from "@/queries/finance.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * Informal lending, in and out.
@@ -57,13 +57,9 @@ const RecordTransactionModal = ({ people }: { people: IDuePerson[] }) => {
   const [open, setOpen] = useState(false)
   const queryClient = useQueryClient()
 
-  const { data: accountsData } = useQuery({
-    queryKey: ["accounts"],
-    queryFn: () => getAccounts(),
-    enabled: open,
-  })
+  const { data: accountsData } = useQuery({ ...accountsQuery(), enabled: open })
 
-  const bdtAccounts = ((accountsData?.data ?? []) as IAccount[]).filter(
+  const bdtAccounts = ((accountsData?.data ?? [])).filter(
     (account) => account.currency === "BDT" && account.is_active,
   )
 
@@ -99,7 +95,7 @@ const RecordTransactionModal = ({ people }: { people: IDuePerson[] }) => {
 
       void queryClient.invalidateQueries({ queryKey: ["due-people"] })
       void queryClient.invalidateQueries({ queryKey: ["due-transactions"] })
-      void queryClient.invalidateQueries({ queryKey: ["accounts"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
     },
   })
 

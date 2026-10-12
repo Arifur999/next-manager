@@ -22,7 +22,6 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt } from "@/lib/currency"
 import { getExpenseCategories } from "@/services/spending.services"
-import { getAccounts } from "@/services/finance.services"
 import { expenseFormZodSchema, toNumber, type IExpenseFormValues } from "@/zod/agencio.validation"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -31,6 +30,8 @@ import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
 import { projectsListQuery } from "@/queries/project.queries"
+import { accountsQuery } from "@/queries/finance.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -55,11 +56,7 @@ const RecordExpenseModal = () => {
     queryFn: () => getExpenseCategories(),
     enabled: open,
   })
-  const { data: accountsData } = useQuery({
-    queryKey: ["accounts"],
-    queryFn: () => getAccounts(),
-    enabled: open,
-  })
+  const { data: accountsData } = useQuery({ ...accountsQuery(), enabled: open })
   const { data: projectsData } = useQuery({ ...projectsListQuery(), enabled: open })
 
   const categories = ((categoriesData?.data ?? [])).filter((c) => c.is_active)
@@ -99,7 +96,7 @@ const RecordExpenseModal = () => {
       form.reset()
 
       void queryClient.invalidateQueries({ queryKey: ["expenses"] })
-      void queryClient.invalidateQueries({ queryKey: ["accounts"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] })
       router.refresh()
     },

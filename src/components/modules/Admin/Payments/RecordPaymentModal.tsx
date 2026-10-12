@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt, formatRate } from "@/lib/currency"
-import { getAccounts, getRateSettings } from "@/services/finance.services"
 import { paymentFormZodSchema, toNumber, type IPaymentFormValues } from "@/zod/agencio.validation"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -28,6 +27,7 @@ import { toast } from "sonner"
 import { clientsListQuery } from "@/queries/crm.queries"
 import { projectsListQuery } from "@/queries/project.queries"
 import { queryKeys } from "@/lib/queryKeys"
+import { accountsQuery, rateSettingsQuery } from "@/queries/finance.queries"
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -50,16 +50,8 @@ const RecordPaymentModal = () => {
   // Only fetched once the dialog opens — three lists nobody needs until then.
   const { data: clientsData } = useQuery({ ...clientsListQuery(), enabled: open })
   const { data: projectsData } = useQuery({ ...projectsListQuery(), enabled: open })
-  const { data: accountsData } = useQuery({
-    queryKey: ["accounts"],
-    queryFn: () => getAccounts(),
-    enabled: open,
-  })
-  const { data: rateData } = useQuery({
-    queryKey: ["rate-settings"],
-    queryFn: () => getRateSettings(),
-    enabled: open,
-  })
+  const { data: accountsData } = useQuery({ ...accountsQuery(), enabled: open })
+  const { data: rateData } = useQuery({ ...rateSettingsQuery(), enabled: open })
 
   const clients = clientsData?.data ?? []
   const projects = projectsData?.data ?? []
@@ -97,7 +89,7 @@ const RecordPaymentModal = () => {
 
       // Balances, the dashboard and any invoice this settled all move.
       void queryClient.invalidateQueries({ queryKey: queryKeys.payments.all })
-      void queryClient.invalidateQueries({ queryKey: ["accounts"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
       void queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all })
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] })
       router.refresh()

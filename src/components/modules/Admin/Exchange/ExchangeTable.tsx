@@ -5,18 +5,14 @@ import { exchangeColumns } from "@/components/modules/Admin/Exchange/exchangeCol
 import StatTile from "@/components/shared/StatTile"
 import DataTable from "@/components/shared/table/DataTable"
 import { formatBdt, formatRate, formatUsd } from "@/lib/currency"
-import { getExchanges } from "@/services/finance.services"
-import type { IExchange } from "@/types/finance.types"
 import { useQuery } from "@tanstack/react-query"
 import { ArrowLeftRight, TrendingDown } from "lucide-react"
+import { exchangesListQuery } from "@/queries/finance.queries"
 
 const ExchangeTable = () => {
-  const { data, isLoading, isFetching } = useQuery({
-    queryKey: ["exchanges"],
-    queryFn: () => getExchanges(),
-  })
+  const { data, isLoading, isFetching } = useQuery(exchangesListQuery())
 
-  const exchanges = (data?.data ?? []) as IExchange[]
+  const exchanges = data?.data ?? []
 
   const sentUsd = exchanges.reduce((running, row) => running + row.amount_usd, 0)
   const receivedBdt = exchanges.reduce((running, row) => running + row.amount_bdt, 0)

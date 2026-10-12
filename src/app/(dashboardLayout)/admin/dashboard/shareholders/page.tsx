@@ -1,19 +1,19 @@
 import ShareholdersBoard from "@/components/modules/Admin/Loans/ShareholdersBoard";
-import { getAccounts, getDistributions, getShareholders } from "@/services/finance.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { accountsQuery, distributionsListQuery, shareholdersQuery } from "@/queries/finance.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Shareholders",
 };
 
 const ShareholdersPage = async () => {
-  const queryClient = new QueryClient();
 
-  await Promise.all([
-    queryClient.prefetchQuery({ queryKey: ["shareholders"], queryFn: () => getShareholders() }),
-    queryClient.prefetchQuery({ queryKey: ["distributions"], queryFn: () => getDistributions() }),
-    queryClient.prefetchQuery({ queryKey: ["accounts"], queryFn: () => getAccounts() }),
+  const prefetch = (queryClient: QueryClient) => Promise.all([
+    queryClient.prefetchQuery(shareholdersQuery()),
+    queryClient.prefetchQuery(distributionsListQuery()),
+    queryClient.prefetchQuery(accountsQuery()),
   ]);
 
   return (
@@ -27,9 +27,9 @@ const ShareholdersPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <ShareholdersBoard />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

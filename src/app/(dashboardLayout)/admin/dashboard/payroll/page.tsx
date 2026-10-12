@@ -1,19 +1,19 @@
 import PayrollBoard from "@/components/modules/Admin/People/PayrollBoard";
 import { getPayrollRuns } from "@/services/people.services";
-import { getAccounts } from "@/services/finance.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { accountsQuery } from "@/queries/finance.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Payroll",
 };
 
 const PayrollPage = async () => {
-  const queryClient = new QueryClient();
 
-  await Promise.all([
+  const prefetch = (queryClient: QueryClient) => Promise.all([
     queryClient.prefetchQuery({ queryKey: ["payroll"], queryFn: () => getPayrollRuns() }),
-    queryClient.prefetchQuery({ queryKey: ["accounts"], queryFn: () => getAccounts() }),
+    queryClient.prefetchQuery(accountsQuery()),
   ]);
 
   return (
@@ -27,9 +27,9 @@ const PayrollPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <PayrollBoard />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

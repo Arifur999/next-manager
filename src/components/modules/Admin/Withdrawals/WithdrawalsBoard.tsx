@@ -22,9 +22,6 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt } from "@/lib/currency"
 import { getOwnerWithdrawals } from "@/services/spending.services"
-import { getAccounts } from "@/services/finance.services"
-import type { IOwnerWithdrawal } from "@/types/spending.types"
-import type { IAccount } from "@/types/finance.types"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { PiggyBank, Plus, ShieldAlert } from "lucide-react"
@@ -32,6 +29,8 @@ import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
 import { z } from "zod"
+import { accountsQuery } from "@/queries/finance.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 const withdrawalFormSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date"),
@@ -62,13 +61,9 @@ const RecordWithdrawalModal = () => {
   const queryClient = useQueryClient()
   const router = useRouter()
 
-  const { data: accountsData } = useQuery({
-    queryKey: ["accounts"],
-    queryFn: () => getAccounts(),
-    enabled: open,
-  })
+  const { data: accountsData } = useQuery({ ...accountsQuery(), enabled: open })
 
-  const accounts = (accountsData?.data ?? []) as IAccount[]
+  const accounts = accountsData?.data ?? []
   const bdtAccounts = accounts.filter((account) => account.currency === "BDT" && account.is_active)
 
   const { mutateAsync, isPending } = useMutation({
@@ -91,7 +86,7 @@ const RecordWithdrawalModal = () => {
       form.reset()
 
       void queryClient.invalidateQueries({ queryKey: ["withdrawals"] })
-      void queryClient.invalidateQueries({ queryKey: ["accounts"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] })
       router.refresh()
     },
@@ -231,7 +226,7 @@ const WithdrawalsBoard = () => {
     retry: 1,
   })
 
-  const withdrawals = (data?.data ?? []) as IOwnerWithdrawal[]
+  const withdrawals = data?.data ?? []
 
   const personal = withdrawals
     .filter((row) => row.type === "personal")

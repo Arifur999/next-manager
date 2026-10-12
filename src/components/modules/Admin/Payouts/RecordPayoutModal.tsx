@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt } from "@/lib/currency"
-import { getAccounts } from "@/services/finance.services"
 import { getAllUsers } from "@/services/user.services"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -27,6 +26,8 @@ import { useCallback, useState } from "react"
 import { toast } from "sonner"
 import { z } from "zod"
 import { projectsListQuery } from "@/queries/project.queries"
+import { accountsQuery } from "@/queries/finance.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 const payoutFormSchema = z.object({
   user_id: z.string().min(1, "Choose a team member"),
@@ -73,11 +74,7 @@ const RecordPayoutModal = () => {
     queryFn: () => getAllUsers(),
     enabled: open,
   })
-  const { data: accountsData } = useQuery({
-    queryKey: ["accounts"],
-    queryFn: () => getAccounts(),
-    enabled: open,
-  })
+  const { data: accountsData } = useQuery({ ...accountsQuery(), enabled: open })
   const { data: projectsData } = useQuery({ ...projectsListQuery(), enabled: open })
 
   const users = ((usersData?.data ?? [])).filter((user) => user.status === "active")
@@ -109,7 +106,7 @@ const RecordPayoutModal = () => {
       form.reset()
 
       void queryClient.invalidateQueries({ queryKey: ["payouts"] })
-      void queryClient.invalidateQueries({ queryKey: ["accounts"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] })
       router.refresh()
     },

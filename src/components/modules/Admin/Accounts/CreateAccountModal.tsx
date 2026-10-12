@@ -30,6 +30,7 @@ import { Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
+import { queryKeys } from "@/lib/queryKeys"
 
 const defaultValues: IAccountFormValues = {
   name: "",
@@ -83,7 +84,7 @@ const CreateAccountModal = () => {
       setOpen(false)
       form.reset()
 
-      void queryClient.invalidateQueries({ queryKey: ["accounts"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] })
       router.refresh()
     },

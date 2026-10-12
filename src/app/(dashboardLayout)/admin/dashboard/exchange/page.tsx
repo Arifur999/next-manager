@@ -1,20 +1,16 @@
 import ExchangeTable from "@/components/modules/Admin/Exchange/ExchangeTable";
-import { getExchanges } from "@/services/finance.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { exchangesListQuery } from "@/queries/finance.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Exchange",
 };
 
 const ExchangePage = async () => {
-  const queryClient = new QueryClient();
 
-  await queryClient.prefetchQuery({
-    queryKey: ["exchanges"],
-    queryFn: () => getExchanges(),
-    staleTime: 1000 * 30,
-  });
+  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(exchangesListQuery());
 
   return (
     <div className="space-y-6">
@@ -25,9 +21,9 @@ const ExchangePage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <ExchangeTable />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

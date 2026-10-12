@@ -9,13 +9,13 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { formatRate } from "@/lib/currency"
-import { getRateSettings } from "@/services/finance.services"
-import type { IRateSettings } from "@/types/finance.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { RefreshCw } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { rateSettingsQuery } from "@/queries/finance.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * The USD -> BDT rate used for REPORTING.
@@ -29,12 +29,9 @@ const ExchangeRateSettings = () => {
   const queryClient = useQueryClient()
   const [draft, setDraft] = useState("")
 
-  const { data } = useQuery({
-    queryKey: ["rate-settings"],
-    queryFn: () => getRateSettings(),
-  })
+  const { data } = useQuery(rateSettingsQuery())
 
-  const rates = data?.data as IRateSettings | undefined
+  const rates = data?.data
 
   const { mutateAsync: save, isPending: isSaving } = useMutation({
     mutationFn: (rate: number | null) => setDefaultRateAction(rate),
@@ -61,7 +58,7 @@ const ExchangeRateSettings = () => {
 
     toast.success(value === null ? "Using the market rate again" : "Default rate saved")
     setDraft("")
-    void queryClient.invalidateQueries({ queryKey: ["rate-settings"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.rateSettings.all })
   }
 
   const handleRefresh = async () => {
@@ -77,7 +74,7 @@ const ExchangeRateSettings = () => {
         ? `Fetched ${formatRate(result.data.rate)} from ${result.data.provider}`
         : "Rate refreshed",
     )
-    void queryClient.invalidateQueries({ queryKey: ["rate-settings"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.rateSettings.all })
   }
 
   return (

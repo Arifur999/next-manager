@@ -1,20 +1,16 @@
 import AccountsBoard from "@/components/modules/Admin/Accounts/AccountsBoard";
-import { getAccounts } from "@/services/finance.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { accountsQuery } from "@/queries/finance.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Accounts",
 };
 
 const AccountsPage = async () => {
-  const queryClient = new QueryClient();
 
-  await queryClient.prefetchQuery({
-    queryKey: ["accounts"],
-    queryFn: () => getAccounts(),
-    staleTime: 1000 * 30,
-  });
+  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(accountsQuery());
 
   return (
     <div className="space-y-6">
@@ -25,9 +21,9 @@ const AccountsPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <AccountsBoard />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };
