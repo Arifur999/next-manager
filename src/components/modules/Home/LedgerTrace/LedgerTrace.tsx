@@ -1,4 +1,5 @@
 import { LEDGER_TRACE_INTRO, TRACE_STEPS } from "@/data/home/ledgerTrace"
+import { FadeIn } from "@/components/motion/FadeIn"
 import { cn } from "@/lib/utils"
 import { MarkerNotes } from "../Frame/MarkerNote"
 import SectionShell from "../Shell/SectionShell"
@@ -28,29 +29,31 @@ const LedgerTrace = () => (
       tabIndex={0}
       className="relative -mx-4 mt-12 overflow-x-auto px-4 pb-4 [scrollbar-width:thin] focus-visible:outline-2 focus-visible:outline-ring sm:-mx-6 sm:px-6 lg:mx-0 lg:overflow-visible lg:px-0 lg:pb-0"
     >
-      <ol className="flex snap-x snap-mandatory gap-4 lg:grid lg:snap-none lg:grid-cols-5">
-        {TRACE_STEPS.map((step, index) => {
-          const isLast = index === TRACE_STEPS.length - 1
-          return (
-            <li key={step.id} className="w-[78%] shrink-0 snap-start sm:w-[44%] lg:w-auto">
-              <div className="flex items-center" aria-hidden="true">
-                <span className="grid size-6 shrink-0 place-items-center rounded-full border border-foreground bg-background text-[0.6875rem] font-semibold tabular-nums">
-                  {index + 1}
-                </span>
-                <span className={cn("h-px flex-1 bg-foreground/70", isLast ? "bg-transparent" : "-mr-4")} />
-              </div>
-              <h3 className="mt-4 text-title">
-                <span className="sr-only">Step {index + 1}, {step.module}: </span>
-                {step.title}
-              </h3>
-              <div className="mt-4">
-                <TraceFrame id={step.id} module={step.module} />
-              </div>
-              <p className="mt-4 text-sm">{step.caption}</p>
-            </li>
-          )
-        })}
-      </ol>
+      <FadeIn stagger={0.05} items=":scope > ol > li">
+        <ol className="flex snap-x snap-mandatory gap-4 lg:grid lg:snap-none lg:grid-cols-5">
+          {TRACE_STEPS.map((step, index) => {
+            const isLast = index === TRACE_STEPS.length - 1
+            return (
+              <li key={step.id} className="w-[78%] shrink-0 snap-start sm:w-[44%] lg:w-auto">
+                <div className="flex items-center" aria-hidden="true">
+                  <span className="grid size-6 shrink-0 place-items-center rounded-full border border-foreground bg-background text-[0.6875rem] font-semibold tabular-nums">
+                    {index + 1}
+                  </span>
+                  <span className={cn("h-px flex-1 bg-foreground/70", isLast ? "bg-transparent" : "-mr-4")} />
+                </div>
+                <h3 className="mt-4 text-title">
+                  <span className="sr-only">Step {index + 1}, {step.module}: </span>
+                  {step.title}
+                </h3>
+                <div className="mt-4">
+                  <TraceFrame id={step.id} module={step.module} />
+                </div>
+                <p className="mt-4 text-sm">{step.caption}</p>
+              </li>
+            )
+          })}
+        </ol>
+      </FadeIn>
     </div>
 
     <MarkerNotes className="mt-10 max-w-2xl" notes={NOTES} />

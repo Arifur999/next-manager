@@ -362,6 +362,14 @@
   font-stretch: 87%;
 }
 
+/* Reveal targets start hidden only when scripts run, so the page is complete
+   with JavaScript off. FadeIn and SplitReveal un-hide them on mount. */
+@media (scripting: enabled) {
+  [data-reveal] {
+    visibility: hidden;
+  }
+}
+
 /* The floor, not the whole answer: components still choose a reduced variant. */
 @media (prefers-reduced-motion: reduce) {
   *,

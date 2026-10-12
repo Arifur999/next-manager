@@ -1,5 +1,6 @@
 import type { IFeature } from "@/data/home/features"
 import { cn } from "@/lib/utils"
+import { FadeIn } from "@/components/motion/FadeIn"
 import type { ReactNode } from "react"
 
 export type FeatureLayout = "wide" | "crop-left" | "crop-right" | "stacked"
@@ -20,7 +21,9 @@ const Copy = ({ feature, className }: { feature: IFeature; className?: string })
 
 // The layouts differ on purpose, so five blocks do not read as one template
 // repeated five times.
-const FeatureBlock = ({ feature, layout, crop }: IFeatureBlockProps) => {
+const FeatureBlock = ({ feature, layout, crop: rawCrop }: IFeatureBlockProps) => {
+  const crop = <FadeIn>{rawCrop}</FadeIn>
+
   if (layout === "wide") {
     return (
       <article className="grid gap-8 lg:grid-cols-12">

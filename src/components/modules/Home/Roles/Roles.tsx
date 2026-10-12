@@ -1,4 +1,5 @@
 import { ROLE_COLUMNS, ROLES_INTRO, SECURITY_POINTS } from "@/data/home/roles"
+import { FadeIn } from "@/components/motion/FadeIn"
 import SectionShell from "../Shell/SectionShell"
 import ScopeGrid from "./ScopeGrid"
 
@@ -28,7 +29,9 @@ const Roles = () => (
 
     <div className="mt-12 grid gap-10 lg:grid-cols-12">
       <div className="min-w-0 lg:col-span-7">
-        <ScopeGrid />
+        <FadeIn>
+          <ScopeGrid />
+        </FadeIn>
       </div>
       <div className="lg:col-span-4 lg:col-start-9">
         <h3 className="text-title">Kept safe, and on the record</h3>
