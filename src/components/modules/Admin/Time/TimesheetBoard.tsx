@@ -5,12 +5,11 @@ import StatTile from "@/components/shared/StatTile"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { getTimeEntries, getTimeSummary } from "@/services/work.services"
-import type { ITimeEntry, ITimeSummary } from "@/types/work.types"
 import { useQuery } from "@tanstack/react-query"
 import { addDays, format, startOfWeek } from "date-fns"
 import { ChevronLeft, ChevronRight, Clock, Lock, TrendingUp } from "lucide-react"
 import { useState } from "react"
+import { timeEntriesListQuery, timeSummaryQuery } from "@/queries/work.queries"
 
 /**
  * One person's week.
@@ -39,17 +38,11 @@ const TimesheetBoard = ({ userId }: { userId: string }) => {
   const end = addDays(start, 6)
   const range = `from=${iso(start)}&to=${iso(end)}&user_id=${userId}`
 
-  const { data: entriesData, isLoading } = useQuery({
-    queryKey: ["time-entries", range],
-    queryFn: () => getTimeEntries(range),
-  })
-  const { data: summaryData } = useQuery({
-    queryKey: ["time-summary", range],
-    queryFn: () => getTimeSummary(range),
-  })
+  const { data: entriesData, isLoading } = useQuery(timeEntriesListQuery(range))
+  const { data: summaryData } = useQuery(timeSummaryQuery(range))
 
-  const entries = (entriesData?.data ?? []) as ITimeEntry[]
-  const summary = summaryData?.data as ITimeSummary | undefined
+  const entries = entriesData?.data ?? []
+  const summary = summaryData?.data
 
   const days = Array.from({ length: 7 }, (_, index) => addDays(start, index))
 

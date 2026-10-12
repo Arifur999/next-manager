@@ -4,12 +4,12 @@ import CountSection from "@/components/shared/dashboard/CountSection"
 import { useCount } from "@/components/shared/dashboard/useCount"
 import EmptyState from "@/components/shared/state/EmptyState"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { getTaskReport, getWorkload } from "@/services/work.services"
 import { useQuery } from "@tanstack/react-query"
 import { format, isBefore, parseISO, startOfToday } from "date-fns"
 import { AlertTriangle, CalendarDays, CheckCircle2, FolderKanban, ListChecks, UserCheck, UsersRound } from "lucide-react"
 import Link from "next/link"
 import { projectsListQuery } from "@/queries/project.queries"
+import { taskReportQuery, workloadQuery } from "@/queries/work.queries"
 
 /**
  * What a project manager opens the morning with.
@@ -30,13 +30,10 @@ const PmOverview = () => {
   const review = useCount(projectsListQuery("status=Review&limit=1"))
   const completed = useCount(projectsListQuery("status=Completed&limit=1"))
 
-  const { data: reportData } = useQuery({
-    queryKey: ["task-report"],
-    queryFn: () => getTaskReport(),
-  })
+  const { data: reportData } = useQuery(taskReportQuery())
   const report = reportData?.data
 
-  const { data: workloadData } = useQuery({ queryKey: ["workload"], queryFn: () => getWorkload() })
+  const { data: workloadData } = useQuery(workloadQuery())
   const workload = workloadData?.data
 
   // Three readings of one row, from the query the Workload page uses. Somebody

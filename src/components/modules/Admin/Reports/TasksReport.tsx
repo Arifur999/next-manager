@@ -7,10 +7,9 @@ import { STATUS_TONE } from "@/components/shared/status/statusTone"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
-import { getTaskReport } from "@/services/work.services"
-import type { ITaskReport } from "@/types/work.types"
 import { useQuery } from "@tanstack/react-query"
 import { AlertTriangle, CheckCircle2, ListChecks, UserX } from "lucide-react"
+import { taskReportQuery } from "@/queries/work.queries"
 
 /**
  * The board, added up.
@@ -23,12 +22,9 @@ import { AlertTriangle, CheckCircle2, ListChecks, UserX } from "lucide-react"
  * is doing eleven of these" is the most useful line on the page.
  */
 const TasksReport = () => {
-  const { data, isLoading } = useQuery({
-    queryKey: ["task-report"],
-    queryFn: () => getTaskReport(),
-  })
+  const { data, isLoading } = useQuery(taskReportQuery())
 
-  const report = data?.data as ITaskReport | undefined
+  const report = data?.data
 
   if (isLoading && !report) return <LoadingBlock height="h-64" rounded />
   if (!report) return null

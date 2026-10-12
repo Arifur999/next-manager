@@ -7,12 +7,11 @@ import EmptyState from "@/components/shared/state/EmptyState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { getTasks, getWorkflowStatuses } from "@/services/work.services"
-import type { ITask, IWorkflowStatus } from "@/types/work.types"
 import { useQuery } from "@tanstack/react-query"
 import { format, isBefore, startOfToday } from "date-fns"
 import { ListChecks } from "lucide-react"
 import { useSearchParams } from "next/navigation"
+import { tasksListQuery, workflowStatusesListQuery } from "@/queries/work.queries"
 
 /**
  * The task board.
@@ -57,20 +56,14 @@ const TaskBoard = ({
     .filter(Boolean)
     .join("&")
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["tasks", query],
-    queryFn: () => getTasks(query || undefined),
-  })
+  const { data, isLoading } = useQuery(tasksListQuery(query))
 
   // The columns are the agency's own now, so the board asks for them instead
   // of carrying a list of four words that used to be true.
-  const { data: statusData } = useQuery({
-    queryKey: ["workflow-statuses", "task"],
-    queryFn: () => getWorkflowStatuses("kind=task"),
-  })
+  const { data: statusData } = useQuery(workflowStatusesListQuery("kind=task"))
 
-  const tasks = (data?.data ?? []) as ITask[]
-  const statuses = ((statusData?.data ?? []) as IWorkflowStatus[]).filter(
+  const tasks = data?.data ?? []
+  const statuses = ((statusData?.data ?? [])).filter(
     // A retired column still holds work, so it is drawn when something is on
     // it - just never offered as somewhere to put anything new.
     (status) => status.is_active || tasks.some((task) => task.status.id === status.id)

@@ -1,16 +1,16 @@
 import WorkloadBoard from "@/components/modules/Admin/Team/WorkloadBoard";
-import { getWorkload } from "@/services/work.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { workloadQuery } from "@/queries/work.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Workload",
 };
 
 const WorkloadPage = async () => {
-  const queryClient = new QueryClient();
 
-  await queryClient.prefetchQuery({ queryKey: ["workload"], queryFn: () => getWorkload() });
+  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(workloadQuery());
 
   return (
     <div className="space-y-6">
@@ -23,9 +23,9 @@ const WorkloadPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <WorkloadBoard mode="load" />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

@@ -6,6 +6,7 @@ import type { ITask, IWorkflowStatus } from "@/types/work.types"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { format, isBefore, startOfToday } from "date-fns"
 import { toast } from "sonner"
+import { queryKeys } from "@/lib/queryKeys"
 
 const PRIORITY_TONE: Record<string, string> = {
   urgent: "bg-destructive/12 text-destructive",
@@ -57,7 +58,7 @@ const TaskCard = ({ task, statuses }: { task: ITask; statuses: IWorkflowStatus[]
       return
     }
 
-    void queryClient.invalidateQueries({ queryKey: ["tasks"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all })
     void queryClient.invalidateQueries({ queryKey: ["dashboard"] })
   }
 

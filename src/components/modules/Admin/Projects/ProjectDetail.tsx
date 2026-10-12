@@ -11,7 +11,6 @@ import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { formatBdt, formatPercent, formatUsd } from "@/lib/currency"
 import { getCredentials } from "@/services/workspace.services"
-import { getTasks } from "@/services/work.services"
 import type { ITask } from "@/types/work.types"
 import type { IProject } from "@/types/project.types"
 import ProjectLinksPanel from "@/components/modules/Admin/Projects/ProjectLinksPanel"
@@ -20,6 +19,7 @@ import { format } from "date-fns"
 import { ArrowDownLeft, KeyRound, Receipt, TrendingUp } from "lucide-react"
 import Link from "next/link"
 import { projectDetailQuery, projectFinancialsQuery } from "@/queries/project.queries"
+import { tasksListQuery } from "@/queries/work.queries"
 
 /**
  * One project, and how much of it somebody may see.
@@ -45,10 +45,7 @@ const ProjectDetail = ({
 
   const { data: financeData } = useQuery({ ...projectFinancialsQuery(projectId), enabled: canSeeMoney })
 
-  const { data: tasksData } = useQuery({
-    queryKey: ["tasks", `project_id=${projectId}`],
-    queryFn: () => getTasks(`project_id=${projectId}`),
-  })
+  const { data: tasksData } = useQuery(tasksListQuery(`project_id=${projectId}`))
 
   const { data: credentialsData } = useQuery({
     queryKey: ["credentials", `project_id=${projectId}`],

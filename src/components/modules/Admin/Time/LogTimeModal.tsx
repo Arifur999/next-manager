@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { getTasks } from "@/services/work.services"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
@@ -26,6 +25,8 @@ import { useCallback, useState } from "react"
 import { toast } from "sonner"
 import { z } from "zod"
 import { projectsListQuery } from "@/queries/project.queries"
+import { tasksListQuery } from "@/queries/work.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 const logTimeSchema = z.object({
   project_id: z.string().min(1, "Choose a project"),
@@ -63,11 +64,7 @@ const TaskPicker = ({
   onChange: (value: string) => void
   disabled: boolean
 }) => {
-  const { data } = useQuery({
-    queryKey: ["tasks", `project_id=${projectId}`],
-    queryFn: () => getTasks(`project_id=${projectId}`),
-    enabled: Boolean(projectId),
-  })
+  const { data } = useQuery({ ...tasksListQuery(`project_id=${projectId}`), enabled: Boolean(projectId) })
 
   const tasks = data?.data ?? []
 
@@ -128,8 +125,8 @@ const LogTimeModal = ({ defaultDate }: { defaultDate: string }) => {
       setOpen(false)
       form.reset()
 
-      void queryClient.invalidateQueries({ queryKey: ["time-entries"] })
-      void queryClient.invalidateQueries({ queryKey: ["time-summary"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.timeEntries.all })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.timeSummary.all })
     },
   })
 

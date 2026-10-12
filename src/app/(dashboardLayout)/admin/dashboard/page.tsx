@@ -2,7 +2,6 @@ import AdminOverview from "@/components/modules/Dashboard/AdminOverview";
 import AgencyKpiBand from "@/components/modules/Dashboard/AgencyKpiBand";
 import DashboardOverview from "@/components/modules/Dashboard/DashboardOverview";
 import { getDashboard } from "@/services/insights.services";
-import { getTaskReport, getWorkload } from "@/services/work.services";
 import { getUserInfo } from "@/services/auth.services";
 import { getAllUsers } from "@/services/user.services";
 import type { QueryClient } from "@tanstack/react-query";
@@ -10,6 +9,7 @@ import type { Metadata } from "next";
 import { clientsListQuery } from "@/queries/crm.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import { projectsListQuery } from "@/queries/project.queries";
+import { taskReportQuery, workloadQuery } from "@/queries/work.queries";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -34,8 +34,8 @@ const AdminDashboardPage = async () => {
       queryFn: () => getDashboard(),
       staleTime: 1000 * 30,
     }),
-    queryClient.prefetchQuery({ queryKey: ["task-report"], queryFn: () => getTaskReport() }),
-    queryClient.prefetchQuery({ queryKey: ["workload"], queryFn: () => getWorkload() }),
+    queryClient.prefetchQuery(taskReportQuery()),
+    queryClient.prefetchQuery(workloadQuery()),
     queryClient.prefetchQuery(clientsListQuery("limit=1")),
     queryClient.prefetchQuery(clientsListQuery("status=active&limit=1")),
     queryClient.prefetchQuery(projectsListQuery("limit=1")),

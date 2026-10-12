@@ -18,13 +18,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { getWorkflowStatuses } from "@/services/work.services"
-import type { IWorkflowStatus } from "@/types/work.types"
 import type { StatusCategory } from "@/types/common.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ArrowDown, ArrowUp, Plus, Power, Star, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { workflowStatusesListQuery } from "@/queries/work.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * The columns on one board, and what each of them means.
@@ -60,13 +60,10 @@ const WorkflowBoard = ({ kind }: { kind: "task" | "project" }) => {
   const [name, setName] = useState("")
   const [category, setCategory] = useState<StatusCategory>("open")
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["workflow-statuses", kind],
-    queryFn: () => getWorkflowStatuses(`kind=${kind}`),
-  })
+  const { data, isLoading } = useQuery(workflowStatusesListQuery(`kind=${kind}`))
 
-  const statuses = (data?.data ?? []) as IWorkflowStatus[]
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ["workflow-statuses"] })
+  const statuses = data?.data ?? []
+  const refresh = () => queryClient.invalidateQueries({ queryKey: queryKeys.workflowStatuses.all })
 
   const { mutate: add, isPending: isAdding } = useMutation({
     mutationFn: () => createWorkflowStatusAction({ kind, name: name.trim(), category }),

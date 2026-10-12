@@ -16,7 +16,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { getWorkflowStatuses } from "@/services/work.services"
 import { getAllUsers } from "@/services/user.services"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -25,6 +24,8 @@ import { useCallback, useState } from "react"
 import { toast } from "sonner"
 import { z } from "zod"
 import { projectsListQuery } from "@/queries/project.queries"
+import { workflowStatusesListQuery } from "@/queries/work.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 const taskFormSchema = z.object({
   project_id: z.string().min(1, "Choose a project"),
@@ -53,10 +54,7 @@ const CreateTaskModal = () => {
   const users = ((usersData?.data ?? [])).filter((user) => user.status === "active")
 
   // The agency's own columns, rather than a list of words baked in here.
-  const { data: statusData } = useQuery({
-    queryKey: ["workflow-statuses", "task"],
-    queryFn: () => getWorkflowStatuses("kind=task"),
-  })
+  const { data: statusData } = useQuery(workflowStatusesListQuery("kind=task"))
   const statuses = statusData?.data ?? []
 
   const { mutateAsync, isPending } = useMutation({
@@ -97,7 +95,7 @@ const CreateTaskModal = () => {
       setOpen(false)
       form.reset()
 
-      void queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all })
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] })
     },
   })

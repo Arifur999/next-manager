@@ -19,7 +19,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { getWorkflowStatuses } from "@/services/work.services"
 import type { IProject } from "@/types/project.types"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -30,6 +29,7 @@ import { toast } from "sonner"
 import { z } from "zod"
 import { clientsListQuery } from "@/queries/crm.queries"
 import { queryKeys } from "@/lib/queryKeys"
+import { workflowStatusesListQuery } from "@/queries/work.queries"
 
 const projectFormSchema = z.object({
   client_id: z.string().min(1, "Choose a client"),
@@ -73,10 +73,7 @@ const ProjectForm = ({ project, onDone }: { project?: IProject | null; onDone: (
   const clients = clientsData?.data ?? []
 
   // The columns this agency actually uses, rather than a list baked in here.
-  const { data: statusData } = useQuery({
-    queryKey: ["workflow-statuses", "project"],
-    queryFn: () => getWorkflowStatuses("kind=project"),
-  })
+  const { data: statusData } = useQuery(workflowStatusesListQuery("kind=project"))
   const statuses = statusData?.data ?? []
 
   const { mutateAsync, isPending } = useMutation({

@@ -1,19 +1,16 @@
 import WorkflowBoard from "@/components/modules/Admin/Workflow/WorkflowBoard";
-import { getWorkflowStatuses } from "@/services/work.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { workflowStatusesListQuery } from "@/queries/work.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Project Settings",
 };
 
 const ProjectSettingsPage = async () => {
-  const queryClient = new QueryClient();
 
-  await queryClient.prefetchQuery({
-    queryKey: ["workflow-statuses", "project"],
-    queryFn: () => getWorkflowStatuses("kind=project"),
-  });
+  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(workflowStatusesListQuery("kind=project"));
 
   return (
     <div className="space-y-6">
@@ -25,9 +22,9 @@ const ProjectSettingsPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <WorkflowBoard kind="project" />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

@@ -1,8 +1,9 @@
 import TaskBoard from "@/components/modules/Admin/Tasks/TaskBoard";
-import { getTasks, getWorkflowStatuses } from "@/services/work.services";
 import { getUserInfo } from "@/services/auth.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { tasksListQuery, workflowStatusesListQuery } from "@/queries/work.queries";
 
 export const metadata: Metadata = {
   title: "Tasks",
@@ -19,7 +20,6 @@ const TasksPage = async ({
   }>;
 }) => {
   const params = await searchParams;
-  const queryClient = new QueryClient();
 
   // Built the same way the board builds it, so the first paint is the view
   // that was asked for rather than every task followed by a correction.
@@ -31,22 +31,15 @@ const TasksPage = async ({
     .filter(Boolean)
     .join("&");
 
-  const [user] = await Promise.all([
-    getUserInfo(),
-    queryClient.prefetchQuery({
-      queryKey: ["tasks", query],
-      queryFn: () => getTasks(query || undefined),
-      staleTime: 1000 * 30,
-    }),
+  const user = await getUserInfo();
+
+  const prefetch = (queryClient: QueryClient) => Promise.all([
+    queryClient.prefetchQuery(tasksListQuery(query)),
     // The board draws its COLUMNS from these, so without them the server
     // renders a board with no columns and therefore no tasks — everything
     // appearing only once the browser has hydrated and fetched them. The list
     // and calendar views never showed it because they read tasks directly.
-    queryClient.prefetchQuery({
-      queryKey: ["workflow-statuses", "task"],
-      queryFn: () => getWorkflowStatuses("kind=task"),
-      staleTime: 1000 * 30,
-    }),
+    queryClient.prefetchQuery(workflowStatusesListQuery("kind=task")),
   ]);
 
   // The two roles that own the schedule. Sales reads this board; the API
@@ -79,9 +72,9 @@ const TasksPage = async ({
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <TaskBoard canManage={canManage} />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

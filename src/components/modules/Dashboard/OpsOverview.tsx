@@ -6,11 +6,11 @@ import EmptyState from "@/components/shared/state/EmptyState"
 import { STATUS_TONE } from "@/components/shared/status/statusTone"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
-import { getTasks } from "@/services/work.services"
 import { useQuery } from "@tanstack/react-query"
 import { AlertTriangle, CalendarCheck, CheckCircle2, FolderKanban, ListChecks } from "lucide-react"
 import Link from "next/link"
 import { projectsListQuery } from "@/queries/project.queries"
+import { tasksListQuery } from "@/queries/work.queries"
 
 /**
  * What somebody doing the work opens the morning with.
@@ -24,18 +24,15 @@ import { projectsListQuery } from "@/queries/project.queries"
  * query does not say "mine" is how a scope quietly stops being one.
  */
 const OpsOverview = () => {
-  const mine = useCount({ queryKey: ["tasks", "count", "mine"], queryFn: () => getTasks("mine=true&limit=1") })
-  const today = useCount({ queryKey: ["tasks", "count", "today"], queryFn: () => getTasks("mine=true&due=today&limit=1") })
-  const overdue = useCount({ queryKey: ["tasks", "count", "overdue"], queryFn: () => getTasks("mine=true&overdue=true&limit=1") })
-  const done = useCount({ queryKey: ["tasks", "count", "done"], queryFn: () => getTasks("mine=true&completed=true&limit=1") })
+  const mine = useCount(tasksListQuery("mine=true&limit=1"))
+  const today = useCount(tasksListQuery("mine=true&due=today&limit=1"))
+  const overdue = useCount(tasksListQuery("mine=true&overdue=true&limit=1"))
+  const done = useCount(tasksListQuery("mine=true&completed=true&limit=1"))
   const projects = useCount(projectsListQuery("mine=true&limit=1"))
 
   // Today's work itself, not a count of it: this is the list somebody actually
   // works from, and the number above only tells them how long it is.
-  const { data: todayData } = useQuery({
-    queryKey: ["tasks", "mine=true&due=today"],
-    queryFn: () => getTasks("mine=true&due=today"),
-  })
+  const { data: todayData } = useQuery(tasksListQuery("mine=true&due=today"))
   const todaysWork = todayData?.data ?? []
 
   return (

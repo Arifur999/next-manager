@@ -5,13 +5,13 @@ import { useCount } from "@/components/shared/dashboard/useCount"
 import EmptyState from "@/components/shared/state/EmptyState"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { getServices } from "@/services/catalog.services"
-import { getTaskReport } from "@/services/work.services"
 import { useQuery } from "@tanstack/react-query"
 import { formatDistanceToNow, parseISO } from "date-fns"
 import { FolderKanban, ListChecks, Package, UserCheck, UserPlus, Users } from "lucide-react"
 import Link from "next/link"
 import { clientsListQuery } from "@/queries/crm.queries"
 import { projectsListQuery } from "@/queries/project.queries"
+import { taskReportQuery } from "@/queries/work.queries"
 
 /**
  * What a salesperson opens the morning with.
@@ -30,10 +30,7 @@ const SalesOverview = () => {
   const planning = useCount(projectsListQuery("status=Planning&limit=1"))
   const activeProjects = useCount(projectsListQuery("status=Active&limit=1"))
 
-  const { data: reportData } = useQuery({
-    queryKey: ["task-report"],
-    queryFn: () => getTaskReport(),
-  })
+  const { data: reportData } = useQuery(taskReportQuery())
   const report = reportData?.data
 
   // The list, not just the number: "recently added" is a thing to act on, and a

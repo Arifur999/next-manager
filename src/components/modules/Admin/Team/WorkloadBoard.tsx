@@ -6,11 +6,10 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
-import { getWorkload } from "@/services/work.services"
-import type { IWorkload } from "@/types/work.types"
 import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { UsersRound } from "lucide-react"
+import { workloadQuery } from "@/queries/work.queries"
 
 /**
  * Who is carrying what, and what is left of them.
@@ -26,8 +25,8 @@ import { UsersRound } from "lucide-react"
  * to deserves to know which denominators were guessed.
  */
 const WorkloadBoard = ({ mode }: { mode: "load" | "free" }) => {
-  const { data, isLoading } = useQuery({ queryKey: ["workload"], queryFn: () => getWorkload() })
-  const workload = data?.data as IWorkload | undefined
+  const { data, isLoading } = useQuery(workloadQuery())
+  const workload = data?.data
   const rows = workload?.rows ?? []
 
   return (

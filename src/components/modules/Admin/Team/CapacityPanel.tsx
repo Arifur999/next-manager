@@ -5,11 +5,12 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { getCapacities } from "@/services/work.services"
 import type { ICapacityRow } from "@/types/work.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { toast } from "sonner"
+import { capacitiesQuery } from "@/queries/work.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * The two numbers every KPI divides by.
@@ -48,7 +49,7 @@ const CapacityRow = ({ row }: { row: ICapacityRow }) => {
         return
       }
       toast.success(`${row.user.full_name} updated`)
-      void queryClient.invalidateQueries({ queryKey: ["capacities"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.capacities.all })
       // Every utilization and realization figure divides by this.
       void queryClient.invalidateQueries({ queryKey: ["kpi"] })
     },
@@ -109,12 +110,9 @@ const CapacityRow = ({ row }: { row: ICapacityRow }) => {
 }
 
 const CapacityPanel = () => {
-  const { data, isLoading } = useQuery({
-    queryKey: ["capacities"],
-    queryFn: () => getCapacities(),
-  })
+  const { data, isLoading } = useQuery(capacitiesQuery())
 
-  const rows = (data?.data ?? []) as ICapacityRow[]
+  const rows = data?.data ?? []
   const unrated = rows.filter((row) => row.standard_rate_usd <= 0).length
 
   return (

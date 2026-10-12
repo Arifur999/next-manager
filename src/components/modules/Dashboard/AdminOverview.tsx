@@ -4,7 +4,6 @@ import CountSection from "@/components/shared/dashboard/CountSection"
 import { useCount } from "@/components/shared/dashboard/useCount"
 import { formatBdt, formatUsd } from "@/lib/currency"
 import { getDashboard } from "@/services/insights.services"
-import { getTaskReport, getWorkload } from "@/services/work.services"
 import { getAllUsers } from "@/services/user.services"
 import { useQuery } from "@tanstack/react-query"
 import {
@@ -20,6 +19,7 @@ import {
 } from "lucide-react"
 import { clientsListQuery } from "@/queries/crm.queries"
 import { projectsListQuery } from "@/queries/project.queries"
+import { taskReportQuery, workloadQuery } from "@/queries/work.queries"
 
 /**
  * What an admin opens the morning with.
@@ -39,16 +39,13 @@ const AdminOverview = () => {
   const projects = useCount(projectsListQuery("limit=1"))
   const team = useCount({ queryKey: ["users", "count"], queryFn: () => getAllUsers("limit=1") })
 
-  const { data: reportData } = useQuery({
-    queryKey: ["task-report"],
-    queryFn: () => getTaskReport(),
-  })
+  const { data: reportData } = useQuery(taskReportQuery())
   const report = reportData?.data
 
   const { data: dashboardData } = useQuery({ queryKey: ["dashboard"], queryFn: () => getDashboard() })
   const money = dashboardData?.data
 
-  const { data: workloadData } = useQuery({ queryKey: ["workload"], queryFn: () => getWorkload() })
+  const { data: workloadData } = useQuery(workloadQuery())
   const workload = workloadData?.data
 
   // Somebody with nothing left of their week. Read from the same rows the

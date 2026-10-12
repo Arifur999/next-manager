@@ -1,10 +1,10 @@
 import ProjectDetail from "@/components/modules/Admin/Projects/ProjectDetail";
-import { getTasks } from "@/services/work.services";
 import { getUserInfo } from "@/services/auth.services";
 import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { projectDetailQuery, projectFinancialsQuery } from "@/queries/project.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import { tasksListQuery } from "@/queries/work.queries";
 
 export const metadata: Metadata = {
   title: "Project",
@@ -28,11 +28,7 @@ const ProjectDetailPage = async ({ params }: { params: Promise<{ id: string }> }
   // all before it can paint, so serialising would just add round-trips.
   const prefetch = (queryClient: QueryClient) => Promise.all([
     queryClient.prefetchQuery(projectDetailQuery(id)),
-    queryClient.prefetchQuery({
-      queryKey: ["tasks", `project_id=${id}`],
-      queryFn: () => getTasks(`project_id=${id}`),
-      staleTime: 1000 * 30,
-    }),
+    queryClient.prefetchQuery(tasksListQuery(`project_id=${id}`)),
     ...(canSeeMoney
       ? [
           queryClient.prefetchQuery(projectFinancialsQuery(id)),

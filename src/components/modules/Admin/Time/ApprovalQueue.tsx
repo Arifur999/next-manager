@@ -9,13 +9,14 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { getTimeEntries } from "@/services/work.services"
 import type { ITimeEntry } from "@/types/work.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { addDays, format, startOfWeek } from "date-fns"
 import { ChevronLeft, ChevronRight, Clock, Undo2, UserCheck } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { timeEntriesListQuery } from "@/queries/work.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * Everybody's logged time, waiting on a second pair of eyes.
@@ -77,12 +78,9 @@ const ApprovalQueue = ({ viewerId }: { viewerId: string }) => {
   const end = addDays(start, 6)
   const query = `from=${iso(start)}&to=${iso(end)}&approved=${tab === "approved"}`
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["time-entries", query],
-    queryFn: () => getTimeEntries(query),
-  })
+  const { data, isLoading } = useQuery(timeEntriesListQuery(query))
 
-  const entries = (data?.data ?? []) as ITimeEntry[]
+  const entries = data?.data ?? []
   const groups = groupByPerson(entries)
   const totalHours = entries.reduce((running, entry) => running + entry.hours, 0)
   const billableHours = entries
@@ -90,8 +88,8 @@ const ApprovalQueue = ({ viewerId }: { viewerId: string }) => {
     .reduce((running, entry) => running + entry.hours, 0)
 
   const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: ["time-entries"] })
-    void queryClient.invalidateQueries({ queryKey: ["time-summary"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.timeEntries.all })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.timeSummary.all })
   }
 
   const { mutate: approve, isPending: isApproving } = useMutation({

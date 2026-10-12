@@ -1,7 +1,8 @@
 import TaskBoard from "@/components/modules/Admin/Tasks/TaskBoard";
-import { getTasks } from "@/services/work.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { tasksListQuery } from "@/queries/work.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "My Tasks",
@@ -18,7 +19,6 @@ const MyTasksPage = async ({
   searchParams: Promise<{ due?: string; overdue?: string; completed?: string }>;
 }) => {
   const params = await searchParams;
-  const queryClient = new QueryClient();
 
   // Built the same way the board builds it, so the first paint is the view that
   // was asked for rather than every task followed by a correction.
@@ -31,11 +31,7 @@ const MyTasksPage = async ({
     .filter(Boolean)
     .join("&");
 
-  await queryClient.prefetchQuery({
-    queryKey: ["tasks", query],
-    queryFn: () => getTasks(query),
-    staleTime: 1000 * 30,
-  });
+  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(tasksListQuery(query));
 
   const title =
     params.overdue === "true"
@@ -66,9 +62,9 @@ const MyTasksPage = async ({
         <p className="text-sm text-muted-foreground">{blurb}</p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <TaskBoard mineOnly />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

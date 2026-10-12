@@ -1,19 +1,16 @@
 import TasksReport from "@/components/modules/Admin/Reports/TasksReport";
-import { getTaskReport } from "@/services/work.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { taskReportQuery } from "@/queries/work.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Task report",
 };
 
 const TasksReportPage = async () => {
-  const queryClient = new QueryClient();
 
-  await queryClient.prefetchQuery({
-    queryKey: ["task-report"],
-    queryFn: () => getTaskReport(),
-  });
+  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(taskReportQuery());
 
   return (
     <div className="space-y-6">
@@ -27,9 +24,9 @@ const TasksReportPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <TasksReport />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };
