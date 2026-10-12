@@ -1,5 +1,5 @@
 import LeadPipeline from "@/components/modules/Admin/Leads/LeadPipeline";
-import { getLeadPipeline } from "@/services/agencio.services";
+import { getLeadPipeline } from "@/services/crm.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

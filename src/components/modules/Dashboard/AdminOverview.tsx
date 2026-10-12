@@ -3,13 +3,8 @@
 import CountSection from "@/components/shared/dashboard/CountSection"
 import { useCount } from "@/components/shared/dashboard/useCount"
 import { formatBdt, formatUsd } from "@/lib/currency"
-import {
-  getClients,
-  getDashboard,
-  getProjects,
-  getTaskReport,
-  getWorkload,
-} from "@/services/agencio.services"
+import { getDashboard, getProjects, getTaskReport, getWorkload } from "@/services/agencio.services"
+import { getClients } from "@/services/crm.services"
 import { getAllUsers } from "@/services/user.services"
 import type { IDashboard, ITaskReport, IWorkload } from "@/types/agencio.types"
 import { useQuery } from "@tanstack/react-query"

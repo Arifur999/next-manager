@@ -1,8 +1,8 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { convertLead, createLead, deleteLead, updateLead } from "@/services/agencio.services"
-import type { IClient } from "@/types/agencio.types"
+import { convertLead, createLead, deleteLead, updateLead } from "@/services/crm.services"
+import type { IClient } from "@/types/crm.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 export const createLeadAction = async (

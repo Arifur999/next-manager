@@ -1,4 +1,4 @@
-import type { LeadStage } from "@/types/agencio.types"
+import type { LeadStage } from "@/types/crm.types"
 
 /**
  * The stages a lead moves through, in one place.

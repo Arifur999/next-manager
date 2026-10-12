@@ -1,4 +1,4 @@
-import type { StatusCategory } from "@/types/agencio.types"
+import type { StatusCategory } from "@/types/common.types"
 
 /**
  * How a status looks, decided by what it MEANS rather than what it is called.

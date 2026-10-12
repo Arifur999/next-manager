@@ -1,6 +1,6 @@
 import DateCell from "@/components/shared/cell/DateCell"
 import StatusBadgeCell from "@/components/shared/cell/StatusBadgeCell"
-import type { IClient } from "@/types/agencio.types"
+import type { IClient } from "@/types/crm.types"
 import { ColumnDef } from "@tanstack/react-table"
 
 export const clientsColumns: ColumnDef<IClient>[] = [

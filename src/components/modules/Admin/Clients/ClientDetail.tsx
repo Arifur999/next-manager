@@ -6,21 +6,10 @@ import { Card } from "@/components/ui/card"
 import ClientLinksPanel from "@/components/modules/Admin/Clients/ClientLinksPanel"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { formatBdt, formatUsd } from "@/lib/currency"
-import {
-  getClient,
-  getClientFinancials,
-  getCredentials,
-  getInvoices,
-  getPayments,
-} from "@/services/agencio.services"
-import type {
-  IClient,
-  IClientFinancials,
-  ICredential,
-  IInvoice,
-  IPayment,
-  IProject,
-} from "@/types/agencio.types"
+import { getCredentials, getInvoices, getPayments } from "@/services/agencio.services"
+import { getClient, getClientFinancials } from "@/services/crm.services"
+import type { ICredential, IInvoice, IPayment, IProject } from "@/types/agencio.types"
+import type { IClient, IClientFinancials } from "@/types/crm.types"
 import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { ArrowDownLeft, FileText, FolderKanban, TrendingUp } from "lucide-react"

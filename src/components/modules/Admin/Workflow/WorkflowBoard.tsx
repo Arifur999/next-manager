@@ -19,7 +19,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { getWorkflowStatuses } from "@/services/agencio.services"
-import type { IWorkflowStatus, StatusCategory } from "@/types/agencio.types"
+import type { IWorkflowStatus } from "@/types/agencio.types"
+import type { StatusCategory } from "@/types/common.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ArrowDown, ArrowUp, Plus, Power, Star, Trash2 } from "lucide-react"
 import { useState } from "react"

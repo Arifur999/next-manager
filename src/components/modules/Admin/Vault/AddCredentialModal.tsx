@@ -17,8 +17,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { getClients, getProjects } from "@/services/agencio.services"
-import type { IClient, IProject } from "@/types/agencio.types"
+import { getProjects } from "@/services/agencio.services"
+import { getClients } from "@/services/crm.services"
+import type { IProject } from "@/types/agencio.types"
+import type { IClient } from "@/types/crm.types"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Eye, EyeOff, Plus } from "lucide-react"

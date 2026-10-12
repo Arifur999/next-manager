@@ -1,13 +1,8 @@
 import AdminOverview from "@/components/modules/Dashboard/AdminOverview";
 import AgencyKpiBand from "@/components/modules/Dashboard/AgencyKpiBand";
 import DashboardOverview from "@/components/modules/Dashboard/DashboardOverview";
-import {
-  getClients,
-  getDashboard,
-  getProjects,
-  getTaskReport,
-  getWorkload,
-} from "@/services/agencio.services";
+import { getDashboard, getProjects, getTaskReport, getWorkload } from "@/services/agencio.services";
+import { getClients } from "@/services/crm.services";
 import { getUserInfo } from "@/services/auth.services";
 import { getAllUsers } from "@/services/user.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";

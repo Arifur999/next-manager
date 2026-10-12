@@ -16,8 +16,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { getLeadSources } from "@/services/agencio.services"
-import type { ILeadSource, LeadStage } from "@/types/agencio.types"
+import { getLeadSources } from "@/services/crm.services"
+import type { ILeadSource, LeadStage } from "@/types/crm.types"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"

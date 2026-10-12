@@ -9,9 +9,6 @@ import type {
     IAssignmentRow,
     IAttendance,
     ICapacityRow,
-    IClient,
-    IClientFinancials,
-    IClientLink,
     ICredential,
     ICredentialAccessEntry,
     IDashboard,
@@ -23,9 +20,6 @@ import type {
     IExpenseCategory,
     IInvoice,
     IKpiTarget,
-    ILeadPipeline,
-    ILeadSource,
-    ILeadStageEvent,
     ILeaveBalance,
     ILeaveRequest,
     IConversation,
@@ -92,7 +86,6 @@ import type {
  * them into a message the user should see.
  */
 
-
 // httpClient already logs failures; the label only names the call for readers.
 const wrap = async <T>(label: string, run: () => Promise<T>): Promise<T> => run()
 
@@ -100,43 +93,6 @@ const wrap = async <T>(label: string, run: () => Promise<T>): Promise<T> => run(
 
 export const getDashboard = async () =>
     wrap("fetching dashboard", () => httpClient.get<IDashboard>("/dashboard"))
-
-// ------------------------------------------------------------------ clients
-
-export const getClients = async (queryString?: string) =>
-    wrap("fetching clients", () => httpClient.get<IClient[]>("/clients", { params: toParams(queryString) }))
-
-export const getClient = async (id: string) =>
-    wrap("fetching client", () => httpClient.get<IClient>(`/clients/${id}`))
-
-export const getClientFinancials = async (id: string) =>
-    wrap("fetching client financials", () => httpClient.get<IClientFinancials>(`/clients/${id}/financials`))
-
-export const createClient = async (payload: Record<string, unknown>) =>
-    wrap("creating client", () => httpClient.post<IClient>("/clients", payload))
-
-export const updateClient = async (id: string, payload: Record<string, unknown>) =>
-    wrap("updating client", () => httpClient.patch<IClient>(`/clients/${id}`, payload))
-
-export const deleteClient = async (id: string) =>
-    wrap("deleting client", () => httpClient.delete<{ message: string }>(`/clients/${id}`))
-
-// -------------------------------------------------------------------- leads
-
-export const getLeadPipeline = async (queryString?: string) =>
-    wrap("fetching leads", () => httpClient.get<ILeadPipeline>("/leads", { params: toParams(queryString) }))
-
-export const createLead = async (payload: Record<string, unknown>) =>
-    wrap("creating lead", () => httpClient.post("/leads", payload))
-
-export const updateLead = async (id: string, payload: Record<string, unknown>) =>
-    wrap("updating lead", () => httpClient.patch(`/leads/${id}`, payload))
-
-export const convertLead = async (id: string) =>
-    wrap("converting lead", () => httpClient.post<IClient>(`/leads/${id}/convert`, {}))
-
-export const deleteLead = async (id: string) =>
-    wrap("deleting lead", () => httpClient.delete(`/leads/${id}`))
 
 // ----------------------------------------------------------------- projects
 
@@ -479,11 +435,6 @@ export const updateKpiTarget = async (id: string, payload: Record<string, unknow
 export const deleteKpiTarget = async (id: string) =>
     wrap("deleting a target", () => httpClient.delete<{ message: string }>(`/kpi-targets/${id}`))
 
-export const getLeadStageEvents = async (leadId: string) =>
-    wrap("fetching lead history", () =>
-        httpClient.get<ILeadStageEvent[]>(`/leads/${leadId}/stage-events`)
-    )
-
 // ---------------------------------------------------------------------------
 // KPIs
 // ---------------------------------------------------------------------------
@@ -593,31 +544,6 @@ export const rejectMember = async (id: string, payload: Record<string, unknown>)
 
 // ---------------------------------------------------------------------------
 // Lead sources (where the work is landed) and client links
-// ---------------------------------------------------------------------------
-
-export const getLeadSources = async () =>
-    wrap("fetching lead sources", () => httpClient.get<ILeadSource[]>("/lead-sources"))
-
-export const createLeadSource = async (payload: Record<string, unknown>) =>
-    wrap("adding a lead source", () => httpClient.post<ILeadSource>("/lead-sources", payload))
-
-export const updateLeadSource = async (id: string, payload: Record<string, unknown>) =>
-    wrap("updating a lead source", () =>
-        httpClient.patch<ILeadSource>(`/lead-sources/${id}`, payload)
-    )
-
-export const getClientLinks = async (queryString?: string) =>
-    wrap("fetching client links", () =>
-        httpClient.get<IClientLink[]>("/client-links", { params: toParams(queryString) })
-    )
-
-export const createClientLink = async (payload: Record<string, unknown>) =>
-    wrap("adding a link", () => httpClient.post<IClientLink>("/client-links", payload))
-
-export const deleteClientLink = async (id: string) =>
-    wrap("removing a link", () =>
-        httpClient.delete<{ message: string }>(`/client-links/${id}`)
-    )
 
 // ---------------------------------------------------------------------------
 // The platform team

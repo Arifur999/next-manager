@@ -1,9 +1,9 @@
 import ClientsTable from "@/components/modules/Admin/Clients/ClientsTable";
-import { getClients } from "@/services/agencio.services";
+import { getClients } from "@/services/crm.services";
 import { getUserInfo } from "@/services/auth.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import { buildQueryString, pickAllowed } from "@/lib/queryString";
-import { CLIENT_STATUSES } from "@/types/agencio.types";
+import { CLIENT_STATUSES } from "@/types/crm.types";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

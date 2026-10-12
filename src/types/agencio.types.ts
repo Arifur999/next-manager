@@ -4,7 +4,8 @@
 // arrives as plain numbers — sendResponse serialises Decimal to number and a
 // @db.Date column to "YYYY-MM-DD" — so nothing here needs a transform layer.
 
-export type Currency = "USD" | "BDT";
+import type { Currency, IStatusRef, StatusCategory } from "@/types/common.types";
+import type { IClient } from "@/types/crm.types";
 
 export type AccountType =
     | "paypal"
@@ -16,18 +17,6 @@ export type AccountType =
     | "bkash"
     | "nagad"
     | "other";
-
-export const CLIENT_STATUSES = ["active", "inactive", "archived"] as const;
-export type ClientStatus = (typeof CLIENT_STATUSES)[number];
-export type LeadStage = "new" | "contacted" | "proposal" | "negotiating" | "won" | "lost";
-/**
- * What a status MEANS, as opposed to what an agency calls it.
- *
- * The name is theirs to change; this is what the product reasons about. A
- * board column called "Shipped" or "Client approved" is `done` either way,
- * and that is what stops the clock.
- */
-export type StatusCategory = "open" | "active" | "blocked" | "done" | "cancelled";
 
 /** One column on a board. */
 export interface IWorkflowStatus {
@@ -44,13 +33,6 @@ export interface IWorkflowStatus {
     _count?: { tasks: number; projects: number };
 }
 
-/** The status as it travels on a task or project row. */
-export interface IStatusRef {
-    id: string;
-    name: string;
-    category: StatusCategory;
-    sort_order: number;
-}
 export type TaskPriority = "low" | "medium" | "high" | "urgent";
 export type InvoiceStatus =
     | "draft"
@@ -89,51 +71,6 @@ export interface IAccount {
     is_active: boolean;
     notes: string;
     created_at: string;
-}
-
-export interface IClient {
-    id: string;
-    name: string;
-    company: string;
-    email: string;
-    phone: string;
-    country: string;
-    status: ClientStatus;
-    notes: string;
-    created_at: string;
-}
-
-export interface IClientFinancials {
-    lifetime_value_usd: number;
-    lifetime_value_bdt_reporting: number;
-    total_invoiced_usd: number;
-    outstanding_usd: number;
-    payment_count: number;
-    project_count: number;
-    client_since: string;
-}
-
-export interface ILead {
-    id: string;
-    name: string;
-    company: string;
-    email: string;
-    phone: string;
-    /** Null when nobody said where it came from - not the same as "Direct". */
-    source_id: string | null;
-    source?: { id: string; name: string } | null;
-    stage: LeadStage;
-    estimated_value_usd: number;
-    notes: string;
-    converted_client_id: string | null;
-    converted_at: string | null;
-}
-
-export interface ILeadPipeline {
-    stages: Array<{ stage: LeadStage; leads: ILead[]; count: number; value_usd: number }>;
-    total: number;
-    open_value_usd: number;
-    open_count: number;
 }
 
 export interface IProject {
@@ -505,16 +442,6 @@ export interface IKpiTarget {
     user?: { id: string; full_name: string; email: string };
 }
 
-/** Every stage a lead has been in. `from_stage` is null on the creation event. */
-export interface ILeadStageEvent {
-    id: string;
-    lead_id: string;
-    from_stage: string | null;
-    to_stage: string;
-    changed_by: string | null;
-    changed_at: string;
-}
-
 /**
  * One entry in the audit trail.
  *
@@ -561,32 +488,6 @@ export interface ITeamInvite {
 export interface IInvitePreview {
     email: string;
     organization_name: string;
-}
-
-/**
- * A marketplace or channel a company lands work through.
- *
- * Curated per company rather than fixed — agencies use different ones. The
- * lead count comes back on the list so the screen can say why a source cannot
- * be deleted before somebody tries.
- */
-export interface ILeadSource {
-    id: string;
-    name: string;
-    is_active: boolean;
-    created_at: string;
-    _count?: { leads: number };
-}
-
-/** A pointer to where a client's work actually lives. */
-export interface IClientLink {
-    id: string;
-    client_id: string;
-    label: string;
-    url: string;
-    notes: string;
-    created_at: string;
-    client?: { id: string; name: string };
 }
 
 /**

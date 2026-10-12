@@ -1,8 +1,8 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { createClientLink, deleteClientLink } from "@/services/agencio.services"
-import type { IClientLink } from "@/types/agencio.types"
+import { createClientLink, deleteClientLink } from "@/services/crm.services"
+import type { IClientLink } from "@/types/crm.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 export const addClientLinkAction = async (

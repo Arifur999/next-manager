@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { formatUsd } from "@/lib/currency"
-import type { ILead, LeadStage } from "@/types/agencio.types"
+import type { ILead, LeadStage } from "@/types/crm.types"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { MoreHorizontal } from "lucide-react"
 import { useRouter } from "next/navigation"
