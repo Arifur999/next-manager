@@ -1,0 +1,77 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { describeApiFailure, logApiFailure } from "./apiFailure";
+
+const axiosError = (overrides: Record<string, unknown> = {}) => ({
+  name: "AxiosError",
+  message: "Request failed with status code 404",
+  config: {
+    method: "get",
+    url: "/clients?status=active&search=secret-search",
+    headers: { Cookie: "accessToken=SECRET; refreshToken=SECRET2" },
+    data: '{"password":"SECRET3"}',
+  },
+  response: {
+    status: 404,
+    data: { success: false, message: "Client not found" },
+    headers: { "x-request-id": "req-1", "set-cookie": ["accessToken=SECRET"] },
+  },
+  ...overrides,
+});
+
+describe("describeApiFailure", () => {
+  it("keeps method, path, status, API message and request id", () => {
+    expect(describeApiFailure(axiosError())).toEqual({
+      method: "GET",
+      path: "/clients",
+      status: 404,
+      code: undefined,
+      apiMessage: "Client not found",
+      requestId: "req-1",
+    });
+  });
+
+  it("never carries cookies, bodies or the query string", () => {
+    const serialized = JSON.stringify(describeApiFailure(axiosError()));
+    expect(serialized).not.toContain("SECRET");
+    expect(serialized).not.toContain("secret-search");
+  });
+
+  it("reports the network code when there is no response", () => {
+    const failure = describeApiFailure(axiosError({ code: "ECONNREFUSED", response: undefined }));
+    expect(failure.status).toBeUndefined();
+    expect(failure.code).toBe("ECONNREFUSED");
+  });
+
+  it("takes the first message of a string array", () => {
+    const failure = describeApiFailure(axiosError({ response: { status: 400, data: { message: ["a", "b"] } } }));
+    expect(failure.apiMessage).toBe("a");
+  });
+
+  it("survives values that are not errors at all", () => {
+    expect(describeApiFailure("boom")).toEqual({});
+  });
+});
+
+describe("logApiFailure", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("logs a 4xx at warn without secrets", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    logApiFailure("GET /clients", axiosError());
+    expect(warn).toHaveBeenCalledOnce();
+    expect(String(warn.mock.calls[0][0])).not.toContain("SECRET");
+  });
+
+  it("logs a refused connection at error", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    logApiFailure("GET /clients", axiosError({ code: "ECONNREFUSED", response: undefined }));
+    expect(error).toHaveBeenCalledOnce();
+    expect(String(error.mock.calls[0][0])).toContain("ECONNREFUSED");
+  });
+
+  it("logs a 5xx at error", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    logApiFailure("GET /clients", axiosError({ response: { status: 502, data: "<html>" } }));
+    expect(error).toHaveBeenCalledOnce();
+  });
+});
