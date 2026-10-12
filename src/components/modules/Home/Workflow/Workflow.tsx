@@ -1,13 +1,16 @@
 import { WORKFLOW, WORKFLOW_STEPS } from "@/data/home/workflow"
+import { SplitReveal } from "@/components/motion/SplitReveal"
 import SectionShell from "../Shell/SectionShell"
 
 // Ruled like a ledger page: one row per step, the step's own record on the right.
 const Workflow = () => (
   <SectionShell id="workflow" labelledBy="workflow-title" className="border-b">
     <div className="grid gap-6 lg:grid-cols-12">
-      <h2 id="workflow-title" className="text-display lg:col-span-7">
-        {WORKFLOW.title}
-      </h2>
+      <SplitReveal className="lg:col-span-7">
+        <h2 id="workflow-title" className="text-display [text-wrap:wrap]">
+          {WORKFLOW.title}
+        </h2>
+      </SplitReveal>
       <p className="max-w-[48ch] text-lg text-muted-foreground lg:col-span-4 lg:col-start-9 lg:self-end">{WORKFLOW.intro}</p>
     </div>
 

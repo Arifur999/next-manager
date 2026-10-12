@@ -1,5 +1,6 @@
 import { MODULE_FACTS, MODULES } from "@/data/home/modules"
 import { Fragment } from "react"
+import { Marquee } from "@/components/motion/Marquee"
 import SectionShell from "../Shell/SectionShell"
 import ModuleCount from "./ModuleCount"
 
@@ -21,13 +22,15 @@ const ModuleBand = () => (
       ))}
       , in one workspace.
     </h2>
-    <ul aria-label="Modules" className="mt-8 flex flex-wrap gap-x-2 gap-y-2">
-      {MODULES.map((module) => (
-        <li key={module} className="rounded-md border bg-card px-3 py-1.5 text-sm">
-          {module}
-        </li>
-      ))}
-    </ul>
+    <div className="mt-8">
+      <Marquee label="Modules">
+        {MODULES.map((module) => (
+          <li key={module} className="shrink-0 rounded-md border bg-card px-3 py-1.5 text-sm whitespace-nowrap">
+            {module}
+          </li>
+        ))}
+      </Marquee>
+    </div>
   </SectionShell>
 )
 
