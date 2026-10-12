@@ -14,6 +14,7 @@ import NotificationBell from "@/components/modules/Dashboard/NotificationBell";
 import { logout } from "@/services/logout"
 import { type IUser } from "@/types/user.types";
 import { LogOut, Moon, Sun, User } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -28,9 +29,12 @@ const initialsOf = (name: string) =>
 
 const DashboardNavbar = ({ user }: { user: IUser }) => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { resolvedTheme, setTheme } = useTheme();
   const handleLogout = async () => {
     await logout();
+    // The browser cache outlives the session; the next person must not see it.
+    queryClient.clear();
     router.push("/login");
     router.refresh();
   };

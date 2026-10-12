@@ -15,7 +15,7 @@ import { safeRedirect } from "@/lib/authUtils"
 import { toUserRole } from "@/types/user.types"
 import { loginFormZodSchema, type ILoginFormValues } from "@/zod/auth.validation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Eye, EyeOff } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -25,6 +25,7 @@ import { toast } from "sonner"
 const LoginForm = () => {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const queryClient = useQueryClient()
   const [showPassword, setShowPassword] = useState(false)
 
   // Registering sends the new admin here with their email attached, so they
@@ -56,6 +57,8 @@ const LoginForm = () => {
       const role = toUserRole("data" in result ? result.data?.user?.role : undefined)
       const destination = role ? safeRedirect(searchParams.get("redirect"), role) : "/"
 
+      // Whatever a previous session left in this browser's cache is not theirs.
+      queryClient.clear()
       router.push(destination)
       router.refresh()
     },
