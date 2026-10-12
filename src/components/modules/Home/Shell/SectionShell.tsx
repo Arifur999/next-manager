@@ -17,7 +17,7 @@ interface ISectionShellProps {
 const OUTER: Record<SectionVariant, string> = {
   contained: "py-16 md:py-24",
   dense: "py-12 md:py-16",
-  "full-bleed": "py-16 md:py-24 bg-foreground text-background",
+  "full-bleed": "py-16 md:py-24 bg-band text-band-foreground",
 }
 
 const SectionShell = ({ id, labelledBy, variant = "contained", className, innerClassName, children }: ISectionShellProps) => (

@@ -17,7 +17,7 @@ interface ICtaLinkProps {
 const TONES: Record<CtaTone, string> = {
   primary: "bg-primary text-primary-foreground hover:bg-primary/90",
   quiet: "border border-input bg-card text-foreground hover:bg-muted",
-  inverse: "bg-background text-foreground hover:bg-background/90",
+  inverse: "bg-band-foreground text-band hover:bg-band-foreground/90",
 }
 
 const SIZES = {

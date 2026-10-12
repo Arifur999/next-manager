@@ -63,6 +63,8 @@ const PAIRS: Array<[string, string, number]> = [
   ["--primary-strong", "--card", 4.5],
   ["--accent-foreground", "--accent", 4.5],
   ["--marker-foreground", "--marker", 4.5],
+  ["--band-foreground", "--band", 7],
+  ["--band", "--band-foreground", 4.5],
   ["--primary", "--background", 3],
   ["--destructive", "--background", 4.5],
   ["--destructive", "--card", 4.5],

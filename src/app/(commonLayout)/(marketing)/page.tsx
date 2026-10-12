@@ -1,4 +1,5 @@
 import Faq from "@/components/modules/Home/Faq/Faq"
+import FinalCta from "@/components/modules/Home/FinalCta/FinalCta"
 import Features from "@/components/modules/Home/Features/Features"
 import Hero from "@/components/modules/Home/Hero/Hero"
 import LedgerTrace from "@/components/modules/Home/LedgerTrace/LedgerTrace"
@@ -26,6 +27,7 @@ const HomePage = async () => {
       <Roles />
       {plans.length > 0 && <PricingTeaser plans={plans} />}
       <Faq />
+      <FinalCta trialDays={trialDays} />
     </>
   )
 }

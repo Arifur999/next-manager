@@ -60,6 +60,8 @@
   --color-info-subtle-foreground: var(--info-subtle-foreground);
   --color-marker: var(--marker);
   --color-marker-foreground: var(--marker-foreground);
+  --color-band: var(--band);
+  --color-band-foreground: var(--band-foreground);
   --shadow-frame: var(--elevation-frame);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -178,6 +180,10 @@
   --marker: var(--p-marker);
   --marker-foreground: var(--p-graphite-900);
 
+  /* The ink band that closes a marketing page. */
+  --band: var(--p-graphite-900);
+  --band-foreground: var(--p-paper-50);
+
   /* Chart series, fixed order, never cycled. Checked with the dataviz validator
      against the card surface: all five pass on adjacent pairs; the first three
      also pass all-pairs, so scatter-like charts stop at three series. */
@@ -240,6 +246,10 @@
 
   --marker: var(--p-marker);
   --marker-foreground: var(--p-graphite-900);
+
+  /* Deep teal ink rather than a paper flash in a dark page. */
+  --band: oklch(0.27 0.04 200);
+  --band-foreground: var(--p-night-50);
 
   --chart-1: oklch(0.625 0.106 188.3);
   --chart-2: oklch(0.634 0.148 50.6);
