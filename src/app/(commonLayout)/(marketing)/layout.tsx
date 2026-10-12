@@ -1,12 +1,15 @@
 import MarketingFooter from "@/components/modules/Home/Shell/MarketingFooter"
 import MarketingHeader from "@/components/modules/Home/Shell/MarketingHeader"
 import { MARKETING_NAV, getPrimaryCta } from "@/data/site"
+import { getPublicPlans } from "@/services/publicPlans.services"
+import { signupTrialDays } from "@/zod/publicPlans.validation"
 import type { ReactNode } from "react"
 
-const MarketingLayout = ({ children }: { children: ReactNode }) => {
-  // Pricing appears only once real plans can be shown (C61 wires the API).
-  const links = MARKETING_NAV.filter((link) => link.href !== "/#pricing")
-  const cta = getPrimaryCta(null)
+const MarketingLayout = async ({ children }: { children: ReactNode }) => {
+  const plans = await getPublicPlans()
+  // The Pricing link only appears when there are real plans to show.
+  const links = plans.length > 0 ? MARKETING_NAV : MARKETING_NAV.filter((link) => link.href !== "/#pricing")
+  const cta = getPrimaryCta(signupTrialDays(plans))
 
   return (
     <div className="flex min-h-screen flex-col">
