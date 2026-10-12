@@ -7,6 +7,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -15,7 +17,7 @@ import NotificationBell from "@/components/modules/Dashboard/NotificationBell";
 import type { UserRole } from "@/lib/authUtils";
 import { logout } from "@/services/logout"
 import { type IUser } from "@/types/user.types";
-import { LogOut, Moon, Sun, User } from "lucide-react";
+import { LogOut, Monitor, Moon, Sun, User } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
 import Link from "next/link";
@@ -32,7 +34,7 @@ const initialsOf = (name: string) =>
 const DashboardNavbar = ({ user, role }: { user: IUser; role: UserRole }) => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { resolvedTheme, setTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const handleLogout = async () => {
     await logout();
     // The browser cache outlives the session; the next person must not see it.
@@ -55,21 +57,39 @@ const DashboardNavbar = ({ user, role }: { user: IUser; role: UserRole }) => {
             to them here - they are the one sending. */}
         {user.role !== "super_admin" && <NotificationBell />}
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-          aria-label="Toggle theme"
-        >
-          {/* CSS picks the icon off the <html class="dark"> that next-themes
-              sets, so there is no browser-only state to hydrate around. */}
-          <Sun className="hidden size-4 dark:block" />
-          <Moon className="size-4 dark:hidden" />
-        </Button>
+        {/* Light, Dark or follow the system. A two-state toggle could not get
+            back to System once someone had pressed it. */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" aria-label="Theme">
+              {/* CSS picks the icon off the <html class="dark"> that next-themes
+                  sets, so there is no browser-only state to hydrate around. */}
+              <Sun aria-hidden="true" className="hidden size-4 dark:block" />
+              <Moon aria-hidden="true" className="size-4 dark:hidden" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuLabel>Theme</DropdownMenuLabel>
+            <DropdownMenuRadioGroup value={theme ?? "system"} onValueChange={setTheme}>
+              <DropdownMenuRadioItem value="light">
+                <Sun aria-hidden="true" className="size-4" />
+                Light
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="dark">
+                <Moon aria-hidden="true" className="size-4" />
+                Dark
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="system">
+                <Monitor aria-hidden="true" className="size-4" />
+                System
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="gap-2 px-2">
+            <Button variant="ghost" className="gap-2 px-2" aria-label={`Account menu for ${user.full_name}`}>
               <Avatar className="size-7">
                 <AvatarFallback className="text-xs">{initialsOf(user.full_name)}</AvatarFallback>
               </Avatar>
@@ -87,7 +107,7 @@ const DashboardNavbar = ({ user, role }: { user: IUser; role: UserRole }) => {
 
             <DropdownMenuItem asChild>
               <Link href="/my-profile">
-                <User className="size-4" />
+                <User aria-hidden="true" className="size-4" />
                 My Profile
               </Link>
             </DropdownMenuItem>
@@ -95,7 +115,7 @@ const DashboardNavbar = ({ user, role }: { user: IUser; role: UserRole }) => {
             <DropdownMenuSeparator />
 
             <DropdownMenuItem onClick={handleLogout} variant="destructive">
-              <LogOut className="size-4" />
+              <LogOut aria-hidden="true" className="size-4" />
               Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>

@@ -180,7 +180,7 @@ const RegisterForm = () => {
                     onClick={() => setShowPassword((shown) => !shown)}
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
-                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    {showPassword ? <EyeOff aria-hidden="true" className="size-4" /> : <Eye aria-hidden="true" className="size-4" />}
                   </Button>
                 </div>
               )}

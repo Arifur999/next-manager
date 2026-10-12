@@ -320,6 +320,8 @@
   }
   html {
     @apply font-sans;
+    /* Keyboard focus and anchor jumps stop below the 64px sticky headers. */
+    scroll-padding-top: 5rem;
   }
 
   /* Anything you can click gets the hand.

@@ -69,11 +69,11 @@ const NotificationBell = () => {
           className="relative"
           aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"}
         >
-          <Bell className="size-4" />
+          <Bell aria-hidden="true" className="size-4" />
           {unread > 0 && (
             // A number, not a dot: "3 things happened" and "something happened"
             // are answered differently, and only one needs opening now.
-            <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium leading-none text-primary-foreground">
+            <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium leading-none text-primary-foreground">
               {unread > 9 ? "9+" : unread}
             </span>
           )}
