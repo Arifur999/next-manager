@@ -87,22 +87,16 @@ import type {
 /**
  * Thin wrappers over httpClient, one per endpoint.
  *
- * Every one logs and re-throws — turning an error into a message the user
- * should see is the action layer's job, not this file's.
+ * Errors propagate untouched: httpClient logs them and the action layer turns
+ * them into a message the user should see.
  */
 
 // A query string from the URL, turned into the params object axios wants.
 const toParams = (queryString?: string) =>
     queryString ? Object.fromEntries(new URLSearchParams(queryString)) : undefined
 
-const wrap = async <T>(label: string, run: () => Promise<T>): Promise<T> => {
-    try {
-        return await run()
-    } catch (error) {
-        console.log(`Error ${label}:`, error)
-        throw error
-    }
-}
+// httpClient already logs failures; the label only names the call for readers.
+const wrap = async <T>(label: string, run: () => Promise<T>): Promise<T> => run()
 
 // ---------------------------------------------------------------- dashboard
 

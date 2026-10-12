@@ -11,14 +11,9 @@ import type { IPermissionGrid, PermissionScope } from "@/types/permission.types"
  * three chances to draw a mixture of two moments.
  */
 export const getPermissionGrid = async (userId?: string) => {
-    try {
-        return await httpClient.get<IPermissionGrid>("/permissions", {
-            params: userId ? { user_id: userId } : undefined,
-        })
-    } catch (error) {
-        console.log("Error fetching permissions:", error)
-        throw error
-    }
+    return httpClient.get<IPermissionGrid>("/permissions", {
+        params: userId ? { user_id: userId } : undefined,
+    })
 }
 
 export const setRolePermission = async (payload: {
