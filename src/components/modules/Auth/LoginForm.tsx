@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { getDefaultDashboardRoute, isValidRedirectForRole } from "@/lib/authUtils"
+import { safeRedirect } from "@/lib/authUtils"
 import { toUserRole } from "@/types/user.types"
 import { loginFormZodSchema, type ILoginFormValues } from "@/zod/auth.validation"
 import { useForm } from "@tanstack/react-form"
@@ -54,13 +54,7 @@ const LoginForm = () => {
       toast.success(result.message || "Signed in successfully")
 
       const role = toUserRole("data" in result ? result.data?.user?.role : undefined)
-      const fallback = role ? getDefaultDashboardRoute(role) : "/"
-
-      // Only honour ?redirect= when the signed-in role may actually reach it -
-      // otherwise the proxy would bounce them straight back out again.
-      const requested = searchParams.get("redirect")
-      const destination =
-        requested && role && isValidRedirectForRole(requested, role) ? requested : fallback
+      const destination = role ? safeRedirect(searchParams.get("redirect"), role) : "/"
 
       router.push(destination)
       router.refresh()

@@ -249,11 +249,22 @@ export const getDefaultDashboardRoute = (role: UserRole): string => {
     }
 };
 
-/**
- * Whether a `?redirect=` is worth honouring for this role.
- *
- * Without this, signing in from a deep link would bounce: the proxy would send
- * them to a page their role cannot open, then straight back out again.
- */
-export const isValidRedirectForRole = (redirectPath: string, role: UserRole): boolean =>
-    canRoleReach(redirectPath, role);
+// Where to go after sign-in. A ?redirect= is honoured only when it is a path on
+// this site that the role may open; anything else lands on the role's dashboard.
+export const safeRedirect = (raw: string | null | undefined, role: UserRole): string => {
+    const fallback = getDefaultDashboardRoute(role);
+    if (!raw || !raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) return fallback;
+
+    const origin = "http://redirect.invalid";
+    let url: URL;
+    try {
+        url = new URL(raw, origin);
+    } catch {
+        return fallback;
+    }
+
+    if (url.origin !== origin) return fallback;
+    if (isAuthRoute(url.pathname)) return fallback;
+    if (!canRoleReach(url.pathname, role)) return fallback;
+    return `${url.pathname}${url.search}${url.hash}`;
+};
