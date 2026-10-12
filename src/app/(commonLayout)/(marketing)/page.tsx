@@ -4,7 +4,7 @@ import Link from "next/link";
 
 const HomePage = () => {
   return (
-    <section className="mx-auto flex min-h-screen w-full max-w-3xl flex-col items-center justify-center gap-6 px-6 text-center">
+    <section className="mx-auto flex min-h-[70vh] w-full max-w-3xl flex-col items-center justify-center gap-6 px-6 text-center">
       <p className="rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground">
         Business management, modular
       </p>
