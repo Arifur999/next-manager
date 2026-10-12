@@ -45,6 +45,25 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-primary-strong: var(--primary-strong);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-subtle: var(--destructive-subtle);
+  --color-destructive-subtle-foreground: var(--destructive-subtle-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-subtle: var(--success-subtle);
+  --color-success-subtle-foreground: var(--success-subtle-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-warning-subtle-foreground: var(--warning-subtle-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-subtle: var(--info-subtle);
+  --color-info-subtle-foreground: var(--info-subtle-foreground);
+  --color-marker: var(--marker);
+  --color-marker-foreground: var(--marker-foreground);
+  --shadow-frame: var(--elevation-frame);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -54,109 +73,190 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Direction: Ledger ink (design/direction.md)
+   Brand hue 195 (teal ink), paper neutrals warm at hue 85, graphite text and dark
+   surfaces cool at hue 220 to 230. Depth: hairline borders, one shadow for product
+   frames. Ramps come from scripts/palette.ts; pairs are checked by npm run qa:contrast. */
+
+/* ---------- 1. Primitives (only the semantic layer reads these) ---------- */
 :root {
-  /* AGENCIO tone: soft periwinkle-indigo on a light lavender ground, white
-     cards, generous radius. Every colour lives here - never a raw hex in a
-     component's className. */
-  --radius: 1rem;
+  --p-neutral-0: oklch(1 0 0);
+  --p-paper-50: oklch(0.985 0.004 85);
+  --p-paper-100: oklch(0.968 0.005 85);
+  --p-paper-200: oklch(0.948 0.006 85);
+  --p-paper-300: oklch(0.9 0.006 85);
+  --p-paper-400: oklch(0.86 0.007 85);
 
-  --background: oklch(0.951 0.014 280);
-  --foreground: oklch(0.320 0.075 280);
+  --p-graphite-400: oklch(0.62 0.012 230);
+  --p-graphite-500: oklch(0.5 0.014 230);
+  --p-graphite-700: oklch(0.36 0.015 230);
+  --p-graphite-900: oklch(0.24 0.015 230);
 
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.320 0.075 280);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.320 0.075 280);
+  --p-night-950: oklch(0.17 0.012 220);
+  --p-night-900: oklch(0.21 0.013 220);
+  --p-night-850: oklch(0.235 0.013 220);
+  --p-night-800: oklch(0.26 0.013 220);
+  --p-night-700: oklch(0.32 0.014 220);
+  --p-night-300: oklch(0.74 0.012 220);
+  --p-night-50: oklch(0.945 0.006 85);
 
-  --primary: oklch(0.525 0.135 277);
-  --primary-foreground: oklch(0.995 0 0);
+  --p-brand-50: oklch(0.97 0.006 195);
+  --p-brand-100: oklch(0.932 0.013 195);
+  --p-brand-200: oklch(0.882 0.024 195);
+  --p-brand-300: oklch(0.809 0.042 195);
+  --p-brand-400: oklch(0.707 0.066 195);
+  --p-brand-500: oklch(0.623 0.086 195);
+  --p-brand-600: oklch(0.546 0.093 195);
+  --p-brand-700: oklch(0.488 0.083 195);
+  --p-brand-800: oklch(0.42 0.072 195);
+  --p-brand-900: oklch(0.379 0.059 195);
+  --p-brand-950: oklch(0.282 0.037 195);
+  --p-brand-dark: oklch(0.76 0.085 190);
+  --p-brand-dark-strong: oklch(0.82 0.075 190);
 
-  --secondary: oklch(0.920 0.022 280);
-  --secondary-foreground: oklch(0.400 0.120 280);
+  --p-marker: oklch(0.92 0.15 100);
 
-  --muted: oklch(0.962 0.010 280);
-  --muted-foreground: oklch(0.630 0.032 277);
-
-  --accent: oklch(0.920 0.022 280);
-  --accent-foreground: oklch(0.400 0.120 280);
-
-  --destructive: oklch(0.585 0.215 25);
-
-  --border: oklch(0.912 0.014 280);
-  --input: oklch(0.912 0.014 280);
-  --ring: oklch(0.525 0.135 277);
-
-  /* Chart series colours. These three are validator output, not eyeballed —
-     see scripts/validate-palette in the dataviz workflow. Slots are assigned in
-     this fixed order and never cycled; the order alternates cool/warm so
-     adjacent series never share a hue family.
-     light: CVD ΔE 14.7 (protan), normal-vision 23.8, all-pairs. Orange sits at
-     2.79:1 on white, which is why every chart here ships direct labels and a
-     table view rather than relying on colour alone. */
-  --chart-1: #5341b1;
-  --chart-2: #e38305;
-  --chart-3: #009192;
-  /* Slots 4-5 are decorative tints for stat-tile icon chips only — they never
-     encode data, so they are not part of the validated series palette. */
-  --chart-4: oklch(0.760 0.120 55);
-  --chart-5: oklch(0.680 0.140 350);
-
-  /* The sidebar is a white panel on the lavender ground, as in the design. */
-  --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.320 0.075 280);
-  --sidebar-primary: oklch(0.525 0.135 277);
-  --sidebar-primary-foreground: oklch(0.995 0 0);
-  --sidebar-accent: oklch(0.945 0.022 280);
-  --sidebar-accent-foreground: oklch(0.400 0.120 280);
-  --sidebar-border: oklch(0.930 0.012 280);
-  --sidebar-ring: oklch(0.525 0.135 277);
+  --p-green-100: oklch(0.962 0.044 157);
+  --p-green-300: oklch(0.871 0.15 154);
+  --p-green-500: oklch(0.723 0.219 150);
+  --p-green-700: oklch(0.527 0.154 150);
+  --p-green-800: oklch(0.448 0.119 151);
+  --p-amber-100: oklch(0.962 0.059 96);
+  --p-amber-300: oklch(0.879 0.169 92);
+  --p-amber-400: oklch(0.828 0.189 84);
+  --p-amber-500: oklch(0.769 0.188 70);
+  --p-amber-800: oklch(0.473 0.137 46);
+  --p-amber-950: oklch(0.279 0.077 46);
+  --p-red-100: oklch(0.936 0.032 18);
+  --p-red-300: oklch(0.808 0.114 20);
+  --p-red-400: oklch(0.704 0.191 22);
+  --p-red-600: oklch(0.577 0.245 27);
+  --p-red-800: oklch(0.444 0.177 27);
 }
 
+/* ---------- 2. Semantic tokens: light ---------- */
+:root {
+  --radius: 1rem;
+
+  --background: var(--p-paper-50);
+  --foreground: var(--p-graphite-900);
+  --card: var(--p-neutral-0);
+  --card-foreground: var(--p-graphite-900);
+  --popover: var(--p-neutral-0);
+  --popover-foreground: var(--p-graphite-900);
+  --primary: var(--p-brand-700);
+  --primary-foreground: var(--p-neutral-0);
+  --primary-strong: var(--p-brand-800); /* teal text and links */
+  --secondary: var(--p-paper-200);
+  --secondary-foreground: var(--p-graphite-900);
+  --muted: var(--p-paper-100);
+  --muted-foreground: var(--p-graphite-500);
+  --accent: var(--p-brand-50);
+  --accent-foreground: var(--p-brand-900);
+  --border: var(--p-paper-300);
+  --input: var(--p-paper-400);
+  --ring: var(--p-brand-600);
+
+  --destructive: var(--p-red-600);
+  --destructive-foreground: var(--p-neutral-0);
+  --destructive-subtle: var(--p-red-100);
+  --destructive-subtle-foreground: var(--p-red-800);
+  --success: var(--p-green-700);
+  --success-foreground: var(--p-neutral-0);
+  --success-subtle: var(--p-green-100);
+  --success-subtle-foreground: var(--p-green-800);
+  --warning: var(--p-amber-500);
+  --warning-foreground: var(--p-amber-950);
+  --warning-subtle: var(--p-amber-100);
+  --warning-subtle-foreground: var(--p-amber-800);
+  --info: var(--p-brand-700);
+  --info-foreground: var(--p-neutral-0);
+  --info-subtle: var(--p-brand-50);
+  --info-subtle-foreground: var(--p-brand-900);
+
+  /* Annotations on product frames only: never a text colour, never a status. */
+  --marker: var(--p-marker);
+  --marker-foreground: var(--p-graphite-900);
+
+  /* Chart series, fixed order, never cycled. Checked with the dataviz validator
+     against the card surface: all five pass on adjacent pairs; the first three
+     also pass all-pairs, so scatter-like charts stop at three series. */
+  --chart-1: oklch(0.592 0.103 188.8);
+  --chart-2: oklch(0.627 0.155 49);
+  --chart-3: oklch(0.553 0.148 266.4);
+  --chart-4: oklch(0.596 0.158 351.3);
+  --chart-5: oklch(0.601 0.147 125.8);
+
+  --sidebar: var(--p-paper-100);
+  --sidebar-foreground: var(--p-graphite-900);
+  --sidebar-primary: var(--p-brand-700);
+  --sidebar-primary-foreground: var(--p-neutral-0);
+  --sidebar-accent: var(--p-paper-200);
+  --sidebar-accent-foreground: var(--p-graphite-900);
+  --sidebar-border: var(--p-paper-300);
+  --sidebar-ring: var(--p-brand-600);
+
+  /* Borders do the work everywhere; product frames are the one raised object. */
+  --elevation-frame: 0 1px 0 oklch(0.24 0.015 230 / 0.04), 0 12px 32px -12px oklch(0.24 0.015 230 / 0.18);
+}
+
+/* ---------- 3. Semantic tokens: dark (re-picked, not inverted) ---------- */
 .dark {
-  /* Same hues, inverted roles: a deep indigo-navy ground with a lifted
-     periwinkle primary so it stays legible on dark. */
-  --background: oklch(0.220 0.030 280);
-  --foreground: oklch(0.930 0.015 280);
+  --background: var(--p-night-950);
+  --foreground: var(--p-night-50);
+  --card: var(--p-night-900);
+  --card-foreground: var(--p-night-50);
+  --popover: var(--p-night-850);
+  --popover-foreground: var(--p-night-50);
+  --primary: var(--p-brand-dark);
+  --primary-foreground: var(--p-night-950);
+  --primary-strong: var(--p-brand-dark-strong);
+  --secondary: var(--p-night-800);
+  --secondary-foreground: var(--p-night-50);
+  --muted: var(--p-night-800);
+  --muted-foreground: var(--p-night-300);
+  --accent: oklch(0.3 0.03 195);
+  --accent-foreground: var(--p-night-50);
+  --border: oklch(1 0 0 / 11%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: var(--p-brand-dark);
 
-  --card: oklch(0.270 0.035 280);
-  --card-foreground: oklch(0.930 0.015 280);
-  --popover: oklch(0.270 0.035 280);
-  --popover-foreground: oklch(0.930 0.015 280);
+  --destructive: var(--p-red-400);
+  --destructive-foreground: var(--p-night-950);
+  --destructive-subtle: oklch(0.704 0.191 22 / 15%);
+  --destructive-subtle-foreground: var(--p-red-300);
+  --success: var(--p-green-500);
+  --success-foreground: var(--p-night-950);
+  --success-subtle: oklch(0.723 0.219 150 / 15%);
+  --success-subtle-foreground: var(--p-green-300);
+  --warning: var(--p-amber-400);
+  --warning-foreground: var(--p-amber-950);
+  --warning-subtle: oklch(0.828 0.189 84 / 15%);
+  --warning-subtle-foreground: var(--p-amber-300);
+  --info: var(--p-brand-dark);
+  --info-foreground: var(--p-night-950);
+  --info-subtle: oklch(0.76 0.085 190 / 15%);
+  --info-subtle-foreground: var(--p-brand-dark-strong);
 
-  --primary: oklch(0.680 0.130 278);
-  --primary-foreground: oklch(0.200 0.030 280);
+  --marker: var(--p-marker);
+  --marker-foreground: var(--p-graphite-900);
 
-  --secondary: oklch(0.320 0.032 280);
-  --secondary-foreground: oklch(0.930 0.015 280);
+  --chart-1: oklch(0.625 0.106 188.3);
+  --chart-2: oklch(0.634 0.148 50.6);
+  --chart-3: oklch(0.627 0.139 265.4);
+  --chart-4: oklch(0.622 0.145 353.7);
+  --chart-5: oklch(0.638 0.15 124.5);
 
-  --muted: oklch(0.310 0.030 280);
-  --muted-foreground: oklch(0.700 0.030 278);
-
-  --accent: oklch(0.320 0.032 280);
-  --accent-foreground: oklch(0.930 0.015 280);
-
-  --destructive: oklch(0.680 0.190 25);
-
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.680 0.130 278);
-
-  /* Dark is chosen, not flipped: re-stepped from the same hues and validated
-     against the dark card surface. All six checks pass, contrast >= 3:1. */
-  --chart-1: #796eda;
-  --chart-2: #cd7d00;
-  --chart-3: #00a0a1;
-  --chart-4: oklch(0.780 0.120 55);
-  --chart-5: oklch(0.710 0.140 350);
-
-  --sidebar: oklch(0.270 0.035 280);
-  --sidebar-foreground: oklch(0.930 0.015 280);
-  --sidebar-primary: oklch(0.680 0.130 278);
-  --sidebar-primary-foreground: oklch(0.200 0.030 280);
-  --sidebar-accent: oklch(0.320 0.032 280);
-  --sidebar-accent-foreground: oklch(0.930 0.015 280);
+  --sidebar: var(--p-night-900);
+  --sidebar-foreground: var(--p-night-50);
+  --sidebar-primary: var(--p-brand-dark);
+  --sidebar-primary-foreground: var(--p-night-950);
+  --sidebar-accent: var(--p-night-800);
+  --sidebar-accent-foreground: var(--p-night-50);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.680 0.130 278);
+  --sidebar-ring: var(--p-brand-dark);
+
+  --elevation-frame: 0 0 0 1px oklch(1 0 0 / 0.08), 0 16px 40px -12px oklch(0 0 0 / 0.6);
 }
 
 @layer base {
@@ -207,7 +307,7 @@
  * does not leave blank pages behind. */
 @media print {
   body {
-    background: #fff;
+    background: oklch(1 0 0);
   }
 
   /* The app shell has no place on a document being sent to a client. */
@@ -225,7 +325,7 @@
   [data-print="page"] {
     /* Cards carry shadows and rounded corners that print as grey smears. */
     box-shadow: none !important;
-    border-color: #ddd !important;
+    border-color: oklch(0.88 0 0) !important;
   }
 
   /* Backgrounds are dropped by default in print; the few that carry meaning
