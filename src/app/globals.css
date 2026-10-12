@@ -286,9 +286,11 @@
   --text-display: clamp(2rem, 1.6667rem + 1.4815vw, 3rem);
   --text-display--line-height: 1.08;
   --text-display--letter-spacing: -0.022em;
+  --text-display--font-weight: 500;
   --text-display-lg: clamp(2.375rem, 1.8333rem + 2.4074vw, 4rem);
   --text-display-lg--line-height: 1.02;
   --text-display-lg--letter-spacing: -0.03em;
+  --text-display-lg--font-weight: 500;
 
   --container-form: 42rem;
   --container-content: 76rem;

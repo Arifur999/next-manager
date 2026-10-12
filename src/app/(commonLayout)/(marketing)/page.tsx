@@ -1,3 +1,4 @@
+import Features from "@/components/modules/Home/Features/Features"
 import Hero from "@/components/modules/Home/Hero/Hero"
 import LedgerTrace from "@/components/modules/Home/LedgerTrace/LedgerTrace"
 import ModuleBand from "@/components/modules/Home/ModuleBand/ModuleBand"
@@ -10,6 +11,7 @@ const HomePage = () => (
     <LedgerTrace />
     <Problem />
     <ModuleBand />
+    <Features />
   </>
 )
 
