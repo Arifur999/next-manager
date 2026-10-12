@@ -1,6 +1,8 @@
 import TransactionsBoard from "@/components/modules/Admin/Transactions/TransactionsBoard";
 import { getTransactions } from "@/services/agencio.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import { buildQueryString, pickAllowed } from "@/lib/queryString";
+import { TRANSACTION_KINDS } from "@/types/agencio.types";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -10,14 +12,14 @@ export const metadata: Metadata = {
 const TransactionsPage = async ({
   searchParams,
 }: {
-  searchParams: Promise<{ kind?: string }>;
+  searchParams: Promise<{ kind?: string | string[] }>;
 }) => {
-  const { kind } = await searchParams;
+  const kind = pickAllowed((await searchParams).kind, TRANSACTION_KINDS);
   const queryClient = new QueryClient();
 
   // The filter is read here as well as in the board, so the first paint is the
   // view that was asked for rather than every row followed by a correction.
-  const query = kind ? `kind=${kind}` : "";
+  const query = buildQueryString({ kind });
 
   await queryClient.prefetchQuery({
     queryKey: ["transactions", query],

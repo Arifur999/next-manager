@@ -6,7 +6,8 @@ import { clientsColumns } from "@/components/modules/Admin/Clients/clientsColumn
 import DataTable from "@/components/shared/table/DataTable"
 import { useRowActionModalState } from "@/hooks/useRowActionModalState"
 import { getClients } from "@/services/agencio.services"
-import type { IClient } from "@/types/agencio.types"
+import { buildQueryString, pickAllowed } from "@/lib/queryString"
+import { CLIENT_STATUSES, type IClient } from "@/types/agencio.types"
 import { useQuery } from "@tanstack/react-query"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
@@ -41,7 +42,7 @@ const ClientsTable = ({
   const searchParams = useSearchParams()
   const [search, setSearch] = useState("")
 
-  const status = searchParams.get("status") ?? ""
+  const status = pickAllowed(searchParams.get("status"), CLIENT_STATUSES)
 
   const {
     editingItem,
@@ -53,12 +54,8 @@ const ClientsTable = ({
     tableActions,
   } = useRowActionModalState<IClient>({ enableView: true })
 
-  const query = [
-    search ? `search=${encodeURIComponent(search)}` : "",
-    status ? `status=${status}` : "",
-  ]
-    .filter(Boolean)
-    .join("&")
+  // Same builder and key order as the page's prefetch, so the keys match.
+  const query = buildQueryString({ search, status })
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ["clients", query],

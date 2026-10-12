@@ -1,6 +1,7 @@
 "use server"
 
 import { httpClient } from "@/lib/axios/httpClient"
+import { toParams } from "@/lib/queryString"
 import type {
     IAccount,
     IActivityEntry,
@@ -91,9 +92,6 @@ import type {
  * them into a message the user should see.
  */
 
-// A query string from the URL, turned into the params object axios wants.
-const toParams = (queryString?: string) =>
-    queryString ? Object.fromEntries(new URLSearchParams(queryString)) : undefined
 
 // httpClient already logs failures; the label only names the call for readers.
 const wrap = async <T>(label: string, run: () => Promise<T>): Promise<T> => run()

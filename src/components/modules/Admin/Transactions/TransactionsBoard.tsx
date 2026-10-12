@@ -3,7 +3,8 @@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { getTransactions } from "@/services/agencio.services"
-import type { ITransaction, LedgerSource } from "@/types/agencio.types"
+import { buildQueryString, pickAllowed } from "@/lib/queryString"
+import { TRANSACTION_KINDS, type ITransaction, type LedgerSource } from "@/types/agencio.types"
 import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { Scale } from "lucide-react"
@@ -83,9 +84,9 @@ const money = (amount: number, currency: string) =>
 
 const TransactionsBoard = () => {
   const searchParams = useSearchParams()
-  const kind = searchParams.get("kind") ?? ""
+  const kind = pickAllowed(searchParams.get("kind"), TRANSACTION_KINDS)
 
-  const query = kind ? `kind=${kind}` : ""
+  const query = buildQueryString({ kind })
 
   const { data, isLoading } = useQuery({
     queryKey: ["transactions", query],

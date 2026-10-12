@@ -2,6 +2,8 @@ import ClientsTable from "@/components/modules/Admin/Clients/ClientsTable";
 import { getClients } from "@/services/agencio.services";
 import { getUserInfo } from "@/services/auth.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import { buildQueryString, pickAllowed } from "@/lib/queryString";
+import { CLIENT_STATUSES } from "@/types/agencio.types";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -11,9 +13,9 @@ export const metadata: Metadata = {
 const ClientsPage = async ({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string | string[] }>;
 }) => {
-  const { status } = await searchParams;
+  const status = pickAllowed((await searchParams).status, CLIENT_STATUSES);
   const queryClient = new QueryClient();
   const user = await getUserInfo();
 
@@ -26,7 +28,7 @@ const ClientsPage = async ({
   // The filter is read here, not only in the table. Prefetching the
   // unfiltered list while the URL asks for archived paints every client for
   // one frame and then corrects itself — a flash of the wrong answer.
-  const query = status ? `status=${status}` : "";
+  const query = buildQueryString({ status });
 
   await queryClient.prefetchQuery({
     queryKey: ["clients", query],

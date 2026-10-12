@@ -17,7 +17,8 @@ export type AccountType =
     | "nagad"
     | "other";
 
-export type ClientStatus = "active" | "inactive" | "archived";
+export const CLIENT_STATUSES = ["active", "inactive", "archived"] as const;
+export type ClientStatus = (typeof CLIENT_STATUSES)[number];
 export type LeadStage = "new" | "contacted" | "proposal" | "negotiating" | "won" | "lost";
 /**
  * What a status MEANS, as opposed to what an agency calls it.
@@ -602,6 +603,10 @@ export interface IDepartment {
     created_at: string;
     _count?: { members: number };
 }
+
+/** The ledger filter: what a movement did to the business. */
+export const TRANSACTION_KINDS = ["income", "expense", "transfer"] as const;
+export type TransactionKind = (typeof TRANSACTION_KINDS)[number];
 
 /** What produced a ledger row. Mirrors the backend's LedgerSource. */
 export type LedgerSource =
