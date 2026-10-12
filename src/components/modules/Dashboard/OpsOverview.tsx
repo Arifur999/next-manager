@@ -7,10 +7,10 @@ import { STATUS_TONE } from "@/components/shared/status/statusTone"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { getTasks } from "@/services/work.services"
-import { getProjects } from "@/services/project.services"
 import { useQuery } from "@tanstack/react-query"
 import { AlertTriangle, CalendarCheck, CheckCircle2, FolderKanban, ListChecks } from "lucide-react"
 import Link from "next/link"
+import { projectsListQuery } from "@/queries/project.queries"
 
 /**
  * What somebody doing the work opens the morning with.
@@ -28,7 +28,7 @@ const OpsOverview = () => {
   const today = useCount({ queryKey: ["tasks", "count", "today"], queryFn: () => getTasks("mine=true&due=today&limit=1") })
   const overdue = useCount({ queryKey: ["tasks", "count", "overdue"], queryFn: () => getTasks("mine=true&overdue=true&limit=1") })
   const done = useCount({ queryKey: ["tasks", "count", "done"], queryFn: () => getTasks("mine=true&completed=true&limit=1") })
-  const projects = useCount({ queryKey: ["projects", "count", "mine"], queryFn: () => getProjects("mine=true&limit=1") })
+  const projects = useCount(projectsListQuery("mine=true&limit=1"))
 
   // Today's work itself, not a count of it: this is the list somebody actually
   // works from, and the number above only tells them how long it is.

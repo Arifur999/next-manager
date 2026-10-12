@@ -12,13 +12,14 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { getMilestones } from "@/services/project.services"
 import type { IMilestone } from "@/types/project.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { format, isAfter, parseISO } from "date-fns"
 import { CalendarCheck, Plus, Trash2, Undo2 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { milestonesListQuery } from "@/queries/project.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * The dated promises inside one project.
@@ -73,15 +74,12 @@ const ProjectMilestonePanel = ({
   const [title, setTitle] = useState("")
   const [dueDate, setDueDate] = useState("")
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["milestones", `project_id=${projectId}`],
-    queryFn: () => getMilestones(`project_id=${projectId}`),
-  })
+  const { data, isLoading } = useQuery(milestonesListQuery(`project_id=${projectId}`))
 
-  const milestones = (data?.data ?? []) as IMilestone[]
+  const milestones = data?.data ?? []
 
   const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: ["milestones"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.milestones.all })
   }
 
   const run = (label: string) => ({

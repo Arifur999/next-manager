@@ -29,6 +29,7 @@ import { useCallback, useState } from "react"
 import { toast } from "sonner"
 import { z } from "zod"
 import { clientsListQuery } from "@/queries/crm.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 const projectFormSchema = z.object({
   client_id: z.string().min(1, "Choose a client"),
@@ -122,7 +123,7 @@ const ProjectForm = ({ project, onDone }: { project?: IProject | null; onDone: (
       toast.success(result.message || `Project ${isEdit ? "updated" : "created"} successfully`)
       onDone()
 
-      void queryClient.invalidateQueries({ queryKey: ["projects"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all })
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] })
       router.refresh()
     },

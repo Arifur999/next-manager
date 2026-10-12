@@ -4,11 +4,11 @@ import ProjectFormModal from "@/components/modules/Admin/Projects/ProjectFormMod
 import { projectsColumns } from "@/components/modules/Admin/Projects/projectsColumns"
 import DataTable from "@/components/shared/table/DataTable"
 import { useRowActionModalState } from "@/hooks/useRowActionModalState"
-import { getProjects } from "@/services/project.services"
 import type { IProject } from "@/types/project.types"
 import { useQuery } from "@tanstack/react-query"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
+import { projectsListQuery } from "@/queries/project.queries"
 
 /**
  * The projects list.
@@ -51,12 +51,9 @@ const ProjectsTable = ({ canManage = true }: { canManage?: boolean }) => {
     .filter(Boolean)
     .join("&")
 
-  const { data, isLoading, isFetching } = useQuery({
-    queryKey: ["projects", query],
-    queryFn: () => getProjects(query || undefined),
-  })
+  const { data, isLoading, isFetching } = useQuery(projectsListQuery(query))
 
-  const projects = (data?.data ?? []) as IProject[]
+  const projects = data?.data ?? []
 
   return (
     <>

@@ -9,12 +9,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { getProjectLinks } from "@/services/project.services"
-import type { IProjectLink } from "@/types/project.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ExternalLink, FolderOpen, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { projectLinksListQuery } from "@/queries/project.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * Where this project's work actually lives.
@@ -52,15 +52,12 @@ const ProjectLinksPanel = ({
   const [label, setLabel] = useState("")
   const [url, setUrl] = useState("")
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["project-links", projectId],
-    queryFn: () => getProjectLinks(`project_id=${projectId}`),
-  })
+  const { data, isLoading } = useQuery(projectLinksListQuery(`project_id=${projectId}`))
 
-  const links = (data?.data ?? []) as IProjectLink[]
+  const links = data?.data ?? []
 
   const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: ["project-links", projectId] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.projectLinks.all })
   }
 
   const { mutate: add, isPending } = useMutation({

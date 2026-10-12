@@ -5,27 +5,24 @@ import PendingApprovals from "@/components/modules/Admin/TeamManagement/PendingA
 import TeamTable from "@/components/modules/Admin/TeamManagement/TeamTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getDepartments } from "@/services/people.services";
-import { getAssignmentOverview } from "@/services/project.services";
 import { getAllUsers } from "@/services/user.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { assignmentOverviewQuery } from "@/queries/project.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Team",
 };
 
 const TeamManagementPage = async () => {
-  const queryClient = new QueryClient();
 
-  await Promise.all([
+  const prefetch = (queryClient: QueryClient) => Promise.all([
     queryClient.prefetchQuery({ queryKey: ["users", ""], queryFn: () => getAllUsers() }),
     // Without this the department filter pops in after hydration, and the
     // first paint of the team list has no way to be filtered.
     queryClient.prefetchQuery({ queryKey: ["departments"], queryFn: () => getDepartments() }),
-    queryClient.prefetchQuery({
-      queryKey: ["assignment-overview"],
-      queryFn: () => getAssignmentOverview(),
-    }),
+    queryClient.prefetchQuery(assignmentOverviewQuery()),
   ]);
 
   return (
@@ -37,7 +34,7 @@ const TeamManagementPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <Tabs defaultValue="members">
           <TabsList>
             <TabsTrigger value="members">Members &amp; roles</TabsTrigger>
@@ -65,7 +62,7 @@ const TeamManagementPage = async () => {
             <CapacityPanel />
           </TabsContent>
         </Tabs>
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

@@ -5,13 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { getProject } from "@/services/project.services"
-import type { IProject } from "@/types/project.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { Lock } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { projectDetailQuery } from "@/queries/project.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * The plan this project will be measured against.
@@ -31,12 +31,9 @@ const ProjectBaselineCard = ({ projectId }: { projectId: string }) => {
   const [value, setValue] = useState("")
   const [replacing, setReplacing] = useState(false)
 
-  const { data } = useQuery({
-    queryKey: ["project", projectId],
-    queryFn: () => getProject(projectId),
-  })
+  const { data } = useQuery(projectDetailQuery(projectId))
 
-  const project = data?.data as IProject | undefined
+  const project = data?.data
   const isBaselined = Boolean(project?.baseline_set_at)
 
   const { mutate: save, isPending } = useMutation({
@@ -55,7 +52,7 @@ const ProjectBaselineCard = ({ projectId }: { projectId: string }) => {
       setHours("")
       setValue("")
       setReplacing(false)
-      void queryClient.invalidateQueries({ queryKey: ["project", projectId] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all })
       void queryClient.invalidateQueries({ queryKey: ["kpi"] })
     },
   })

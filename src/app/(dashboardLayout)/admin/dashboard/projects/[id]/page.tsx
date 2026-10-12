@@ -1,9 +1,10 @@
 import ProjectDetail from "@/components/modules/Admin/Projects/ProjectDetail";
 import { getTasks } from "@/services/work.services";
-import { getProject, getProjectFinancials } from "@/services/project.services";
 import { getUserInfo } from "@/services/auth.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { projectDetailQuery, projectFinancialsQuery } from "@/queries/project.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Project",
@@ -13,7 +14,6 @@ export const metadata: Metadata = {
 const ProjectDetailPage = async ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
 
-  const queryClient = new QueryClient();
   const user = await getUserInfo();
 
   // The same two roles /projects/:id/financials allows. Sales opens this page
@@ -26,12 +26,8 @@ const ProjectDetailPage = async ({ params }: { params: Promise<{ id: string }> }
 
   // Prefetched in parallel rather than one after another — the page needs them
   // all before it can paint, so serialising would just add round-trips.
-  await Promise.all([
-    queryClient.prefetchQuery({
-      queryKey: ["project", id],
-      queryFn: () => getProject(id),
-      staleTime: 1000 * 30,
-    }),
+  const prefetch = (queryClient: QueryClient) => Promise.all([
+    queryClient.prefetchQuery(projectDetailQuery(id)),
     queryClient.prefetchQuery({
       queryKey: ["tasks", `project_id=${id}`],
       queryFn: () => getTasks(`project_id=${id}`),
@@ -39,19 +35,15 @@ const ProjectDetailPage = async ({ params }: { params: Promise<{ id: string }> }
     }),
     ...(canSeeMoney
       ? [
-          queryClient.prefetchQuery({
-            queryKey: ["project-financials", id],
-            queryFn: () => getProjectFinancials(id),
-            staleTime: 1000 * 30,
-          }),
+          queryClient.prefetchQuery(projectFinancialsQuery(id)),
         ]
       : []),
   ]);
 
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
+    <QueryPrefetch prefetch={prefetch}>
       <ProjectDetail projectId={id} canSeeMoney={canSeeMoney} canManage={canManage} />
-    </HydrationBoundary>
+    </QueryPrefetch>
   );
 };
 

@@ -1,9 +1,10 @@
 import ProjectsTable from "@/components/modules/Admin/Projects/ProjectsTable";
-import { getProjects } from "@/services/project.services";
 import { getUserInfo } from "@/services/auth.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { projectsListQuery } from "@/queries/project.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Projects",
@@ -15,7 +16,6 @@ const ProjectsPage = async ({
   searchParams: Promise<{ status?: string; mine?: string }>;
 }) => {
   const params = await searchParams;
-  const queryClient = new QueryClient();
   const user = await getUserInfo();
 
   // The same two the API lets create and edit a project. Operations opens this
@@ -32,11 +32,7 @@ const ProjectsPage = async ({
     .filter(Boolean)
     .join("&");
 
-  await queryClient.prefetchQuery({
-    queryKey: ["projects", query],
-    queryFn: () => getProjects(query || undefined),
-    staleTime: 1000 * 30,
-  });
+  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(projectsListQuery(query));
 
   return (
     <div className="space-y-6">
@@ -53,13 +49,13 @@ const ProjectsPage = async ({
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         {/* The table reads its filter from the URL, which needs a Suspense
             boundary around useSearchParams. */}
         <Suspense fallback={null}>
           <ProjectsTable canManage={canManage} />
         </Suspense>
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

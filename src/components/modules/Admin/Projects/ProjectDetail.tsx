@@ -12,15 +12,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { formatBdt, formatPercent, formatUsd } from "@/lib/currency"
 import { getCredentials } from "@/services/workspace.services"
 import { getTasks } from "@/services/work.services"
-import { getProject, getProjectFinancials } from "@/services/project.services"
-import type { ICredential } from "@/types/workspace.types"
 import type { ITask } from "@/types/work.types"
-import type { IProject, IProjectFinancials } from "@/types/project.types"
+import type { IProject } from "@/types/project.types"
 import ProjectLinksPanel from "@/components/modules/Admin/Projects/ProjectLinksPanel"
 import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { ArrowDownLeft, KeyRound, Receipt, TrendingUp } from "lucide-react"
 import Link from "next/link"
+import { projectDetailQuery, projectFinancialsQuery } from "@/queries/project.queries"
 
 /**
  * One project, and how much of it somebody may see.
@@ -42,16 +41,9 @@ const ProjectDetail = ({
   /** Whether the panels that CHANGE a project appear. Admin and PM only. */
   canManage?: boolean
 }) => {
-  const { data: projectData, isLoading } = useQuery({
-    queryKey: ["project", projectId],
-    queryFn: () => getProject(projectId),
-  })
+  const { data: projectData, isLoading } = useQuery(projectDetailQuery(projectId))
 
-  const { data: financeData } = useQuery({
-    queryKey: ["project-financials", projectId],
-    enabled: canSeeMoney,
-    queryFn: () => getProjectFinancials(projectId),
-  })
+  const { data: financeData } = useQuery({ ...projectFinancialsQuery(projectId), enabled: canSeeMoney })
 
   const { data: tasksData } = useQuery({
     queryKey: ["tasks", `project_id=${projectId}`],
@@ -64,9 +56,9 @@ const ProjectDetail = ({
   })
 
   const project = projectData?.data as (IProject & { tasks?: ITask[] }) | undefined
-  const finance = financeData?.data as IProjectFinancials | undefined
-  const tasks = ((tasksData?.data ?? []) as ITask[])
-  const credentials = (credentialsData?.data ?? []) as ICredential[]
+  const finance = financeData?.data
+  const tasks = ((tasksData?.data ?? []))
+  const credentials = credentialsData?.data ?? []
 
   if (isLoading && !project) {
     return <Card className="h-64 animate-pulse bg-muted/40" />

@@ -11,18 +11,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  assignProjectMember,
-  getProjectMembers,
-  removeProjectMember,
-} from "@/services/project.services"
+import { assignProjectMember, removeProjectMember } from "@/services/project.services"
 import { getAllUsers } from "@/services/user.services"
 import type { IProjectMember } from "@/types/project.types"
-import type { IUser } from "@/types/user.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { UserMinus, UserPlus } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { projectMembersQuery } from "@/queries/project.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 const initialsOf = (name: string) =>
   name
@@ -45,17 +42,14 @@ const ProjectTeamPanel = ({
   const [userId, setUserId] = useState("")
   const [roleOnProject, setRoleOnProject] = useState("")
 
-  const { data: membersData } = useQuery({
-    queryKey: ["project-members", projectId],
-    queryFn: () => getProjectMembers(projectId),
-  })
+  const { data: membersData } = useQuery(projectMembersQuery(projectId))
   const { data: usersData } = useQuery({
     queryKey: ["users"],
     queryFn: () => getAllUsers(),
   })
 
-  const members = (membersData?.data ?? []) as IProjectMember[]
-  const users = ((usersData?.data ?? []) as IUser[]).filter((user) => user.status === "active")
+  const members = membersData?.data ?? []
+  const users = ((usersData?.data ?? [])).filter((user) => user.status === "active")
 
   const { mutateAsync: assign, isPending: isAssigning } = useMutation({
     mutationFn: () =>
@@ -67,9 +61,9 @@ const ProjectTeamPanel = ({
   })
 
   const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: ["project-members", projectId] })
-    void queryClient.invalidateQueries({ queryKey: ["assignment-overview"] })
-    void queryClient.invalidateQueries({ queryKey: ["project", projectId] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.projectMembers.all })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.assignmentOverview.all })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all })
   }
 
   const handleAssign = async () => {

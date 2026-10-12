@@ -23,10 +23,6 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt } from "@/lib/currency"
 import { getExpenseCategories } from "@/services/spending.services"
 import { getAccounts } from "@/services/finance.services"
-import { getProjects } from "@/services/project.services"
-import type { IExpenseCategory } from "@/types/spending.types"
-import type { IAccount } from "@/types/finance.types"
-import type { IProject } from "@/types/project.types"
 import { expenseFormZodSchema, toNumber, type IExpenseFormValues } from "@/zod/agencio.validation"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -34,6 +30,7 @@ import { Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
+import { projectsListQuery } from "@/queries/project.queries"
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -63,15 +60,11 @@ const RecordExpenseModal = () => {
     queryFn: () => getAccounts(),
     enabled: open,
   })
-  const { data: projectsData } = useQuery({
-    queryKey: ["projects", ""],
-    queryFn: () => getProjects(),
-    enabled: open,
-  })
+  const { data: projectsData } = useQuery({ ...projectsListQuery(), enabled: open })
 
-  const categories = ((categoriesData?.data ?? []) as IExpenseCategory[]).filter((c) => c.is_active)
-  const accounts = (accountsData?.data ?? []) as IAccount[]
-  const projects = (projectsData?.data ?? []) as IProject[]
+  const categories = ((categoriesData?.data ?? [])).filter((c) => c.is_active)
+  const accounts = accountsData?.data ?? []
+  const projects = projectsData?.data ?? []
 
   // Expenses are BDT, so a USD wallet is never a valid source.
   const bdtAccounts = accounts.filter((account) => account.currency === "BDT" && account.is_active)

@@ -17,17 +17,14 @@ import {
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { getWorkflowStatuses } from "@/services/work.services"
-import { getProjects } from "@/services/project.services"
 import { getAllUsers } from "@/services/user.services"
-import type { IWorkflowStatus } from "@/types/work.types"
-import type { IProject } from "@/types/project.types"
-import type { IUser } from "@/types/user.types"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
 import { z } from "zod"
+import { projectsListQuery } from "@/queries/project.queries"
 
 const taskFormSchema = z.object({
   project_id: z.string().min(1, "Choose a project"),
@@ -45,26 +42,22 @@ const CreateTaskModal = () => {
   const [open, setOpen] = useState(false)
   const queryClient = useQueryClient()
 
-  const { data: projectsData } = useQuery({
-    queryKey: ["projects", ""],
-    queryFn: () => getProjects(),
-    enabled: open,
-  })
+  const { data: projectsData } = useQuery({ ...projectsListQuery(), enabled: open })
   const { data: usersData } = useQuery({
     queryKey: ["users"],
     queryFn: () => getAllUsers(),
     enabled: open,
   })
 
-  const projects = (projectsData?.data ?? []) as IProject[]
-  const users = ((usersData?.data ?? []) as IUser[]).filter((user) => user.status === "active")
+  const projects = projectsData?.data ?? []
+  const users = ((usersData?.data ?? [])).filter((user) => user.status === "active")
 
   // The agency's own columns, rather than a list of words baked in here.
   const { data: statusData } = useQuery({
     queryKey: ["workflow-statuses", "task"],
     queryFn: () => getWorkflowStatuses("kind=task"),
   })
-  const statuses = (statusData?.data ?? []) as IWorkflowStatus[]
+  const statuses = statusData?.data ?? []
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: (values: TaskFormValues) =>

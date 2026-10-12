@@ -17,7 +17,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { getProjects } from "@/services/project.services"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Eye, EyeOff, Plus } from "lucide-react"
@@ -25,6 +24,7 @@ import { useCallback, useState } from "react"
 import { toast } from "sonner"
 import { z } from "zod"
 import { clientsListQuery } from "@/queries/crm.queries"
+import { projectsListQuery } from "@/queries/project.queries"
 
 const credentialFormSchema = z.object({
   label: z.string().min(1, "Label is required"),
@@ -57,11 +57,7 @@ const AddCredentialModal = () => {
   const queryClient = useQueryClient()
 
   const { data: clientsData } = useQuery({ ...clientsListQuery(), enabled: open })
-  const { data: projectsData } = useQuery({
-    queryKey: ["projects", ""],
-    queryFn: () => getProjects(),
-    enabled: open,
-  })
+  const { data: projectsData } = useQuery({ ...projectsListQuery(), enabled: open })
 
   const clients = clientsData?.data ?? []
   const projects = projectsData?.data ?? []

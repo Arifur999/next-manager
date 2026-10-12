@@ -19,7 +19,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatUsd } from "@/lib/currency"
-import { getProjects } from "@/services/project.services"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus, Trash2 } from "lucide-react"
@@ -28,6 +27,7 @@ import { useCallback, useState } from "react"
 import { toast } from "sonner"
 import { z } from "zod"
 import { clientsListQuery } from "@/queries/crm.queries"
+import { projectsListQuery } from "@/queries/project.queries"
 
 /**
  * Creating an invoice.
@@ -78,11 +78,7 @@ const CreateInvoiceModal = () => {
   const router = useRouter()
 
   const { data: clientsData } = useQuery({ ...clientsListQuery(), enabled: open })
-  const { data: projectsData } = useQuery({
-    queryKey: ["projects", ""],
-    queryFn: () => getProjects(),
-    enabled: open,
-  })
+  const { data: projectsData } = useQuery({ ...projectsListQuery(), enabled: open })
 
   const clients = clientsData?.data ?? []
   const projects = projectsData?.data ?? []

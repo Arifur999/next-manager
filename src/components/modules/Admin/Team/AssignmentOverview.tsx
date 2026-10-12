@@ -3,10 +3,9 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
-import { getAssignmentOverview } from "@/services/project.services"
-import type { IAssignmentRow } from "@/types/project.types"
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
+import { assignmentOverviewQuery } from "@/queries/project.queries"
 
 const initialsOf = (name: string) =>
   name
@@ -24,12 +23,9 @@ const initialsOf = (name: string) =>
  * answer it.
  */
 const AssignmentOverview = () => {
-  const { data, isLoading } = useQuery({
-    queryKey: ["assignment-overview"],
-    queryFn: () => getAssignmentOverview(),
-  })
+  const { data, isLoading } = useQuery(assignmentOverviewQuery())
 
-  const rows = (data?.data ?? []) as IAssignmentRow[]
+  const rows = data?.data ?? []
 
   if (isLoading && rows.length === 0) {
     return <Card className="h-64 animate-pulse bg-muted/40" />

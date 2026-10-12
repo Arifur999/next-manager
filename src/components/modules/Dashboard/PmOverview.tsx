@@ -5,11 +5,11 @@ import { useCount } from "@/components/shared/dashboard/useCount"
 import EmptyState from "@/components/shared/state/EmptyState"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { getTaskReport, getWorkload } from "@/services/work.services"
-import { getProjects } from "@/services/project.services"
 import { useQuery } from "@tanstack/react-query"
 import { format, isBefore, parseISO, startOfToday } from "date-fns"
 import { AlertTriangle, CalendarDays, CheckCircle2, FolderKanban, ListChecks, UserCheck, UsersRound } from "lucide-react"
 import Link from "next/link"
+import { projectsListQuery } from "@/queries/project.queries"
 
 /**
  * What a project manager opens the morning with.
@@ -25,10 +25,10 @@ import Link from "next/link"
  * the same one the sidebar already makes.
  */
 const PmOverview = () => {
-  const planning = useCount({ queryKey: ["projects", "count", "planning"], queryFn: () => getProjects("status=Planning&limit=1") })
-  const active = useCount({ queryKey: ["projects", "count", "active"], queryFn: () => getProjects("status=Active&limit=1") })
-  const review = useCount({ queryKey: ["projects", "count", "review"], queryFn: () => getProjects("status=Review&limit=1") })
-  const completed = useCount({ queryKey: ["projects", "count", "completed"], queryFn: () => getProjects("status=Completed&limit=1") })
+  const planning = useCount(projectsListQuery("status=Planning&limit=1"))
+  const active = useCount(projectsListQuery("status=Active&limit=1"))
+  const review = useCount(projectsListQuery("status=Review&limit=1"))
+  const completed = useCount(projectsListQuery("status=Completed&limit=1"))
 
   const { data: reportData } = useQuery({
     queryKey: ["task-report"],
@@ -50,10 +50,7 @@ const PmOverview = () => {
 
   // The deadlines themselves, not a count of them: a date is something to act
   // on, and "three due soon" tells nobody which three.
-  const { data: dueData } = useQuery({
-    queryKey: ["projects", "deadlines"],
-    queryFn: () => getProjects("status=Active&limit=50"),
-  })
+  const { data: dueData } = useQuery(projectsListQuery("status=Active&limit=50"))
   const today = startOfToday()
   const deadlines = ((dueData?.data ?? []))
     .filter((project) => project.end_date)

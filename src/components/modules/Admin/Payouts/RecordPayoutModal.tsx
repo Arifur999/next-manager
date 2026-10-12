@@ -18,11 +18,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt } from "@/lib/currency"
 import { getAccounts } from "@/services/finance.services"
-import { getProjects } from "@/services/project.services"
 import { getAllUsers } from "@/services/user.services"
-import type { IAccount } from "@/types/finance.types"
-import type { IProject } from "@/types/project.types"
-import type { IUser } from "@/types/user.types"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
@@ -30,6 +26,7 @@ import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
 import { z } from "zod"
+import { projectsListQuery } from "@/queries/project.queries"
 
 const payoutFormSchema = z.object({
   user_id: z.string().min(1, "Choose a team member"),
@@ -81,15 +78,11 @@ const RecordPayoutModal = () => {
     queryFn: () => getAccounts(),
     enabled: open,
   })
-  const { data: projectsData } = useQuery({
-    queryKey: ["projects", ""],
-    queryFn: () => getProjects(),
-    enabled: open,
-  })
+  const { data: projectsData } = useQuery({ ...projectsListQuery(), enabled: open })
 
-  const users = ((usersData?.data ?? []) as IUser[]).filter((user) => user.status === "active")
-  const accounts = (accountsData?.data ?? []) as IAccount[]
-  const projects = (projectsData?.data ?? []) as IProject[]
+  const users = ((usersData?.data ?? [])).filter((user) => user.status === "active")
+  const accounts = accountsData?.data ?? []
+  const projects = projectsData?.data ?? []
   const bdtAccounts = accounts.filter((account) => account.currency === "BDT" && account.is_active)
 
   const { mutateAsync, isPending } = useMutation({

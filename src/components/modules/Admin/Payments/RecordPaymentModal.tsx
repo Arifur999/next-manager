@@ -18,7 +18,6 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt, formatRate } from "@/lib/currency"
 import { getAccounts, getRateSettings } from "@/services/finance.services"
-import { getProjects } from "@/services/project.services"
 import { paymentFormZodSchema, toNumber, type IPaymentFormValues } from "@/zod/agencio.validation"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -27,6 +26,7 @@ import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
 import { clientsListQuery } from "@/queries/crm.queries"
+import { projectsListQuery } from "@/queries/project.queries"
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -48,11 +48,7 @@ const RecordPaymentModal = () => {
 
   // Only fetched once the dialog opens — three lists nobody needs until then.
   const { data: clientsData } = useQuery({ ...clientsListQuery(), enabled: open })
-  const { data: projectsData } = useQuery({
-    queryKey: ["projects", ""],
-    queryFn: () => getProjects(),
-    enabled: open,
-  })
+  const { data: projectsData } = useQuery({ ...projectsListQuery(), enabled: open })
   const { data: accountsData } = useQuery({
     queryKey: ["accounts"],
     queryFn: () => getAccounts(),

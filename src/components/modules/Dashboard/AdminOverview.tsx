@@ -5,7 +5,6 @@ import { useCount } from "@/components/shared/dashboard/useCount"
 import { formatBdt, formatUsd } from "@/lib/currency"
 import { getDashboard } from "@/services/insights.services"
 import { getTaskReport, getWorkload } from "@/services/work.services"
-import { getProjects } from "@/services/project.services"
 import { getAllUsers } from "@/services/user.services"
 import { useQuery } from "@tanstack/react-query"
 import {
@@ -20,6 +19,7 @@ import {
   Wallet,
 } from "lucide-react"
 import { clientsListQuery } from "@/queries/crm.queries"
+import { projectsListQuery } from "@/queries/project.queries"
 
 /**
  * What an admin opens the morning with.
@@ -36,7 +36,7 @@ import { clientsListQuery } from "@/queries/crm.queries"
 const AdminOverview = () => {
   const clients = useCount(clientsListQuery("limit=1"))
   const activeClients = useCount(clientsListQuery("status=active&limit=1"))
-  const projects = useCount({ queryKey: ["projects", "count"], queryFn: () => getProjects("limit=1") })
+  const projects = useCount(projectsListQuery("limit=1"))
   const team = useCount({ queryKey: ["users", "count"], queryFn: () => getAllUsers("limit=1") })
 
   const { data: reportData } = useQuery({

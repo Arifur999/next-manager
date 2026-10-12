@@ -19,15 +19,13 @@ import {
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { getTasks } from "@/services/work.services"
-import { getProjects } from "@/services/project.services"
-import type { ITask } from "@/types/work.types"
-import type { IProject } from "@/types/project.types"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
 import { z } from "zod"
+import { projectsListQuery } from "@/queries/project.queries"
 
 const logTimeSchema = z.object({
   project_id: z.string().min(1, "Choose a project"),
@@ -71,7 +69,7 @@ const TaskPicker = ({
     enabled: Boolean(projectId),
   })
 
-  const tasks = (data?.data ?? []) as ITask[]
+  const tasks = data?.data ?? []
 
   return (
     <EntitySelect
@@ -91,13 +89,9 @@ const LogTimeModal = ({ defaultDate }: { defaultDate: string }) => {
   const [open, setOpen] = useState(false)
   const queryClient = useQueryClient()
 
-  const { data: projectsData } = useQuery({
-    queryKey: ["projects", ""],
-    queryFn: () => getProjects(),
-    enabled: open,
-  })
+  const { data: projectsData } = useQuery({ ...projectsListQuery(), enabled: open })
 
-  const projects = (projectsData?.data ?? []) as IProject[]
+  const projects = projectsData?.data ?? []
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: (values: LogTimeValues) =>
