@@ -16,7 +16,6 @@ export const queryKeys = {
   assignmentOverview: createDomainKeys("assignment-overview"),
   attendance: createDomainKeys("attendance"),
   capacities: createDomainKeys("capacities"),
-  chatUnread: createDomainKeys("chat-unread"),
   clientFinancials: createDomainKeys("client-financials"),
   clientLinks: createDomainKeys("client-links"),
   clients: createDomainKeys("clients"),

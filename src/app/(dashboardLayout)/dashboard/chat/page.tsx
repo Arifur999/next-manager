@@ -1,9 +1,10 @@
 import ChatBoard from "@/components/modules/Admin/Chat/ChatBoard";
-import { getConversations } from "@/services/workspace.services";
 import { getUserInfo } from "@/services/auth.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { conversationsListQuery } from "@/queries/workspace.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Chat",
@@ -15,7 +16,6 @@ const ChatPage = async ({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) => {
   const params = await searchParams;
-  const queryClient = new QueryClient();
 
   // The same query string the board builds from the URL, so the prefetch lands
   // on the key it will actually ask for. Without this the first paint is an
@@ -29,12 +29,10 @@ const ChatPage = async ({
   // `meId` tells your own messages from everybody else's. It is never a
   // permission: who may read a conversation is decided by the server from a
   // membership row, on every single call.
-  const [user] = await Promise.all([
-    getUserInfo(),
-    queryClient.prefetchQuery({
-      queryKey: ["conversations", query],
-      queryFn: () => getConversations(query),
-    }),
+  const user = await getUserInfo();
+
+  const prefetch = (queryClient: QueryClient) => Promise.all([
+    queryClient.prefetchQuery(conversationsListQuery(query)),
   ]);
 
   return (
@@ -48,13 +46,13 @@ const ChatPage = async ({
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         {/* The board reads its filter from the URL, which needs a Suspense
             boundary around useSearchParams. */}
         <Suspense fallback={null}>
           <ChatBoard meId={user?.id ?? null} />
         </Suspense>
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

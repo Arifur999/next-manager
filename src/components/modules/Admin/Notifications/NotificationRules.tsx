@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { getNotificationRules } from "@/services/workspace.services"
 import type { INotificationRule } from "@/types/workspace.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { BellRing } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
+import { notificationRulesQuery } from "@/queries/workspace.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * What the company tells its own people about.
@@ -34,12 +35,9 @@ const roleLabel = (role: string) => role.replace(/_/g, " ")
 const NotificationRules = () => {
   const queryClient = useQueryClient()
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["notification-rules"],
-    queryFn: () => getNotificationRules(),
-  })
+  const { data, isLoading } = useQuery(notificationRulesQuery())
 
-  const rules = (data?.data ?? []) as INotificationRule[]
+  const rules = data?.data ?? []
 
   const { mutate: save, isPending } = useMutation({
     mutationFn: ({ event, payload }: { event: string; payload: Record<string, unknown> }) =>
@@ -49,7 +47,7 @@ const NotificationRules = () => {
         toast.error(result.message || "Could not save that")
         return
       }
-      void queryClient.invalidateQueries({ queryKey: ["notification-rules"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.notificationRules.all })
     },
   })
 

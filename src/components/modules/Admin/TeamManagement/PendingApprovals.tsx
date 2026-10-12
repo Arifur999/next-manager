@@ -35,7 +35,7 @@ const PendingApprovals = () => {
 
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.users.all })
-    void queryClient.invalidateQueries({ queryKey: ["activity"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.activity.all })
   }
 
   const { mutate: approve, isPending: isApproving } = useMutation({

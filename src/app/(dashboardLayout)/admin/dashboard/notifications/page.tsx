@@ -1,19 +1,16 @@
 import NotificationRules from "@/components/modules/Admin/Notifications/NotificationRules";
-import { getNotificationRules } from "@/services/workspace.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { notificationRulesQuery } from "@/queries/workspace.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Notifications",
 };
 
 const NotificationsPage = async () => {
-  const queryClient = new QueryClient();
 
-  await queryClient.prefetchQuery({
-    queryKey: ["notification-rules"],
-    queryFn: () => getNotificationRules(),
-  });
+  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(notificationRulesQuery());
 
   return (
     <div className="space-y-6">
@@ -25,9 +22,9 @@ const NotificationsPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <NotificationRules />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

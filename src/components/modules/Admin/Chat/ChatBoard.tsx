@@ -12,13 +12,13 @@ import NewConversationCard from "@/components/modules/Admin/Chat/NewConversation
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { useChatSocket } from "@/hooks/useChatSocket"
-import { getConversations, getMessages } from "@/services/workspace.services"
-import type { IConversation, IMessage } from "@/types/workspace.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Archive } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
+import { conversationsListQuery, messagesQuery } from "@/queries/workspace.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * Chat.
@@ -47,25 +47,16 @@ const ChatBoard = ({ meId }: { meId: string | null }) => {
     ...(archived ? { archived: "true" } : {}),
   }).toString()
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["conversations", query],
-    queryFn: () => getConversations(query),
-  })
-  const conversations = (data?.data ?? []) as IConversation[]
+  const { data, isLoading } = useQuery(conversationsListQuery(query))
+  const conversations = data?.data ?? []
 
-  const { data: messageData, isLoading: loadingMessages } = useQuery({
-    queryKey: ["messages", activeId],
-    queryFn: () => getMessages(activeId as string),
-    enabled: Boolean(activeId),
-  })
-  const messages = (messageData?.data ?? []) as IMessage[]
+  const { data: messageData, isLoading: loadingMessages } = useQuery({ ...messagesQuery(activeId as string), enabled: Boolean(activeId) })
+  const messages = messageData?.data ?? []
 
   const active = conversations.find((conversation) => conversation.id === activeId) ?? null
 
   const refreshLists = () => {
-    void queryClient.invalidateQueries({ queryKey: ["conversations"] })
-    // The navbar badge counts the same thing.
-    void queryClient.invalidateQueries({ queryKey: ["chat-unread"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.conversations.all })
   }
 
   // A push is a hint, never the message itself: refetch rather than splice, so
@@ -74,7 +65,7 @@ const ChatBoard = ({ meId }: { meId: string | null }) => {
     if (event.type !== "message") return
     refreshLists()
     if (event.conversation_id === activeId) {
-      void queryClient.invalidateQueries({ queryKey: ["messages", activeId] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.messages.all })
     }
   })
 
@@ -93,7 +84,7 @@ const ChatBoard = ({ meId }: { meId: string | null }) => {
         toast.error(result.message || "Could not send it")
         return
       }
-      void queryClient.invalidateQueries({ queryKey: ["messages", activeId] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.messages.all })
       refreshLists()
     },
   })

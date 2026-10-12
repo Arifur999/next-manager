@@ -10,12 +10,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { getActivity, getActivityFilters } from "@/services/workspace.services"
-import type { IActivityEntry, IActivityFilters } from "@/types/workspace.types"
+import type { IActivityEntry } from "@/types/workspace.types"
 import { useQuery } from "@tanstack/react-query"
 import { format, formatDistanceToNow, isToday, isYesterday, parseISO } from "date-fns"
 import { History } from "lucide-react"
 import { useState } from "react"
+import { activityFiltersQuery, activityQuery } from "@/queries/workspace.queries"
 
 /**
  * Who did what, across the whole company.
@@ -71,18 +71,12 @@ const ActivityFeed = () => {
     .filter(Boolean)
     .join("&")
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["activity", query],
-    queryFn: () => getActivity(query),
-  })
+  const { data, isLoading } = useQuery(activityQuery(query))
 
-  const { data: filterData } = useQuery({
-    queryKey: ["activity-filters"],
-    queryFn: () => getActivityFilters(),
-  })
+  const { data: filterData } = useQuery(activityFiltersQuery())
 
-  const entries = (data?.data ?? []) as IActivityEntry[]
-  const filters = filterData?.data as IActivityFilters | undefined
+  const entries = data?.data ?? []
+  const filters = filterData?.data
   const total = data?.meta?.total ?? entries.length
   const grouped = groupByDay(entries)
 

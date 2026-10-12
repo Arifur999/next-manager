@@ -1,9 +1,10 @@
 "use client"
 
-import { getPermissionGrid } from "@/services/permission.services"
-import type { IPermissionGrid, PermissionScope } from "@/types/permission.types"
+import type { PermissionScope } from "@/types/permission.types"
+import { permissionGridQuery } from "@/queries/workspace.queries"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * The grid, and the one thing every write to it has in common.
@@ -19,17 +20,12 @@ import { toast } from "sonner"
  * does not have.
  */
 
-export const permissionKey = (userId?: string) => ["permissions", userId ?? ""] as const
-
 export const usePermissionGrid = (userId?: string) => {
     const queryClient = useQueryClient()
 
-    const { data, isLoading, isFetching } = useQuery({
-        queryKey: permissionKey(userId),
-        queryFn: () => getPermissionGrid(userId),
-    })
+    const { data, isLoading, isFetching } = useQuery(permissionGridQuery(userId))
 
-    const grid = data?.data as IPermissionGrid | undefined
+    const grid = data?.data
 
     const { mutate, isPending } = useMutation({
         mutationFn: ({ run }: { run: () => Promise<{ success: boolean; message?: string }>; note: string }) =>
@@ -39,16 +35,16 @@ export const usePermissionGrid = (userId?: string) => {
                 toast.error(result?.message || "Could not change that permission")
                 // A refetch even on failure: the screen must show what the
                 // server holds, not the value somebody just tried to set.
-                void queryClient.invalidateQueries({ queryKey: ["permissions"] })
+                void queryClient.invalidateQueries({ queryKey: queryKeys.permissions.all })
                 return
             }
 
             toast.success(variables.note)
-            void queryClient.invalidateQueries({ queryKey: ["permissions"] })
+            void queryClient.invalidateQueries({ queryKey: queryKeys.permissions.all })
         },
         onError: () => {
             toast.error("Could not change that permission")
-            void queryClient.invalidateQueries({ queryKey: ["permissions"] })
+            void queryClient.invalidateQueries({ queryKey: queryKeys.permissions.all })
         },
     })
 

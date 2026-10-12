@@ -4,11 +4,10 @@ import AddCredentialModal from "@/components/modules/Admin/Vault/AddCredentialMo
 import CredentialCard from "@/components/modules/Admin/Vault/CredentialCard"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { getCredentials } from "@/services/workspace.services"
-import type { ICredential } from "@/types/workspace.types"
 import { useQuery } from "@tanstack/react-query"
 import { Search, ShieldCheck } from "lucide-react"
 import { useEffect, useState } from "react"
+import { credentialsListQuery } from "@/queries/workspace.queries"
 
 const VaultBoard = () => {
   const [term, setTerm] = useState("")
@@ -21,12 +20,9 @@ const VaultBoard = () => {
     return () => clearTimeout(timer)
   }, [term])
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["credentials", search],
-    queryFn: () => getCredentials(search ? `search=${encodeURIComponent(search)}` : undefined),
-  })
+  const { data, isLoading } = useQuery(credentialsListQuery(search ? `search=${encodeURIComponent(search)}` : undefined))
 
-  const credentials = (data?.data ?? []) as ICredential[]
+  const credentials = data?.data ?? []
 
   return (
     <div className="space-y-6">

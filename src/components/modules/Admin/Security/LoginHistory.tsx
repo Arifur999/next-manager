@@ -3,12 +3,11 @@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { getLoginEvents } from "@/services/workspace.services"
-import type { ILoginEvent } from "@/types/workspace.types"
 import { useQuery } from "@tanstack/react-query"
 import { format, formatDistanceToNow, parseISO } from "date-fns"
 import { ShieldAlert, ShieldCheck } from "lucide-react"
 import { useState } from "react"
+import { loginEventsListQuery } from "@/queries/workspace.queries"
 
 /**
  * Who tried to sign in, and whether it worked.
@@ -35,12 +34,9 @@ const LoginHistory = () => {
 
   const query = filter === ALL ? "" : `success=${filter}`
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["login-events", query],
-    queryFn: () => getLoginEvents(query || undefined),
-  })
+  const { data, isLoading } = useQuery(loginEventsListQuery(query))
 
-  const events = (data?.data ?? []) as ILoginEvent[]
+  const events = data?.data ?? []
   const failedLately = data?.meta?.failed_last_24h ?? 0
   const retention = data?.meta?.retention_days ?? 90
 

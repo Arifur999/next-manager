@@ -1,21 +1,18 @@
 import { site } from "@/data/site"
 import BusinessProfile from "@/components/modules/Admin/Settings/BusinessProfile";
 import SubscriptionPanel from "@/components/modules/Admin/Settings/SubscriptionPanel";
-import { getOrganization } from "@/services/workspace.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { organizationQuery } from "@/queries/workspace.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Business Information",
 };
 
 const BusinessInformationPage = async () => {
-  const queryClient = new QueryClient();
 
-  await queryClient.prefetchQuery({
-    queryKey: ["organization"],
-    queryFn: () => getOrganization(),
-  });
+  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(organizationQuery());
 
   return (
     <div className="space-y-6">
@@ -30,9 +27,9 @@ const BusinessInformationPage = async () => {
           the message is pointing at. */}
       <SubscriptionPanel />
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <BusinessProfile />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

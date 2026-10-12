@@ -4,20 +4,17 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatUsd } from "@/lib/currency"
-import { getOrganization } from "@/services/workspace.services"
 import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { Printer } from "lucide-react"
 import Link from "next/link"
 import { invoiceDetailQuery } from "@/queries/billing.queries"
+import { organizationQuery } from "@/queries/workspace.queries"
 
 const InvoiceDetail = ({ invoiceId }: { invoiceId: string }) => {
   const { data, isLoading } = useQuery(invoiceDetailQuery(invoiceId))
 
-  const { data: orgData } = useQuery({
-    queryKey: ["organization"],
-    queryFn: () => getOrganization(),
-  })
+  const { data: orgData } = useQuery(organizationQuery())
 
   const invoice = data?.data
   const organization = orgData?.data

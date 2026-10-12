@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/card"
 import ClientLinksPanel from "@/components/modules/Admin/Clients/ClientLinksPanel"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { formatBdt, formatUsd } from "@/lib/currency"
-import { getCredentials } from "@/services/workspace.services"
 import type { IProject } from "@/types/project.types"
 import type { IClient } from "@/types/crm.types"
 import { useQuery } from "@tanstack/react-query"
@@ -15,6 +14,7 @@ import { ArrowDownLeft, FileText, FolderKanban, TrendingUp } from "lucide-react"
 import Link from "next/link"
 import { clientDetailQuery, clientFinancialsQuery } from "@/queries/crm.queries"
 import { invoicesListQuery, paymentsListQuery } from "@/queries/billing.queries"
+import { credentialsListQuery } from "@/queries/workspace.queries"
 
 /**
  * One client, and how much of them somebody may see.
@@ -42,10 +42,7 @@ const ClientDetail = ({
   // The vault, which now takes a client_id, is asked for directly.
   const { data: paymentsData } = useQuery({ ...paymentsListQuery(), enabled: canSeeMoney })
   const { data: invoicesData } = useQuery({ ...invoicesListQuery(), enabled: canSeeMoney })
-  const { data: credentialsData } = useQuery({
-    queryKey: ["credentials", `client_id=${clientId}`],
-    queryFn: () => getCredentials(`client_id=${clientId}`),
-  })
+  const { data: credentialsData } = useQuery(credentialsListQuery(`client_id=${clientId}`))
 
   const client = clientData?.data as (IClient & { projects?: IProject[] }) | undefined
   const finance = financeData?.data

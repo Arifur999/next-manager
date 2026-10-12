@@ -25,6 +25,7 @@ import { toast } from "sonner"
 import { z } from "zod"
 import { clientsListQuery } from "@/queries/crm.queries"
 import { projectsListQuery } from "@/queries/project.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 const credentialFormSchema = z.object({
   label: z.string().min(1, "Label is required"),
@@ -86,7 +87,7 @@ const AddCredentialModal = () => {
       form.reset()
       setShowPassword(false)
 
-      void queryClient.invalidateQueries({ queryKey: ["credentials"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.credentials.all })
     },
   })
 

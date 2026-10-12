@@ -10,7 +10,6 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { formatBdt, formatPercent, formatUsd } from "@/lib/currency"
-import { getCredentials } from "@/services/workspace.services"
 import type { ITask } from "@/types/work.types"
 import type { IProject } from "@/types/project.types"
 import ProjectLinksPanel from "@/components/modules/Admin/Projects/ProjectLinksPanel"
@@ -20,6 +19,7 @@ import { ArrowDownLeft, KeyRound, Receipt, TrendingUp } from "lucide-react"
 import Link from "next/link"
 import { projectDetailQuery, projectFinancialsQuery } from "@/queries/project.queries"
 import { tasksListQuery } from "@/queries/work.queries"
+import { credentialsListQuery } from "@/queries/workspace.queries"
 
 /**
  * One project, and how much of it somebody may see.
@@ -47,10 +47,7 @@ const ProjectDetail = ({
 
   const { data: tasksData } = useQuery(tasksListQuery(`project_id=${projectId}`))
 
-  const { data: credentialsData } = useQuery({
-    queryKey: ["credentials", `project_id=${projectId}`],
-    queryFn: () => getCredentials(`project_id=${projectId}`),
-  })
+  const { data: credentialsData } = useQuery(credentialsListQuery(`project_id=${projectId}`))
 
   const project = projectData?.data as (IProject & { tasks?: ITask[] }) | undefined
   const finance = financeData?.data

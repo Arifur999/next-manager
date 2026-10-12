@@ -1,22 +1,18 @@
 import VaultBoard from "@/components/modules/Admin/Vault/VaultBoard";
-import { getCredentials } from "@/services/workspace.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { credentialsListQuery } from "@/queries/workspace.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Vault",
 };
 
 const VaultPage = async () => {
-  const queryClient = new QueryClient();
 
   // The list carries masks only — real passwords are never part of it, so
   // prefetching here leaves nothing sensitive in the page payload.
-  await queryClient.prefetchQuery({
-    queryKey: ["credentials", ""],
-    queryFn: () => getCredentials(),
-    staleTime: 1000 * 30,
-  });
+  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(credentialsListQuery());
 
   return (
     <div className="space-y-6">
@@ -27,9 +23,9 @@ const VaultPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <VaultBoard />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

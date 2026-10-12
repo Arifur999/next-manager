@@ -1,7 +1,8 @@
 import LoginHistory from "@/components/modules/Admin/Security/LoginHistory";
-import { getLoginEvents } from "@/services/workspace.services";
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { loginEventsListQuery } from "@/queries/workspace.queries";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
   title: "Security",
@@ -10,12 +11,8 @@ export const metadata: Metadata = {
 // No _action.ts, and there will not be one: the API is GET-only, because a
 // security log somebody can edit proves nothing.
 const SecurityPage = async () => {
-  const queryClient = new QueryClient();
 
-  await queryClient.prefetchQuery({
-    queryKey: ["login-events", ""],
-    queryFn: () => getLoginEvents(),
-  });
+  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(loginEventsListQuery());
 
   return (
     <div className="space-y-6">
@@ -27,9 +24,9 @@ const SecurityPage = async () => {
         </p>
       </div>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
+      <QueryPrefetch prefetch={prefetch}>
         <LoginHistory />
-      </HydrationBoundary>
+      </QueryPrefetch>
     </div>
   );
 };

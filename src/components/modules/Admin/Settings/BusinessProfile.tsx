@@ -4,12 +4,13 @@ import { updateOrganizationAction } from "@/app/(dashboardLayout)/admin/dashboar
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { getOrganization } from "@/services/workspace.services"
 import type { IOrganization } from "@/types/workspace.types"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { z } from "zod"
+import { organizationQuery } from "@/queries/workspace.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * Who the agency is, on paper.
@@ -58,7 +59,7 @@ const OrganizationForm = ({ organization }: { organization: IOrganization }) => 
       }
 
       toast.success("Business information updated")
-      void queryClient.invalidateQueries({ queryKey: ["organization"] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.organization.all })
     },
   })
 
@@ -117,12 +118,9 @@ const OrganizationForm = ({ organization }: { organization: IOrganization }) => 
 }
 
 const BusinessProfile = () => {
-  const { data } = useQuery({
-    queryKey: ["organization"],
-    queryFn: () => getOrganization(),
-  })
+  const { data } = useQuery(organizationQuery())
 
-  const organization = data?.data as IOrganization | undefined
+  const organization = data?.data
 
   return (
     <Card className="gap-0 overflow-hidden p-0">

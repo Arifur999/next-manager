@@ -5,17 +5,13 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-  getNotifications,
-  getUnreadCount,
-  markAllNotificationsRead,
-  markNotificationRead,
-} from "@/services/workspace.services"
-import type { INotification } from "@/types/platform.types"
+import { markAllNotificationsRead, markNotificationRead } from "@/services/workspace.services"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { formatDistanceToNow, parseISO } from "date-fns"
 import { Bell } from "lucide-react"
 import { useState } from "react"
+import { notificationsQuery, unreadCountQuery } from "@/queries/workspace.queries"
+import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * Everything one person needs to know, in one place.
@@ -38,28 +34,20 @@ const NotificationBell = () => {
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
 
-  const { data: countData } = useQuery({
-    queryKey: ["notifications-unread"],
-    queryFn: () => getUnreadCount(),
-    // Company notifications move faster than platform notices, but not by
+  const { data: countData } = useQuery({ ...unreadCountQuery(), // Company notifications move faster than platform notices, but not by
     // much: a task assignment can wait a minute. A tighter loop would be one
     // request per user per interval, forever, for a number that changes a
     // handful of times a day.
-    refetchInterval: 60 * 1000,
-  })
+    refetchInterval: 60 * 1000 })
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["notifications"],
-    queryFn: () => getNotifications(),
-    enabled: open,
-  })
+  const { data, isLoading } = useQuery({ ...notificationsQuery(), enabled: open })
 
   const unread = countData?.data?.unread ?? 0
-  const notifications = (data?.data ?? []) as INotification[]
+  const notifications = data?.data ?? []
 
   const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: ["notifications"] })
-    void queryClient.invalidateQueries({ queryKey: ["notifications-unread"] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.notificationsUnread.all })
   }
 
   const { mutate: markRead } = useMutation({
