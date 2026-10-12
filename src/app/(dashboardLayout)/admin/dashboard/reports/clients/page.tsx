@@ -1,5 +1,5 @@
 import ClientsReport from "@/components/modules/Admin/Reports/ClientsReport";
-import { getClientRevenue } from "@/services/agencio.services";
+import { getClientRevenue } from "@/services/insights.services";
 import { getUserInfo } from "@/services/auth.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";

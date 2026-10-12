@@ -1,8 +1,8 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { createKpiTarget, deleteKpiTarget, updateKpiTarget } from "@/services/agencio.services"
-import type { IKpiTarget } from "@/types/agencio.types"
+import { createKpiTarget, deleteKpiTarget, updateKpiTarget } from "@/services/insights.services"
+import type { IKpiTarget } from "@/types/insights.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 export const setTargetAction = async (

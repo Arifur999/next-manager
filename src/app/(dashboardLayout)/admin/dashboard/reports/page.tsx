@@ -1,5 +1,5 @@
 import BusinessReport from "@/components/modules/Admin/Reports/BusinessReport";
-import { getMonthlySeries, getProfitAndLoss } from "@/services/agencio.services";
+import { getMonthlySeries, getProfitAndLoss } from "@/services/insights.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

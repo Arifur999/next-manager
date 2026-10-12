@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
-import type { IMonthlyPoint } from "@/types/agencio.types"
+import type { IMonthlyPoint } from "@/types/insights.types"
 import { format, parse } from "date-fns"
 import { Table2, TrendingUp } from "lucide-react"
 import { useState } from "react"

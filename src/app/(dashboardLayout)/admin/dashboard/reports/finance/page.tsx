@@ -1,5 +1,5 @@
 import FinanceReport from "@/components/modules/Admin/Reports/FinanceReport";
-import { getCashFlow } from "@/services/agencio.services";
+import { getCashFlow } from "@/services/insights.services";
 import { getExpenses } from "@/services/spending.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";

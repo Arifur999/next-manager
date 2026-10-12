@@ -2,7 +2,7 @@
 
 import MetricTile, { bdt, hours, pct, usd, usd2 } from "@/components/shared/kpi/MetricTile"
 import { KpiRangePicker, useKpiRange } from "@/components/shared/kpi/KpiRange"
-import { getKpi } from "@/services/agencio.services"
+import { getKpi } from "@/services/insights.services"
 import type { AgencyKpi } from "@/types/kpi.types"
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"

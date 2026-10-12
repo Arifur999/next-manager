@@ -3,7 +3,7 @@
 import ShareRow from "@/components/modules/Admin/Reports/ShareRow"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt, formatUsd } from "@/lib/currency"
-import { getCashFlow } from "@/services/agencio.services"
+import { getCashFlow } from "@/services/insights.services"
 import { getExpenses } from "@/services/spending.services"
 import type { IExpense } from "@/types/spending.types"
 import type { Currency } from "@/types/common.types"

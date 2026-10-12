@@ -1,5 +1,5 @@
 import ProjectsReport from "@/components/modules/Admin/Reports/ProjectsReport";
-import { getProjectProfitability } from "@/services/agencio.services";
+import { getProjectProfitability } from "@/services/insights.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

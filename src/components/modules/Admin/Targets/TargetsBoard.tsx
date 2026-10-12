@@ -16,9 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { getKpiTargets } from "@/services/agencio.services"
+import { getKpiTargets } from "@/services/insights.services"
 import { getAllUsers } from "@/services/user.services"
-import type { IKpiTarget, KpiMetric, KpiPeriod } from "@/types/agencio.types"
+import type { IKpiTarget, KpiMetric, KpiPeriod } from "@/types/insights.types"
 import type { IUser } from "@/types/user.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { format, startOfMonth, startOfQuarter, startOfYear } from "date-fns"

@@ -3,7 +3,7 @@
 import ShareRow from "@/components/modules/Admin/Reports/ShareRow"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
-import { getKpi } from "@/services/agencio.services"
+import { getKpi } from "@/services/insights.services"
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 

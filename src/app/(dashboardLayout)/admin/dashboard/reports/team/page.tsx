@@ -1,5 +1,5 @@
 import TeamReport from "@/components/modules/Admin/Reports/TeamReport";
-import { getKpi } from "@/services/agencio.services";
+import { getKpi } from "@/services/insights.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

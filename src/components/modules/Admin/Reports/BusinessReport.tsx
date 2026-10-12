@@ -3,8 +3,8 @@
 import MonthlyChart from "@/components/modules/Admin/Reports/MonthlyChart"
 import StatTile from "@/components/shared/StatTile"
 import { formatBdt, formatPercent, formatUsd } from "@/lib/currency"
-import { getMonthlySeries, getProfitAndLoss } from "@/services/agencio.services"
-import type { IMonthlyPoint, IProfitAndLoss } from "@/types/agencio.types"
+import { getMonthlySeries, getProfitAndLoss } from "@/services/insights.services"
+import type { IMonthlyPoint, IProfitAndLoss } from "@/types/insights.types"
 import { useQuery } from "@tanstack/react-query"
 import { ArrowDownLeft, Receipt, TrendingUp, Wallet } from "lucide-react"
 

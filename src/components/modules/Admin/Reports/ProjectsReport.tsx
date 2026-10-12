@@ -2,7 +2,7 @@
 
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
-import { getProjectProfitability } from "@/services/agencio.services"
+import { getProjectProfitability } from "@/services/insights.services"
 import { useQuery } from "@tanstack/react-query"
 
 /**

@@ -2,8 +2,6 @@
 
 import { httpClient } from "@/lib/axios/httpClient"
 import { toParams } from "@/lib/queryString"
-import type { IDashboard, IKpiTarget, IMonthlyPoint, IProfitAndLoss } from "@/types/agencio.types"
-import type { KpiScope } from "@/types/kpi.types"
 import type {
     IAgencyInvite,
     IAnnouncement,
@@ -32,67 +30,14 @@ import type {
 // httpClient already logs failures; the label only names the call for readers.
 const wrap = async <T>(label: string, run: () => Promise<T>): Promise<T> => run()
 
-// ---------------------------------------------------------------- dashboard
-
-export const getDashboard = async () =>
-    wrap("fetching dashboard", () => httpClient.get<IDashboard>("/dashboard"))
-
-// ------------------------------------------------------------------ reports
-
-export const getProfitAndLoss = async (queryString?: string) =>
-    wrap("fetching P&L", () => httpClient.get<IProfitAndLoss>("/reports/profit-loss", { params: toParams(queryString) }))
-
-export const getMonthlySeries = async (months = 12) =>
-    wrap("fetching monthly series", () =>
-        httpClient.get<IMonthlyPoint[]>("/reports/monthly", { params: { months } })
-    )
-
-export const getClientRevenue = async (queryString?: string) =>
-    wrap("fetching client revenue", () =>
-        httpClient.get("/reports/client-revenue", { params: toParams(queryString) })
-    )
-
-export const getProjectProfitability = async (queryString?: string) =>
-    wrap("fetching project profitability", () =>
-        httpClient.get("/reports/project-profitability", { params: toParams(queryString) })
-    )
-
-export const getCashFlow = async (queryString?: string) =>
-    wrap("fetching cash flow", () => httpClient.get("/reports/cash-flow", { params: toParams(queryString) }))
-
 // ---------------------------------------------------------------------------
 // Milestones
 
 // ---------------------------------------------------------------------------
 // KPI targets
-// ---------------------------------------------------------------------------
-
-export const getKpiTargets = async (queryString?: string) =>
-    wrap("fetching targets", () =>
-        httpClient.get<IKpiTarget[]>("/kpi-targets", { params: toParams(queryString) })
-    )
-
-export const createKpiTarget = async (payload: Record<string, unknown>) =>
-    wrap("setting a target", () => httpClient.post<IKpiTarget>("/kpi-targets", payload))
-
-export const updateKpiTarget = async (id: string, payload: Record<string, unknown>) =>
-    wrap("updating a target", () => httpClient.patch<IKpiTarget>(`/kpi-targets/${id}`, payload))
-
-export const deleteKpiTarget = async (id: string) =>
-    wrap("deleting a target", () => httpClient.delete<{ message: string }>(`/kpi-targets/${id}`))
 
 // ---------------------------------------------------------------------------
 // KPIs
-// ---------------------------------------------------------------------------
-
-/**
- * One scope's numbers. The scope decides both what comes back and who may ask —
- * the server refuses a scope the caller's role has no business reading.
- */
-export const getKpi = async <T>(scope: KpiScope, queryString?: string) =>
-    wrap(`fetching ${scope} KPIs`, () =>
-        httpClient.get<T>(`/kpi/${scope}`, { params: toParams(queryString) })
-    )
 
 // ---------------------------------------------------------------------------
 // Platform (super_admin) and a company's own standing
