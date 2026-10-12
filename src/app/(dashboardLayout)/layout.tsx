@@ -30,7 +30,7 @@ const DashboardLayout = async ({ children }: { children: React.ReactNode }) => {
       <DashboardSidebar role={role} />
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        <DashboardNavbar user={user} />
+        <DashboardNavbar user={user} role={role} />
 
         <main
           id="main-content"

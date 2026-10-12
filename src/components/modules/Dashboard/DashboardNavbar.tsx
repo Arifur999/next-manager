@@ -10,7 +10,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import MobileNav from "@/components/modules/Dashboard/MobileNav";
 import NotificationBell from "@/components/modules/Dashboard/NotificationBell";
+import type { UserRole } from "@/lib/authUtils";
 import { logout } from "@/services/logout"
 import { type IUser } from "@/types/user.types";
 import { LogOut, Moon, Sun, User } from "lucide-react";
@@ -27,7 +29,7 @@ const initialsOf = (name: string) =>
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("") || "U";
 
-const DashboardNavbar = ({ user }: { user: IUser }) => {
+const DashboardNavbar = ({ user, role }: { user: IUser; role: UserRole }) => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { resolvedTheme, setTheme } = useTheme();
@@ -41,9 +43,12 @@ const DashboardNavbar = ({ user }: { user: IUser }) => {
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b bg-background px-4 md:px-6">
-      <p className="text-sm text-muted-foreground">
-        <span className="capitalize">{user.role.replace(/_/g, " ")}</span> workspace
-      </p>
+      <div className="flex items-center gap-2">
+        <MobileNav role={role} />
+        <p className="text-sm text-muted-foreground">
+          <span className="capitalize">{user.role.replace(/_/g, " ")}</span> workspace
+        </p>
+      </div>
 
       <div className="flex items-center gap-2">
         {/* The platform operator has no company, so nothing is ever addressed
