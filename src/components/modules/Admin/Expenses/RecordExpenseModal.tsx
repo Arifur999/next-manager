@@ -21,13 +21,12 @@ import {
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt } from "@/lib/currency"
-import { expenseFormZodSchema, toNumber, type IExpenseFormValues } from "@/zod/agencio.validation"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { expenseFormZodSchema, type IExpenseFormValues } from "@/zod/agencio.validation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
-import { toast } from "sonner"
 import { projectsListQuery } from "@/queries/project.queries"
 import { accountsQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
@@ -48,8 +47,6 @@ const defaultValues: IExpenseFormValues = {
 const RecordExpenseModal = () => {
   const [open, setOpen] = useState(false)
   const [newCategory, setNewCategory] = useState("")
-  const queryClient = useQueryClient()
-  const router = useRouter()
 
   const { data: categoriesData } = useQuery({ ...expenseCategoriesQuery(), enabled: open })
   const { data: accountsData } = useQuery({ ...accountsQuery(), enabled: open })
@@ -62,39 +59,38 @@ const RecordExpenseModal = () => {
   // Expenses are BDT, so a USD wallet is never a valid source.
   const bdtAccounts = accounts.filter((account) => account.currency === "BDT" && account.is_active)
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IExpenseFormValues) =>
-      createExpenseAction({
-        ...values,
-        amount_bdt: toNumber(values.amount_bdt),
-        project_id: values.project_id || null,
-      }),
+  const { run: recordExpense, isPending } = useActionMutation({
+    action: createExpenseAction,
+    successMessage: "Expense recorded",
+    invalidateKeys: [
+      queryKeys.expenses.all,
+      queryKeys.accounts.all,
+      queryKeys.transactions.all,
+      queryKeys.dashboard.all,
+    ],
   })
 
   // Adding a category inline: without it, the first expense of a new kind means
   // abandoning a half-filled form to go and create one somewhere else.
-  const { mutateAsync: addCategory, isPending: isAddingCategory } = useMutation({
-    mutationFn: (name: string) => createExpenseCategoryAction({ name, type: "general" }),
+  const { run: addCategory, isPending: isAddingCategory } = useActionMutation({
+    action: createExpenseCategoryAction,
+    successMessage: "Category added",
+    invalidateKeys: [queryKeys.expenseCategories.all],
+    refresh: false,
+    // Select the new category, so the user does not have to find it in the list.
+    onSuccess: (result) => {
+      if (result.success) form.setFieldValue("category_id", result.data.id)
+    },
   })
 
   const form = useForm({
     defaultValues,
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        toast.error(result.message || "Failed to record expense")
-        return
+      // A failure keeps the dialog open with what was typed.
+      if (await recordExpense(value)) {
+        setOpen(false)
+        form.reset()
       }
-
-      toast.success(result.message || "Expense recorded successfully")
-      setOpen(false)
-      form.reset()
-
-      void queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
-      router.refresh()
     },
   })
 
@@ -102,22 +98,7 @@ const RecordExpenseModal = () => {
     const name = newCategory.trim()
     if (!name) return
 
-    const result = await addCategory(name)
-
-    if (!result.success) {
-      toast.error(result.message || "Failed to create category")
-      return
-    }
-
-    toast.success("Category added")
-    setNewCategory("")
-    await queryClient.invalidateQueries({ queryKey: queryKeys.expenseCategories.all })
-
-    // Select the category that was just created, so the user does not have to
-    // go and find it in the list they just added to.
-    if ("data" in result && result.data?.id) {
-      form.setFieldValue("category_id", result.data.id)
-    }
+    if (await addCategory({ name, type: "general" })) setNewCategory("")
   }
 
   const handleOpenChange = useCallback(

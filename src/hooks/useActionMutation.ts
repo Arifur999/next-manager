@@ -11,17 +11,21 @@ interface ActionOutcome {
     message?: string
 }
 
-interface ActionMutationOptions<TVariables> {
-    action: (variables: TVariables) => Promise<ActionOutcome>
+interface ActionMutationOptions<TVariables, TResult extends ActionOutcome> {
+    action: (variables: TVariables) => Promise<TResult>
     successMessage?: string
     invalidateKeys?: QueryKey[]
     refresh?: boolean
+    // Runs after the invalidations settle, for callers that need the result.
+    onSuccess?: (result: TResult) => void
 }
 
 // One mutation flow for every form: call the action, toast the outcome,
 // invalidate, refresh. run() resolves true on success so the caller can reset
 // and close. Its identity is stable, so it is safe in columns and effects.
-export const useActionMutation = <TVariables>(options: ActionMutationOptions<TVariables>) => {
+export const useActionMutation = <TVariables, TResult extends ActionOutcome>(
+    options: ActionMutationOptions<TVariables, TResult>,
+) => {
     const queryClient = useQueryClient()
     const router = useRouter()
     const latest = useRef(options)
@@ -35,9 +39,9 @@ export const useActionMutation = <TVariables>(options: ActionMutationOptions<TVa
 
     const run = useCallback(
         async (variables: TVariables): Promise<boolean> => {
-            const { successMessage, invalidateKeys = [], refresh = true } = latest.current
+            const { successMessage, invalidateKeys = [], refresh = true, onSuccess } = latest.current
 
-            let result: ActionOutcome
+            let result: TResult
             try {
                 result = await mutateAsync(variables)
             } catch {
@@ -53,6 +57,7 @@ export const useActionMutation = <TVariables>(options: ActionMutationOptions<TVa
 
             toast.success(successMessage ?? result.message ?? "Saved")
             await Promise.all(invalidateKeys.map((queryKey) => queryClient.invalidateQueries({ queryKey })))
+            onSuccess?.(result)
             if (refresh) router.refresh()
             return true
         },

@@ -1,55 +1,22 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
+import { requireId, runAction, runValidatedAction } from "@/lib/runAction"
 import {
     createExpense,
     createExpenseCategory,
     deleteExpense,
     deleteExpenseCategory,
 } from "@/services/spending.services"
-import type { IExpense, IExpenseCategory } from "@/types/spending.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+import { createExpenseCategoryServerZodSchema, createExpenseServerZodSchema } from "@/zod/spending.validation"
 
-export const createExpenseAction = async (
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<IExpense> | ApiErrorResponse> => {
-    try {
-        return await createExpense(payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to record expense") }
-    }
-}
+export const createExpenseAction = async (values: unknown) =>
+    runValidatedAction(createExpenseServerZodSchema, values, "Failed to record expense", createExpense)
 
-export const deleteExpenseAction = async (
-    id: string,
-): Promise<ApiResponse<{ message: string }> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid expense id" }
+export const deleteExpenseAction = async (id: string) =>
+    requireId(id, "expense") ?? runAction("Failed to delete expense", () => deleteExpense(id))
 
-    try {
-        return await deleteExpense(id)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to delete expense") }
-    }
-}
+export const createExpenseCategoryAction = async (values: unknown) =>
+    runValidatedAction(createExpenseCategoryServerZodSchema, values, "Failed to create category", createExpenseCategory)
 
-export const createExpenseCategoryAction = async (
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<IExpenseCategory> | ApiErrorResponse> => {
-    try {
-        return await createExpenseCategory(payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to create category") }
-    }
-}
-
-export const deleteExpenseCategoryAction = async (
-    id: string,
-): Promise<ApiResponse<{ message: string }> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid category id" }
-
-    try {
-        return await deleteExpenseCategory(id)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to delete category") }
-    }
-}
+export const deleteExpenseCategoryAction = async (id: string) =>
+    requireId(id, "category") ?? runAction("Failed to delete category", () => deleteExpenseCategory(id))
