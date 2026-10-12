@@ -1,5 +1,5 @@
 import ServiceDetail from "@/components/modules/Admin/Services/ServiceDetail";
-import { getService } from "@/services/agencio.services";
+import { getService } from "@/services/catalog.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

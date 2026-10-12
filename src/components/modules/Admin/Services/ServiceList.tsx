@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatUsd } from "@/lib/currency"
-import type { IService } from "@/types/agencio.types"
+import type { IService } from "@/types/catalog.types"
 import { Package, Power, Trash2 } from "lucide-react"
 
 /**

@@ -1,5 +1,5 @@
 import TemplatesBoard from "@/components/modules/Admin/Services/TemplatesBoard";
-import { getServiceTemplates, getServices } from "@/services/agencio.services";
+import { getServiceTemplates, getServices } from "@/services/catalog.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

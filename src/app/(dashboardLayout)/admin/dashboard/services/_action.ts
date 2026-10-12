@@ -10,8 +10,8 @@ import {
     deleteServiceTemplate,
     updateService,
     updateServiceCategory,
-} from "@/services/agencio.services"
-import type { IService, IServiceCategory, IServiceTemplate } from "@/types/agencio.types"
+} from "@/services/catalog.services"
+import type { IService, IServiceCategory, IServiceTemplate } from "@/types/catalog.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
 const fail = (error: unknown, fallback: string): ApiErrorResponse => ({

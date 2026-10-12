@@ -1,5 +1,5 @@
 import ServicesBoard from "@/components/modules/Admin/Services/ServicesBoard";
-import { getServiceCategories, getServices } from "@/services/agencio.services";
+import { getServiceCategories, getServices } from "@/services/catalog.services";
 import { getUserInfo } from "@/services/auth.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";

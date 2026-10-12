@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import type { IServiceCategory } from "@/types/agencio.types"
+import type { IServiceCategory } from "@/types/catalog.types"
 import { Plus, X } from "lucide-react"
 
 /**

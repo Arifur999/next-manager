@@ -1,5 +1,5 @@
 import CategoriesBoard from "@/components/modules/Admin/Services/CategoriesBoard";
-import { getServiceCategories } from "@/services/agencio.services";
+import { getServiceCategories } from "@/services/catalog.services";
 import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 
