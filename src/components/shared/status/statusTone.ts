@@ -7,13 +7,13 @@ import type { StatusCategory } from "@/types/common.types"
  * that adds "In QA" gets the in-progress treatment without anybody adding it
  * to a lookup table. That is the whole reason a status carries a category.
  *
- * `blocked` and `cancelled` are STATES, not series, so they take the status
- * palette rather than another categorical hue.
+ * These are states, not chart series, so every one takes a status pair whose
+ * text passes 4.5:1 on its tint (npm run qa:contrast checks the pairs).
  */
 export const STATUS_TONE: Record<StatusCategory, string> = {
     open: "bg-muted text-muted-foreground",
-    active: "bg-chart-1/15 text-chart-1",
-    blocked: "bg-chart-4/15 text-chart-4",
-    done: "bg-chart-3/15 text-chart-3",
-    cancelled: "bg-destructive/12 text-destructive",
+    active: "bg-info-subtle text-info-subtle-foreground",
+    blocked: "bg-warning-subtle text-warning-subtle-foreground",
+    done: "bg-success-subtle text-success-subtle-foreground",
+    cancelled: "bg-destructive-subtle text-destructive-subtle-foreground",
 }
