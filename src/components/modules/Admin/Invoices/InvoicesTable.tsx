@@ -15,7 +15,7 @@ const InvoicesTable = () => {
   const router = useRouter()
   const [search, setSearch] = useState("")
 
-  const { data, isLoading, isFetching } = useQuery(invoicesListQuery(search ? `search=${encodeURIComponent(search)}` : undefined))
+  const { data, isLoading, isFetching, isError, refetch } = useQuery(invoicesListQuery(search ? `search=${encodeURIComponent(search)}` : undefined))
 
   const invoices = data?.data ?? []
 
@@ -51,6 +51,8 @@ const InvoicesTable = () => {
         data={invoices}
         columns={invoicesColumns}
         isLoading={isLoading || isFetching}
+        isError={isError}
+        onRetry={() => refetch()}
         emptyMessage="No invoices yet."
         toolbarAction={<CreateInvoiceModal />}
         search={{

@@ -1,6 +1,7 @@
 "use client";
 
 import Loader from "@/components/shared/Loader";
+import ErrorState from "@/components/shared/state/ErrorState";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -45,6 +46,9 @@ interface DataTableProps<TData> {
   toolbarAction?: React.ReactNode;
   emptyMessage?: string;
   isLoading?: boolean;
+  /** The list request failed: show the error and Retry instead of the empty message. */
+  isError?: boolean;
+  onRetry?: () => void;
   // Presence of these two switches the table into server-driven mode.
   sorting?: {
     state: SortingState;
@@ -70,6 +74,8 @@ const DataTable = <TData,>({
   toolbarAction,
   emptyMessage,
   isLoading,
+  isError = false,
+  onRetry,
   sorting,
   pagination,
   search,
@@ -83,7 +89,8 @@ const DataTable = <TData,>({
 
   // The server render must not include the overlay, or the markup it produces
   // and the markup React expects on the client disagree.
-  const showLoadingOverlay = Boolean(isLoading) && hasHydrated;
+  // A retry in flight is shown on the Retry button, not as an overlay on the error.
+  const showLoadingOverlay = Boolean(isLoading) && hasHydrated && !isError;
 
   // The actions column is appended here rather than declared per feature, so
   // every table in the app has the same row menu in the same place.
@@ -217,7 +224,13 @@ const DataTable = <TData,>({
           </TableHeader>
 
           <TableBody>
-            {table.getRowModel()?.rows?.length ? (
+            {isError ? (
+              <TableRow>
+                <TableCell colSpan={tableColumns.length} className="p-0">
+                  <ErrorState onRetry={onRetry} isRetrying={Boolean(isLoading)} />
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel()?.rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (

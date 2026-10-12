@@ -31,7 +31,7 @@ const TeamTable = () => {
   // filtering the page that arrived would hide people rather than find them.
   const query = department === ALL ? "" : `department_id=${department}`
 
-  const { data: usersResponse, isLoading, isFetching } = useQuery(usersListQuery(query))
+  const { data: usersResponse, isLoading, isFetching, isError, refetch } = useQuery(usersListQuery(query))
 
   const { data: departmentResponse } = useQuery(departmentsQuery())
 
@@ -76,6 +76,8 @@ const TeamTable = () => {
         // isFetching too, so a background refetch also shows the overlay -
         // otherwise a stale list looks settled while it is still updating.
         isLoading={isLoading || isFetching}
+        isError={isError}
+        onRetry={() => refetch()}
         emptyMessage="No team members yet."
         toolbarAction={<CreateUserFormModal />}
         actions={tableActions}

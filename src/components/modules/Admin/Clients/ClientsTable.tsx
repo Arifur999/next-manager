@@ -57,7 +57,7 @@ const ClientsTable = ({
   // Same builder and key order as the page's prefetch, so the keys match.
   const query = buildQueryString({ search, status })
 
-  const { data, isLoading, isFetching } = useQuery(clientsListQuery(query))
+  const { data, isLoading, isFetching, isError, refetch } = useQuery(clientsListQuery(query))
 
   const clients = data?.data ?? []
 
@@ -67,6 +67,8 @@ const ClientsTable = ({
         data={clients}
         columns={clientsColumns}
         isLoading={isLoading || isFetching}
+        isError={isError}
+        onRetry={() => refetch()}
         emptyMessage={
           status
             ? // Says which list is empty. "No clients yet" on a filtered view is a

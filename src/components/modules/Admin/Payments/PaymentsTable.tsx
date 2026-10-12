@@ -13,7 +13,7 @@ import { paymentsListQuery } from "@/queries/billing.queries"
 const PaymentsTable = () => {
   const [search, setSearch] = useState("")
 
-  const { data, isLoading, isFetching } = useQuery(paymentsListQuery(search ? `search=${encodeURIComponent(search)}` : undefined))
+  const { data, isLoading, isFetching, isError, refetch } = useQuery(paymentsListQuery(search ? `search=${encodeURIComponent(search)}` : undefined))
 
   const payments = data?.data ?? []
 
@@ -39,6 +39,8 @@ const PaymentsTable = () => {
         data={payments}
         columns={paymentsColumns}
         isLoading={isLoading || isFetching}
+        isError={isError}
+        onRetry={() => refetch()}
         emptyMessage="No payments recorded yet."
         toolbarAction={<RecordPaymentModal />}
         search={{

@@ -10,7 +10,7 @@ import { ArrowLeftRight, TrendingDown } from "lucide-react"
 import { exchangesListQuery } from "@/queries/finance.queries"
 
 const ExchangeTable = () => {
-  const { data, isLoading, isFetching } = useQuery(exchangesListQuery())
+  const { data, isLoading, isFetching, isError, refetch } = useQuery(exchangesListQuery())
 
   const exchanges = data?.data ?? []
 
@@ -53,6 +53,8 @@ const ExchangeTable = () => {
         data={exchanges}
         columns={exchangeColumns}
         isLoading={isLoading || isFetching}
+        isError={isError}
+        onRetry={() => refetch()}
         emptyMessage="No exchanges recorded yet."
         toolbarAction={<RecordExchangeModal />}
       />

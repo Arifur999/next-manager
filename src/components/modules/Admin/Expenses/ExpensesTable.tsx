@@ -15,7 +15,7 @@ import { expensesListQuery } from "@/queries/spending.queries"
 const ExpensesTable = () => {
   const [search, setSearch] = useState("")
 
-  const { data, isLoading, isFetching } = useQuery(expensesListQuery(search ? `search=${encodeURIComponent(search)}` : undefined))
+  const { data, isLoading, isFetching, isError, refetch } = useQuery(expensesListQuery(search ? `search=${encodeURIComponent(search)}` : undefined))
 
   const expenses = data?.data ?? []
 
@@ -89,6 +89,8 @@ const ExpensesTable = () => {
         data={expenses}
         columns={expensesColumns}
         isLoading={isLoading || isFetching}
+        isError={isError}
+        onRetry={() => refetch()}
         emptyMessage="No expenses recorded yet."
         toolbarAction={<RecordExpenseModal />}
         search={{

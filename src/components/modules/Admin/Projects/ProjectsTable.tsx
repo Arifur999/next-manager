@@ -51,7 +51,7 @@ const ProjectsTable = ({ canManage = true }: { canManage?: boolean }) => {
     .filter(Boolean)
     .join("&")
 
-  const { data, isLoading, isFetching } = useQuery(projectsListQuery(query))
+  const { data, isLoading, isFetching, isError, refetch } = useQuery(projectsListQuery(query))
 
   const projects = data?.data ?? []
 
@@ -61,6 +61,8 @@ const ProjectsTable = ({ canManage = true }: { canManage?: boolean }) => {
         data={projects}
         columns={projectsColumns}
         isLoading={isLoading || isFetching}
+        isError={isError}
+        onRetry={() => refetch()}
         emptyMessage="No projects yet."
         toolbarAction={canManage ? <ProjectFormModal /> : undefined}
         search={{

@@ -10,7 +10,7 @@ import { HandCoins } from "lucide-react"
 import { teamPayoutsListQuery } from "@/queries/spending.queries"
 
 const PayoutsTable = () => {
-  const { data, isLoading, isFetching } = useQuery(teamPayoutsListQuery())
+  const { data, isLoading, isFetching, isError, refetch } = useQuery(teamPayoutsListQuery())
 
   const payouts = data?.data ?? []
   const total = payouts.reduce((running, row) => running + row.amount_bdt, 0)
@@ -32,6 +32,8 @@ const PayoutsTable = () => {
         data={payouts}
         columns={payoutsColumns}
         isLoading={isLoading || isFetching}
+        isError={isError}
+        onRetry={() => refetch()}
         emptyMessage="No payouts recorded yet."
         toolbarAction={<RecordPayoutModal />}
       />
