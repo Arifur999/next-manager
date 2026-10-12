@@ -12,16 +12,17 @@ export const dynamic = "force-dynamic";
 const DashboardLayout = async ({ children }: { children: React.ReactNode }) => {
   const user = await getUserInfo();
 
-  // The proxy already blocks anonymous access; this is the second line of
-  // defence for the case where the token is valid but the account is gone.
+  // The proxy already blocks anonymous access; this catches a token that still
+  // verifies but that the API refuses (password changed, account deactivated).
+  // The reason tells the proxy to clear the cookies instead of bouncing back.
   if (!user) {
-    redirect("/login");
+    redirect("/login?reason=session-expired");
   }
 
   const role = toUserRole(user.role);
 
   if (!role) {
-    redirect("/login");
+    redirect("/login?reason=session-expired");
   }
 
   return (

@@ -7,6 +7,7 @@ import {
     isAuthRoute,
     type UserRole,
 } from "./lib/authUtils";
+import { AUTH_COOKIE_NAMES } from "./lib/authCookies";
 import { allow } from "./lib/csp";
 import { jwtUtils } from "./lib/jwtUtils";
 import { isTokenExpiringSoon } from "./lib/tokenUtils";
@@ -29,6 +30,14 @@ export async function proxy(request: NextRequest) {
     try {
         const { pathname } = request.nextUrl;
         const pathWithQuery = `${pathname}${request.nextUrl.search}`;
+
+        // The dashboard layout sends a session the API refused here. The JWT may
+        // still verify, so Rule 1 would bounce it back: clear it and show /login.
+        if (isAuthRoute(pathname) && request.nextUrl.searchParams.get("reason") === "session-expired") {
+            const response = allow(request);
+            for (const name of AUTH_COOKIE_NAMES) response.cookies.delete(name);
+            return response;
+        }
 
         const accessToken = request.cookies.get("accessToken")?.value;
         const refreshToken = request.cookies.get("refreshToken")?.value;
