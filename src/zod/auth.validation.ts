@@ -19,11 +19,8 @@ export const loginFormZodSchema = z.object({
 export type ILoginFormValues = z.infer<typeof loginFormZodSchema>
 
 /**
- * Signing up creates a COMPANY, not just an account.
- *
- * organization_name was missing here while the API has always required it, so
- * this schema could never have produced a request the server accepts. Whoever
- * signs up becomes that company's first admin - there is no role field,
+ * Signing up creates a COMPANY, not just an account, so the company name is
+ * required. Whoever signs up becomes its first admin: there is no role field,
  * because a form that let you pick your own role is not an access control.
  */
 export const registerFormZodSchema = z.object({

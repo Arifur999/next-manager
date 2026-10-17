@@ -27,9 +27,6 @@ import { useRef } from "react"
  * makes you its first admin. Everybody else joins by being invited from inside
  * it, which is why there is no role picker here: a form that let you choose
  * your own role is not an access control.
- *
- * Both links to this page (the landing page and the sign-in form) have existed
- * since the beginning and pointed at a 404, so nobody could sign up at all.
  */
 
 const defaultValues: IRegisterFormValues = {

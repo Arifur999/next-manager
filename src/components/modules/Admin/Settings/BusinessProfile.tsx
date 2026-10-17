@@ -17,10 +17,6 @@ import { queryKeys } from "@/lib/queryKeys"
 /**
  * Who the agency is, on paper.
  *
- * This was a tab inside Settings, which is why it read as missing — the things
- * you change least often are the hardest to find when they are nested behind
- * something else.
- *
  * Everything here ends up on an invoice, so a change is not cosmetic: rename
  * the agency and every invoice raised from now on carries the new name.
  */
