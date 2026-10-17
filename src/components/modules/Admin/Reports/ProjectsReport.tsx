@@ -1,5 +1,6 @@
 "use client"
 
+import ReportEmpty from "@/components/modules/Admin/Reports/ReportEmpty"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
 import { useQuery } from "@tanstack/react-query"
@@ -33,9 +34,7 @@ const ProjectsReport = () => {
       </CardHeader>
 
       {projects.length === 0 ? (
-        <p className="px-5 py-12 text-center text-sm text-muted-foreground">
-          No projects with recorded money yet.
-        </p>
+        <ReportEmpty>No projects with recorded money yet.</ReportEmpty>
       ) : (
         <ul className="divide-y">
           {projects.map((row) => {

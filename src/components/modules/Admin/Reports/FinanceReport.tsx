@@ -1,6 +1,7 @@
 "use client"
 
 import ShareRow from "@/components/modules/Admin/Reports/ShareRow"
+import ReportEmpty from "@/components/modules/Admin/Reports/ReportEmpty"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt, formatUsd } from "@/lib/currency"
 import type { Currency } from "@/types/common.types"
@@ -85,9 +86,7 @@ const FinanceReport = () => {
         </CardHeader>
 
         {flows.length === 0 ? (
-          <p className="px-5 py-12 text-center text-sm text-muted-foreground">
-            Nothing has moved yet.
-          </p>
+          <ReportEmpty>Nothing has moved yet.</ReportEmpty>
         ) : (
           <>
             <div className="grid gap-4 border-b px-5 py-4 sm:grid-cols-2">
@@ -138,9 +137,7 @@ const FinanceReport = () => {
         </CardHeader>
 
         {byCategory.length === 0 ? (
-          <p className="px-5 py-12 text-center text-sm text-muted-foreground">
-            No expenses recorded yet.
-          </p>
+          <ReportEmpty>No expenses recorded yet.</ReportEmpty>
         ) : (
           <ul className="divide-y">
             {byCategory.map((group) => (

@@ -1,6 +1,7 @@
 "use client"
 
 import ShareRow from "@/components/modules/Admin/Reports/ShareRow"
+import ReportEmpty from "@/components/modules/Admin/Reports/ReportEmpty"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
 import { useQuery } from "@tanstack/react-query"
@@ -46,9 +47,7 @@ const TeamReport = () => {
         </CardHeader>
 
         {rows.length === 0 ? (
-          <p className="px-5 py-12 text-center text-sm text-muted-foreground">
-            Nothing logged yet.
-          </p>
+          <ReportEmpty>Nothing logged yet.</ReportEmpty>
         ) : (
           <ul className="divide-y">
             {rows.map((row) => (
@@ -74,9 +73,7 @@ const TeamReport = () => {
         </CardHeader>
 
         {rows.length === 0 ? (
-          <p className="px-5 py-12 text-center text-sm text-muted-foreground">
-            Nothing paid out yet.
-          </p>
+          <ReportEmpty>Nothing paid out yet.</ReportEmpty>
         ) : (
           <ul className="divide-y">
             {rows.map((row) => (
