@@ -2,9 +2,9 @@
 
 import { acceptPlatformInviteAction } from "@/app/(commonLayout)/(auth)/platform-join/[token]/_action"
 import AppField from "@/components/shared/form/AppField"
+import InvalidInviteCard from "@/components/modules/Auth/InvalidInviteCard"
 import PasswordField from "@/components/modules/Auth/PasswordField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { Clock, LinkIcon } from "lucide-react"
+import { Clock } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 import { joinFormZodSchema, type IJoinFormValues } from "@/zod/auth.validation"
@@ -53,29 +53,8 @@ const PlatformJoinForm = ({
     },
   })
 
-  if (!invite) {
-    return (
-      <div className="w-full">
-        <Card>
-          <CardHeader className="items-center text-center">
-            <LinkIcon className="size-8 text-muted-foreground" aria-hidden="true" />
-            <CardTitle>
-              <h1 className="text-2xl font-semibold tracking-tight">This invite is no longer valid</h1>
-            </CardTitle>
-            <CardDescription>
-              It may have expired, been used already, or been withdrawn. Ask whoever
-              invited you for a fresh link.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <Button asChild variant="outline">
-              <Link href="/login">Go to sign in</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
+  if (!invite) return <InvalidInviteCard />
+
 
   if (submitted) {
     return (
