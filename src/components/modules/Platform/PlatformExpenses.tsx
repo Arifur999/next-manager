@@ -5,17 +5,18 @@ import {
   removePlatformExpenseAction,
 } from "@/app/(dashboardLayout)/platform/_financeAction"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
+import AppField from "@/components/shared/form/AppField"
 import EmptyState from "@/components/shared/state/EmptyState"
 import PanelState from "@/components/shared/state/PanelState"
 import { usd } from "@/components/shared/kpi/MetricTile"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { queryKeys } from "@/lib/queryKeys"
 import { platformExpensesListQuery } from "@/queries/platform.queries"
 import type { IPlatformExpense } from "@/types/platform.types"
+import { platformExpenseFormZodSchema, type IPlatformExpenseFormValues } from "@/zod/platform.validation"
+import { useForm } from "@tanstack/react-form"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { Receipt, Trash2 } from "lucide-react"
@@ -24,12 +25,15 @@ import { useState } from "react"
 // The report's totals are built from the expenses, so both refetch together.
 const FINANCE_KEYS = [queryKeys.platformFinance.all, queryKeys.platformExpenses.all]
 
+const newExpenseDefaults = (): IPlatformExpenseFormValues => ({
+  date: format(new Date(), "yyyy-MM-dd"),
+  description: "",
+  category: "",
+  amount_usd: "",
+})
+
 // What running the platform costs in the report's window: record one, or remove one.
 const PlatformExpenses = ({ range }: { range: string }) => {
-  const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"))
-  const [description, setDescription] = useState("")
-  const [category, setCategory] = useState("")
-  const [amount, setAmount] = useState("")
   const [removing, setRemoving] = useState<IPlatformExpense | null>(null)
 
   const expensesQuery = useQuery({
@@ -58,13 +62,15 @@ const PlatformExpenses = ({ range }: { range: string }) => {
     if (removing && (await removeExpense(removing.id))) setRemoving(null)
   }
 
-  const handleRecord = async () => {
-    if (!(await recordExpense({ date, description, category, amount_usd: amount }))) return
+  const form = useForm({
+    defaultValues: newExpenseDefaults(),
+    onSubmit: async ({ value, formApi }) => {
+      if (!(await recordExpense(value))) return
 
-    setDescription("")
-    setCategory("")
-    setAmount("")
-  }
+      // The date stays, for the next expense paid the same day.
+      formApi.reset({ ...newExpenseDefaults(), date: value.date }, { keepDefaultValues: true })
+    },
+  })
 
   return (
     <>
@@ -79,62 +85,68 @@ const PlatformExpenses = ({ range }: { range: string }) => {
 
         <form
           className="flex flex-wrap items-end gap-3 border-b px-5 py-4"
+          noValidate
           onSubmit={(event) => {
             event.preventDefault()
-            if (!description.trim() || !amount.trim()) return
-            void handleRecord()
+            event.stopPropagation()
+            void form.handleSubmit()
           }}
         >
-          <div className="space-y-1.5">
-            <Label htmlFor="expense-date">Date</Label>
-            <Input
-              id="expense-date"
-              type="date"
-              value={date}
-              onChange={(event) => setDate(event.target.value)}
-              disabled={isPending}
-            />
-          </div>
+          <form.Field name="date" validators={{ onChange: platformExpenseFormZodSchema.shape.date }}>
+            {(field) => <AppField field={field} label="Date" type="date" disabled={isPending} />}
+          </form.Field>
 
-          <div className="min-w-44 flex-1 space-y-1.5">
-            <Label htmlFor="expense-description">What for</Label>
-            <Input
-              id="expense-description"
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              placeholder="Database hosting"
-              disabled={isPending}
-            />
-          </div>
+          <form.Field
+            name="description"
+            validators={{ onChange: platformExpenseFormZodSchema.shape.description }}
+          >
+            {(field) => (
+              <AppField
+                field={field}
+                label="What for"
+                placeholder="Database hosting"
+                className="min-w-44 flex-1"
+                disabled={isPending}
+              />
+            )}
+          </form.Field>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="expense-category">Category</Label>
-            <Input
-              id="expense-category"
-              value={category}
-              onChange={(event) => setCategory(event.target.value)}
-              placeholder="Infrastructure"
-              className="w-36"
-              disabled={isPending}
-            />
-          </div>
+          <form.Field name="category">
+            {(field) => (
+              <AppField
+                field={field}
+                label="Category"
+                placeholder="Infrastructure"
+                className="w-36"
+                disabled={isPending}
+              />
+            )}
+          </form.Field>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="expense-amount">$ </Label>
-            <Input
-              id="expense-amount"
-              type="number"
-              step="any"
-              value={amount}
-              onChange={(event) => setAmount(event.target.value)}
-              className="w-28 tabular-nums"
-              disabled={isPending}
-            />
-          </div>
+          <form.Field
+            name="amount_usd"
+            validators={{ onChange: platformExpenseFormZodSchema.shape.amount_usd }}
+          >
+            {(field) => (
+              <AppField
+                field={field}
+                label="$"
+                type="number"
+                className="w-28 tabular-nums"
+                disabled={isPending}
+              />
+            )}
+          </form.Field>
 
-          <Button type="submit" disabled={isPending || !description.trim() || !amount.trim()}>
-            Record
-          </Button>
+          <form.Subscribe
+            selector={({ values }) => values.description.trim() !== "" && values.amount_usd.trim() !== ""}
+          >
+            {(isFilledIn) => (
+              <Button type="submit" disabled={isPending || !isFilledIn}>
+                Record
+              </Button>
+            )}
+          </form.Subscribe>
         </form>
 
         <PanelState
