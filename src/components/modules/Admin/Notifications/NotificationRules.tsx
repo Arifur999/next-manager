@@ -105,7 +105,7 @@ const NotificationRules = () => {
                 <Label htmlFor={`${rule.event}-in-app`} className="font-normal">
                   In the bell
                   <span className="block text-xs text-muted-foreground">
-                    Off means nobody hears about it at all.
+                    Off keeps it out of the bell. With email off too, nobody hears about it.
                   </span>
                 </Label>
               </div>
@@ -115,7 +115,7 @@ const NotificationRules = () => {
                   id={`${rule.event}-email`}
                   className="mt-0.5"
                   checked={rule.email}
-                  disabled={isPending || !rule.in_app}
+                  disabled={isPending}
                   onCheckedChange={(checked) =>
                     void saveRule({ event: rule.event, change: { email: checked === true } })
                   }
@@ -125,7 +125,8 @@ const NotificationRules = () => {
                   <span className="block text-xs text-muted-foreground">
                     {/* Off by default everywhere: email leaves the product and
                         cannot be unsent. */}
-                    Off by default — email leaves the product and cannot be unsent.
+                    On sends an email to each active person it reaches, the moment it
+                    happens. Off by default: an email cannot be unsent.
                   </span>
                 </Label>
               </div>
@@ -142,7 +143,7 @@ const NotificationRules = () => {
                       size="sm"
                       variant={rule.roles.includes(role) ? "default" : "outline"}
                       className="capitalize"
-                      disabled={isPending || !rule.in_app}
+                      disabled={isPending || (!rule.in_app && !rule.email)}
                       aria-pressed={rule.roles.includes(role)}
                       onClick={() => toggleRole(rule, role, !rule.roles.includes(role))}
                     >

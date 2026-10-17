@@ -78,7 +78,7 @@ const DashboardNavbar = ({ user, role }: { user: IUser; role: UserRole }) => {
       <div className="flex shrink-0 items-center gap-2">
         {/* The platform operator has no company, so nothing is ever addressed
             to them here - they are the one sending. */}
-        {role !== "super_admin" && <NotificationBell />}
+        {role !== "super_admin" && <NotificationBell role={role} />}
 
         {/* Light, Dark or follow the system. A two-state toggle could not get
             back to System once someone had pressed it. */}

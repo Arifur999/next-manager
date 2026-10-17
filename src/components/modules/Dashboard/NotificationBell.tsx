@@ -12,8 +12,12 @@ import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useActionMutation } from "@/hooks/useActionMutation"
+import type { UserRole } from "@/lib/authUtils"
+import { formatDaysInText, notificationHref } from "@/lib/notificationTarget"
+import type { INotification } from "@/types/platform.types"
 import { useQuery } from "@tanstack/react-query"
 import { Bell } from "lucide-react"
+import Link from "next/link"
 import { useState } from "react"
 import { notificationsQuery, unreadCountQuery } from "@/queries/workspace.queries"
 import { queryKeys } from "@/lib/queryKeys"
@@ -33,12 +37,26 @@ import { queryKeys } from "@/lib/queryKeys"
  * gets fetched repeatedly, and fetching the full list to render one number
  * would pull every message body across the wire for a digit. The list is only
  * fetched once the panel is actually opened.
+ *
+ * A notification about a record opens it, and opening it marks it read.
  */
 
 // The list and the badge both change when anything is marked read.
 const BELL_KEYS = [queryKeys.notifications.all, queryKeys.notificationsUnread.all]
 
-const NotificationBell = () => {
+// Title and body, the way the bell shows them whether or not they link anywhere.
+const NotificationText = ({ notification }: { notification: INotification }) => (
+  <>
+    <p className="text-sm font-medium">{notification.title}</p>
+    {/* Whitespace is preserved because the blank lines the
+        operator typed are the only formatting there is. */}
+    <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
+      {formatDaysInText(notification.body)}
+    </p>
+  </>
+)
+
+const NotificationBell = ({ role }: { role: UserRole }) => {
   const [open, setOpen] = useState(false)
 
   // A task assignment can wait a minute; a tighter poll is a request per user,
@@ -113,50 +131,63 @@ const NotificationBell = () => {
         >
           <ScrollArea className="max-h-96">
             <ul className="divide-y">
-              {notifications.map((notification) => (
-                <li
-                  key={notification.id}
-                  className={notification.read_at ? "px-4 py-3" : "bg-muted/40 px-4 py-3"}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-medium">{notification.title}</p>
-                    {/* Said, not colour-coded: a notice from AGENCIO and one
-                        from your own team need different reactions. */}
-                    {notification.source === "platform" && (
-                      <Badge variant="outline" className="shrink-0 text-[10px]">
-                        {site.shortName}
-                      </Badge>
-                    )}
-                    {!notification.read_at && (
-                      <Badge variant="secondary" className="shrink-0 text-[10px]">
-                        new
-                      </Badge>
-                    )}
-                  </div>
+              {notifications.map((notification) => {
+                const href = notificationHref(notification, role)
 
-                  {/* Whitespace is preserved because the blank lines the
-                      operator typed are the only formatting there is. */}
-                  <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
-                    {notification.body}
-                  </p>
+                return (
+                  <li
+                    key={notification.id}
+                    className={notification.read_at ? "px-4 py-3" : "bg-muted/40 px-4 py-3"}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        {href ? (
+                          <Link
+                            href={href}
+                            className="-m-1 block rounded-md p-1 hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+                            onClick={() => {
+                              if (!notification.read_at) void markRead(notification.id)
+                              setOpen(false)
+                            }}
+                          >
+                            <NotificationText notification={notification} />
+                          </Link>
+                        ) : (
+                          <NotificationText notification={notification} />
+                        )}
+                      </div>
+                      {/* Said, not colour-coded: a notice from AGENCIO and one
+                          from your own team need different reactions. */}
+                      {notification.source === "platform" && (
+                        <Badge variant="outline" className="shrink-0 text-[10px]">
+                          {site.shortName}
+                        </Badge>
+                      )}
+                      {!notification.read_at && (
+                        <Badge variant="secondary" className="shrink-0 text-[10px]">
+                          new
+                        </Badge>
+                      )}
+                    </div>
 
-                  <div className="mt-2 flex items-center justify-between gap-2">
-                    <span className="text-xs text-muted-foreground">
-                      <RelativeTime value={notification.published_at} />
-                    </span>
-                    {!notification.read_at && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 text-xs"
-                        onClick={() => void markRead(notification.id)}
-                      >
-                        Mark read
-                      </Button>
-                    )}
-                  </div>
-                </li>
-              ))}
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        <RelativeTime value={notification.published_at} />
+                      </span>
+                      {!notification.read_at && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-xs"
+                          onClick={() => void markRead(notification.id)}
+                        >
+                          Mark read
+                        </Button>
+                      )}
+                    </div>
+                  </li>
+                )
+              })}
             </ul>
           </ScrollArea>
         </PanelState>
