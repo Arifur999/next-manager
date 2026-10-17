@@ -15,6 +15,7 @@ export const expensesColumns: ColumnDef<IExpense>[] = [
     id: "category",
     header: "Category",
     enableSorting: false,
+    meta: { exportValue: (expense) => expense.category?.name },
     cell: ({ row }) => (
       <div className="flex items-center gap-2">
         <Badge variant="outline">{row.original.category?.name ?? "N/A"}</Badge>
@@ -52,6 +53,7 @@ export const expensesColumns: ColumnDef<IExpense>[] = [
     id: "account",
     header: "Paid from",
     enableSorting: false,
+    meta: { exportValue: (expense) => expense.account?.name },
     cell: ({ row }) => (
       <span className="text-sm text-muted-foreground">{row.original.account?.name ?? "N/A"}</span>
     ),

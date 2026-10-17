@@ -90,6 +90,7 @@ const ExpensesTable = () => {
         data={expenses}
         columns={expensesColumns}
         tableId="expenses"
+        exportFileName="expenses"
         {...toTableQueryProps(expensesQuery)}
         emptyMessage="No expenses recorded yet."
         toolbarAction={<RecordExpenseModal />}
