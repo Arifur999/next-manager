@@ -14,7 +14,8 @@ import { useId } from "react";
 import { useNavGroups } from "./NavGroupsProvider";
 import { useNavBadges, type NavBadgeCounts } from "./useNavBadges";
 
-const ROW = "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors";
+// 44px rows below md, where this list is tapped in the sheet; 36px above.
+const ROW = "flex min-h-11 items-center gap-3 rounded-md px-3 text-sm transition-colors md:min-h-9";
 
 const CountPill = ({ count }: { count: number }) => (
   <span
@@ -86,7 +87,7 @@ const NavGroup = ({ section, title, active, badges, onNavigate }: GroupProps) =>
         aria-expanded={open}
         aria-controls={listId}
         onClick={() => toggle(groupId)}
-        className="flex min-h-8 w-full items-center gap-2 rounded-md px-3 text-xs font-medium tracking-wide text-muted-foreground uppercase transition-colors hover:text-sidebar-foreground"
+        className="flex min-h-11 w-full items-center gap-2 rounded-md px-3 text-xs font-medium tracking-wide text-muted-foreground uppercase transition-colors hover:text-sidebar-foreground md:min-h-8"
       >
         {title}
         <span className="ml-auto flex items-center gap-2">
