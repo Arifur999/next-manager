@@ -3,6 +3,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { tasksListQuery } from "@/queries/work.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "My Tasks",
@@ -57,10 +58,9 @@ const MyTasksPage = async ({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        <p className="text-sm text-muted-foreground">{blurb}</p>
-      </div>
+      <PageHeader title={title}>
+        {blurb}
+      </PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
         <TaskBoard mineOnly />

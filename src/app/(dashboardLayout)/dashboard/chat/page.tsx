@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { conversationsListQuery } from "@/queries/workspace.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Chat",
@@ -37,14 +38,11 @@ const ChatPage = async ({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Chat</h1>
-        <p className="text-sm text-muted-foreground">
-          Direct messages, groups and project threads. Messages are stored before they are
-          sent live, so a dropped connection makes this page stop updating on its own —
-          it never loses anything.
-        </p>
-      </div>
+      <PageHeader title="Chat">
+        Direct messages, groups and project threads. Messages are stored before they are
+        sent live, so a dropped connection makes this page stop updating on its own —
+        it never loses anything.
+      </PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
         {/* The board reads its filter from the URL, which needs a Suspense
