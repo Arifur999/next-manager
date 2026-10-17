@@ -3,11 +3,10 @@
 import ProjectBaselineCard from "@/components/modules/Admin/Projects/ProjectBaselineCard"
 import ProjectFinanceTiles from "@/components/modules/Admin/Projects/ProjectFinanceTiles"
 import ProjectMilestonePanel from "@/components/modules/Admin/Projects/ProjectMilestonePanel"
+import ProjectTasksPanel from "@/components/modules/Admin/Projects/ProjectTasksPanel"
 import ProjectTeamPanel from "@/components/modules/Admin/Projects/ProjectTeamPanel"
-import { STATUS_TONE } from "@/components/shared/status/statusTone"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { ITask } from "@/types/work.types"
 import type { IProject } from "@/types/project.types"
@@ -17,7 +16,6 @@ import { format } from "date-fns"
 import { KeyRound } from "lucide-react"
 import Link from "next/link"
 import { projectDetailQuery, projectFinancialsQuery } from "@/queries/project.queries"
-import { tasksListQuery } from "@/queries/work.queries"
 import { credentialsListQuery } from "@/queries/workspace.queries"
 
 /**
@@ -44,13 +42,10 @@ const ProjectDetail = ({
 
   const { data: financeData } = useQuery({ ...projectFinancialsQuery(projectId), enabled: canSeeMoney })
 
-  const { data: tasksData } = useQuery(tasksListQuery(`project_id=${projectId}`))
-
   const { data: credentialsData } = useQuery(credentialsListQuery(`project_id=${projectId}`))
 
   const project = projectData?.data as (IProject & { tasks?: ITask[] }) | undefined
   const finance = financeData?.data
-  const tasks = ((tasksData?.data ?? []))
   const credentials = credentialsData?.data ?? []
 
   if (isLoading && !project) {
@@ -58,11 +53,6 @@ const ProjectDetail = ({
   }
 
   if (!project) return null
-
-  // By category: a renamed "Done" still counts as finished, and so does a
-  // second finished status the agency added.
-  const doneCount = tasks.filter((task) => task.status.category === "done").length
-  const progress = tasks.length > 0 ? (doneCount / tasks.length) * 100 : 0
 
   return (
     <div className="space-y-6">
@@ -106,41 +96,7 @@ const ProjectDetail = ({
         </TabsList>
 
         <TabsContent value="tasks" className="mt-4">
-          <Card className="gap-0 overflow-hidden p-0">
-            <CardHeader className="border-b px-5 py-4">
-              <CardTitle className="text-base">
-                {doneCount} of {tasks.length} done
-              </CardTitle>
-              <Progress value={progress} className="mt-2 h-1.5" />
-            </CardHeader>
-
-            {tasks.length === 0 ? (
-              <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-                No tasks on this project yet.
-              </p>
-            ) : (
-              <ul className="divide-y">
-                {tasks.map((task) => (
-                  <li key={task.id} className="flex items-center justify-between gap-3 px-5 py-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{task.title}</p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {task.assignee?.full_name ?? "Unassigned"}
-                        {task.due_date && ` · due ${format(new Date(task.due_date), "MMM dd")}`}
-                      </p>
-                    </div>
-                    <span
-                      className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-medium capitalize ${
-                        STATUS_TONE[task.status.category]
-                      }`}
-                    >
-                      {task.status.name}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
+          <ProjectTasksPanel projectId={projectId} />
         </TabsContent>
 
         <TabsContent value="milestones" className="mt-4 space-y-4">
