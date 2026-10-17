@@ -3,7 +3,7 @@
 import { clockAction } from "@/app/(dashboardLayout)/dashboard/attendance/_action"
 import RecordAttendanceCard from "@/components/modules/Admin/People/RecordAttendanceCard"
 import EmptyState from "@/components/shared/state/EmptyState"
-import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -37,9 +37,9 @@ const hoursBetween = (from: string | null, to: string | null) => {
 }
 
 const AttendanceBoard = ({ canRecord = false }: { canRecord?: boolean }) => {
-  const { data, isLoading } = useQuery(attendanceQuery())
+  const attendanceList = useQuery(attendanceQuery())
 
-  const rows = data?.data ?? []
+  const rows = attendanceList.data?.data ?? []
 
   // No successMessage: the server says which happened. Guessing here is how the
   // button ends up claiming the opposite of what was stored.
@@ -70,11 +70,12 @@ const AttendanceBoard = ({ canRecord = false }: { canRecord?: boolean }) => {
         </Button>
       </CardHeader>
 
-      {isLoading && rows.length === 0 ? (
-        <LoadingBlock />
-      ) : rows.length === 0 ? (
-        <EmptyState icon={CalendarCheck}>Nothing recorded yet.</EmptyState>
-      ) : (
+      <PanelState
+        query={attendanceList}
+        errorMessage="Attendance did not load."
+        isEmpty={rows.length === 0}
+        empty={<EmptyState icon={CalendarCheck}>Nothing recorded yet.</EmptyState>}
+      >
         <div className="overflow-x-auto">
           <table className="w-full min-w-[42rem] text-sm">
             <thead>
@@ -126,7 +127,7 @@ const AttendanceBoard = ({ canRecord = false }: { canRecord?: boolean }) => {
             </tbody>
           </table>
         </div>
-      )}
+      </PanelState>
     </Card>
   )
 
