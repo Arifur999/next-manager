@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest"
-import { createProjectServerZodSchema, updateProjectServerZodSchema } from "./project.validation"
+import {
+    assignProjectMemberServerZodSchema,
+    createProjectServerZodSchema,
+    updateProjectServerZodSchema,
+} from "./project.validation"
 
 const validProject = {
     client_id: "c1",
@@ -53,5 +57,20 @@ describe("createProjectServerZodSchema", () => {
 describe("updateProjectServerZodSchema", () => {
     it("leaves the code out of the payload", () => {
         expect(updateProjectServerZodSchema.parse(validProject)).not.toHaveProperty("code")
+    })
+})
+
+describe("assignProjectMemberServerZodSchema", () => {
+    const validAssignment = { project_id: "p1", user_id: "u1", role_on_project: "Designer" }
+
+    it("builds the API payload", () => {
+        expect(assignProjectMemberServerZodSchema.parse(validAssignment)).toEqual(validAssignment)
+    })
+
+    it("requires somebody to assign and the project to assign them to", () => {
+        expect(assignProjectMemberServerZodSchema.safeParse({ ...validAssignment, user_id: "" }).error?.issues[0]?.message).toBe(
+            "Choose someone",
+        )
+        expect(assignProjectMemberServerZodSchema.safeParse({ ...validAssignment, project_id: "" }).success).toBe(false)
     })
 })

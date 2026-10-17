@@ -39,3 +39,20 @@ export const createProjectServerZodSchema = projectFormZodSchema.transform((valu
 // The code is fixed after creation and the API drops it on update, so sending
 // it would only look like an edit.
 export const updateProjectServerZodSchema = projectFormZodSchema.transform(toProjectPayload)
+
+// Assigning somebody already on the project updates their role, which is how
+// a role gets changed.
+export const projectMemberFormZodSchema = z.object({
+    user_id: z.string().min(1, "Choose someone"),
+    role_on_project: z.string().optional(),
+})
+
+export type IProjectMemberFormValues = z.infer<typeof projectMemberFormZodSchema>
+
+export const assignProjectMemberServerZodSchema = projectMemberFormZodSchema
+    .extend({ project_id: z.string().min(1, "Invalid project id") })
+    .transform((values) => ({
+        project_id: values.project_id,
+        user_id: values.user_id,
+        role_on_project: values.role_on_project,
+    }))

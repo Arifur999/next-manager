@@ -1,5 +1,9 @@
 "use client"
 
+import {
+  assignProjectMemberAction,
+  removeProjectMemberAction,
+} from "@/app/(dashboardLayout)/admin/dashboard/projects/_action"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,7 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { assignProjectMember, removeProjectMember } from "@/services/project.services"
 import type { IProjectMember } from "@/types/project.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { UserMinus, UserPlus } from "lucide-react"
@@ -50,11 +53,11 @@ const ProjectTeamPanel = ({
 
   const { mutateAsync: assign, isPending: isAssigning } = useMutation({
     mutationFn: () =>
-      assignProjectMember({ project_id: projectId, user_id: userId, role_on_project: roleOnProject }),
+      assignProjectMemberAction({ project_id: projectId, user_id: userId, role_on_project: roleOnProject }),
   })
 
   const { mutateAsync: remove } = useMutation({
-    mutationFn: (id: string) => removeProjectMember(id),
+    mutationFn: (id: string) => removeProjectMemberAction(id),
   })
 
   const refresh = () => {
