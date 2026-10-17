@@ -68,7 +68,7 @@ Next.js 16.3 (App Router, `src/proxy.ts` instead of middleware), React 19.2, Typ
 - Don't edit generated `src/components/ui/*` to restyle; change tokens instead.
 - Don't add GSAP to app screens (motion level 1 there) or animate the landing `h1`.
 - Don't read `process.env` outside `env.ts`, `csp.ts`, `cookiesUtils.ts`, `logger.ts` and the dev-only socket URL in `hooks/useChatSocket.ts`.
-- Don't push without running the checks above: there is no CI yet.
+- Don't push without running the checks above. CI (`.github/workflows/ci.yml`) repeats lint with `--max-warnings 0`, typecheck, tests and the build on pull requests and on `main`, and builds the Docker image for pull requests.
 
 ## Known gaps
 
