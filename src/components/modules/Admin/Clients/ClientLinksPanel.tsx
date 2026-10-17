@@ -5,15 +5,18 @@ import {
   addClientLinkAction,
   removeClientLinkAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/clients/_linkAction"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useActionMutation } from "@/hooks/useActionMutation"
+import type { IClientLink } from "@/types/crm.types"
 import { clientLinkFormZodSchema, type IClientLinkFormValues } from "@/zod/crm.validation"
 import { useForm } from "@tanstack/react-form"
 import { useQuery } from "@tanstack/react-query"
 import { ExternalLink, FolderOpen, Trash2 } from "lucide-react"
+import { useState } from "react"
 import { clientLinksListQuery } from "@/queries/crm.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -43,6 +46,8 @@ const hostOf = (url: string) => {
 const emptyLink: IClientLinkFormValues = { label: "", url: "" }
 
 const ClientLinksPanel = ({ clientId }: { clientId: string }) => {
+  const [linkToRemove, setLinkToRemove] = useState<IClientLink | null>(null)
+
   const { data, isLoading } = useQuery(clientLinksListQuery(`client_id=${clientId}`))
 
   const links = data?.data ?? []
@@ -68,6 +73,10 @@ const ClientLinksPanel = ({ clientId }: { clientId: string }) => {
       if (await addLink({ client_id: clientId, ...value })) formApi.reset()
     },
   })
+
+  const handleRemove = async () => {
+    if (linkToRemove && (await removeLink(linkToRemove.id))) setLinkToRemove(null)
+  }
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
@@ -170,7 +179,7 @@ const ClientLinksPanel = ({ clientId }: { clientId: string }) => {
                   variant="outline"
                   size="sm"
                   disabled={isRemoving}
-                  onClick={() => void removeLink(link.id)}
+                  onClick={() => setLinkToRemove(link)}
                 >
                   <Trash2 className="size-3.5" />
                   <span className="sr-only">Remove {link.label}</span>
@@ -180,6 +189,25 @@ const ClientLinksPanel = ({ clientId }: { clientId: string }) => {
           })}
         </ul>
       )}
+
+      <ConfirmDialog
+        open={linkToRemove !== null}
+        onOpenChange={(open) => {
+          if (!open) setLinkToRemove(null)
+        }}
+        title="Remove this link?"
+        description={
+          <>
+            <span className="font-medium text-foreground">{linkToRemove?.label}</span> comes off this
+            client&apos;s page. The folder or file it points to is not touched.
+          </>
+        }
+        variant="destructive"
+        confirmLabel="Remove"
+        pendingLabel="Removing..."
+        isPending={isRemoving}
+        onConfirm={() => void handleRemove()}
+      />
     </Card>
   )
 }
