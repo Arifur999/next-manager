@@ -14,13 +14,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { UserPlus } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { queryKeys } from "@/lib/queryKeys"
-import { duePersonFormZodSchema, type IDuePersonFormValues } from "@/zod/spending.validation"
+import { duePersonFormZodSchema } from "@/zod/spending.validation"
 
 /**
  * Informal lending, in and out.
@@ -33,26 +32,21 @@ import { duePersonFormZodSchema, type IDuePersonFormValues } from "@/zod/spendin
 
 const AddPersonModal = () => {
   const [open, setOpen] = useState(false)
-  const queryClient = useQueryClient()
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IDuePersonFormValues) => createDuePersonAction(values),
+  const { run: addPerson, isPending } = useActionMutation({
+    action: createDuePersonAction,
+    successMessage: "Person added",
+    invalidateKeys: [queryKeys.duePeople.all],
+    refresh: false,
   })
 
   const form = useForm({
     defaultValues: { name: "", phone: "" },
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        toast.error(result.message || "Failed to add person")
-        return
+      if (await addPerson(value)) {
+        setOpen(false)
+        form.reset()
       }
-
-      toast.success("Person added")
-      setOpen(false)
-      form.reset()
-      void queryClient.invalidateQueries({ queryKey: queryKeys.duePeople.all })
     },
   })
 
