@@ -48,7 +48,7 @@ const LoansBoard = () => {
 
   // No successMessage: the server's own message is the toast, and after a
   // payment it says what is left owed, a number that should live in one place.
-  const { run: recordLoan, isPending } = useActionMutation({
+  const { run: recordLoan, isPending: isRecording } = useActionMutation({
     action: createLoanAction,
     invalidateKeys: LOAN_KEYS,
     refresh: false,
@@ -92,7 +92,7 @@ const LoansBoard = () => {
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-      <LoanFormCard accounts={accounts} onSubmit={recordLoan} isPending={isPending} />
+      <LoanFormCard accounts={accounts} onSubmit={recordLoan} isPending={isRecording} />
 
       <div className="space-y-4">
         {summary && summary.loan_count > 0 && (
