@@ -19,12 +19,12 @@ import { queryKeys } from "@/lib/queryKeys"
 import { expenseCategoriesQuery } from "@/queries/spending.queries"
 import { useQuery } from "@tanstack/react-query"
 import { Trash2 } from "lucide-react"
-import { useState } from "react"
+import { expenseCategoryFormZodSchema, type IExpenseCategoryFormValues } from "@/zod/spending.validation"
+import { useForm } from "@tanstack/react-form"
+
+const defaultValues: IExpenseCategoryFormValues = { name: "", type: "general" }
 
 const ExpenseCategorySettings = () => {
-  const [name, setName] = useState("")
-  const [type, setType] = useState<"general" | "employee">("general")
-
   const { data } = useQuery(expenseCategoriesQuery())
 
   const categories = data?.data ?? []
@@ -45,45 +45,69 @@ const ExpenseCategorySettings = () => {
     refresh: false,
   })
 
-  const handleCreate = async () => {
-    if (!name.trim()) return
-    if (await addCategory({ name, type })) setName("")
-  }
+  const form = useForm({
+    defaultValues,
+    validators: { onSubmit: expenseCategoryFormZodSchema },
+    onSubmit: async ({ value, formApi }) => {
+      // The type stays as chosen: categories tend to be added in runs of one kind.
+      if (await addCategory(value)) {
+        formApi.reset({ ...value, name: "" }, { keepDefaultValues: true })
+      }
+    },
+  })
 
   return (
     <div className="space-y-5 px-5 py-5">
-      <div className="flex flex-wrap gap-2">
-        <Input
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          placeholder="New category name"
-          className="min-w-0 flex-1"
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault()
-              void handleCreate()
-            }
-          }}
-        />
+      <form
+        method="POST"
+        action="#"
+        noValidate
+        className="flex flex-wrap gap-2"
+        onSubmit={(event) => {
+          event.preventDefault()
+          event.stopPropagation()
+          form.handleSubmit()
+        }}
+      >
+        <form.Field name="name">
+          {(field) => (
+            <Input
+              name={field.name}
+              value={field.state.value}
+              onChange={(event) => field.handleChange(event.target.value)}
+              onBlur={field.handleBlur}
+              placeholder="New category name"
+              aria-label="New category name"
+              className="min-w-0 flex-1"
+            />
+          )}
+        </form.Field>
 
-        <Select value={type} onValueChange={(value) => setType(value as "general" | "employee")}>
-          <SelectTrigger className="w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="general">General</SelectItem>
-            <SelectItem value="employee">Employee</SelectItem>
-          </SelectContent>
-        </Select>
+        <form.Field name="type">
+          {(field) => (
+            <Select
+              value={field.state.value}
+              onValueChange={(value) => field.handleChange(value as IExpenseCategoryFormValues["type"])}
+            >
+              <SelectTrigger className="w-40" aria-label="Category type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="general">General</SelectItem>
+                <SelectItem value="employee">Employee</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+        </form.Field>
 
-        <Button
-          type="button"
-          onClick={() => void handleCreate()}
-          disabled={isCreating || !name.trim()}
-        >
-          Add
-        </Button>
-      </div>
+        <form.Subscribe selector={(state) => !state.values.name.trim()}>
+          {(isNameBlank) => (
+            <Button type="submit" disabled={isCreating || isNameBlank}>
+              Add
+            </Button>
+          )}
+        </form.Subscribe>
+      </form>
 
       <p className="text-xs text-muted-foreground">
         Employee-type categories are reported alongside team payouts rather than with
