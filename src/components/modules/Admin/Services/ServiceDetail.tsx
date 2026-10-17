@@ -1,6 +1,8 @@
 "use client"
 
 import EmptyState from "@/components/shared/state/EmptyState"
+import ErrorState from "@/components/shared/state/ErrorState"
+import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatUsd } from "@/lib/currency"
@@ -21,12 +23,22 @@ import { serviceDetailQuery } from "@/queries/catalog.queries"
  * admin's revenue-by-service report.
  */
 const ServiceDetail = ({ serviceId }: { serviceId: string }) => {
-  const { data, isLoading } = useQuery(serviceDetailQuery(serviceId))
+  const serviceQuery = useQuery(serviceDetailQuery(serviceId))
 
-  const service = data?.data
+  const service = serviceQuery.data?.data
 
-  if (isLoading && !service) return <Card className="h-64 animate-pulse bg-muted/40" />
-  if (!service) return null
+  if (serviceQuery.isError && !service) {
+    return (
+      <Card>
+        <ErrorState
+          message="This service did not load."
+          onRetry={() => void serviceQuery.refetch()}
+          isRetrying={serviceQuery.isFetching}
+        />
+      </Card>
+    )
+  }
+  if (!service) return <LoadingBlock height="h-64" rounded />
 
   return (
     <div className="space-y-6">
