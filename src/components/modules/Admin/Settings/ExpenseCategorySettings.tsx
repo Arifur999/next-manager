@@ -4,6 +4,7 @@ import {
   createCategoryAction,
   deleteCategoryAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/finance-config/_action"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -18,13 +19,17 @@ import { formatBdt } from "@/lib/currency"
 import { queryKeys } from "@/lib/queryKeys"
 import { expenseCategoriesQuery } from "@/queries/spending.queries"
 import { useQuery } from "@tanstack/react-query"
+import type { IExpenseCategory } from "@/types/spending.types"
 import { Trash2 } from "lucide-react"
+import { useState } from "react"
 import { expenseCategoryFormZodSchema, type IExpenseCategoryFormValues } from "@/zod/spending.validation"
 import { useForm } from "@tanstack/react-form"
 
 const defaultValues: IExpenseCategoryFormValues = { name: "", type: "general" }
 
 const ExpenseCategorySettings = () => {
+  const [categoryToDelete, setCategoryToDelete] = useState<IExpenseCategory | null>(null)
+
   const { data } = useQuery(expenseCategoriesQuery())
 
   const categories = data?.data ?? []
@@ -38,12 +43,16 @@ const ExpenseCategorySettings = () => {
 
   // The server refuses a category that expenses still use, and its message
   // ("deactivate it instead") is the failure toast.
-  const { run: deleteCategory } = useActionMutation({
+  const { run: deleteCategory, isPending: isDeleting } = useActionMutation({
     action: deleteCategoryAction,
     successMessage: "Category deleted",
     invalidateKeys: [queryKeys.expenseCategories.all],
     refresh: false,
   })
+
+  const handleConfirmDelete = async () => {
+    if (categoryToDelete && (await deleteCategory(categoryToDelete.id))) setCategoryToDelete(null)
+  }
 
   const form = useForm({
     defaultValues,
@@ -132,7 +141,7 @@ const ExpenseCategorySettings = () => {
                 type="button"
                 variant="ghost"
                 size="icon"
-                onClick={() => void deleteCategory(category.id)}
+                onClick={() => setCategoryToDelete(category)}
               >
                 <Trash2 className="size-4" />
                 <span className="sr-only">Delete {category.name}</span>
@@ -141,6 +150,26 @@ const ExpenseCategorySettings = () => {
           ))}
         </ul>
       )}
+
+      <ConfirmDialog
+        open={categoryToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setCategoryToDelete(null)
+        }}
+        title="Delete this category?"
+        description={
+          <>
+            This removes <span className="font-medium text-foreground">{categoryToDelete?.name}</span>. A
+            category with expenses recorded against it cannot be deleted — deactivate it instead, so
+            those expenses keep their category.
+          </>
+        }
+        variant="destructive"
+        confirmLabel="Delete"
+        pendingLabel="Deleting..."
+        isPending={isDeleting}
+        onConfirm={() => void handleConfirmDelete()}
+      />
     </div>
   )
 }
