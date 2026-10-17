@@ -5,6 +5,7 @@ import { paymentsColumns } from "@/components/modules/Admin/Payments/paymentsCol
 import DataTable from "@/components/shared/table/DataTable"
 import StatTile from "@/components/shared/StatTile"
 import { formatBdt, formatUsd } from "@/lib/currency"
+import { optionsFromValues } from "@/lib/table/filterOptions"
 import { toTableQueryProps } from "@/lib/table/queryProps"
 import { useQuery } from "@tanstack/react-query"
 import { ArrowDownLeft } from "lucide-react"
@@ -41,6 +42,17 @@ const PaymentsTable = () => {
         columns={paymentsColumns}
         tableId="payments"
         exportFileName="payments"
+        filters={{
+          configs: [
+            {
+              id: "account",
+              type: "multi-select",
+              label: "Into",
+              options: optionsFromValues(payments.map((payment) => payment.account?.name)),
+            },
+            { id: "date", type: "date-range", label: "Date" },
+          ],
+        }}
         {...toTableQueryProps(paymentsQuery)}
         emptyMessage="No payments recorded yet."
         toolbarAction={<RecordPaymentModal />}
