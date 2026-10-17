@@ -27,9 +27,9 @@ export const payoutsColumns: ColumnDef<ITeamPayout>[] = [
   },
   {
     id: "type",
-    accessorKey: "type",
+    // The label people read, so search, sort and export all use it too.
+    accessorFn: (payout) => payout.type.replace(/_/g, " "),
     header: "Type",
-    meta: { exportValue: (payout) => payout.type.replace(/_/g, " ") },
     cell: ({ row }) => (
       <Badge variant="outline" className="capitalize">
         {row.original.type.replace(/_/g, " ")}
