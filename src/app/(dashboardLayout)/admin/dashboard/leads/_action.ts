@@ -1,7 +1,7 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { convertLead, createLead, deleteLead, updateLead } from "@/services/crm.services"
+import { convertLead, createLead, updateLead } from "@/services/crm.services"
 import type { IClient } from "@/types/crm.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
@@ -37,17 +37,5 @@ export const convertLeadAction = async (
         return await convertLead(id)
     } catch (error: unknown) {
         return { success: false, message: getActionErrorMessage(error, "Failed to convert lead") }
-    }
-}
-
-export const deleteLeadAction = async (
-    id: string,
-): Promise<ApiResponse<unknown> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid lead id" }
-
-    try {
-        return await deleteLead(id)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to delete lead") }
     }
 }

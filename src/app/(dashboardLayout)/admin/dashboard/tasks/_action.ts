@@ -1,7 +1,7 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { createTask, deleteTask, updateTask } from "@/services/work.services"
+import { createTask, updateTask } from "@/services/work.services"
 import type { ITask } from "@/types/work.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
@@ -25,17 +25,5 @@ export const updateTaskAction = async (
         return await updateTask(id, payload)
     } catch (error: unknown) {
         return { success: false, message: getActionErrorMessage(error, "Failed to update task") }
-    }
-}
-
-export const deleteTaskAction = async (
-    id: string,
-): Promise<ApiResponse<{ message: string }> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid task id" }
-
-    try {
-        return await deleteTask(id)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to delete task") }
     }
 }

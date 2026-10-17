@@ -8,7 +8,6 @@ import {
     reopenMilestone,
     setProjectBaseline,
     submitMilestone,
-    updateMilestone,
 } from "@/services/project.services"
 import type { IMilestone, IProject } from "@/types/project.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
@@ -22,22 +21,6 @@ export const createMilestoneAction = async (
         return await createMilestone(payload)
     } catch (error: unknown) {
         return { success: false, message: getActionErrorMessage(error, "Failed to add the milestone") }
-    }
-}
-
-export const updateMilestoneAction = async (
-    id: string,
-    payload: Record<string, unknown>,
-): Promise<MilestoneResult> => {
-    if (!id) return { success: false, message: "Invalid milestone id" }
-
-    try {
-        return await updateMilestone(id, payload)
-    } catch (error: unknown) {
-        // The server refuses a due-date change on a submitted milestone by
-        // name, which is more use than "update failed" — a date that will not
-        // move needs its reason stated.
-        return { success: false, message: getActionErrorMessage(error, "Failed to update the milestone") }
     }
 }
 

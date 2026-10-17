@@ -1,7 +1,7 @@
 "use server"
 
 import { getActionErrorMessage } from "@/lib/actionError"
-import { createProject, deleteProject, updateProject } from "@/services/project.services"
+import { createProject, updateProject } from "@/services/project.services"
 import type { IProject } from "@/types/project.types"
 import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
 
@@ -25,17 +25,5 @@ export const updateProjectAction = async (
         return await updateProject(id, payload)
     } catch (error: unknown) {
         return { success: false, message: getActionErrorMessage(error, "Failed to update project") }
-    }
-}
-
-export const deleteProjectAction = async (
-    id: string,
-): Promise<ApiResponse<{ message: string }> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid project id" }
-
-    try {
-        return await deleteProject(id)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to delete project") }
     }
 }
