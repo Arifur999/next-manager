@@ -1,11 +1,13 @@
 "use client"
 
+import AccountActions from "@/components/modules/Admin/Accounts/AccountActions"
 import CreateAccountModal from "@/components/modules/Admin/Accounts/CreateAccountModal"
 import StatTile from "@/components/shared/StatTile"
 import ErrorState from "@/components/shared/state/ErrorState"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt, formatMoney, formatUsd } from "@/lib/currency"
+import { plural, sentenceCase } from "@/lib/text"
 import type { IAccount } from "@/types/finance.types"
 import type { Currency } from "@/types/common.types"
 import { useQuery } from "@tanstack/react-query"
@@ -40,12 +42,10 @@ const CurrencyColumn = ({
     ) : (
       <ul className="divide-y">
         {accounts.map((account) => (
-          <li key={account.id} className="flex items-center justify-between gap-3 px-5 py-3.5">
+          <li key={account.id} className="flex items-center justify-between gap-3 py-3.5 pr-3 pl-5">
             <div className="min-w-0">
               <p className="truncate text-sm font-medium">{account.name}</p>
-              <p className="text-xs capitalize text-muted-foreground">
-                {account.type.replace(/_/g, " ")}
-              </p>
+              <p className="text-xs text-muted-foreground">{sentenceCase(account.type)}</p>
             </div>
 
             <div className="flex shrink-0 items-center gap-3">
@@ -57,6 +57,7 @@ const CurrencyColumn = ({
               <span className="text-sm font-medium tabular-nums">
                 {formatMoney(account.balance, currency)}
               </span>
+              <AccountActions account={account} />
             </div>
           </li>
         ))}
@@ -103,14 +104,14 @@ const AccountsBoard = () => {
           <StatTile
             label="Held in USD"
             value={formatUsd(sumBalances(usdAccounts))}
-            hint={`${usdAccounts.length} account${usdAccounts.length === 1 ? "" : "s"}`}
+            hint={plural(usdAccounts.length, "account")}
             icon={<Wallet className="size-5" />}
             tone={1}
           />
           <StatTile
             label="Held in BDT"
             value={formatBdt(sumBalances(bdtAccounts))}
-            hint={`${bdtAccounts.length} account${bdtAccounts.length === 1 ? "" : "s"}`}
+            hint={plural(bdtAccounts.length, "account")}
             icon={<Banknote className="size-5" />}
             tone={3}
           />

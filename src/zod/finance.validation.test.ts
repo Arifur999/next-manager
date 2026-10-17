@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+    accountRenameFormZodSchema,
     createAccountServerZodSchema,
     createDistributionServerZodSchema,
     createExchangeServerZodSchema,
@@ -40,6 +41,18 @@ describe("createAccountServerZodSchema", () => {
         expect(createAccountServerZodSchema.safeParse({ ...valid, currency: "EUR" }).error?.issues[0]?.message).toBe(
             "Choose a currency",
         )
+    })
+})
+
+describe("accountRenameFormZodSchema", () => {
+    it("trims the new name and sends only the name", () => {
+        expect(accountRenameFormZodSchema.parse({ name: "  PayPal - main  ", currency: "BDT" })).toEqual({
+            name: "PayPal - main",
+        })
+    })
+
+    it("refuses a blank name", () => {
+        expect(accountRenameFormZodSchema.safeParse({ name: "   " }).error?.issues[0]?.message).toBe("Name is required")
     })
 })
 

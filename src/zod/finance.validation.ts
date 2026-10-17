@@ -26,6 +26,14 @@ export const createAccountServerZodSchema = accountFormZodSchema.transform((valu
     notes: values.notes,
 }))
 
+// Renaming is the one edit an account takes here: its currency is fixed and its
+// opening balance is history, and the API accepts neither on an update.
+export const accountRenameFormZodSchema = z.object({
+    name: z.string().trim().min(1, "Name is required").max(120, "Keep the name under 120 characters"),
+})
+
+export type IAccountRenameFormValues = z.infer<typeof accountRenameFormZodSchema>
+
 // Exported beside the refined schema so per-field validators can reach
 // `.shape`; a refined schema has none.
 export const exchangeFormFields = z.object({
