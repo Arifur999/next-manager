@@ -6,16 +6,7 @@ import {
   publishAnnouncementAction,
   updateAnnouncementAction,
 } from "@/app/(dashboardLayout)/platform/_campaignAction"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -125,6 +116,11 @@ const CampaignBoard = () => {
 
   const handleSave = async () => {
     if (await saveDraft(draft)) reset()
+  }
+
+  // The dialog stays open until the send settles, so a refusal is read in place.
+  const handlePublish = async () => {
+    if (confirming && (await publish(confirming.id))) setConfirming(null)
   }
 
   const handleRemove = async (id: string) => {
@@ -358,27 +354,24 @@ const CampaignBoard = () => {
         </Card>
       </div>
 
-      <AlertDialog open={Boolean(confirming)} onOpenChange={(open) => !open && setConfirming(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Send this to {AUDIENCE_LABEL[confirming?.audience ?? "all"].toLowerCase()}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              It appears in their notifications straight away
-              {confirming?.send_email ? ", and is emailed to each customer's admin" : ""}. This
-              cannot be undone, and the text can no longer be edited afterwards.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Not yet</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={isPublishing}
-              onClick={() => confirming && void publish(confirming.id)}
-            >
-              Publish
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={Boolean(confirming)}
+        onOpenChange={(open) => {
+          if (!open) setConfirming(null)
+        }}
+        title={`Send this to ${AUDIENCE_LABEL[confirming?.audience ?? "all"].toLowerCase()}?`}
+        description={
+          <>
+            It appears in their notifications straight away
+            {confirming?.send_email ? ", and is emailed to each customer's admin" : ""}. This
+            cannot be undone, and the text can no longer be edited afterwards.
+          </>
+        }
+        confirmLabel="Publish"
+        pendingLabel="Publishing..."
+        isPending={isPublishing}
+        onConfirm={() => void handlePublish()}
+      />
     </div>
   )
 }
