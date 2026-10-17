@@ -1,12 +1,8 @@
 "use client"
 
-import {
-  inviteAgencyAction,
-  revokeAgencyInviteAction,
-} from "@/app/(dashboardLayout)/platform/_agencyAction"
+import { inviteAgencyAction } from "@/app/(dashboardLayout)/platform/_agencyAction"
+import AgencyInviteList from "@/components/modules/Platform/AgencyInviteList"
 import InviteLinkPanel from "@/components/modules/Platform/InviteLinkPanel"
-import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -19,14 +15,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useActionMutation } from "@/hooks/useActionMutation"
-import type { IAgencyInvite } from "@/types/platform.types"
 import { useQuery } from "@tanstack/react-query"
-import { format, isPast, parseISO } from "date-fns"
-import { Send, Trash2 } from "lucide-react"
+import { Send } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 import { toast } from "sonner"
-import { agencyInvitesQuery, plansQuery } from "@/queries/platform.queries"
+import { plansQuery } from "@/queries/platform.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
 /**
@@ -43,13 +37,6 @@ import { queryKeys } from "@/lib/queryKeys"
 
 const NO_PLAN = "__none__"
 
-const statusOf = (invite: IAgencyInvite) => {
-  if (invite.used_at) return { label: "opened", tone: "secondary" as const }
-  if (invite.revoked_at) return { label: "revoked", tone: "outline" as const }
-  if (isPast(parseISO(invite.expires_at))) return { label: "expired", tone: "outline" as const }
-  return { label: "waiting", tone: "default" as const }
-}
-
 const AgencyInvites = () => {
   const [email, setEmail] = useState("")
   const [companyName, setCompanyName] = useState("")
@@ -57,13 +44,9 @@ const AgencyInvites = () => {
   const [trialDays, setTrialDays] = useState("14")
   const [freshLink, setFreshLink] = useState<string | null>(null)
   const [mailed, setMailed] = useState<{ delivered: boolean; reason: string | null } | null>(null)
-  const [revoking, setRevoking] = useState<IAgencyInvite | null>(null)
-
-  const { data, isLoading } = useQuery(agencyInvitesQuery())
 
   const { data: planData } = useQuery(plansQuery())
 
-  const invites = data?.data ?? []
   const plans = ((planData?.data ?? [])).filter((plan) => plan.is_active)
 
   const { run: sendInvite, isPending } = useActionMutation({
@@ -83,17 +66,6 @@ const AgencyInvites = () => {
       else toast.warning(result.message, { description: mail.reason ?? undefined })
     },
   })
-
-  const { run: revokeInvite, isPending: isRevoking } = useActionMutation({
-    action: revokeAgencyInviteAction,
-    successMessage: "Invite revoked — the link stops working immediately",
-    invalidateKeys: [queryKeys.agencyInvites.all],
-    refresh: false,
-  })
-
-  const handleRevoke = async () => {
-    if (revoking && (await revokeInvite(revoking.id))) setRevoking(null)
-  }
 
   const handleInvite = async () => {
     const sent = await sendInvite({
@@ -237,84 +209,7 @@ const AgencyInvites = () => {
         )}
       </Card>
 
-      <Card className="gap-0 overflow-hidden p-0">
-        <CardHeader className="border-b px-5 py-4">
-          <CardTitle className="text-base">Invites</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Nothing appears on the customers list until an invite is opened.
-          </p>
-        </CardHeader>
-
-        {isLoading && invites.length === 0 ? (
-          <div className="h-24 animate-pulse bg-muted/40" />
-        ) : invites.length === 0 ? (
-          <p className="px-6 py-10 text-center text-sm text-muted-foreground">
-            No agencies invited yet.
-          </p>
-        ) : (
-          <ul className="divide-y">
-            {invites.map((invite) => {
-              const state = statusOf(invite)
-
-              return (
-                <li
-                  key={invite.id}
-                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5"
-                >
-                  <div className="min-w-48">
-                    <p className="font-medium">{invite.company_name || "unnamed until opened"}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {invite.email}
-                      {invite.plan ? ` · ${invite.plan.name}` : " · no plan"}
-                      {invite.trial_days > 0 ? ` · ${invite.trial_days}-day trial` : " · no trial"}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-muted-foreground">
-                      {invite.used_at
-                        ? `opened ${format(parseISO(invite.used_at), "d MMM")}`
-                        : `expires ${format(parseISO(invite.expires_at), "d MMM")}`}
-                    </span>
-                    <Badge variant={state.tone}>{state.label}</Badge>
-                    {state.label === "waiting" && (
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => setRevoking(invite)}
-                        aria-label={`Revoke the invite to ${invite.email}`}
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    )}
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
-        )}
-      </Card>
-
-      <ConfirmDialog
-        open={Boolean(revoking)}
-        onOpenChange={(open) => {
-          if (!open) setRevoking(null)
-        }}
-        title="Revoke this invite?"
-        description={
-          revoking && (
-            <>
-              The link sent to <span className="font-medium text-foreground">{revoking.email}</span>{" "}
-              stops working immediately. Nothing was created from it, so nothing else changes.
-            </>
-          )
-        }
-        variant="destructive"
-        confirmLabel="Revoke"
-        pendingLabel="Revoking..."
-        isPending={isRevoking}
-        onConfirm={() => void handleRevoke()}
-      />
+      <AgencyInviteList />
     </div>
   )
 }
