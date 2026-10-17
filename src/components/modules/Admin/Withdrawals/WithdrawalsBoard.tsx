@@ -18,12 +18,12 @@ const WithdrawalsBoard = () => {
 
   const withdrawals = data?.data ?? []
 
-  const personal = withdrawals
-    .filter((row) => row.type === "personal")
-    .reduce((running, row) => running + row.amount_bdt, 0)
-  const reinvested = withdrawals
-    .filter((row) => row.type === "reinvestment")
-    .reduce((running, row) => running + row.amount_bdt, 0)
+  const personalBdt = withdrawals
+    .filter((withdrawal) => withdrawal.type === "personal")
+    .reduce((running, withdrawal) => running + withdrawal.amount_bdt, 0)
+  const reinvestedBdt = withdrawals
+    .filter((withdrawal) => withdrawal.type === "reinvestment")
+    .reduce((running, withdrawal) => running + withdrawal.amount_bdt, 0)
 
   // Never an empty table that reads as "no withdrawals". Not a permission
   // message either: the page and the API are both admin-only, and a thrown
@@ -46,14 +46,14 @@ const WithdrawalsBoard = () => {
       <div className="grid gap-4 sm:grid-cols-2">
         <StatTile
           label="Taken personally"
-          value={formatBdt(personal)}
+          value={formatBdt(personalBdt)}
           hint="Profit already earned, leaving — never counted as a business cost"
           icon={<PiggyBank className="size-5" />}
           tone={5}
         />
         <StatTile
           label="Put back in"
-          value={formatBdt(reinvested)}
+          value={formatBdt(reinvestedBdt)}
           hint="Reinvested into the business"
           icon={<PiggyBank className="size-5" />}
           tone={3}
