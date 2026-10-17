@@ -20,12 +20,11 @@ import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatUsd } from "@/lib/currency"
 import { invoiceFormZodSchema, type IInvoiceFormValues } from "@/zod/billing.validation"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { Plus, Trash2 } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
-import { toast } from "sonner"
 import { clientsListQuery } from "@/queries/crm.queries"
 import { projectsListQuery } from "@/queries/project.queries"
 import { queryKeys } from "@/lib/queryKeys"
@@ -56,8 +55,6 @@ const defaultValues: IInvoiceFormValues = {
 
 const CreateInvoiceModal = () => {
   const [open, setOpen] = useState(false)
-  const queryClient = useQueryClient()
-  const router = useRouter()
 
   const { data: clientsData } = useQuery({ ...clientsListQuery(), enabled: open })
   const { data: projectsData } = useQuery({ ...projectsListQuery(), enabled: open })
@@ -65,27 +62,20 @@ const CreateInvoiceModal = () => {
   const clients = clientsData?.data ?? []
   const projects = projectsData?.data ?? []
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IInvoiceFormValues) => createInvoiceAction(values),
+  const { run: createInvoice, isPending } = useActionMutation({
+    action: createInvoiceAction,
+    successMessage: "Invoice created successfully",
+    invalidateKeys: [queryKeys.invoices.all, queryKeys.dashboard.all],
   })
 
   const form = useForm({
     defaultValues,
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        toast.error(result.message || "Failed to create invoice")
-        return
+      // A failure keeps the dialog open with the lines already typed.
+      if (await createInvoice(value)) {
+        setOpen(false)
+        form.reset()
       }
-
-      toast.success(result.message || "Invoice created")
-      setOpen(false)
-      form.reset()
-
-      void queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
-      router.refresh()
     },
   })
 
