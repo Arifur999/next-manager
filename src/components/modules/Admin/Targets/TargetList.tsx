@@ -6,6 +6,7 @@ import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
+import { formatUsd } from "@/lib/currency"
 import type { IKpiTarget } from "@/types/insights.types"
 import type { UseQueryResult } from "@tanstack/react-query"
 import { Target as TargetIcon, Trash2 } from "lucide-react"
@@ -23,7 +24,7 @@ const TargetList = ({
 }) => {
   const formatValue = (target: IKpiTarget) => {
     const { unit } = specOf(target.metric)
-    if (unit === "$") return `$${target.target_value.toLocaleString()}`
+    if (unit === "$") return formatUsd(target.target_value)
     return `${target.target_value}${unit}`
   }
 
