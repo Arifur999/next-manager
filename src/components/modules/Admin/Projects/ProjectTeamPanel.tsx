@@ -5,6 +5,8 @@ import {
   removeProjectMemberAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/projects/_action"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
+import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,7 +23,7 @@ import type { IProjectMember } from "@/types/project.types"
 import { projectMemberFormZodSchema, type IProjectMemberFormValues } from "@/zod/project.validation"
 import { useForm } from "@tanstack/react-form"
 import { useQuery } from "@tanstack/react-query"
-import { UserMinus, UserPlus } from "lucide-react"
+import { UserMinus, UserPlus, Users } from "lucide-react"
 import { useState } from "react"
 import { projectMembersQuery } from "@/queries/project.queries"
 import { queryKeys } from "@/lib/queryKeys"
@@ -52,10 +54,10 @@ const ProjectTeamPanel = ({
 }) => {
   const [memberToRemove, setMemberToRemove] = useState<IProjectMember | null>(null)
 
-  const { data: membersData } = useQuery(projectMembersQuery(projectId))
+  const membersQuery = useQuery(projectMembersQuery(projectId))
   const { data: usersData } = useQuery(usersListQuery())
 
-  const members = membersData?.data ?? []
+  const members = membersQuery.data?.data ?? []
   const users = ((usersData?.data ?? [])).filter((user) => user.status === "active")
 
   const { run: assignMember, isPending: isAssigning } = useActionMutation({
@@ -141,11 +143,16 @@ const ProjectTeamPanel = ({
       </div>
       )}
 
-      {members.length === 0 ? (
-        <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-          Nobody assigned yet.
-        </p>
-      ) : (
+      <PanelState
+        query={membersQuery}
+        errorMessage="The team did not load."
+        isEmpty={members.length === 0}
+        empty={
+          <EmptyState icon={Users} hint={canManage ? "Choose someone above to put them on this project." : undefined}>
+            Nobody assigned yet.
+          </EmptyState>
+        }
+      >
         <ul className="divide-y">
           {members.map((member) => (
             <li key={member.id} className="flex items-center gap-3 px-5 py-3">
@@ -176,7 +183,7 @@ const ProjectTeamPanel = ({
             </li>
           ))}
         </ul>
-      )}
+      </PanelState>
 
       <ConfirmDialog
         open={memberToRemove !== null}
