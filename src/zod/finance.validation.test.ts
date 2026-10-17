@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest"
-import { createAccountServerZodSchema, createExchangeServerZodSchema } from "./finance.validation"
+import {
+    createAccountServerZodSchema,
+    createExchangeServerZodSchema,
+    createLoanServerZodSchema,
+    payInstalmentServerZodSchema,
+} from "./finance.validation"
 
 describe("createAccountServerZodSchema", () => {
     const valid = { name: "PayPal main", type: "paypal", currency: "USD", opening_balance: "1500.50", notes: "" }
@@ -82,5 +87,57 @@ describe("createExchangeServerZodSchema", () => {
             "Choose the USD account",
             "Choose the BDT account",
         ])
+    })
+})
+
+describe("createLoanServerZodSchema", () => {
+    const loan = {
+        lender: "  City Bank ",
+        principal_bdt: "500000",
+        interest_rate: "",
+        started_on: "2026-01-01",
+        term_months: "12",
+        account_id: "",
+    }
+
+    it("builds the API payload, with no account for a loan entered after the fact", () => {
+        expect(createLoanServerZodSchema.parse(loan)).toEqual({
+            lender: "City Bank",
+            principal_bdt: 500000,
+            interest_rate: 0,
+            started_on: "2026-01-01",
+            term_months: 12,
+            account_id: undefined,
+        })
+    })
+
+    it("keeps the account the money landed in and a typed rate", () => {
+        const payload = createLoanServerZodSchema.parse({ ...loan, account_id: "bdt-1", interest_rate: "9.5" })
+        expect(payload).toMatchObject({ account_id: "bdt-1", interest_rate: 9.5 })
+    })
+
+    it("says who lent it when the lender is blank", () => {
+        expect(createLoanServerZodSchema.safeParse({ ...loan, lender: "   " }).error?.issues[0]?.message).toBe(
+            "Say who lent it",
+        )
+    })
+
+    it("rejects a term that is not a whole number of months", () => {
+        for (const term_months of ["", "0", "1.5", "601"]) {
+            expect(createLoanServerZodSchema.safeParse({ ...loan, term_months }).error?.issues[0]?.message).toBe(
+                "Months must be a whole number from 1 to 600",
+            )
+        }
+    })
+
+    it("rejects a loan of nothing", () => {
+        expect(createLoanServerZodSchema.safeParse({ ...loan, principal_bdt: "0" }).success).toBe(false)
+    })
+})
+
+describe("payInstalmentServerZodSchema", () => {
+    it("requires the account the instalment is paid from", () => {
+        expect(payInstalmentServerZodSchema.parse({ account_id: "bdt-1" })).toEqual({ account_id: "bdt-1" })
+        expect(payInstalmentServerZodSchema.safeParse({ account_id: "" }).success).toBe(false)
     })
 })

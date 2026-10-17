@@ -59,3 +59,35 @@ export const createExchangeServerZodSchema = exchangeFormZodSchema.transform((va
     fee_usd: toNumber(values.fee_usd) ?? 0,
     notes: values.notes,
 }))
+
+export const loanFormZodSchema = z.object({
+    lender: z.string().trim().min(1, "Say who lent it").max(120, "Keep the lender under 120 characters"),
+    principal_bdt: positiveAmount("Amount"),
+    interest_rate: optionalNonNegative("Rate"),
+    started_on: isoDate,
+    term_months: z
+        .string()
+        .refine(
+            (value) => Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) <= 600,
+            "Months must be a whole number from 1 to 600",
+        ),
+    // Blank on purpose for a loan entered after the fact: that money never
+    // landed in an account here, and picking one would invent it.
+    account_id: z.string().optional(),
+})
+
+export type ILoanFormValues = z.infer<typeof loanFormZodSchema>
+
+export const createLoanServerZodSchema = loanFormZodSchema.transform((values) => ({
+    lender: values.lender,
+    principal_bdt: Number(values.principal_bdt),
+    interest_rate: toNumber(values.interest_rate) ?? 0,
+    started_on: values.started_on,
+    term_months: Number(values.term_months),
+    // The API takes no null here, only an id or nothing.
+    account_id: values.account_id || undefined,
+}))
+
+export const payInstalmentServerZodSchema = z.object({
+    account_id: z.string().min(1, "Choose the account it is paid from"),
+})

@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import type { IAccount } from "@/types/finance.types"
+import type { ILoanFormValues } from "@/zod/finance.validation"
 import { format } from "date-fns"
 import { useState } from "react"
 
@@ -33,7 +34,7 @@ const LoanFormCard = ({
   isPending,
 }: {
   accounts: IAccount[]
-  onSubmit: (payload: Record<string, unknown>) => void
+  onSubmit: (values: ILoanFormValues) => void
   isPending: boolean
 }) => {
   const [lender, setLender] = useState("")
@@ -45,12 +46,12 @@ const LoanFormCard = ({
 
   const submit = () => {
     onSubmit({
-      lender: lender.trim(),
-      principal_bdt: Number(principal),
-      interest_rate: Number(rate || 0),
+      lender,
+      principal_bdt: principal,
+      interest_rate: rate,
       started_on: startedOn,
-      term_months: Number(months),
-      ...(accountId ? { account_id: accountId } : {}),
+      term_months: months,
+      account_id: accountId,
     })
     setLender("")
     setPrincipal("")

@@ -1,11 +1,11 @@
 "use client"
 
 import {
+  closeLoanAction,
   createLoanAction,
   deleteLoanAction,
   payLoanInstalmentAction,
   reverseLoanInstalmentAction,
-  updateLoanAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/loans/_action"
 import LoanCard from "@/components/modules/Admin/Loans/LoanCard"
 import LoanFormCard from "@/components/modules/Admin/Loans/LoanFormCard"
@@ -13,6 +13,7 @@ import EmptyState from "@/components/shared/state/EmptyState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Card } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
+import type { ILoanFormValues } from "@/zod/finance.validation"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { Landmark } from "lucide-react"
@@ -62,7 +63,7 @@ const LoansBoard = () => {
   }
 
   const { mutate: record, isPending } = useMutation({
-    mutationFn: (payload: Record<string, unknown>) => createLoanAction(payload),
+    mutationFn: (values: ILoanFormValues) => createLoanAction(values),
     onSuccess: settle("Could not record it"),
   })
 
@@ -78,7 +79,7 @@ const LoansBoard = () => {
   })
 
   const { mutate: close } = useMutation({
-    mutationFn: (id: string) => updateLoanAction(id, { status: "closed" }),
+    mutationFn: (id: string) => closeLoanAction(id),
     onSuccess: settle("Could not close it"),
   })
 
