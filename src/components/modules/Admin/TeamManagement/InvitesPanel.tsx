@@ -103,6 +103,7 @@ const InvitesPanel = () => {
             <Input
               id="invite-email"
               type="email"
+              autoComplete="off"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="colleague@example.com"

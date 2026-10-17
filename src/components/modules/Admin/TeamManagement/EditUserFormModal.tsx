@@ -72,11 +72,13 @@ const EditUserForm = ({ user, onOpenChange }: { user: IUser; onOpenChange: (open
       className="space-y-5"
     >
       <form.Field name="full_name" validators={{ onChange: editUserFormZodSchema.shape.full_name }}>
-        {(field) => <AppField field={field} label="Full name" disabled={isPending} />}
+        {(field) => <AppField field={field} label="Full name" autoComplete="off" disabled={isPending} />}
       </form.Field>
 
       <form.Field name="phone">
-        {(field) => <AppField field={field} label="Phone" placeholder="Optional" disabled={isPending} />}
+        {(field) => (
+          <AppField field={field} label="Phone" autoComplete="off" placeholder="Optional" disabled={isPending} />
+        )}
       </form.Field>
 
       <form.Field name="role">

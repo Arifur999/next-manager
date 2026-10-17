@@ -105,7 +105,13 @@ const CreateUserFormModal = () => {
                 validators={{ onChange: createUserFormZodSchema.shape.full_name }}
               >
                 {(field) => (
-                  <AppField field={field} label="Full name" placeholder="e.g. Rahim Uddin" disabled={isPending} />
+                  <AppField
+                    field={field}
+                    label="Full name"
+                    autoComplete="off"
+                    placeholder="e.g. Rahim Uddin"
+                    disabled={isPending}
+                  />
                 )}
               </form.Field>
 
@@ -118,6 +124,7 @@ const CreateUserFormModal = () => {
                     field={field}
                     label="Email"
                     type="email"
+                    autoComplete="off"
                     placeholder="name@example.com"
                     disabled={isPending}
                   />
@@ -126,7 +133,7 @@ const CreateUserFormModal = () => {
 
               <form.Field name="phone">
                 {(field) => (
-                  <AppField field={field} label="Phone" placeholder="Optional" disabled={isPending} />
+                  <AppField field={field} label="Phone" autoComplete="off" placeholder="Optional" disabled={isPending} />
                 )}
               </form.Field>
 
@@ -139,6 +146,7 @@ const CreateUserFormModal = () => {
                     field={field}
                     label="Temporary password"
                     type="password"
+                    autoComplete="new-password"
                     placeholder="At least 8 characters"
                     disabled={isPending}
                   />
