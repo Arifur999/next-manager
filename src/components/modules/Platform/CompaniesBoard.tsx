@@ -1,89 +1,84 @@
 "use client"
 
-import {
-  companiesColumns,
-  NOT_SET_UP,
-  STATUS_LABEL,
-  STATUSES,
-} from "@/components/modules/Platform/companiesColumns"
+import CompanySubscriptionSheet, {
+  type ICompanySheetTarget,
+} from "@/components/modules/Platform/CompanySubscriptionSheet"
+import { companiesColumns } from "@/components/modules/Platform/companiesColumns"
+import { COMPANIES_TABLE } from "@/components/modules/Platform/companiesTable.config"
 import DataTable from "@/components/shared/table/DataTable"
-import type { DataTableFilterConfig } from "@/components/shared/table/dataTable.types"
-import { Card, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardHeader } from "@/components/ui/card"
+import { useServerDataTable } from "@/hooks/useServerDataTable"
 import { toTableQueryProps } from "@/lib/table/queryProps"
 import { companiesListQuery, plansQuery } from "@/queries/platform.queries"
 import type { ICompanyRow } from "@/types/platform.types"
-import { useQuery } from "@tanstack/react-query"
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMemo, useState } from "react"
 
 /**
- * Every company on the platform, and what it is paying.
+ * Which company is on which plan, and what each one uses of it.
  *
- * What is deliberately absent is the point: no balances, no payments, no client
- * names, no vault. Provisioning a workspace is not a licence to read the books
- * of the business inside it, and the API does not return those columns at all —
- * this screen could not show them if it tried.
- *
- * Usage is shown as used-of-limit rather than a percentage. "4 of 5 seats" says
- * what to do next; "80%" does not.
+ * No balances, payments, client names or vault: provisioning a workspace is not
+ * a licence to read the books inside it, and the API does not return them.
+ * Usage reads "4 / 5" rather than "80%", because that says what to do next.
  */
-
-const STANDING_FILTER: DataTableFilterConfig = {
-  id: "standing",
-  type: "single-select",
-  label: "Standing",
-  options: [
-    ...STATUSES.map((status) => ({ value: status, label: STATUS_LABEL[status] })),
-    { value: NOT_SET_UP, label: "not set up" },
-  ],
-}
 
 const isAtLimit = (company: ICompanyRow) =>
   (company.usage.seats_limit !== null && company.usage.seats_used >= company.usage.seats_limit) ||
   (company.usage.projects_limit !== null && company.usage.projects_used >= company.usage.projects_limit)
 
-// The ones about to hit a wall are the ones worth a call, so they are counted
-// rather than left to be spotted by eye.
-const CompanyCount = ({ companies }: { companies: ICompanyRow[] | undefined }) => {
+// The ones about to hit a wall are worth a call, so they are counted rather than spotted by eye.
+const CompanyCount = ({ companies, total }: { companies: ICompanyRow[] | undefined; total: number | undefined }) => {
   // Unknown until the list arrives, and "0 companies" must never stand in for that.
   if (!companies) return null
-  if (companies.length === 0) return <>No companies yet.</>
 
+  const count = total ?? companies.length
   const atLimit = companies.filter(isAtLimit).length
-  if (atLimit === 0) return <>{companies.length} on the platform, none at a plan limit.</>
+  const noun = count === 1 ? "company" : "companies"
+  if (atLimit === 0) return <>{count} {noun}, none on this page at a plan limit.</>
   return (
     <>
-      {companies.length} on the platform · {atLimit} at a plan limit
+      {count} {noun} · {atLimit} on this page at a plan limit
     </>
   )
 }
 
+// Below sm only the company column shows, and its cell carries the standing and a Change button.
+const PHONE_CARDS = "max-sm:[&_td:not(:first-child)]:hidden max-sm:[&_th:not(:first-child)]:hidden"
+
 const CompaniesBoard = () => {
-  const companiesQuery = useQuery(companiesListQuery())
+  const queryClient = useQueryClient()
+  const [sheetTarget, setSheetTarget] = useState<ICompanySheetTarget | null>(null)
+
+  const { queryString, filterQueryString, dataTableProps } = useServerDataTable<ICompanyRow>(COMPANIES_TABLE)
+  const companiesQuery = useQuery({ ...companiesListQuery(queryString), placeholderData: keepPreviousData })
   const { data: plansData } = useQuery(plansQuery())
 
   const companies = companiesQuery.data?.data
-  const plans = plansData?.data ?? []
+  const plans = plansData?.data
+  const columns = useMemo(() => companiesColumns(plans ?? [], (company) => setSheetTarget({ company })), [plans])
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
       <CardHeader className="border-b px-5 py-4">
-        <CardTitle className="text-base">Companies</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          <CompanyCount companies={companies} />
+        <p className="min-h-5 text-sm text-muted-foreground">
+          <CompanyCount companies={companies} total={companiesQuery.data?.meta?.total} />
         </p>
       </CardHeader>
 
-      <div className="p-4">
+      <div className={`p-4 ${PHONE_CARDS}`}>
         <DataTable
           data={companies ?? []}
-          columns={companiesColumns(plans)}
+          columns={columns}
           tableId="platform-companies"
-          exportFileName="companies"
-          search={{ placeholder: "Company or contact email" }}
-          filters={{ configs: [STANDING_FILTER] }}
+          exportFileName="plan-assignments"
+          exportRows={async () => (await queryClient.fetchQuery(companiesListQuery(filterQueryString))).data}
+          {...dataTableProps}
           {...toTableQueryProps(companiesQuery)}
           emptyMessage="Nobody has signed up yet."
         />
       </div>
+
+      <CompanySubscriptionSheet target={sheetTarget} onClose={() => setSheetTarget(null)} />
     </Card>
   )
 }

@@ -49,7 +49,7 @@ export type IPlanLimitsFormValues = z.infer<typeof planLimitsFormZodSchema>
 
 export const subscriptionFormZodSchema = z.object({
     plan_id: z.string().min(1, "Choose a plan"),
-    status: z.enum(SUBSCRIPTION_STATUSES, { message: "Choose a status" }),
+    status: z.enum(SUBSCRIPTION_STATUSES, { message: "Choose a standing" }),
 })
 
 export type ISubscriptionFormValues = z.infer<typeof subscriptionFormZodSchema>

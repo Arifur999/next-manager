@@ -1,29 +1,13 @@
 import { isQuietSince } from "@/components/modules/Platform/customerActivity"
-import { planOptionLabel } from "@/components/modules/Platform/planLabel"
+import { monthlyPrice, planOptionLabel } from "@/components/modules/Platform/planLabel"
+import StandingBadge from "@/components/modules/Platform/StandingBadge"
+import { NOT_SET_UP_LABEL, standingLabel } from "@/components/modules/Platform/subscriptionStatus"
 import RelativeTime from "@/components/shared/RelativeTime"
 import { Badge } from "@/components/ui/badge"
-import { formatUsd } from "@/lib/currency"
 import { toDate } from "@/lib/dates"
-import type { ICompanyRow, SubscriptionStatus } from "@/types/platform.types"
+import type { ICompanyRow } from "@/types/platform.types"
 import type { ColumnDef } from "@tanstack/react-table"
 import { format } from "date-fns"
-
-const STATUS_LABEL: Record<SubscriptionStatus, string> = {
-  trialing: "trial",
-  active: "active",
-  past_due: "past due",
-  suspended: "suspended",
-  cancelled: "cancelled",
-}
-
-const STATUS_TONE: Record<SubscriptionStatus, "secondary" | "outline" | "destructive"> = {
-  trialing: "outline",
-  active: "secondary",
-  // The grace window — still writing, so not a failure yet.
-  past_due: "outline",
-  suspended: "destructive",
-  cancelled: "destructive",
-}
 
 export const customersColumns: ColumnDef<ICompanyRow>[] = [
   {
@@ -71,15 +55,15 @@ export const customersColumns: ColumnDef<ICompanyRow>[] = [
     accessorFn: (company) => company.subscription?.plan.name,
     header: "Plan",
     enableSorting: false,
-    meta: { exportValue: (company) => (company.subscription ? planOptionLabel(company.subscription.plan) : "not set up") },
+    meta: { exportValue: (company) => (company.subscription ? planOptionLabel(company.subscription.plan) : NOT_SET_UP_LABEL) },
     cell: ({ row }) => {
       const { subscription } = row.original
-      if (!subscription) return <span className="text-xs text-muted-foreground">not set up</span>
+      if (!subscription) return <span className="text-xs text-muted-foreground">{NOT_SET_UP_LABEL}</span>
 
       return (
         <>
           <p>{subscription.plan.name}</p>
-          <p className="text-xs text-muted-foreground tabular-nums">{formatUsd(subscription.plan.price_usd)}/mo</p>
+          <p className="text-xs text-muted-foreground tabular-nums">{monthlyPrice(subscription.plan.price_usd)}</p>
         </>
       )
     },
@@ -138,14 +122,7 @@ export const customersColumns: ColumnDef<ICompanyRow>[] = [
     accessorFn: (company) => company.subscription?.status,
     header: "Standing",
     enableSorting: false,
-    meta: {
-      exportValue: (company) => (company.subscription ? STATUS_LABEL[company.subscription.status] : "unprovisioned"),
-    },
-    cell: ({ row }) => {
-      const { subscription } = row.original
-      if (!subscription) return <Badge variant="outline">unprovisioned</Badge>
-
-      return <Badge variant={STATUS_TONE[subscription.status]}>{STATUS_LABEL[subscription.status]}</Badge>
-    },
+    meta: { exportValue: (company) => standingLabel(company.subscription?.status) },
+    cell: ({ row }) => <StandingBadge status={row.original.subscription?.status} />,
   },
 ]
