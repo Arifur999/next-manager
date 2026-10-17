@@ -3,7 +3,7 @@
 import {
   createCategoryAction,
   deleteCategoryAction,
-  updateCategoryAction,
+  setCategoryActiveAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/services/_action"
 import EmptyState from "@/components/shared/state/EmptyState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
@@ -41,7 +41,7 @@ const CategoriesBoard = () => {
   }
 
   const { mutate: add, isPending } = useMutation({
-    mutationFn: () => createCategoryAction({ name: name.trim() }),
+    mutationFn: () => createCategoryAction({ name }),
     onSuccess: (result) => {
       if (!result.success) {
         toast.error(result.message || "Could not add it")
@@ -54,7 +54,7 @@ const CategoriesBoard = () => {
 
   const { mutate: toggle } = useMutation({
     mutationFn: (category: IServiceCategory) =>
-      updateCategoryAction(category.id, { is_active: !category.is_active }),
+      setCategoryActiveAction(category.id, { is_active: !category.is_active }),
     onSuccess: (result) => {
       if (!result.success) {
         toast.error(result.message || "Could not change it")

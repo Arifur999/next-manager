@@ -44,11 +44,7 @@ const TemplatesBoard = () => {
   const refresh = () => queryClient.invalidateQueries({ queryKey: queryKeys.serviceTemplates.all })
 
   const { mutate: create, isPending } = useMutation({
-    mutationFn: () =>
-      createTemplateAction({
-        name: name.trim(),
-        items: Object.entries(picked).map(([service_id, quantity]) => ({ service_id, quantity })),
-      }),
+    mutationFn: () => createTemplateAction({ name, quantities: picked }),
     onSuccess: (result) => {
       if (!result.success) {
         toast.error(result.message || "Could not create it")

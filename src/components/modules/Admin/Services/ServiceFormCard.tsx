@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import type { IServiceCategory } from "@/types/catalog.types"
+import { NO_CATEGORY } from "@/zod/catalog.validation"
 import { Plus, X } from "lucide-react"
 
 /**
@@ -22,8 +23,6 @@ import { Plus, X } from "lucide-react"
  * and they do not — every line keeps its own copy from the moment it is
  * written.
  */
-
-export const NO_CATEGORY = "__none__"
 
 export interface ServiceDraft {
   name: string

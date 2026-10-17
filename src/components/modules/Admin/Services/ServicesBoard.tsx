@@ -3,10 +3,10 @@
 import {
   createServiceAction,
   deleteServiceAction,
+  setServiceActiveAction,
   updateServiceAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/services/_action"
 import ServiceFormCard, {
-  NO_CATEGORY,
   emptyService,
   type ServiceDraft,
 } from "@/components/modules/Admin/Services/ServiceFormCard"
@@ -17,6 +17,7 @@ import { useState } from "react"
 import { toast } from "sonner"
 import { serviceCategoriesQuery, servicesListQuery } from "@/queries/catalog.queries"
 import { queryKeys } from "@/lib/queryKeys"
+import { NO_CATEGORY } from "@/zod/catalog.validation"
 
 /**
  * The catalogue: a form on the left, the list on the right.
@@ -49,18 +50,9 @@ const ServicesBoard = ({ canManage = true }: { canManage?: boolean }) => {
     setEditingId(null)
   }
 
-  const payload = () => ({
-    name: draft.name.trim(),
-    description: draft.description.trim(),
-    category_id: draft.category_id === NO_CATEGORY ? null : draft.category_id,
-    // An empty box means "type it each time", which is zero rather than a
-    // missing value the API would reject.
-    default_price_usd: draft.default_price_usd ? Number(draft.default_price_usd) : 0,
-  })
-
   const { mutate: save, isPending } = useMutation({
     mutationFn: () =>
-      editingId ? updateServiceAction(editingId, payload()) : createServiceAction(payload()),
+      editingId ? updateServiceAction(editingId, draft) : createServiceAction(draft),
     onSuccess: (result) => {
       if (!result.success) {
         toast.error(result.message || "Could not save it")
@@ -74,7 +66,7 @@ const ServicesBoard = ({ canManage = true }: { canManage?: boolean }) => {
 
   const { mutate: toggle } = useMutation({
     mutationFn: (service: IService) =>
-      updateServiceAction(service.id, { is_active: !service.is_active }),
+      setServiceActiveAction(service.id, { is_active: !service.is_active }),
     onSuccess: (result) => {
       if (!result.success) {
         toast.error(result.message || "Could not change it")
