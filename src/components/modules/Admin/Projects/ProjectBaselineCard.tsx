@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useActionMutation } from "@/hooks/useActionMutation"
+import { formatUsd } from "@/lib/currency"
 import type { IBaselineFormValues } from "@/zod/project.validation"
 import { useForm } from "@tanstack/react-form"
 import { useQuery } from "@tanstack/react-query"
@@ -92,10 +93,10 @@ const ProjectBaselineCard = ({ projectId }: { projectId: string }) => {
           <div>
             <p className="text-xs text-muted-foreground">Baseline value</p>
             <p className="mt-1 text-lg font-semibold tabular-nums">
-              ${Number(project.baseline_value_usd).toLocaleString()}
+              {formatUsd(Number(project.baseline_value_usd))}
               {Number(project.contract_value_usd) !== Number(project.baseline_value_usd) && (
                 <span className="ml-2 text-sm font-normal text-muted-foreground">
-                  now ${Number(project.contract_value_usd).toLocaleString()}
+                  now {formatUsd(Number(project.contract_value_usd))}
                 </span>
               )}
             </p>
