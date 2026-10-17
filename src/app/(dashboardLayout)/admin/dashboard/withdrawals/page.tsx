@@ -6,14 +6,11 @@ export const metadata: Metadata = {
   title: "Owner Withdrawals",
 };
 
-// Deliberately not prefetched. The endpoint is owner-only, and a prefetch from
-// a non-owner session would throw during render rather than letting the board
-// show its "owner only" state.
 const WithdrawalsPage = () => {
   return (
     <div className="space-y-6">
       <PageHeader title="Owner withdrawals">
-        Money you take out. Visible to the owner alone — not to admins or managers.
+        Money you take out. Admins alone see it — not managers, sales or the team.
       </PageHeader>
 
       <WithdrawalsBoard />
