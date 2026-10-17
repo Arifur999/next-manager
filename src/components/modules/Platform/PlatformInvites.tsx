@@ -5,7 +5,7 @@ import {
   invitePlatformAdminAction,
   revokePlatformInviteAction,
 } from "@/app/(dashboardLayout)/platform/_teamAction"
-import InviteLinkPanel from "@/components/modules/Platform/InviteLinkPanel"
+import InviteLinkPanel from "@/components/shared/InviteLinkPanel"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import AppField from "@/components/shared/form/AppField"
 import EmptyState from "@/components/shared/state/EmptyState"

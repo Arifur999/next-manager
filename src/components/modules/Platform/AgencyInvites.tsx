@@ -2,8 +2,8 @@
 
 import { inviteAgencyAction } from "@/app/(dashboardLayout)/platform/_agencyAction"
 import AgencyInviteList from "@/components/modules/Platform/AgencyInviteList"
-import InviteLinkPanel from "@/components/modules/Platform/InviteLinkPanel"
 import { planOptionLabel } from "@/components/modules/Platform/planLabel"
+import InviteLinkPanel from "@/components/shared/InviteLinkPanel"
 import AppField from "@/components/shared/form/AppField"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
