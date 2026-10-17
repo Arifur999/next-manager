@@ -21,13 +21,20 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import type { IShareholder } from "@/types/finance.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { useState } from "react"
-import { toast } from "sonner"
 import { accountsQuery, distributionsListQuery, shareholdersQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
+// Paying or reversing a distribution moves an account and writes the ledger.
+const SHAREHOLDER_KEYS = [
+  queryKeys.shareholders.all,
+  queryKeys.distributions.all,
+  queryKeys.accounts.all,
+  queryKeys.transactions.all,
+]
 /**
  * Who owns the agency, and what has been paid to them.
  *
@@ -37,8 +44,6 @@ import { queryKeys } from "@/lib/queryKeys"
  * message says what to do about it rather than only that it failed.
  */
 const ShareholdersBoard = () => {
-  const queryClient = useQueryClient()
-
   const [name, setName] = useState("")
   const [pct, setPct] = useState("")
   const [shareholderId, setShareholderId] = useState("")
@@ -60,61 +65,56 @@ const ShareholdersBoard = () => {
   const unallocated =
     typeof data?.meta?.unallocated_pct === "number" ? data.meta.unallocated_pct : null
 
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.shareholders.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.distributions.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all })
-  }
+  // The server's own message is the success toast for all of these, and its
+  // refusals ("Shares would total 120%. The others already hold 90%.") are
+  // the failure toast.
+  const { run: addShareholder, isPending } = useActionMutation({
+    action: createShareholderAction,
+    invalidateKeys: SHAREHOLDER_KEYS,
+    refresh: false,
+  })
 
-  const settle =
-    (fallback: string, done?: () => void) =>
-    (result: { success: boolean; message?: string }) => {
-      if (!result.success) {
-        // "Shares would total 120%. The others already hold 90%." arrives here.
-        toast.error(result.message || fallback)
-        return
-      }
-      toast.success(result.message)
-      done?.()
-      refresh()
-    }
+  const { run: toggleShareholder } = useActionMutation({
+    action: (shareholder: IShareholder) =>
+      updateShareholderAction(shareholder.id, { is_active: !shareholder.is_active }),
+    invalidateKeys: SHAREHOLDER_KEYS,
+    refresh: false,
+  })
 
-  const { mutate: add, isPending } = useMutation({
-    mutationFn: () =>
-      createShareholderAction({ name, share_pct: pct }),
-    onSuccess: settle("Could not add them", () => {
+  const { run: deleteShareholder } = useActionMutation({
+    action: deleteShareholderAction,
+    invalidateKeys: SHAREHOLDER_KEYS,
+    refresh: false,
+  })
+
+  const { run: payDistribution, isPending: paying } = useActionMutation({
+    action: createDistributionAction,
+    invalidateKeys: SHAREHOLDER_KEYS,
+    refresh: false,
+  })
+
+  const { run: reverseDistribution } = useActionMutation({
+    action: deleteDistributionAction,
+    invalidateKeys: SHAREHOLDER_KEYS,
+    refresh: false,
+  })
+
+  const handleAdd = async () => {
+    if (await addShareholder({ name, share_pct: pct })) {
       setName("")
       setPct("")
-    }),
-  })
+    }
+  }
 
-  const { mutate: toggle } = useMutation({
-    mutationFn: (shareholder: IShareholder) =>
-      updateShareholderAction(shareholder.id, { is_active: !shareholder.is_active }),
-    onSuccess: settle("Could not update them"),
-  })
-
-  const { mutate: remove } = useMutation({
-    mutationFn: (id: string) => deleteShareholderAction(id),
-    onSuccess: settle("Could not delete them"),
-  })
-
-  const { mutate: payOut, isPending: paying } = useMutation({
-    mutationFn: () =>
-      createDistributionAction({
-        shareholder_id: shareholderId,
-        date,
-        amount_bdt: amount,
-        account_id: accountId,
-      }),
-    onSuccess: settle("Could not record it", () => setAmount("")),
-  })
-
-  const { mutate: reverse } = useMutation({
-    mutationFn: (id: string) => deleteDistributionAction(id),
-    onSuccess: settle("Could not reverse it"),
-  })
+  const handlePayOut = async () => {
+    const isPaid = await payDistribution({
+      shareholder_id: shareholderId,
+      date,
+      amount_bdt: amount,
+      account_id: accountId,
+    })
+    if (isPaid) setAmount("")
+  }
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
@@ -129,7 +129,7 @@ const ShareholdersBoard = () => {
             onSubmit={(event) => {
               event.preventDefault()
               if (!name.trim()) return
-              add()
+              void handleAdd()
             }}
           >
             <div className="space-y-1.5">
@@ -178,7 +178,7 @@ const ShareholdersBoard = () => {
             onSubmit={(event) => {
               event.preventDefault()
               if (!shareholderId || !accountId || !Number(amount)) return
-              payOut()
+              void handlePayOut()
             }}
           >
             <div className="space-y-1.5">
@@ -264,13 +264,13 @@ const ShareholdersBoard = () => {
           shareholders={shareholders}
           unallocatedPct={unallocated}
           isLoading={isLoading}
-          onToggle={(shareholder) => toggle(shareholder)}
-          onDelete={(id) => remove(id)}
+          onToggle={(shareholder) => void toggleShareholder(shareholder)}
+          onDelete={(id) => void deleteShareholder(id)}
         />
         <DistributionList
           distributions={distributions}
           isLoading={loadingDistributions}
-          onDelete={(id) => reverse(id)}
+          onDelete={(id) => void reverseDistribution(id)}
         />
       </div>
     </div>
