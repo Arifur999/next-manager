@@ -70,23 +70,3 @@ export const exchangeFormZodSchema = exchangeFormFields.refine(
 )
 
 export type IExchangeFormValues = z.infer<typeof exchangeFormZodSchema>
-
-export const expenseFormZodSchema = z.object({
-    date: isoDate,
-    category_id: z.string().min(1, "Choose a category"),
-    amount_bdt: positiveAmount("Amount"),
-    account_id: z.string().min(1, "Choose a BDT account"),
-    project_id: z.string().optional(),
-    vendor: z.string().optional(),
-    notes: z.string().optional(),
-})
-
-export type IExpenseFormValues = z.infer<typeof expenseFormZodSchema>
-
-export const expenseCategoryFormZodSchema = z.object({
-    name: z.string().min(1, "Name is required"),
-    type: z.enum(["general", "employee"], { message: "Choose a type" }),
-    monthly_budget: optionalNonNegative("Monthly budget"),
-})
-
-export type IExpenseCategoryFormValues = z.infer<typeof expenseCategoryFormZodSchema>
