@@ -2,8 +2,9 @@
 
 import { loginHistoryColumns } from "@/components/modules/Admin/Security/loginHistoryColumns"
 import DataTable from "@/components/shared/table/DataTable"
-import { Button } from "@/components/ui/button"
+import type { DataTableFilterConfig } from "@/components/shared/table/dataTable.types"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
+import { buildQueryString } from "@/lib/queryString"
 import { toTableQueryProps } from "@/lib/table/queryProps"
 import { useQuery } from "@tanstack/react-query"
 import { ShieldAlert } from "lucide-react"
@@ -17,18 +18,22 @@ import { loginEventsListQuery } from "@/queries/workspace.queries"
  * belongs to no company and is not here — which is a property of how the row is
  * written rather than something this screen filters out.
  *
- * The failure count is deliberately not affected by the filter chips. It is the
+ * The failure count is deliberately not affected by the filters. It is the
  * number somebody opens this page to notice, and narrowing the list must not be
  * able to hide it.
  */
 
-const ALL = "__all__"
-
-const FILTERS = [
-  { value: ALL, label: "Everything" },
-  { value: "false", label: "Failed only" },
-  { value: "true", label: "Successful only" },
-]
+// Sent to the API as success=, not applied to the rows already here: the API
+// returns the latest 100 attempts, so filtering those would miss older failures.
+const RESULT_FILTER: DataTableFilterConfig = {
+  id: "success",
+  type: "single-select",
+  label: "Result",
+  options: [
+    { label: "Refused", value: "false" },
+    { label: "Signed in", value: "true" },
+  ],
+}
 
 const FailedAttemptsNote = ({ count }: { count: number | undefined }) => {
   // Unknown until the list arrives, and "nothing failed" must never stand in for that.
@@ -48,11 +53,9 @@ const FailedAttemptsNote = ({ count }: { count: number | undefined }) => {
 }
 
 const LoginHistory = () => {
-  const [filter, setFilter] = useState(ALL)
+  const [success, setSuccess] = useState<string>()
 
-  const query = filter === ALL ? "" : `success=${filter}`
-
-  const loginEvents = useQuery(loginEventsListQuery(query))
+  const loginEvents = useQuery(loginEventsListQuery(buildQueryString({ success })))
   const data = loginEvents.data
 
   const events = data?.data ?? []
@@ -62,29 +65,12 @@ const LoginHistory = () => {
   return (
     <div className="space-y-4">
       <Card className="gap-0 overflow-hidden p-0">
-        <CardHeader className="space-y-3 border-b px-5 py-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <CardTitle className="text-base">Sign-in attempts</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                <FailedAttemptsNote count={failedLately} />
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              {FILTERS.map((option) => (
-                <Button
-                  key={option.value}
-                  type="button"
-                  size="sm"
-                  variant={option.value === filter ? "default" : "outline"}
-                  onClick={() => setFilter(option.value)}
-                  aria-pressed={option.value === filter}
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </div>
+        <CardHeader className="border-b px-5 py-4">
+          <div>
+            <CardTitle className="text-base">Sign-in attempts</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              <FailedAttemptsNote count={failedLately} />
+            </p>
           </div>
         </CardHeader>
 
@@ -93,8 +79,15 @@ const LoginHistory = () => {
             data={events}
             columns={loginHistoryColumns}
             tableId="sign-ins"
+            filters={{
+              configs: [RESULT_FILTER],
+              values: { success },
+              onFilterChange: (_filterId, value) => setSuccess(typeof value === "string" ? value : undefined),
+              onClearAll: () => setSuccess(undefined),
+            }}
             {...toTableQueryProps(loginEvents)}
-            emptyMessage={filter === ALL ? "Nothing recorded yet." : "Nothing matches that."}
+            // Shown only when nothing narrows the list; a filtered view says so itself.
+            emptyMessage="Nothing recorded yet."
           />
         </div>
 
