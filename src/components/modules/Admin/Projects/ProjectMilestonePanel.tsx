@@ -12,12 +12,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import type { ApiResult } from "@/types/api.types"
 import type { IMilestone } from "@/types/project.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { format, isAfter, parseISO } from "date-fns"
 import { CalendarCheck, Plus, Trash2, Undo2 } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { milestonesListQuery } from "@/queries/project.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -61,6 +62,16 @@ const statusOf = (milestone: IMilestone): Status => {
   return { label: "due", late: false, tone: "outline" }
 }
 
+// Submit, accept, reopen and delete show their result on the row itself, so
+// only a failure gets a toast.
+const useMilestoneChange = (action: (id: string) => Promise<ApiResult<unknown>>) =>
+  useActionMutation({
+    action,
+    successMessage: false,
+    invalidateKeys: [queryKeys.milestones.all],
+    refresh: false,
+  })
+
 /** `canManage` is false for anybody the API refuses: the controls that change
  *  things come off rather than failing when pressed. */
 const ProjectMilestonePanel = ({
@@ -70,7 +81,6 @@ const ProjectMilestonePanel = ({
   projectId: string
   canManage?: boolean
 }) => {
-  const queryClient = useQueryClient()
   const [title, setTitle] = useState("")
   const [dueDate, setDueDate] = useState("")
 
@@ -78,54 +88,24 @@ const ProjectMilestonePanel = ({
 
   const milestones = data?.data ?? []
 
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.milestones.all })
-  }
-
-  const run = (label: string) => ({
-    onSuccess: (result: { success: boolean; message?: string }) => {
-      if (!result.success) {
-        toast.error(result.message || `Failed to ${label}`)
-        return
-      }
-      refresh()
-    },
+  const { run: addMilestone, isPending: isCreating } = useActionMutation({
+    action: createMilestoneAction,
+    successMessage: "Milestone added",
+    invalidateKeys: [queryKeys.milestones.all],
+    refresh: false,
   })
 
-  const { mutate: create, isPending: isCreating } = useMutation({
-    mutationFn: () =>
-      createMilestoneAction({ project_id: projectId, title, due_date: dueDate }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Failed to add the milestone")
-        return
-      }
-      toast.success("Milestone added")
+  const { run: submit, isPending: isSubmitting } = useMilestoneChange(submitMilestoneAction)
+  const { run: accept, isPending: isAccepting } = useMilestoneChange(acceptMilestoneAction)
+  const { run: reopen, isPending: isReopening } = useMilestoneChange(reopenMilestoneAction)
+  const { run: remove, isPending: isRemoving } = useMilestoneChange(deleteMilestoneAction)
+
+  const handleAdd = async () => {
+    if (await addMilestone({ project_id: projectId, title, due_date: dueDate })) {
       setTitle("")
       setDueDate("")
-      refresh()
-    },
-  })
-
-  const { mutate: submit, isPending: isSubmitting } = useMutation({
-    mutationFn: (id: string) => submitMilestoneAction(id),
-    ...run("submit"),
-  })
-
-  const { mutate: accept, isPending: isAccepting } = useMutation({
-    mutationFn: (id: string) => acceptMilestoneAction(id),
-    ...run("accept"),
-  })
-
-  const { mutate: reopen, isPending: isReopening } = useMutation({
-    mutationFn: (id: string) => reopenMilestoneAction(id),
-    ...run("reopen"),
-  })
-
-  const { mutate: remove, isPending: isRemoving } = useMutation({
-    mutationFn: (id: string) => deleteMilestoneAction(id),
-    ...run("delete"),
-  })
+    }
+  }
 
   const isBusy = isSubmitting || isAccepting || isReopening || isRemoving
 
@@ -153,7 +133,7 @@ const ProjectMilestonePanel = ({
         onSubmit={(event) => {
           event.preventDefault()
           if (!title.trim() || !dueDate) return
-          create()
+          void handleAdd()
         }}
       >
         <div className="min-w-48 flex-1 space-y-1.5">
@@ -222,7 +202,7 @@ const ProjectMilestonePanel = ({
                       type="button"
                       size="sm"
                       disabled={isBusy}
-                      onClick={() => submit(milestone.id)}
+                      onClick={() => void submit(milestone.id)}
                     >
                       Submit
                     </Button>
@@ -233,7 +213,7 @@ const ProjectMilestonePanel = ({
                       type="button"
                       size="sm"
                       disabled={isBusy}
-                      onClick={() => accept(milestone.id)}
+                      onClick={() => void accept(milestone.id)}
                     >
                       Accept
                     </Button>
@@ -245,7 +225,7 @@ const ProjectMilestonePanel = ({
                       size="sm"
                       variant="outline"
                       disabled={isBusy}
-                      onClick={() => reopen(milestone.id)}
+                      onClick={() => void reopen(milestone.id)}
                       title="Undo the submission so it can be corrected"
                     >
                       <Undo2 className="size-3.5" />
@@ -259,7 +239,7 @@ const ProjectMilestonePanel = ({
                     size="sm"
                     variant="outline"
                     disabled={isBusy}
-                    onClick={() => remove(milestone.id)}
+                    onClick={() => void remove(milestone.id)}
                   >
                     <Trash2 className="size-3.5" />
                     <span className="sr-only">Delete</span>
