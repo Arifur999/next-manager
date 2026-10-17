@@ -2,6 +2,7 @@
 
 import { site } from "@/data/site"
 import { updateSettingsAction } from "@/app/(dashboardLayout)/platform/_settingsAction"
+import ErrorState from "@/components/shared/state/ErrorState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -41,12 +42,24 @@ import { queryKeys } from "@/lib/queryKeys"
 const NO_PLAN = "__none__"
 
 const PlatformSettings = () => {
-  const { data, isLoading } = useQuery(platformSettingsQuery())
+  const { data, isLoading, isFetching, refetch } = useQuery(platformSettingsQuery())
 
   const settings = data?.data
 
-  if (isLoading || !settings) {
+  if (isLoading) {
     return <div className="h-72 animate-pulse rounded-xl bg-muted/40" />
+  }
+
+  // Only when nothing ever arrived: a failed background refetch keeps the form.
+  if (!settings) {
+    return (
+      <ErrorState
+        className="rounded-xl border border-dashed"
+        message="The platform settings did not load."
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+      />
+    )
   }
 
   // Keyed on when the server last changed, so the form seeds itself from props
