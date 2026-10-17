@@ -6,15 +6,19 @@
 import "server-only"
 
 import { logApiFailure } from "@/lib/apiFailure"
+import { forwardAuthCookies } from "@/lib/authCookies"
 import { httpClient } from "@/lib/axios/httpClient"
 import { logger } from "@/lib/logger"
 import { classifyMeResponse } from "@/lib/session"
+import { logout } from "@/services/logout"
 import type { ApiResponse } from "@/types/api.types"
+import type { ILoginResponse } from "@/types/auth.types"
 import { type IUser } from "@/types/user.types"
 import type {
     IAgencyJoinFormValues,
     IForgotPasswordFormValues,
     IJoinFormValues,
+    ILoginFormValues,
     IRegisterPayload,
     IResetPasswordFormValues,
 } from "@/zod/auth.validation"
@@ -74,6 +78,43 @@ export const updateMe = async (payload: Record<string, unknown>) =>
 export const changePassword = async (payload: Record<string, unknown>) =>
     httpClient.post<{ message: string }>("/auth/change-password", payload)
 
+const refusal = (message: string): ApiResponse<ILoginResponse | null> => ({ success: false, message, data: null })
+
+/**
+ * Sign in and carry the session to the browser. Callable only from a server
+ * action (login, and register signing the new admin in), because only an
+ * action may write cookies. Not exported from any "use server" file, so it is
+ * never an endpoint of its own.
+ */
+export const signIn = async (credentials: ILoginFormValues): Promise<ApiResponse<ILoginResponse | null>> => {
+    // Plain fetch rather than httpClient: there are no cookies to forward yet,
+    // and this is the request that creates them.
+    const res = await fetch(`${getApiBaseUrl()}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials),
+        cache: "no-store",
+    })
+
+    // nginx answers a dead upstream with an HTML 502, which is not JSON.
+    if (!res.headers.get("content-type")?.includes("application/json")) return refusal("Failed to sign in")
+
+    const body: ApiResponse<ILoginResponse> | null = await res.json()
+    if (!res.ok || !body?.success) return refusal(body?.message ?? "Invalid email or password")
+
+    // The API's Set-Cookie lands on this server-side response, which the browser
+    // never sees; carrying it across is the only way anybody gets signed in. Only
+    // a whole session counts: a "partial" one (an accessToken with no
+    // refreshToken) passes the proxy and then dies at its first renewal, so it is
+    // cleared again and reported rather than toasted as a success.
+    if ((await forwardAuthCookies(res)) !== "set") {
+        await logout()
+        return refusal("Signed in, but no session was issued. Please try again.")
+    }
+
+    return body
+}
+
 /**
  * POST to an endpoint that needs no session: sign-up, a password reset,
  * accepting an invite. Plain fetch, because there are no cookies to forward and
@@ -90,7 +131,7 @@ const postPublic = async <TData>(path: string, payload: unknown) => {
     return (await res.json()) as ApiResponse<TData>
 }
 
-/** Creates a company and its first admin. Returns the user, not tokens: they sign in next. */
+/** Creates a company and its first admin. Returns the user, not tokens: the register action signs them in next. */
 export const register = async (payload: IRegisterPayload) => postPublic<IUser>("/auth/register", payload)
 
 /** Answers the same whether or not the address has an account. */

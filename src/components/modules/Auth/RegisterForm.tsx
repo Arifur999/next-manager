@@ -1,8 +1,9 @@
 "use client"
 
 import { registerAction } from "@/app/(commonLayout)/(auth)/register/_action"
-import AppField from "@/components/shared/form/AppField"
+import FormErrorAlert from "@/components/modules/Auth/FormErrorAlert"
 import PasswordField from "@/components/modules/Auth/PasswordField"
+import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
 import {
   Card,
@@ -11,13 +12,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { registerFormZodSchema, type IRegisterFormValues } from "@/zod/auth.validation"
+import { getCtaMicrocopy } from "@/data/site"
 import { useActionMutation } from "@/hooks/useActionMutation"
-import { useForm } from "@tanstack/react-form"
+import { focusFirstInvalid } from "@/lib/focusFirstInvalid"
+import { registerFormZodSchema, type IRegisterFormValues } from "@/zod/auth.validation"
+import { revalidateLogic, useForm } from "@tanstack/react-form"
+import { useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { focusFirstInvalid } from "@/lib/focusFirstInvalid"
-import { useRef } from "react"
+import { useRef, useState } from "react"
 
 /**
  * Creating a company.
@@ -37,25 +40,33 @@ const defaultValues: IRegisterFormValues = {
   password: "",
 }
 
-const RegisterForm = () => {
+const RegisterForm = ({ trialDays }: { trialDays: number | null }) => {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const formRef = useRef<HTMLFormElement>(null)
+  const [refusal, setRefusal] = useState<string | null>(null)
 
+  // The action signs the new admin in, so this lands on their dashboard; when
+  // that sign-in fails it lands on /login with the email filled in instead.
   const { run: createWorkspace, isPending } = useActionMutation({
     action: registerAction,
-    successMessage: "Workspace created. Sign in to get started.",
-    refresh: false,
+    onError: setRefusal,
+    onSuccess: (result) => {
+      if (!result.success) return
+
+      queryClient.clear()
+      router.push(result.data?.destination ?? "/login")
+    },
   })
 
+  // Checked on submit, then on every change once a submit has been tried.
   const form = useForm({
     defaultValues,
+    validationLogic: revalidateLogic(),
     onSubmitInvalid: () => focusFirstInvalid(formRef.current),
     onSubmit: async ({ value }) => {
-      if (!(await createWorkspace(value))) return
-
-      // Not signed in automatically: register returns the user, not tokens, and
-      // typing the password once more confirms it is the one they meant.
-      router.replace(`/login?email=${encodeURIComponent(value.email)}`)
+      setRefusal(null)
+      await createWorkspace(value)
     },
   })
 
@@ -87,47 +98,26 @@ const RegisterForm = () => {
           >
             <form.Field
               name="organization_name"
-              validators={{ onChange: registerFormZodSchema.shape.organization_name }}
+              validators={{ onDynamic: registerFormZodSchema.shape.organization_name }}
             >
               {(field) => (
                 <AppField
                   field={field}
                   label="Company name"
                   autoComplete="organization"
-                  placeholder="Northwind Studio"
+                  placeholder="e.g. Northwind Studio"
                   disabled={isPending}
                 />
               )}
             </form.Field>
 
-            <form.Field
-              name="full_name"
-              validators={{ onChange: registerFormZodSchema.shape.full_name }}
-            >
-              {(field) => (
-                <AppField
-                  field={field}
-                  label="Your name"
-                  autoComplete="name"
-                  placeholder="Alex Morgan"
-                  disabled={isPending}
-                />
-              )}
+            <form.Field name="full_name" validators={{ onDynamic: registerFormZodSchema.shape.full_name }}>
+              {(field) => <AppField field={field} label="Your name" autoComplete="name" disabled={isPending} />}
             </form.Field>
 
-            <form.Field
-              name="email"
-              validators={{ onChange: registerFormZodSchema.shape.email }}
-            >
+            <form.Field name="email" validators={{ onDynamic: registerFormZodSchema.shape.email }}>
               {(field) => (
-                <AppField
-                  field={field}
-                  label="Email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="you@company.com"
-                  disabled={isPending}
-                />
+                <AppField field={field} label="Email" type="email" autoComplete="email" disabled={isPending} />
               )}
             </form.Field>
 
@@ -144,18 +134,19 @@ const RegisterForm = () => {
               )}
             </form.Field>
 
-            <form.Field
-              name="password"
-              validators={{ onChange: registerFormZodSchema.shape.password }}
-            >
-              {(field) => (
-                <PasswordField field={field} label="Password" disabled={isPending} />
-              )}
+            <form.Field name="password" validators={{ onDynamic: registerFormZodSchema.shape.password }}>
+              {(field) => <PasswordField field={field} label="Password" disabled={isPending} />}
             </form.Field>
 
-            <AppSubmitButton isPending={isPending} pendingLabel="Creating...">
-              Create workspace
-            </AppSubmitButton>
+            <FormErrorAlert message={refusal} />
+
+            <div className="space-y-2">
+              <AppSubmitButton isPending={isPending} pendingLabel="Creating...">
+                Create workspace
+              </AppSubmitButton>
+              {/* The same line the landing page puts under its CTA, from the same plans. */}
+              <p className="text-center text-xs text-muted-foreground">{getCtaMicrocopy(trialDays)}</p>
+            </div>
           </form>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
