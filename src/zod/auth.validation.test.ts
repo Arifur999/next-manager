@@ -41,7 +41,7 @@ describe("changePasswordServerZodSchema", () => {
 
   it("refuses a missing current password and a weak new one", () => {
     const missing = changePasswordServerZodSchema.safeParse({ old_password: "", new_password: "newpass12" })
-    expect(missing.error?.issues[0]?.message).toBe("Current password is required")
+    expect(missing.error?.issues[0]?.message).toBe("Enter your current password")
     expect(changePasswordServerZodSchema.safeParse({ old_password: "old", new_password: "short" }).success).toBe(false)
   })
 })
@@ -65,6 +65,17 @@ describe("registerServerZodSchema", () => {
 
   it("has no role to send, whatever arrives", () => {
     expect(registerServerZodSchema.parse({ ...valid, role: "super_admin" })).not.toHaveProperty("role")
+  })
+
+  it("says what to type rather than what is missing", () => {
+    const blank = registerServerZodSchema.safeParse({ ...valid, organization_name: "", full_name: "", email: "" })
+    expect(blank.error?.issues.map((issue) => issue.message)).toEqual([
+      "Enter your company name",
+      "Enter your name",
+      "Enter your email address",
+    ])
+    const typo = registerServerZodSchema.safeParse({ ...valid, email: "rina@" })
+    expect(typo.error?.issues[0]?.message).toBe("Enter a valid email address")
   })
 
   it("refuses a missing company name and a weak password", () => {
@@ -137,7 +148,7 @@ describe("loginServerZodSchema", () => {
 
   it("refuses an empty password and a malformed email", () => {
     const noPassword = loginServerZodSchema.safeParse({ email: "rina@northwind.com", password: "" })
-    expect(noPassword.error?.issues[0]?.message).toBe("Password is required")
+    expect(noPassword.error?.issues[0]?.message).toBe("Enter your password")
     expect(loginServerZodSchema.safeParse({ email: "rina", password: "x" }).success).toBe(false)
   })
 })

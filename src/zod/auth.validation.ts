@@ -1,9 +1,12 @@
 import { z } from "zod"
-import { newPassword, requiredEmail } from "./formFields"
+import { newPassword } from "./formFields"
+
+// Said as what to do, as every message on the auth forms is.
+const requiredEmail = z.string().min(1, "Enter your email address").pipe(z.email("Enter a valid email address"))
 
 export const loginFormZodSchema = z.object({
   email: requiredEmail,
-  password: z.string().min(1, "Password is required"),
+  password: z.string().min(1, "Enter your password"),
 })
 
 export type ILoginFormValues = z.infer<typeof loginFormZodSchema>
@@ -14,8 +17,8 @@ export type ILoginFormValues = z.infer<typeof loginFormZodSchema>
  * because a form that let you pick your own role is not an access control.
  */
 export const registerFormZodSchema = z.object({
-  organization_name: z.string().min(1, "Company name is required"),
-  full_name: z.string().min(1, "Full name is required"),
+  organization_name: z.string().min(1, "Enter your company name"),
+  full_name: z.string().min(1, "Enter your name"),
   email: requiredEmail,
   phone: z.string().optional(),
   password: newPassword,
@@ -26,14 +29,14 @@ export type IRegisterFormValues = z.infer<typeof registerFormZodSchema>
 // The three fields a person may change about themselves, minus the avatar,
 // which has no field yet. Email is the login and role is an admin's call.
 export const profileFormZodSchema = z.object({
-  full_name: z.string().trim().min(1, "Full name is required"),
+  full_name: z.string().trim().min(1, "Enter your name"),
   phone: z.string().trim(),
 })
 
 export type IProfileFormValues = z.infer<typeof profileFormZodSchema>
 
 export const changePasswordFormZodSchema = z.object({
-  old_password: z.string().min(1, "Current password is required"),
+  old_password: z.string().min(1, "Enter your current password"),
   new_password: newPassword,
 })
 
@@ -57,7 +60,7 @@ export type IResetPasswordFormValues = z.infer<typeof resetPasswordFormZodSchema
 // Accepting an invite. There is no email field: the address comes from the
 // invite server-side, so a leaked link cannot open an account under another one.
 export const joinFormZodSchema = z.object({
-  full_name: z.string().min(1, "Your name is required"),
+  full_name: z.string().min(1, "Enter your name"),
   password: newPassword,
 })
 
@@ -65,7 +68,7 @@ export type IJoinFormValues = z.infer<typeof joinFormZodSchema>
 
 export const agencyJoinFormZodSchema = joinFormZodSchema.extend({
   // Only read when the invite carries no name; one agreed with the deal stays.
-  company_name: z.string().min(1, "Your agency needs a name").max(120, "That is longer than a name"),
+  company_name: z.string().min(1, "Enter your agency's name").max(120, "Keep the name under 120 characters"),
 })
 
 export type IAgencyJoinFormValues = z.infer<typeof agencyJoinFormZodSchema>
@@ -101,3 +104,4 @@ export const agencyJoinServerZodSchema = agencyJoinFormZodSchema
 
 // The form already holds the API's payload.
 export const loginServerZodSchema = loginFormZodSchema
+

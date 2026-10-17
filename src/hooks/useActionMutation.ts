@@ -19,6 +19,8 @@ interface ActionMutationOptions<TVariables, TResult extends ActionOutcome> {
     refresh?: boolean
     // Runs after the invalidations settle, for callers that need the result.
     onSuccess?: (result: TResult) => void
+    // Replaces the error toast, for forms that show the refusal beside the button.
+    onError?: (message: string) => void
 }
 
 // One mutation flow for every form: call the action, toast the outcome,
@@ -43,7 +45,8 @@ export const useActionMutation = <TVariables, TResult extends ActionOutcome>(
 
     const run = useCallback(
         async (variables: TVariables): Promise<boolean> => {
-            const { successMessage, invalidateKeys = [], refresh = true, onSuccess } = latest.current
+            const { successMessage, invalidateKeys = [], refresh = true, onSuccess, onError } = latest.current
+            const reportError = onError ?? ((message: string) => toast.error(message))
             setIsPending(true)
 
             try {
@@ -52,12 +55,12 @@ export const useActionMutation = <TVariables, TResult extends ActionOutcome>(
                     result = await mutateAsync(variables)
                 } catch {
                     // Only the server action transport itself can throw (offline, deploy in flight).
-                    toast.error(UNREACHABLE_MESSAGE)
+                    reportError(UNREACHABLE_MESSAGE)
                     return false
                 }
 
                 if (!result.success) {
-                    toast.error(result.message || "Something went wrong")
+                    reportError(result.message || "Something went wrong")
                     return false
                 }
 

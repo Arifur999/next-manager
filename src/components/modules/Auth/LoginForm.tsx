@@ -1,6 +1,8 @@
 "use client"
 
 import { loginAction } from "@/app/(commonLayout)/(auth)/login/_action"
+import FormErrorAlert from "@/components/modules/Auth/FormErrorAlert"
+import PasswordField from "@/components/modules/Auth/PasswordField"
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
 import { Button } from "@/components/ui/button"
@@ -15,9 +17,9 @@ import { safeRedirect } from "@/lib/authUtils"
 import { toUserRole } from "@/types/user.types"
 import { loginFormZodSchema, type ILoginFormValues } from "@/zod/auth.validation"
 import { useActionMutation } from "@/hooks/useActionMutation"
-import { useForm } from "@tanstack/react-form"
+import { revalidateLogic, useForm } from "@tanstack/react-form"
 import { useQueryClient } from "@tanstack/react-query"
-import { Eye, EyeOff, Info } from "lucide-react"
+import { Info } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { focusFirstInvalid } from "@/lib/focusFirstInvalid"
@@ -27,15 +29,13 @@ const LoginForm = () => {
   const router = useRouter()
   const searchParams = useSearchParams()
   const queryClient = useQueryClient()
-  const [showPassword, setShowPassword] = useState(false)
+  const [refusal, setRefusal] = useState<string | null>(null)
   const formRef = useRef<HTMLFormElement>(null)
   // The dashboard layout sends a revoked session here with this reason (C08).
   const sessionEnded = searchParams.get("reason") === "session-expired"
 
-  // Registering sends the new admin here with their email attached, so they
-  // are not asked to type it again thirty seconds after choosing it. The
-  // password is deliberately not carried over - typing it once more is what
-  // confirms it is the one they meant.
+  // A registration whose automatic sign-in failed sends the new admin here with
+  // their email attached, so they are not asked to type it again.
   const defaultValues: ILoginFormValues = {
     email: searchParams.get("email") ?? "",
     password: "",
@@ -45,6 +45,7 @@ const LoginForm = () => {
   const { run: signIn, isPending } = useActionMutation({
     action: loginAction,
     successMessage: "Logged in successfully",
+    onError: setRefusal,
     onSuccess: (result) => {
       if (!result.success) return
 
@@ -57,10 +58,14 @@ const LoginForm = () => {
     },
   })
 
+  // Checked on submit, then on every change once a submit has been tried, so
+  // nobody is told their email is invalid two letters into typing it.
   const form = useForm({
     defaultValues,
+    validationLogic: revalidateLogic(),
     onSubmitInvalid: () => focusFirstInvalid(formRef.current),
     onSubmit: async ({ value }) => {
+      setRefusal(null)
       await signIn(value)
     },
   })
@@ -93,40 +98,14 @@ const LoginForm = () => {
           }}
           className="space-y-5"
         >
-          <form.Field name="email" validators={{ onChange: loginFormZodSchema.shape.email }}>
+          <form.Field name="email" validators={{ onDynamic: loginFormZodSchema.shape.email }}>
             {(field) => (
-              <AppField
-                field={field}
-                label="Email"
-                type="email"
-                autoComplete="email"
-                placeholder="you@example.com"
-                disabled={isPending}
-              />
+              <AppField field={field} label="Email" type="email" autoComplete="email" disabled={isPending} />
             )}
           </form.Field>
 
-          <form.Field name="password" validators={{ onChange: loginFormZodSchema.shape.password }}>
-            {(field) => (
-              <AppField
-                field={field}
-                label="Password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
-                placeholder="Your password"
-                disabled={isPending}
-                append={
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((previous) => !previous)}
-                    className="-mr-1.5 inline-flex size-7 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? <EyeOff aria-hidden="true" className="size-4" /> : <Eye aria-hidden="true" className="size-4" />}
-                  </button>
-                }
-              />
-            )}
+          <form.Field name="password" validators={{ onDynamic: loginFormZodSchema.shape.password }}>
+            {(field) => <PasswordField field={field} label="Password" purpose="current" disabled={isPending} />}
           </form.Field>
 
           {/* Under the password field, where somebody looks the moment their
@@ -140,6 +119,8 @@ const LoginForm = () => {
               Forgot your password?
             </Link>
           </div>
+
+          <FormErrorAlert message={refusal} />
 
           <AppSubmitButton isPending={isPending} pendingLabel="Signing in...">
             Sign in
