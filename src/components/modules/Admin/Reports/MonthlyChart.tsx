@@ -1,9 +1,13 @@
 "use client"
 
+import ReportEmpty from "@/components/modules/Admin/Reports/ReportEmpty"
+import PanelState from "@/components/shared/state/PanelState"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
+import type { ApiResponse } from "@/types/api.types"
 import type { IMonthlyPoint } from "@/types/insights.types"
+import type { UseQueryResult } from "@tanstack/react-query"
 import { format, parse } from "date-fns"
 import { Table2, TrendingUp } from "lucide-react"
 import { useState } from "react"
@@ -67,9 +71,91 @@ const ChartTooltip = ({ active, payload, label }: TooltipPayload) => {
   )
 }
 
-const MonthlyChart = ({ data }: { data: IMonthlyPoint[] }) => {
-  const [showTable, setShowTable] = useState(false)
+// The table view is not a nicety: one series sits just under 3:1 on white,
+// and a table is the contrast relief for it.
+const MonthlyTable = ({ data }: { data: IMonthlyPoint[] }) => (
+  <div className="overflow-x-auto">
+    <table className="w-full text-sm">
+      <thead className="border-b text-left text-xs text-muted-foreground">
+        <tr>
+          <th className="px-5 py-2 font-medium">Month</th>
+          <th className="px-5 py-2 text-right font-medium">Revenue</th>
+          <th className="px-5 py-2 text-right font-medium">Cost</th>
+          <th className="px-5 py-2 text-right font-medium">Profit</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y">
+        {data.map((point) => (
+          <tr key={point.month}>
+            <td className="px-5 py-2">
+              {format(parse(point.month, "yyyy-MM", new Date()), "MMM yyyy")}
+            </td>
+            <td className="px-5 py-2 text-right tabular-nums">
+              {formatBdt(point.revenue_bdt_reporting)}
+            </td>
+            <td className="px-5 py-2 text-right tabular-nums">{formatBdt(point.cost_bdt)}</td>
+            <td className="px-5 py-2 text-right font-medium tabular-nums">
+              {formatBdt(point.profit_bdt)}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)
 
+const MonthlyLines = ({ data }: { data: IMonthlyPoint[] }) => (
+  <div className="px-2 py-5">
+    <ResponsiveContainer width="100%" height={280}>
+      <LineChart data={data} margin={{ top: 8, right: 56, bottom: 4, left: 8 }}>
+        {/* Hairline, solid, one step off surface — recessive by design. */}
+        <CartesianGrid stroke="var(--border)" strokeWidth={1} vertical={false} />
+        <XAxis
+          dataKey="month"
+          tickFormatter={monthLabel}
+          tickLine={false}
+          axisLine={false}
+          tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
+        />
+        <YAxis
+          tickFormatter={compact}
+          tickLine={false}
+          axisLine={false}
+          width={48}
+          tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
+        />
+        <Tooltip content={<ChartTooltip />} cursor={{ stroke: "var(--border)" }} />
+
+        <Line
+          type="monotone"
+          dataKey="revenue_bdt_reporting"
+          stroke="var(--chart-1)"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          // >= 8px marker with a 2px surface ring, so it stays legible
+          // where the two lines cross.
+          dot={{ r: 4, fill: "var(--chart-1)", stroke: "var(--card)", strokeWidth: 2 }}
+          activeDot={{ r: 5, fill: "var(--chart-1)", stroke: "var(--card)", strokeWidth: 2 }}
+        />
+        <Line
+          type="monotone"
+          dataKey="cost_bdt"
+          stroke="var(--chart-2)"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          dot={{ r: 4, fill: "var(--chart-2)", stroke: "var(--card)", strokeWidth: 2 }}
+          activeDot={{ r: 5, fill: "var(--chart-2)", stroke: "var(--card)", strokeWidth: 2 }}
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  </div>
+)
+
+const MonthlyChart = ({ query }: { query: UseQueryResult<ApiResponse<IMonthlyPoint[]>> }) => {
+  const [showTable, setShowTable] = useState(false)
+  const data = query.data?.data ?? []
   const hasAnything = data.some((point) => point.revenue_bdt_reporting > 0 || point.cost_bdt > 0)
 
   return (
@@ -108,89 +194,14 @@ const MonthlyChart = ({ data }: { data: IMonthlyPoint[] }) => {
         </div>
       </CardHeader>
 
-      {!hasAnything ? (
-        <p className="px-5 py-16 text-center text-sm text-muted-foreground">
-          Nothing recorded in this period yet.
-        </p>
-      ) : showTable ? (
-        // The table view is not a nicety: one series sits just under 3:1 on
-        // white, and the validator's contrast relief is exactly this.
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="border-b text-left text-xs text-muted-foreground">
-              <tr>
-                <th className="px-5 py-2 font-medium">Month</th>
-                <th className="px-5 py-2 text-right font-medium">Revenue</th>
-                <th className="px-5 py-2 text-right font-medium">Cost</th>
-                <th className="px-5 py-2 text-right font-medium">Profit</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {data.map((point) => (
-                <tr key={point.month}>
-                  <td className="px-5 py-2">
-                    {format(parse(point.month, "yyyy-MM", new Date()), "MMM yyyy")}
-                  </td>
-                  <td className="px-5 py-2 text-right tabular-nums">
-                    {formatBdt(point.revenue_bdt_reporting)}
-                  </td>
-                  <td className="px-5 py-2 text-right tabular-nums">{formatBdt(point.cost_bdt)}</td>
-                  <td className="px-5 py-2 text-right font-medium tabular-nums">
-                    {formatBdt(point.profit_bdt)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="px-2 py-5">
-          <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={data} margin={{ top: 8, right: 56, bottom: 4, left: 8 }}>
-              {/* Hairline, solid, one step off surface — recessive by design. */}
-              <CartesianGrid stroke="var(--border)" strokeWidth={1} vertical={false} />
-              <XAxis
-                dataKey="month"
-                tickFormatter={monthLabel}
-                tickLine={false}
-                axisLine={false}
-                tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
-              />
-              <YAxis
-                tickFormatter={compact}
-                tickLine={false}
-                axisLine={false}
-                width={48}
-                tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
-              />
-              <Tooltip content={<ChartTooltip />} cursor={{ stroke: "var(--border)" }} />
-
-              <Line
-                type="monotone"
-                dataKey="revenue_bdt_reporting"
-                stroke="var(--chart-1)"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                // >= 8px marker with a 2px surface ring, so it stays legible
-                // where the two lines cross.
-                dot={{ r: 4, fill: "var(--chart-1)", stroke: "var(--card)", strokeWidth: 2 }}
-                activeDot={{ r: 5, fill: "var(--chart-1)", stroke: "var(--card)", strokeWidth: 2 }}
-              />
-              <Line
-                type="monotone"
-                dataKey="cost_bdt"
-                stroke="var(--chart-2)"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                dot={{ r: 4, fill: "var(--chart-2)", stroke: "var(--card)", strokeWidth: 2 }}
-                activeDot={{ r: 5, fill: "var(--chart-2)", stroke: "var(--card)", strokeWidth: 2 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+      <PanelState
+        query={query}
+        errorMessage="The monthly figures did not load."
+        isEmpty={!hasAnything}
+        empty={<ReportEmpty>Nothing recorded in this period yet.</ReportEmpty>}
+      >
+        {showTable ? <MonthlyTable data={data} /> : <MonthlyLines data={data} />}
+      </PanelState>
     </Card>
   )
 }
