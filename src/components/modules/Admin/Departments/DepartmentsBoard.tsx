@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IDepartment } from "@/types/people.types"
+import { departmentFormZodSchema, type IDepartmentFormValues } from "@/zod/people.validation"
+import { useForm } from "@tanstack/react-form"
 import { useQuery } from "@tanstack/react-query"
 import { Network, Plus, Power, Trash2, X } from "lucide-react"
 import Link from "next/link"
@@ -33,23 +35,17 @@ import { queryKeys } from "@/lib/queryKeys"
  * than a refusal followed by hunting for the switch.
  */
 
+const emptyDepartment: IDepartmentFormValues = { name: "", description: "" }
+
 const DepartmentsBoard = () => {
-  const [name, setName] = useState("")
-  const [description, setDescription] = useState("")
   const [editingId, setEditingId] = useState<string | null>(null)
 
   const { data, isLoading } = useQuery(departmentsQuery())
 
   const departments = data?.data ?? []
 
-  const reset = () => {
-    setName("")
-    setDescription("")
-    setEditingId(null)
-  }
-
   const { run: saveDepartment, isPending } = useActionMutation({
-    action: (values: { name: string; description: string }) =>
+    action: (values: IDepartmentFormValues) =>
       editingId ? updateDepartmentAction(editingId, values) : createDepartmentAction(values),
     successMessage: editingId ? "Department updated" : "Department added",
     invalidateKeys: [queryKeys.departments.all],
@@ -72,13 +68,27 @@ const DepartmentsBoard = () => {
     refresh: false,
   })
 
-  const handleSave = async () => {
-    if (await saveDepartment({ name, description })) reset()
+  const form = useForm({
+    defaultValues: emptyDepartment,
+    validators: { onSubmit: departmentFormZodSchema },
+    onSubmit: async ({ value }) => {
+      if (await saveDepartment(value)) stopEditing()
+    },
+  })
+
+  const startEditing = (department: IDepartment) => {
+    setEditingId(department.id)
+    form.reset({ name: department.name, description: department.description }, { keepDefaultValues: true })
+  }
+
+  const stopEditing = () => {
+    form.reset()
+    setEditingId(null)
   }
 
   // Only the department being edited takes the form with it.
   const handleDelete = async (id: string) => {
-    if ((await removeDepartment(id)) && editingId === id) reset()
+    if ((await removeDepartment(id)) && editingId === id) stopEditing()
   }
 
   return (
@@ -95,41 +105,54 @@ const DepartmentsBoard = () => {
           className="space-y-4 px-6 pb-6"
           onSubmit={(event) => {
             event.preventDefault()
-            if (!name.trim()) return
-            void handleSave()
+            void form.handleSubmit()
           }}
         >
-          <div className="space-y-1.5">
-            <Label htmlFor="department-name">Name</Label>
-            <Input
-              id="department-name"
-              value={name}
-              maxLength={60}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Design"
-              disabled={isPending}
-            />
-          </div>
+          <form.Field name="name">
+            {(field) => (
+              <div className="space-y-1.5">
+                <Label htmlFor="department-name">Name</Label>
+                <Input
+                  id="department-name"
+                  value={field.state.value}
+                  maxLength={60}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  placeholder="Design"
+                  disabled={isPending}
+                />
+              </div>
+            )}
+          </form.Field>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="department-description">What they do</Label>
-            <Input
-              id="department-description"
-              value={description}
-              maxLength={200}
-              onChange={(event) => setDescription(event.target.value)}
-              placeholder="Optional"
-              disabled={isPending}
-            />
-          </div>
+          <form.Field name="description">
+            {(field) => (
+              <div className="space-y-1.5">
+                <Label htmlFor="department-description">What they do</Label>
+                <Input
+                  id="department-description"
+                  value={field.state.value}
+                  maxLength={200}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  placeholder="Optional"
+                  disabled={isPending}
+                />
+              </div>
+            )}
+          </form.Field>
 
           <div className="flex items-center gap-2">
-            <Button type="submit" disabled={isPending || !name.trim()} className="flex-1">
-              <Plus className="size-4" />
-              {editingId ? "Save changes" : "Add"}
-            </Button>
+            <form.Subscribe selector={(state) => state.values.name.trim() === ""}>
+              {(isNameBlank) => (
+                <Button type="submit" disabled={isPending || isNameBlank} className="flex-1">
+                  <Plus className="size-4" />
+                  {editingId ? "Save changes" : "Add"}
+                </Button>
+              )}
+            </form.Subscribe>
             {editingId && (
-              <Button type="button" variant="ghost" size="icon" onClick={reset} aria-label="Stop editing">
+              <Button type="button" variant="ghost" size="icon" onClick={stopEditing} aria-label="Stop editing">
                 <X className="size-4" />
               </Button>
             )}
@@ -187,11 +210,7 @@ const DepartmentsBoard = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => {
-                        setEditingId(department.id)
-                        setName(department.name)
-                        setDescription(department.description)
-                      }}
+                      onClick={() => startEditing(department)}
                     >
                       Edit
                     </Button>
