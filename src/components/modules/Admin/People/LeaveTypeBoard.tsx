@@ -12,13 +12,16 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { ILeaveType } from "@/types/people.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { CalendarOff, Power } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { leaveTypesQuery } from "@/queries/people.queries"
 import { queryKeys } from "@/lib/queryKeys"
+
+// A renamed or retired kind changes what the balance card can offer.
+const LEAVE_TYPE_KEYS = [queryKeys.leaveTypes.all, queryKeys.leaveBalance.all]
 
 /**
  * The kinds of leave an agency gives.
@@ -35,7 +38,6 @@ import { queryKeys } from "@/lib/queryKeys"
  * not having the feature.
  */
 const LeaveTypeBoard = () => {
-  const queryClient = useQueryClient()
   const [name, setName] = useState("")
   const [days, setDays] = useState("")
   const [isPaid, setIsPaid] = useState(true)
@@ -43,40 +45,27 @@ const LeaveTypeBoard = () => {
   const { data, isLoading } = useQuery(leaveTypesQuery())
   const types = data?.data ?? []
 
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.leaveTypes.all })
-    // A renamed or retired kind changes what the balance card can offer.
-    void queryClient.invalidateQueries({ queryKey: queryKeys.leaveBalance.all })
-  }
+  const { run: addLeaveType, isPending } = useActionMutation({
+    action: createLeaveTypeAction,
+    successMessage: "Added",
+    invalidateKeys: LEAVE_TYPE_KEYS,
+    refresh: false,
+  })
 
-  const { mutate: add, isPending } = useMutation({
-    mutationFn: () =>
-      createLeaveTypeAction({ name, days_per_year: days, is_paid: isPaid }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not add it")
-        return
-      }
-      toast.success("Added")
+  const { run: toggleRetired } = useActionMutation({
+    action: (type: ILeaveType) => setLeaveTypeActiveAction(type.id, { is_active: !type.is_active }),
+    successMessage: "Saved",
+    invalidateKeys: LEAVE_TYPE_KEYS,
+    refresh: false,
+  })
+
+  const handleAdd = async () => {
+    if (await addLeaveType({ name, days_per_year: days, is_paid: isPaid })) {
       setName("")
       setDays("")
       setIsPaid(true)
-      refresh()
-    },
-  })
-
-  const { mutate: toggle } = useMutation({
-    mutationFn: (type: ILeaveType) =>
-      setLeaveTypeActiveAction(type.id, { is_active: !type.is_active }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not update it")
-        return
-      }
-      toast.success("Saved")
-      refresh()
-    },
-  })
+    }
+  }
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
@@ -90,7 +79,7 @@ const LeaveTypeBoard = () => {
           onSubmit={(event) => {
             event.preventDefault()
             if (!name.trim()) return
-            add()
+            void handleAdd()
           }}
         >
           <div className="space-y-1.5">
@@ -186,7 +175,7 @@ const LeaveTypeBoard = () => {
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={() => toggle(type)}
+                  onClick={() => void toggleRetired(type)}
                   aria-label={type.is_active ? `Retire ${type.name}` : `Offer ${type.name} again`}
                   title={type.is_active ? "Retire" : "Offer again"}
                 >
