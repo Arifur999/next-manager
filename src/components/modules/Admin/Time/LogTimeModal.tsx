@@ -18,33 +18,15 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { logTimeFormZodSchema, type ILogTimeFormValues } from "@/zod/work.validation"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
-import { z } from "zod"
 import { projectsListQuery } from "@/queries/project.queries"
 import { tasksListQuery } from "@/queries/work.queries"
 import { queryKeys } from "@/lib/queryKeys"
-
-const logTimeSchema = z.object({
-  project_id: z.string().min(1, "Choose a project"),
-  task_id: z.string().optional(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date"),
-  hours: z
-    .string()
-    .min(1, "Hours are required")
-    .refine((value) => Number.isFinite(Number(value)), "Hours must be a number")
-    .refine((value) => Number(value) > 0, "Hours must be greater than zero")
-    // Mirrors the server's guard so a misplaced decimal is caught before the
-    // round-trip, with the same reason given.
-    .refine((value) => Number(value) <= 24, "A day is 24 hours — check the decimal point"),
-  is_billable: z.boolean(),
-  notes: z.string().optional(),
-})
-
-type LogTimeValues = z.infer<typeof logTimeSchema>
 
 /**
  * Tasks for the chosen project only.
@@ -91,7 +73,7 @@ const LogTimeModal = ({ defaultDate }: { defaultDate: string }) => {
   const projects = projectsData?.data ?? []
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: LogTimeValues) =>
+    mutationFn: (values: ILogTimeFormValues) =>
       logTimeAction({
         ...values,
         hours: Number(values.hours),
@@ -99,7 +81,7 @@ const LogTimeModal = ({ defaultDate }: { defaultDate: string }) => {
       }),
   })
 
-  const defaultValues: LogTimeValues = {
+  const defaultValues: ILogTimeFormValues = {
     project_id: "",
     task_id: "",
     date: defaultDate,
@@ -173,7 +155,7 @@ const LogTimeModal = ({ defaultDate }: { defaultDate: string }) => {
               }}
               className="space-y-5"
             >
-              <form.Field name="project_id" validators={{ onChange: logTimeSchema.shape.project_id }}>
+              <form.Field name="project_id" validators={{ onChange: logTimeFormZodSchema.shape.project_id }}>
                 {(field) => (
                   <EntitySelect
                     id={field.name}
@@ -222,7 +204,7 @@ const LogTimeModal = ({ defaultDate }: { defaultDate: string }) => {
                   {(field) => <AppField field={field} label="Date" type="date" disabled={isPending} />}
                 </form.Field>
 
-                <form.Field name="hours" validators={{ onChange: logTimeSchema.shape.hours }}>
+                <form.Field name="hours" validators={{ onChange: logTimeFormZodSchema.shape.hours }}>
                   {(field) => (
                     <AppField
                       field={field}

@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { isoDate } from "./formFields"
 
 export const taskFormZodSchema = z.object({
     project_id: z.string().min(1, "Choose a project"),
@@ -11,6 +12,24 @@ export const taskFormZodSchema = z.object({
 })
 
 export type ITaskFormValues = z.infer<typeof taskFormZodSchema>
+
+export const logTimeFormZodSchema = z.object({
+    project_id: z.string().min(1, "Choose a project"),
+    task_id: z.string().optional(),
+    date: isoDate,
+    hours: z
+        .string()
+        .min(1, "Hours are required")
+        .refine((value) => Number.isFinite(Number(value)), "Hours must be a number")
+        .refine((value) => Number(value) > 0, "Hours must be greater than zero")
+        // Mirrors the server's guard so a misplaced decimal is caught before the
+        // round-trip, with the same reason given.
+        .refine((value) => Number(value) <= 24, "A day is 24 hours — check the decimal point"),
+    is_billable: z.boolean(),
+    notes: z.string().optional(),
+})
+
+export type ILogTimeFormValues = z.infer<typeof logTimeFormZodSchema>
 
 // Server schemas: the form's values checked again on the server and keyed as
 // the API's request schema expects. The API drops unknown keys without a word,
