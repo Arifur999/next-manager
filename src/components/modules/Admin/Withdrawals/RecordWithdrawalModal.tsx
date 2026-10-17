@@ -130,7 +130,7 @@ const RecordWithdrawalModal = () => {
                     id={field.name}
                     label="Type"
                     value={field.state.value}
-                    onChange={(value) => field.handleChange(value as IOwnerWithdrawalFormValues["type"])}
+                    onChange={field.handleChange}
                     disabled={isPending}
                     description="Reinvestment goes back into the business; personal does not."
                     options={[

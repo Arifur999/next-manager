@@ -144,7 +144,7 @@ const CreateLeadModal = () => {
                   id={field.name}
                   label="Stage"
                   value={field.state.value}
-                  onChange={(value) => field.handleChange(value as LeadStage)}
+                  onChange={field.handleChange}
                   disabled={isPending}
                   options={LEAD_STAGES.map((stage) => ({
                     value: stage,

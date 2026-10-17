@@ -167,7 +167,7 @@ const RecordPayoutModal = () => {
                     id={field.name}
                     label="Type"
                     value={field.state.value}
-                    onChange={(value) => field.handleChange(value as ITeamPayoutFormValues["type"])}
+                    onChange={field.handleChange}
                     disabled={isPending}
                     options={TYPES.map((type) => ({ value: type.value, label: type.label }))}
                   />
