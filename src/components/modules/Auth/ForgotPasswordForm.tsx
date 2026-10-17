@@ -1,6 +1,7 @@
 "use client"
 
 import { forgotPasswordAction } from "@/app/(commonLayout)/(auth)/forgot-password/_action"
+import AuthNoticeCard from "@/components/modules/Auth/AuthNoticeCard"
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
 import {
@@ -11,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { forgotPasswordFormZodSchema, type IForgotPasswordFormValues } from "@/zod/auth.validation"
-import { useForm } from "@tanstack/react-form"
+import { revalidateLogic, useForm } from "@tanstack/react-form"
 import { useMutation } from "@tanstack/react-query"
 import { MailCheck } from "lucide-react"
 import Link from "next/link"
@@ -39,6 +40,7 @@ const ForgotPasswordForm = () => {
 
   const form = useForm({
     defaultValues: { email: "" } satisfies IForgotPasswordFormValues,
+    validationLogic: revalidateLogic(),
     onSubmit: async ({ value }) => {
       await mutateAsync(value)
       // Shown whatever came back. A failure that is visible only for real
@@ -47,87 +49,69 @@ const ForgotPasswordForm = () => {
     },
   })
 
+  if (sent) {
+    return (
+      <AuthNoticeCard
+        icon={MailCheck}
+        title="Check your email"
+        description="If that address has an account, a reset link is on its way. It works once and expires in 30 minutes."
+      >
+        <p>Nothing arrived? Check the address you typed — and your spam folder before asking again.</p>
+        <p>
+          <Link href="/login" className="text-primary-strong underline underline-offset-4 hover:decoration-2">
+            Back to sign in
+          </Link>
+        </p>
+      </AuthNoticeCard>
+    )
+  }
+
   return (
     <div className="w-full">
       <Card>
-        {sent ? (
-          <>
-            <CardHeader className="items-center text-center">
-              <MailCheck className="size-8 text-muted-foreground" aria-hidden="true" />
-              <CardTitle>
-                <h1 className="text-2xl font-semibold tracking-tight">Check your email</h1>
-              </CardTitle>
-              <CardDescription>
-                If that address has an account, a reset link is on its way. It works once
-                and expires in 30 minutes.
-              </CardDescription>
-            </CardHeader>
+        <CardHeader>
+          <CardTitle>
+            <h1 className="text-2xl font-semibold tracking-tight">Forgot your password</h1>
+          </CardTitle>
+          <CardDescription>
+            Enter the email you sign in with and we will send a link to set a new
+            password.
+          </CardDescription>
+        </CardHeader>
 
-            <CardContent className="space-y-3 text-center text-sm text-muted-foreground">
-              <p>
-                Nothing arrived? Check the address you typed — and your spam folder before
-                asking again.
-              </p>
-              <p>
-                <Link href="/login" className="text-primary-strong underline underline-offset-4 hover:decoration-2">
-                  Back to sign in
-                </Link>
-              </p>
-            </CardContent>
-          </>
-        ) : (
-          <>
-            <CardHeader>
-              <CardTitle>
-                <h1 className="text-2xl font-semibold tracking-tight">Forgot your password</h1>
-              </CardTitle>
-              <CardDescription>
-                Enter the email you sign in with and we will send a link to set a new
-                password.
-              </CardDescription>
-            </CardHeader>
+        <CardContent>
+          <form
+            method="POST"
+            action="#"
+            noValidate
+            onSubmit={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+              form.handleSubmit()
+            }}
+            className="space-y-5"
+          >
+            <form.Field
+              name="email"
+              validators={{ onDynamic: forgotPasswordFormZodSchema.shape.email }}
+            >
+              {(field) => (
+                <AppField field={field} label="Email" type="email" autoComplete="email" disabled={isPending} />
+              )}
+            </form.Field>
 
-            <CardContent>
-              <form
-                method="POST"
-                action="#"
-                noValidate
-                onSubmit={(event) => {
-                  event.preventDefault()
-                  event.stopPropagation()
-                  form.handleSubmit()
-                }}
-                className="space-y-5"
-              >
-                <form.Field
-                  name="email"
-                  validators={{ onChange: forgotPasswordFormZodSchema.shape.email }}
-                >
-                  {(field) => (
-                    <AppField
-                      field={field}
-                      label="Email"
-                      type="email"
-                      placeholder="you@company.com"
-                      disabled={isPending}
-                    />
-                  )}
-                </form.Field>
+            <AppSubmitButton isPending={isPending} pendingLabel="Sending...">
+              Send reset link
+            </AppSubmitButton>
+          </form>
 
-                <AppSubmitButton isPending={isPending} pendingLabel="Sending...">
-                  Send reset link
-                </AppSubmitButton>
-              </form>
-
-              <p className="mt-6 text-center text-sm text-muted-foreground">
-                Remembered it?{" "}
-                <Link href="/login" className="text-primary-strong underline underline-offset-4 hover:decoration-2">
-                  Sign in
-                </Link>
-              </p>
-            </CardContent>
-          </>
-        )}
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            Remembered it?{" "}
+            <Link href="/login" className="text-primary-strong underline underline-offset-4 hover:decoration-2">
+              Sign in
+            </Link>
+          </p>
+        </CardContent>
       </Card>
     </div>
   )
