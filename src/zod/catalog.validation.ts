@@ -1,12 +1,6 @@
 import { z } from "zod"
 import { optionalNonNegative, toNumber } from "./formFields"
 
-// Turning a service or a category off or on again: one already sold is kept
-// so its invoice lines still say what they were for.
-export const activeStateServerZodSchema = z.object({
-    is_active: z.boolean("is_active must be true or false"),
-})
-
 // The Select's value for "ungrouped", because it cannot hold "". The API wants null.
 export const NO_CATEGORY = "__none__"
 

@@ -11,8 +11,8 @@ import {
     updateService,
     updateServiceCategory,
 } from "@/services/catalog.services"
+import { activeStateServerZodSchema } from "@/zod/formFields"
 import {
-    activeStateServerZodSchema,
     serviceCategoryServerZodSchema,
     serviceServerZodSchema,
     serviceTemplateServerZodSchema,
