@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import type { IBaselineFormValues } from "@/zod/project.validation"
+import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { Lock } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { projectDetailQuery } from "@/queries/project.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -26,7 +27,6 @@ import { queryKeys } from "@/lib/queryKeys"
  */
 
 const ProjectBaselineCard = ({ projectId }: { projectId: string }) => {
-  const queryClient = useQueryClient()
   const [hours, setHours] = useState("")
   const [value, setValue] = useState("")
   const [replacing, setReplacing] = useState(false)
@@ -36,26 +36,21 @@ const ProjectBaselineCard = ({ projectId }: { projectId: string }) => {
   const project = data?.data
   const isBaselined = Boolean(project?.baseline_set_at)
 
-  const { mutate: save, isPending } = useMutation({
-    mutationFn: () =>
-      setBaselineAction(projectId, {
-        baseline_hours: hours,
-        baseline_value_usd: value,
-        replace_existing: isBaselined,
-      }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Failed to set the baseline")
-        return
-      }
-      toast.success(isBaselined ? "Baseline replaced" : "Baseline set")
+  const { run: saveBaseline, isPending } = useActionMutation({
+    action: (values: IBaselineFormValues) =>
+      setBaselineAction(projectId, { ...values, replace_existing: isBaselined }),
+    successMessage: isBaselined ? "Baseline replaced" : "Baseline set",
+    invalidateKeys: [queryKeys.projects.all, queryKeys.kpi.all],
+    refresh: false,
+  })
+
+  const handleSave = async () => {
+    if (await saveBaseline({ baseline_hours: hours, baseline_value_usd: value })) {
       setHours("")
       setValue("")
       setReplacing(false)
-      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.kpi.all })
-    },
-  })
+    }
+  }
 
   if (!project) return null
 
@@ -109,7 +104,7 @@ const ProjectBaselineCard = ({ projectId }: { projectId: string }) => {
           onSubmit={(event) => {
             event.preventDefault()
             if (!hours.trim() || Number(hours) <= 0) return
-            save()
+            void handleSave()
           }}
         >
           <div className="space-y-1.5">
