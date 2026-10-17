@@ -5,6 +5,7 @@ import {
   deleteWorkflowStatusAction,
   updateWorkflowStatusAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/workflow/_action"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { STATUS_TONE } from "@/components/shared/status/statusTone"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -20,6 +21,7 @@ import {
 } from "@/components/ui/select"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import type { StatusCategory } from "@/types/common.types"
+import type { IWorkflowStatus } from "@/types/work.types"
 import {
   workflowStatusFormZodSchema,
   type IWorkflowStatusChange,
@@ -28,6 +30,7 @@ import {
 import { useForm } from "@tanstack/react-form"
 import { useQuery } from "@tanstack/react-query"
 import { ArrowDown, ArrowUp, Plus, Power, Star, Trash2 } from "lucide-react"
+import { useState } from "react"
 import { workflowStatusesListQuery } from "@/queries/work.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -63,6 +66,8 @@ const CATEGORIES: Array<{ value: StatusCategory; label: string; blurb: string }>
 const emptyColumn: IWorkflowStatusFormValues = { name: "", category: "open" }
 
 const WorkflowBoard = ({ kind }: { kind: "task" | "project" }) => {
+  const [statusToDelete, setStatusToDelete] = useState<IWorkflowStatus | null>(null)
+
   const { data, isLoading } = useQuery(workflowStatusesListQuery(`kind=${kind}`))
 
   const statuses = data?.data ?? []
@@ -83,12 +88,16 @@ const WorkflowBoard = ({ kind }: { kind: "task" | "project" }) => {
     refresh: false,
   })
 
-  const { run: remove } = useActionMutation({
+  const { run: remove, isPending: isRemoving } = useActionMutation({
     action: deleteWorkflowStatusAction,
     successMessage: "Removed from the board",
     invalidateKeys: [queryKeys.workflowStatuses.all],
     refresh: false,
   })
+
+  const handleDelete = async () => {
+    if (statusToDelete && (await remove(statusToDelete.id))) setStatusToDelete(null)
+  }
 
   const form = useForm({
     defaultValues: emptyColumn,
@@ -278,7 +287,7 @@ const WorkflowBoard = ({ kind }: { kind: "task" | "project" }) => {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => void remove(status.id)}
+                      onClick={() => setStatusToDelete(status)}
                       aria-label={`Delete ${status.name}`}
                     >
                       <Trash2 className="size-4" />
@@ -295,6 +304,26 @@ const WorkflowBoard = ({ kind }: { kind: "task" | "project" }) => {
           going there. Deleting one is refused while anything is on it.
         </div>
       </Card>
+
+      <ConfirmDialog
+        open={statusToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setStatusToDelete(null)
+        }}
+        title="Delete this column?"
+        description={
+          <>
+            <span className="font-medium text-foreground">{statusToDelete?.name}</span> comes off the
+            board for good. A column with work on it cannot be deleted; turning it off keeps that work
+            and stops anything new going there.
+          </>
+        }
+        variant="destructive"
+        confirmLabel="Delete"
+        pendingLabel="Deleting..."
+        isPending={isRemoving}
+        onConfirm={() => void handleDelete()}
+      />
     </div>
   )
 }
