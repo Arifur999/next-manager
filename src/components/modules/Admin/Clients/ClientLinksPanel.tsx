@@ -9,10 +9,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { useQuery } from "@tanstack/react-query"
 import { ExternalLink, FolderOpen, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { clientLinksListQuery } from "@/queries/crm.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -40,7 +40,6 @@ const hostOf = (url: string) => {
 }
 
 const ClientLinksPanel = ({ clientId }: { clientId: string }) => {
-  const queryClient = useQueryClient()
   const [label, setLabel] = useState("")
   const [url, setUrl] = useState("")
 
@@ -48,35 +47,26 @@ const ClientLinksPanel = ({ clientId }: { clientId: string }) => {
 
   const links = data?.data ?? []
 
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.clientLinks.all })
-  }
+  const { run: addLink, isPending } = useActionMutation({
+    action: addClientLinkAction,
+    successMessage: "Link added",
+    invalidateKeys: [queryKeys.clientLinks.all],
+    refresh: false,
+  })
 
-  const { mutate: add, isPending } = useMutation({
-    mutationFn: () => addClientLinkAction({ client_id: clientId, label, url }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        // "Only http and https links can be stored" arrives here.
-        toast.error(result.message || "Could not add the link")
-        return
-      }
-      toast.success("Link added")
+  const { run: removeLink, isPending: isRemoving } = useActionMutation({
+    action: removeClientLinkAction,
+    successMessage: false,
+    invalidateKeys: [queryKeys.clientLinks.all],
+    refresh: false,
+  })
+
+  const handleAdd = async () => {
+    if (await addLink({ client_id: clientId, label, url })) {
       setLabel("")
       setUrl("")
-      refresh()
-    },
-  })
-
-  const { mutate: remove, isPending: isRemoving } = useMutation({
-    mutationFn: (id: string) => removeClientLinkAction(id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not remove the link")
-        return
-      }
-      refresh()
-    },
-  })
+    }
+  }
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
@@ -93,7 +83,7 @@ const ClientLinksPanel = ({ clientId }: { clientId: string }) => {
         onSubmit={(event) => {
           event.preventDefault()
           if (!label.trim() || !url.trim()) return
-          add()
+          void handleAdd()
         }}
       >
         <div className="min-w-40 flex-1 space-y-1.5">
@@ -165,7 +155,7 @@ const ClientLinksPanel = ({ clientId }: { clientId: string }) => {
                   variant="outline"
                   size="sm"
                   disabled={isRemoving}
-                  onClick={() => remove(link.id)}
+                  onClick={() => void removeLink(link.id)}
                 >
                   <Trash2 className="size-3.5" />
                   <span className="sr-only">Remove {link.label}</span>
