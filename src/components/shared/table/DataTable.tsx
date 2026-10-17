@@ -47,7 +47,7 @@ const DataTable = <TData,>(props: DataTableProps<TData>) => {
   // again from page 1 (server-driven tables reset the page themselves).
   const activeSearch = search && {
     ...search,
-    initialValue: searchOnServer ? search.initialValue : String(table.getState().globalFilter ?? ""),
+    value: searchOnServer ? search.value : String(table.getState().globalFilter ?? ""),
     onDebouncedChange: (value: string) => {
       if (!searchOnServer) return table.setGlobalFilter(value);
       if (!pagination) table.setPageIndex(0);

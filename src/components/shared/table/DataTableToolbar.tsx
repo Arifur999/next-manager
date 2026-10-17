@@ -38,7 +38,7 @@ const DataTableToolbar = <TData,>({
         {search && (
           <DataTableSearch
             inputRef={searchInputRef}
-            value={search.initialValue ?? ""}
+            value={search.value ?? ""}
             placeholder={search.placeholder}
             debounceMs={search.debounceMs}
             onDebouncedChange={(value) => search.onDebouncedChange?.(value)}

@@ -57,7 +57,7 @@ const PaymentsTable = () => {
         emptyMessage="No payments recorded yet."
         toolbarAction={<RecordPaymentModal />}
         search={{
-          initialValue: search,
+          value: search,
           placeholder: "Search reference or client...",
           onDebouncedChange: setSearch,
         }}

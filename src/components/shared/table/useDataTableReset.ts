@@ -18,7 +18,7 @@ export const useDataTableReset = <TData,>(
   filters: DataTableFiltersConfig | undefined,
 ) => {
   const isServerFiltered = Boolean(filters?.onFilterChange);
-  const hasSearch = Boolean(search?.initialValue);
+  const hasSearch = Boolean(search?.value);
   const hasFilters = isServerFiltered
     ? Object.values(filters?.values ?? {}).some(isActiveValue)
     : table.getState().columnFilters.length > 0;

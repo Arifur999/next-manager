@@ -23,7 +23,8 @@ export interface DataTableActions<TData> {
 }
 
 export interface DataTableSearchConfig {
-  initialValue?: string;
+  // The current search term (from the URL or the caller's state).
+  value?: string;
   placeholder?: string;
   debounceMs?: number;
   // Present: the caller searches (on the server). Absent: the table searches

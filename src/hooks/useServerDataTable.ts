@@ -96,7 +96,7 @@ export const useServerDataTable = <TData,>(config: ServerDataTableConfig) => {
 
   const dataTableProps: Pick<DataTableProps<TData>, "pagination" | "search" | "filters"> = {
     pagination: { state: paginationState, onPaginationChange },
-    search: search && { placeholder: search.placeholder, initialValue: searchTerm, onDebouncedChange: onSearchChange },
+    search: search && { placeholder: search.placeholder, value: searchTerm, onDebouncedChange: onSearchChange },
     filters:
       filters.length > 0
         ? { configs: filters, values: readFilterValues(searchParams, filters), onFilterChange, onClearAll }

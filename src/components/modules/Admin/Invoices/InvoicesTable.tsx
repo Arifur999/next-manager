@@ -63,7 +63,7 @@ const InvoicesTable = () => {
         emptyMessage="No invoices yet."
         toolbarAction={<CreateInvoiceModal />}
         search={{
-          initialValue: search,
+          value: search,
           placeholder: "Search invoice number or client...",
           onDebouncedChange: setSearch,
         }}
