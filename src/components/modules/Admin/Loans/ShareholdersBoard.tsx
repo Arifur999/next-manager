@@ -8,6 +8,7 @@ import {
   updateShareholderAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/shareholders/_action"
 import DistributionList from "@/components/modules/Admin/Loans/DistributionList"
+import ShareholderFormCard from "@/components/modules/Admin/Loans/ShareholderFormCard"
 import ShareholderList from "@/components/modules/Admin/Loans/ShareholderList"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -35,6 +36,7 @@ const SHAREHOLDER_KEYS = [
   queryKeys.accounts.all,
   queryKeys.transactions.all,
 ]
+
 /**
  * Who owns the agency, and what has been paid to them.
  *
@@ -44,8 +46,6 @@ const SHAREHOLDER_KEYS = [
  * message says what to do about it rather than only that it failed.
  */
 const ShareholdersBoard = () => {
-  const [name, setName] = useState("")
-  const [pct, setPct] = useState("")
   const [shareholderId, setShareholderId] = useState("")
   const [amount, setAmount] = useState("")
   const [accountId, setAccountId] = useState("")
@@ -99,13 +99,6 @@ const ShareholdersBoard = () => {
     refresh: false,
   })
 
-  const handleAdd = async () => {
-    if (await addShareholder({ name, share_pct: pct })) {
-      setName("")
-      setPct("")
-    }
-  }
-
   const handlePayOut = async () => {
     const isPaid = await payDistribution({
       shareholder_id: shareholderId,
@@ -119,54 +112,7 @@ const ShareholdersBoard = () => {
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
       <div className="space-y-4">
-        <Card className="h-fit">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Add a shareholder</CardTitle>
-          </CardHeader>
-
-          <form
-            className="space-y-4 px-6 pb-6"
-            onSubmit={(event) => {
-              event.preventDefault()
-              if (!name.trim()) return
-              void handleAdd()
-            }}
-          >
-            <div className="space-y-1.5">
-              <Label htmlFor="shareholder-name">Name</Label>
-              <Input
-                id="shareholder-name"
-                value={name}
-                maxLength={120}
-                onChange={(event) => setName(event.target.value)}
-                disabled={isPending}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="shareholder-pct">Share (%)</Label>
-              <Input
-                id="shareholder-pct"
-                type="number"
-                min={0}
-                max={100}
-                step="0.01"
-                value={pct}
-                placeholder="0"
-                onChange={(event) => setPct(event.target.value)}
-                disabled={isPending}
-              />
-              <p className="text-xs text-muted-foreground">
-                Everybody still active has to add up to 100% or less. Retiring somebody
-                frees their share for whoever takes it on.
-              </p>
-            </div>
-
-            <Button type="submit" disabled={isPending || !name.trim()} className="w-full">
-              Add
-            </Button>
-          </form>
-        </Card>
+        <ShareholderFormCard onSubmit={addShareholder} isPending={isPending} />
 
         <Card className="h-fit">
           <CardHeader className="pb-3">
