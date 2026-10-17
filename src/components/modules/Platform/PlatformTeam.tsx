@@ -6,6 +6,8 @@ import {
   setPermissionsAction,
 } from "@/app/(dashboardLayout)/platform/_teamAction"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
+import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -226,9 +228,9 @@ const AdminRow = ({ admin, canRemove }: { admin: IPlatformAdmin; canRemove: bool
 }
 
 const PlatformTeam = () => {
-  const { data, isLoading } = useQuery(platformAdminsQuery())
+  const team = useQuery(platformAdminsQuery())
 
-  const admins = data?.data ?? []
+  const admins = team.data?.data ?? []
   const activeCount = admins.filter((admin) => admin.status === "active").length
 
   return (
@@ -244,9 +246,12 @@ const PlatformTeam = () => {
         </p>
       </CardHeader>
 
-      {isLoading && admins.length === 0 ? (
-        <div className="h-32 animate-pulse bg-muted/40" />
-      ) : (
+      <PanelState
+        query={team}
+        errorMessage="The platform team did not load."
+        isEmpty={admins.length === 0}
+        empty={<EmptyState icon={ShieldCheck}>Nobody is on the platform team.</EmptyState>}
+      >
         <ul className="divide-y">
           {admins.map((admin) => (
             <AdminRow
@@ -258,7 +263,7 @@ const PlatformTeam = () => {
             />
           ))}
         </ul>
-      )}
+      </PanelState>
     </Card>
   )
 }
