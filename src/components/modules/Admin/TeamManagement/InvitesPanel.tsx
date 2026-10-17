@@ -50,15 +50,14 @@ const InvitesPanel = () => {
   const invites = data?.data ?? []
 
   const { mutate: create, isPending } = useMutation({
-    mutationFn: () => createInviteAction({ email: email.trim() }),
+    mutationFn: () => createInviteAction({ email }),
     onSuccess: (result) => {
       if (!result.success) {
         toast.error(result.message || "Could not create the invite")
         return
       }
 
-      const url = "data" in result ? result.data?.join_url : undefined
-      setFreshLink(url ?? null)
+      setFreshLink(result.data.join_url)
       setCopied(false)
       setEmail("")
       void queryClient.invalidateQueries({ queryKey: queryKeys.teamInvites.all })

@@ -78,3 +78,13 @@ export const setPayrollItemsServerZodSchema = payrollItemsFormZodSchema.transfor
 export const completePayrollServerZodSchema = z.object({
     account_id: z.string().min(1, "Choose the account the salaries are paid from"),
 })
+
+export const inviteFormZodSchema = z.object({
+    email: z.string().trim().pipe(z.email("Enter a valid email address")),
+})
+
+export type IInviteFormValues = z.infer<typeof inviteFormZodSchema>
+
+// The trimmed address is the whole payload: every invite is for operations,
+// so there is no role to send or to tamper with.
+export const createInviteServerZodSchema = inviteFormZodSchema

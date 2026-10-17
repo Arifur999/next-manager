@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
     activeStateServerZodSchema,
     completePayrollServerZodSchema,
+    createInviteServerZodSchema,
     createPayrollRunServerZodSchema,
     departmentServerZodSchema,
     leaveTypeServerZodSchema,
@@ -108,5 +109,18 @@ describe("completePayrollServerZodSchema", () => {
     it("refuses to pay without an account", () => {
         const result = completePayrollServerZodSchema.safeParse({ account_id: "" })
         expect(result.error?.issues[0]?.message).toBe("Choose the account the salaries are paid from")
+    })
+})
+
+describe("createInviteServerZodSchema", () => {
+    it("sends the address trimmed", () => {
+        expect(createInviteServerZodSchema.parse({ email: " colleague@example.com " })).toEqual({
+            email: "colleague@example.com",
+        })
+    })
+
+    it.each(["", "colleague@"])("refuses %j as an address", (email) => {
+        const result = createInviteServerZodSchema.safeParse({ email })
+        expect(result.error?.issues[0]?.message).toBe("Enter a valid email address")
     })
 })
