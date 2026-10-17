@@ -20,8 +20,6 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-  } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IClient } from "@/types/crm.types"
