@@ -5,9 +5,10 @@ const downloadBlob = (blob: Blob, fileName: string) => {
   link.href = url
   link.download = fileName
   link.click()
-  URL.revokeObjectURL(url)
+  // Revoked a tick later: revoking at once can cancel the download in Safari.
+  setTimeout(() => URL.revokeObjectURL(url), 0)
 }
 
 // The byte order mark makes Excel open the file as UTF-8, so Bangla text survives.
 export const downloadCsv = (csv: string, fileName: string) =>
-  downloadBlob(new Blob(["﻿", csv], { type: "text/csv;charset=utf-8" }), `${fileName}.csv`)
+  downloadBlob(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }), `${fileName}.csv`)

@@ -1,3 +1,4 @@
+import { toDate } from "@/lib/dates"
 import type { FilterFn } from "@tanstack/react-table"
 
 export interface DateRangeValue {
@@ -11,7 +12,8 @@ export const isDateRange = (value: unknown): value is DateRangeValue =>
 // Inclusive on both ends, by calendar day: `to` covers the whole of that day.
 const isWithinDateRange = (cellValue: unknown, { from, to }: DateRangeValue) => {
   if (!cellValue) return false
-  const time = new Date(String(cellValue)).getTime()
+  // toDate keeps a bare "2026-09-01" as that local day, as DateCell shows it.
+  const time = toDate(String(cellValue)).getTime()
   if (Number.isNaN(time)) return false
   if (from && time < new Date(`${from}T00:00:00`).getTime()) return false
   if (to && time > new Date(`${to}T23:59:59.999`).getTime()) return false

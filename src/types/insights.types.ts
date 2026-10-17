@@ -44,6 +44,34 @@ export interface IMonthlyPoint {
     profit_bdt: number;
 }
 
+/** Money received from one client: payments, not invoices. */
+export interface IClientRevenue {
+    client: { id: string; name: string; company: string } | null;
+    revenue_usd: number;
+    revenue_bdt_reporting: number;
+    payment_count: number;
+}
+
+/** Money received minus money spent on one project. */
+export interface IProjectProfitability {
+    project: { id: string; name: string; code: string };
+    contract_value_usd: number;
+    received_usd: number;
+    received_bdt_reporting: number;
+    expense_bdt: number;
+    team_payout_bdt: number;
+    total_cost_bdt: number;
+    profit_bdt: number;
+    margin_pct: number;
+}
+
+/** The ledger summed by what caused each movement, per currency. */
+export interface ICashFlow {
+    by_source: Array<{ source: string; currency: Currency; amount: number }>;
+    totals: Record<Currency, { in: number; out: number; net: number }>;
+    transfer_sources: string[];
+}
+
 export type KpiMetric =
     | "utilization_pct"
     | "realization_pct"

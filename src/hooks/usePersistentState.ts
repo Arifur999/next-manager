@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useMemo, useState, useSyncExternalStore } from "react"
+import type { z } from "zod"
 
 const SAME_TAB_EVENT = "app:persistent-state"
 
@@ -25,9 +26,10 @@ const subscribe = (onChange: () => void) => {
 
 // localStorage-backed state that hydrates cleanly: the server snapshot is null
 // (so the default renders on both sides), then useSyncExternalStore switches to
-// the stored value. Without a key it is plain in-memory state.
-// Pass a stable (module-level) defaultValue.
-export const usePersistentState = <T,>(key: string | undefined, defaultValue: T) => {
+// the stored value. Without a key it is plain in-memory state. Storage is
+// outside input (an old shape, a hand edit), so it is parsed with `schema` and
+// falls back to the default when it does not fit; pass a module-level schema.
+export const usePersistentState = <T,>(key: string | undefined, defaultValue: T, schema: z.ZodType<T>) => {
   const [memoryValue, setMemoryValue] = useState<T>(defaultValue)
   const raw = useSyncExternalStore(
     subscribe,
@@ -38,11 +40,12 @@ export const usePersistentState = <T,>(key: string | undefined, defaultValue: T)
   const value = useMemo<T>(() => {
     if (raw === null) return memoryValue
     try {
-      return JSON.parse(raw) as T
+      const stored = schema.safeParse(JSON.parse(raw))
+      return stored.success ? stored.data : memoryValue
     } catch {
       return memoryValue
     }
-  }, [raw, memoryValue])
+  }, [raw, memoryValue, schema])
 
   const setValue = useCallback(
     (next: T | ((previous: T) => T)) => {

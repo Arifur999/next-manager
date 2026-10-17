@@ -1,3 +1,4 @@
+import { toDate } from "@/lib/dates";
 import { format } from "date-fns";
 
 type DateCellProps = {
@@ -9,7 +10,7 @@ type DateCellProps = {
 // toLocaleDateString - which renders differently per machine locale, so two
 // users comparing screenshots see two different dates.
 const DateCell = ({ date, formatString = "MMM dd, yyyy" }: DateCellProps) => {
-  const parsed = typeof date === "string" ? new Date(date) : date;
+  const parsed = toDate(date);
 
   if (Number.isNaN(parsed.getTime())) {
     return <span className="text-sm text-muted-foreground">N/A</span>;

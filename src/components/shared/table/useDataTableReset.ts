@@ -18,15 +18,15 @@ export const useDataTableReset = <TData,>(
   filters: DataTableFiltersConfig | undefined,
 ) => {
   const isServerFiltered = Boolean(filters?.onFilterChange);
-  const hasSearch = Boolean(search?.initialValue);
+  const hasSearch = Boolean(search?.value);
   const hasFilters = isServerFiltered
     ? Object.values(filters?.values ?? {}).some(isActiveValue)
     : table.getState().columnFilters.length > 0;
 
   const reset = () => {
-    if (isServerFiltered) filters?.onClearAll?.();
-    else table.resetColumnFilters();
-    if (hasSearch) search?.onDebouncedChange("");
+    if (filters?.onClearAll) return filters.onClearAll();
+    table.resetColumnFilters();
+    if (hasSearch) search?.onDebouncedChange?.("");
   };
 
   return { canReset: hasSearch || hasFilters, reset };

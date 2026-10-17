@@ -13,8 +13,8 @@ export const payoutsColumns: ColumnDef<ITeamPayout>[] = [
   },
   {
     id: "member",
+    accessorFn: (payout) => payout.user?.full_name ?? "",
     header: "Member",
-    meta: { exportValue: (payout) => payout.user?.full_name },
     enableSorting: false,
     cell: ({ row }) => (
       <div className="min-w-0">
@@ -27,9 +27,9 @@ export const payoutsColumns: ColumnDef<ITeamPayout>[] = [
   },
   {
     id: "type",
-    accessorKey: "type",
+    // The label people read, so search, sort and export all use it too.
+    accessorFn: (payout) => payout.type.replace(/_/g, " "),
     header: "Type",
-    meta: { exportValue: (payout) => payout.type.replace(/_/g, " ") },
     cell: ({ row }) => (
       <Badge variant="outline" className="capitalize">
         {row.original.type.replace(/_/g, " ")}
@@ -46,8 +46,8 @@ export const payoutsColumns: ColumnDef<ITeamPayout>[] = [
   },
   {
     id: "account",
+    accessorFn: (payout) => payout.account?.name ?? "",
     header: "Paid from",
-    meta: { exportValue: (payout) => payout.account?.name },
     enableSorting: false,
     cell: ({ row }) => (
       <span className="text-sm text-muted-foreground">{row.original.account?.name ?? "N/A"}</span>

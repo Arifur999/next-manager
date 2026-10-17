@@ -76,6 +76,7 @@ const TeamTable = () => {
         columns={teamColumns}
         tableId="team"
         exportFileName="team"
+        search={{ placeholder: "Search name, phone or role..." }}
         {...toTableQueryProps(usersQuery)}
         emptyMessage="No team members yet."
         toolbarAction={<CreateUserFormModal />}

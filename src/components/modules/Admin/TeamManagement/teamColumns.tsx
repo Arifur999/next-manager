@@ -29,9 +29,9 @@ export const teamColumns: ColumnDef<IUser>[] = [
   },
   {
     id: "role",
-    accessorKey: "role",
+    // The label people read, so search, sort and export all use it too.
+    accessorFn: (user) => roleLabel(user.role),
     header: "Role",
-    meta: { exportValue: (user) => roleLabel(user.role) },
     cell: ({ row }) => (
       <Badge variant="outline" className="capitalize">
         {roleLabel(row.original.role)}

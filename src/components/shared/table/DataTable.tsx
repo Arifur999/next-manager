@@ -1,5 +1,7 @@
 "use client";
 
+import { pageCountOf } from "@/types/api.types";
+import { useEffect, useRef } from "react";
 import DataTableContent from "./DataTableContent";
 import DataTablePagination from "./DataTablePagination";
 import DataTableToolbar from "./DataTableToolbar";
@@ -11,6 +13,7 @@ const DataTable = <TData,>(props: DataTableProps<TData>) => {
   const {
     toolbarAction,
     exportFileName,
+    exportRows,
     emptyMessage,
     isLoading = false,
     isFetching = false,
@@ -25,29 +28,53 @@ const DataTable = <TData,>(props: DataTableProps<TData>) => {
   const isRefreshing = isFetching && !isLoading;
 
   const totalRows = pagination ? (meta?.total ?? 0) : table.getPrePaginationRowModel().rows.length;
-  // Lists that fit on one page at the smallest size never show the pager.
-  const showPagination = !isLoading && !isError && totalRows > DEFAULT_PAGE_SIZE;
+  const isPastFirstPage = table.getState().pagination.pageIndex > 0;
+  // Lists that fit on one page at the smallest size never show the pager,
+  // unless a later page is open and the way back must stay visible.
+  const showPagination = !isLoading && !isError && (totalRows > DEFAULT_PAGE_SIZE || isPastFirstPage);
 
-  // A new search starts again from page 1. Server-driven tables reset the page themselves.
-  const searchFromFirstPage = search && {
+  // A server page that stopped existing (its last row was deleted) moves to the
+  // last real page, replacing the URL so Back never lands on the empty page.
+  const serverPageCount = pagination && meta ? Math.max(pageCountOf(meta) ?? 1, 1) : undefined;
+  useEffect(() => {
+    if (!pagination || serverPageCount === undefined || isFetching) return;
+    if (pagination.state.pageIndex < serverPageCount) return;
+    pagination.onPaginationChange({ ...pagination.state, pageIndex: serverPageCount - 1 }, { replace: true });
+  }, [pagination, serverPageCount, isFetching]);
+
+  const { onDebouncedChange: searchOnServer } = search ?? {};
+  // Searching the rows in memory needs no callback; a caller's search starts
+  // again from page 1 (server-driven tables reset the page themselves).
+  const activeSearch = search && {
     ...search,
+    value: searchOnServer ? search.value : String(table.getState().globalFilter ?? ""),
     onDebouncedChange: (value: string) => {
+      if (!searchOnServer) return table.setGlobalFilter(value);
       if (!pagination) table.setPageIndex(0);
-      search.onDebouncedChange(value);
+      searchOnServer(value);
     },
   };
-  const { canReset, reset } = useDataTableReset(table, searchFromFirstPage, filters);
+  const { canReset, reset } = useDataTableReset(table, activeSearch, filters);
+  // Reset and Clear filters vanish once used, so focus moves to the search box
+  // instead of falling back to the page.
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const resetAndFocusSearch = () => {
+    reset();
+    searchInputRef.current?.focus();
+  };
 
   return (
     <div>
       <DataTableToolbar
         table={table}
-        search={searchFromFirstPage}
+        searchInputRef={searchInputRef}
+        search={activeSearch}
         filters={filters}
         canReset={canReset}
-        onReset={reset}
+        onReset={resetAndFocusSearch}
         toolbarAction={toolbarAction}
         exportFileName={exportFileName}
+        exportRows={exportRows}
       />
 
       <div className="font-condensed relative overflow-hidden rounded-lg border">
@@ -64,7 +91,7 @@ const DataTable = <TData,>(props: DataTableProps<TData>) => {
           isRetrying={isFetching}
           onRetry={onRetry}
           canReset={canReset}
-          onReset={reset}
+          onReset={resetAndFocusSearch}
         />
 
         {showPagination && (

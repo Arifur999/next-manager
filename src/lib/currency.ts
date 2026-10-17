@@ -11,23 +11,27 @@
  *     and labelling them as though they were would be a lie the UI tells.
  */
 
+// A typographic minus, not a hyphen: browsers may break a line after a hyphen,
+// which left a lone "-" above "BDT 352,750.00" in a narrow stat tile.
+const withMinusSign = (formatted: string) => formatted.replace(/^-/, "\u2212");
+
 export const formatUsd = (amount: number, options: { compact?: boolean } = {}) =>
-    new Intl.NumberFormat("en-US", {
+    withMinusSign(new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: "USD",
         notation: options.compact ? "compact" : "standard",
         maximumFractionDigits: options.compact ? 1 : 2,
         minimumFractionDigits: options.compact ? 0 : 2,
-    }).format(amount);
+    }).format(amount));
 
 export const formatBdt = (amount: number, options: { compact?: boolean } = {}) =>
-    new Intl.NumberFormat("en-BD", {
+    withMinusSign(new Intl.NumberFormat("en-BD", {
         style: "currency",
         currency: "BDT",
         notation: options.compact ? "compact" : "standard",
         maximumFractionDigits: options.compact ? 1 : 2,
         minimumFractionDigits: options.compact ? 0 : 2,
-    }).format(amount);
+    }).format(amount));
 
 export const formatMoney = (
     amount: number,

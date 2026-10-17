@@ -3,47 +3,30 @@
 import ClientFormModal from "@/components/modules/Admin/Clients/ClientFormModal"
 import DeleteClientDialog from "@/components/modules/Admin/Clients/DeleteClientDialog"
 import { clientsColumns } from "@/components/modules/Admin/Clients/clientsColumns"
+import { CLIENTS_TABLE } from "@/components/modules/Admin/Clients/clientsTable.config"
 import DataTable from "@/components/shared/table/DataTable"
 import { useRowActionModalState } from "@/hooks/useRowActionModalState"
-import { buildQueryString, pickAllowed } from "@/lib/queryString"
+import { useServerDataTable } from "@/hooks/useServerDataTable"
 import { toTableQueryProps } from "@/lib/table/queryProps"
-import { CLIENT_STATUSES, type IClient } from "@/types/crm.types"
-import { useQuery } from "@tanstack/react-query"
-import { useRouter, useSearchParams } from "next/navigation"
-import { useState } from "react"
 import { clientsListQuery } from "@/queries/crm.queries"
+import type { IClient } from "@/types/crm.types"
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useRouter } from "next/navigation"
 
 /**
- * The client list, and its four sidebar entries.
+ * The client list. Paging, search and the status filter live in the URL, so
+ * the sidebar's All / Active / Inactive / Archived entries are links to views
+ * of this one table.
  *
- * The filter comes from the URL rather than local state, so All / Active /
- * Inactive / Archived are four links to one board. Kept in the URL and not
- * in a chip row because that is what makes them linkable at all — and the
- * sidebar can then show which one you are on.
- *
- * Archived is a state, not a deletion: the client and its history stay, and
- * it drops out of the list somebody works from.
+ * `canManage` hides the create, edit and delete controls; `canOpen` hides the
+ * link to a client page. Operations gets neither: the API returns only the
+ * clients whose projects they are on.
  */
-/**
- * The clients list.
- *
- * `canManage` hides the create and edit forms; `canOpen` hides the row link to a
- * client page. Operations gets neither: the API returns only the clients whose
- * projects they are on, and knowing WHO they are working for is the whole of
- * what they need - the client page itself is somebody else's screen.
- */
-const ClientsTable = ({
-  canManage = true,
-  canOpen = true,
-}: {
-  canManage?: boolean
-  canOpen?: boolean
-}) => {
+const ClientsTable = ({ canManage = true, canOpen = true }: { canManage?: boolean; canOpen?: boolean }) => {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const [search, setSearch] = useState("")
-
-  const status = pickAllowed(searchParams.get("status"), CLIENT_STATUSES)
+  const queryClient = useQueryClient()
+  const { queryString, filterQueryString, dataTableProps } = useServerDataTable<IClient>(CLIENTS_TABLE)
+  const clientsQuery = useQuery({ ...clientsListQuery(queryString), placeholderData: keepPreviousData })
 
   const {
     editingItem,
@@ -55,55 +38,29 @@ const ClientsTable = ({
     tableActions,
   } = useRowActionModalState<IClient>({ enableView: true })
 
-  // Same builder and key order as the page's prefetch, so the keys match.
-  const queryString = buildQueryString({ search, status })
-
-  const clientsQuery = useQuery(clientsListQuery(queryString))
-
-  const clients = clientsQuery.data?.data ?? []
-
   return (
     <>
       <DataTable
-        data={clients}
+        data={clientsQuery.data?.data ?? []}
         columns={clientsColumns}
         tableId="clients"
         exportFileName="clients"
+        exportRows={async () => (await queryClient.fetchQuery(clientsListQuery(filterQueryString))).data}
+        {...dataTableProps}
         {...toTableQueryProps(clientsQuery)}
-        emptyMessage={
-          status
-            ? // Says which list is empty. "No clients yet" on a filtered view is a
-              // lie about the business rather than a fact about the filter.
-              `No ${status} clients.`
-            : "No clients yet."
-        }
+        // Shown only when nothing narrows the list; a filtered view says so itself.
+        emptyMessage="No clients yet."
         toolbarAction={canManage ? <ClientFormModal /> : undefined}
-        search={{
-          initialValue: search,
-          placeholder: "Search name, company or email...",
-          onDebouncedChange: setSearch,
-        }}
         actions={{
           ...(canManage ? tableActions : {}),
-          ...(canOpen
-            ? { onView: (client: IClient) => router.push(`/admin/dashboard/clients/${client.id}`) }
-            : {}),
+          ...(canOpen ? { onView: (client: IClient) => router.push(`/admin/dashboard/clients/${client.id}`) } : {}),
         }}
       />
 
       {canManage && (
         <>
-          <ClientFormModal
-            client={editingItem}
-            open={isEditModalOpen}
-            onOpenChange={onEditOpenChange}
-          />
-
-          <DeleteClientDialog
-            open={isDeleteDialogOpen}
-            onOpenChange={onDeleteOpenChange}
-            client={deletingItem}
-          />
+          <ClientFormModal client={editingItem} open={isEditModalOpen} onOpenChange={onEditOpenChange} />
+          <DeleteClientDialog open={isDeleteDialogOpen} onOpenChange={onDeleteOpenChange} client={deletingItem} />
         </>
       )}
     </>

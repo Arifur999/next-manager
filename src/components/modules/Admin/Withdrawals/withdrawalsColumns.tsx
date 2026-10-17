@@ -31,8 +31,8 @@ export const withdrawalsColumns: ColumnDef<IOwnerWithdrawal>[] = [
   },
   {
     id: "account",
+    accessorFn: (withdrawal) => withdrawal.account?.name ?? "",
     header: "Taken from",
-    meta: { exportValue: (withdrawal) => withdrawal.account?.name },
     enableSorting: false,
     cell: ({ row }) => (
       <span className="text-sm text-muted-foreground">{row.original.account?.name ?? "N/A"}</span>

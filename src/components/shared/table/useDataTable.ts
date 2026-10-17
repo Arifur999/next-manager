@@ -18,12 +18,14 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
+import { z } from "zod";
 import { createActionsColumn } from "./columns/createActionsColumn";
 import type { DataTableProps } from "./dataTable.types";
 
 export const DEFAULT_PAGE_SIZE = 10;
 
 const ALL_COLUMNS_VISIBLE: VisibilityState = {};
+const columnVisibilitySchema = z.record(z.string(), z.boolean());
 
 // The TanStack instance behind DataTable. Passing `sorting` or `pagination`
 // hands that concern to the caller (server-driven); otherwise it stays in memory.
@@ -40,9 +42,11 @@ export const useDataTable = <TData,>({
   const [localSorting, setLocalSorting] = useState<SortingState>([]);
   const [localPagination, setLocalPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: DEFAULT_PAGE_SIZE });
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [globalFilter, setGlobalFilter] = useState("");
   const [columnVisibility, setColumnVisibility] = usePersistentState(
     tableId ? `data-table:${tableId}:columns` : undefined,
     ALL_COLUMNS_VISIBLE,
+    columnVisibilitySchema,
   );
 
   // The actions column is appended here rather than declared per feature, so
@@ -72,6 +76,9 @@ export const useDataTable = <TData,>({
     getFacetedUniqueValues: getFacetedUniqueValues(),
     getPaginationRowModel: getPaginationRowModel(),
     defaultColumn,
+    // Sorting one page of a server-paged list would only mislead, so such a
+    // table sorts only when the server sorts for it.
+    enableSorting: !pagination || Boolean(sorting),
     manualSorting: Boolean(sorting),
     manualFiltering: Boolean(filters?.onFilterChange),
     manualPagination: Boolean(pagination),
@@ -83,6 +90,7 @@ export const useDataTable = <TData,>({
       sorting: sorting?.state ?? localSorting,
       pagination: pagination?.state ?? localPagination,
       columnFilters,
+      globalFilter,
       columnVisibility,
     },
     // Never pass a handler as undefined: TanStack spreads options over its own
@@ -98,6 +106,12 @@ export const useDataTable = <TData,>({
       setColumnFilters(updater);
       resetToFirstPage();
     },
+    // TanStack passes undefined when it resets the filter.
+    onGlobalFilterChange: (value: string | undefined) => {
+      setGlobalFilter(value ?? "");
+      resetToFirstPage();
+    },
+    globalFilterFn: "includesString",
     onColumnVisibilityChange: setColumnVisibility,
   });
 

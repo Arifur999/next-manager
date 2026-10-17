@@ -11,20 +11,24 @@ import DataTableFilters from "./filters/DataTableFilters";
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;
+  searchInputRef: React.RefObject<HTMLInputElement | null>;
   search?: DataTableSearchConfig;
   filters?: DataTableFiltersConfig;
   toolbarAction?: React.ReactNode;
   exportFileName?: string;
+  exportRows?: () => Promise<TData[]>;
   canReset: boolean;
   onReset: () => void;
 }
 
 const DataTableToolbar = <TData,>({
   table,
+  searchInputRef,
   search,
   filters,
   toolbarAction,
   exportFileName,
+  exportRows,
   canReset,
   onReset,
 }: DataTableToolbarProps<TData>) => {
@@ -33,10 +37,11 @@ const DataTableToolbar = <TData,>({
       <div className="flex flex-1 flex-wrap items-center gap-2">
         {search && (
           <DataTableSearch
-            value={search.initialValue ?? ""}
+            inputRef={searchInputRef}
+            value={search.value ?? ""}
             placeholder={search.placeholder}
             debounceMs={search.debounceMs}
-            onDebouncedChange={search.onDebouncedChange}
+            onDebouncedChange={(value) => search.onDebouncedChange?.(value)}
           />
         )}
 
@@ -51,7 +56,7 @@ const DataTableToolbar = <TData,>({
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
-        {exportFileName && <DataTableExportButton table={table} fileName={exportFileName} />}
+        {exportFileName && <DataTableExportButton table={table} fileName={exportFileName} fetchRows={exportRows} />}
         <DataTableViewOptions table={table} />
         {toolbarAction}
       </div>

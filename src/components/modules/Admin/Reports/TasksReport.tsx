@@ -1,6 +1,7 @@
 "use client"
 
 import EmptyState from "@/components/shared/state/EmptyState"
+import ErrorState from "@/components/shared/state/ErrorState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import StatTile from "@/components/shared/StatTile"
 import { STATUS_TONE } from "@/components/shared/status/statusTone"
@@ -22,12 +23,21 @@ import { taskReportQuery } from "@/queries/work.queries"
  * is doing eleven of these" is the most useful line on the page.
  */
 const TasksReport = () => {
-  const { data, isLoading } = useQuery(taskReportQuery())
+  const reportQuery = useQuery(taskReportQuery())
+  const report = reportQuery.data?.data
 
-  const report = data?.data
-
-  if (isLoading && !report) return <LoadingBlock height="h-64" rounded />
-  if (!report) return null
+  if (reportQuery.isError) {
+    return (
+      <Card>
+        <ErrorState
+          message="The task report did not load."
+          onRetry={() => void reportQuery.refetch()}
+          isRetrying={reportQuery.isFetching}
+        />
+      </Card>
+    )
+  }
+  if (!report) return <LoadingBlock height="h-64" rounded />
 
   if (report.total === 0) {
     return (

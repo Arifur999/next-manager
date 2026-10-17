@@ -1,5 +1,7 @@
 "use client"
 
+import ReportEmpty from "@/components/modules/Admin/Reports/ReportEmpty"
+import PanelState from "@/components/shared/state/PanelState"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
 import { useQuery } from "@tanstack/react-query"
@@ -13,18 +15,10 @@ import { projectProfitabilityQuery } from "@/queries/insights.queries"
  * paid at the top.
  */
 
-type ProjectRow = {
-  project: { id: string; name: string; code: string }
-  received_bdt_reporting: number
-  total_cost_bdt: number
-  profit_bdt: number
-  margin_pct: number
-}
-
 const ProjectsReport = () => {
-  const { data } = useQuery(projectProfitabilityQuery())
+  const profitabilityQuery = useQuery(projectProfitabilityQuery())
 
-  const projects = (data?.data ?? []) as ProjectRow[]
+  const projects = profitabilityQuery.data?.data ?? []
 
   // Nominal categories — project names have no inherent order — so every bar
   // takes the SAME slot-1 hue. Colouring them by value would spend the identity
@@ -40,11 +34,12 @@ const ProjectsReport = () => {
         </p>
       </CardHeader>
 
-      {projects.length === 0 ? (
-        <p className="px-5 py-12 text-center text-sm text-muted-foreground">
-          No projects with recorded money yet.
-        </p>
-      ) : (
+      <PanelState
+        query={profitabilityQuery}
+        errorMessage="Project profitability did not load."
+        isEmpty={projects.length === 0}
+        empty={<ReportEmpty>No projects with recorded money yet.</ReportEmpty>}
+      >
         <ul className="divide-y">
           {projects.map((row) => {
             const width = (Math.abs(row.profit_bdt) / widest) * 100
@@ -82,7 +77,7 @@ const ProjectsReport = () => {
             )
           })}
         </ul>
-      )}
+      </PanelState>
     </Card>
   )
 }

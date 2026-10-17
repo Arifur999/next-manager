@@ -1,6 +1,8 @@
 "use client"
 
 import ShareRow from "@/components/modules/Admin/Reports/ShareRow"
+import ReportEmpty from "@/components/modules/Admin/Reports/ReportEmpty"
+import PanelState from "@/components/shared/state/PanelState"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
 import { useQuery } from "@tanstack/react-query"
@@ -27,9 +29,9 @@ type DepartmentRow = {
 }
 
 const TeamReport = () => {
-  const { data } = useQuery(kpiQuery<{ by_department?: DepartmentRow[] }>("delivery"))
+  const deliveryQuery = useQuery(kpiQuery<{ by_department?: DepartmentRow[] }>("delivery"))
 
-  const rows = (data?.data?.by_department ?? []) as DepartmentRow[]
+  const rows = deliveryQuery.data?.data?.by_department ?? []
 
   const mostHours = Math.max(...rows.map((row) => row.hours_logged), 1)
   const mostPaid = Math.max(...rows.map((row) => row.paid_bdt), 1)
@@ -45,11 +47,12 @@ const TeamReport = () => {
           </p>
         </CardHeader>
 
-        {rows.length === 0 ? (
-          <p className="px-5 py-12 text-center text-sm text-muted-foreground">
-            Nothing logged yet.
-          </p>
-        ) : (
+        <PanelState
+          query={deliveryQuery}
+          errorMessage="Hours by team did not load."
+          isEmpty={rows.length === 0}
+          empty={<ReportEmpty>Nothing logged yet.</ReportEmpty>}
+        >
           <ul className="divide-y">
             {rows.map((row) => (
               <ShareRow
@@ -61,7 +64,7 @@ const TeamReport = () => {
               />
             ))}
           </ul>
-        )}
+        </PanelState>
       </Card>
 
       <Card className="gap-0 overflow-hidden p-0">
@@ -73,11 +76,12 @@ const TeamReport = () => {
           </p>
         </CardHeader>
 
-        {rows.length === 0 ? (
-          <p className="px-5 py-12 text-center text-sm text-muted-foreground">
-            Nothing paid out yet.
-          </p>
-        ) : (
+        <PanelState
+          query={deliveryQuery}
+          errorMessage="Cost by team did not load."
+          isEmpty={rows.length === 0}
+          empty={<ReportEmpty>Nothing paid out yet.</ReportEmpty>}
+        >
           <ul className="divide-y">
             {rows.map((row) => (
               <ShareRow
@@ -88,7 +92,7 @@ const TeamReport = () => {
               />
             ))}
           </ul>
-        )}
+        </PanelState>
       </Card>
 
       {!hasDepartments && rows.length > 0 && (

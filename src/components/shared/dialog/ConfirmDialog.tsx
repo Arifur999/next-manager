@@ -68,7 +68,12 @@ const ConfirmDialog = ({
               onConfirm()
             }}
           >
-            {isPending && <Loader size={14} label={pendingLabel} />}
+            {/* Hidden from screen readers: the button's own text already says it. */}
+            {isPending && (
+              <span aria-hidden="true">
+                <Loader size={14} label={pendingLabel} />
+              </span>
+            )}
             {isPending ? pendingLabel : confirmLabel}
           </AlertDialogAction>
         </AlertDialogFooter>

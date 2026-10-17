@@ -80,6 +80,7 @@ const DataTableFacetedFilter = ({ title, options, selected, onChange, multiple, 
                       <Check className="size-3" aria-hidden="true" />
                     </span>
                     <span>{option.label}</span>
+                    {isSelected && <span className="sr-only">(selected)</span>}
                     {count !== undefined && <span className="ml-auto font-mono text-xs text-muted-foreground">{count}</span>}
                   </CommandItem>
                 );

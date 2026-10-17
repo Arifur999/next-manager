@@ -13,8 +13,8 @@ export const paymentsColumns: ColumnDef<IPayment>[] = [
   },
   {
     id: "client",
+    accessorFn: (payment) => payment.client?.name ?? "",
     header: "Client",
-    meta: { exportValue: (payment) => payment.client?.name },
     enableSorting: false,
     cell: ({ row }) => (
       <div className="min-w-0">
@@ -60,8 +60,8 @@ export const paymentsColumns: ColumnDef<IPayment>[] = [
   },
   {
     id: "account",
+    accessorFn: (payment) => payment.account?.name ?? "",
     header: "Into",
-    meta: { exportValue: (payment) => payment.account?.name },
     enableSorting: false,
     cell: ({ row }) => (
       <Badge variant="outline">{row.original.account?.name ?? "N/A"}</Badge>

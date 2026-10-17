@@ -1,7 +1,7 @@
 "use client"
 
 import CreateInvoiceModal from "@/components/modules/Admin/Invoices/CreateInvoiceModal"
-import { invoicesColumns } from "@/components/modules/Admin/Invoices/invoicesColumns"
+import { INVOICE_STATUS_OPTIONS, invoicesColumns } from "@/components/modules/Admin/Invoices/invoicesColumns"
 import StatTile from "@/components/shared/StatTile"
 import DataTable from "@/components/shared/table/DataTable"
 import { formatUsd } from "@/lib/currency"
@@ -53,11 +53,17 @@ const InvoicesTable = () => {
         columns={invoicesColumns}
         tableId="invoices"
         exportFileName="invoices"
+        filters={{
+          configs: [
+            { id: "status", type: "multi-select", label: "Status", options: INVOICE_STATUS_OPTIONS },
+            { id: "issue_date", type: "date-range", label: "Issued" },
+          ],
+        }}
         {...toTableQueryProps(invoicesQuery)}
         emptyMessage="No invoices yet."
         toolbarAction={<CreateInvoiceModal />}
         search={{
-          initialValue: search,
+          value: search,
           placeholder: "Search invoice number or client...",
           onDebouncedChange: setSearch,
         }}

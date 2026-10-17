@@ -1,3 +1,5 @@
+import type { Currency } from "@/types/common.types";
+
 export interface ApiResponse<TData = unknown> {
     success: boolean;
     message: string;
@@ -22,7 +24,7 @@ export interface PaginationMeta {
      * Per currency, never across it: dollars added to taka is a number that is
      * true of nothing.
      */
-    totals?: Array<{ currency: string; amount: number }>;
+    totals?: Array<{ currency: Currency; amount: number }>;
     /**
      * Counted across the whole window rather than the page — narrowing the
      * list must not hide the thing the security page is opened to notice.

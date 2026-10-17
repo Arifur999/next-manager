@@ -23,10 +23,13 @@ export interface DataTableActions<TData> {
 }
 
 export interface DataTableSearchConfig {
-  initialValue?: string;
+  // The current search term (from the URL or the caller's state).
+  value?: string;
   placeholder?: string;
   debounceMs?: number;
-  onDebouncedChange: (value: string) => void;
+  // Present: the caller searches (on the server). Absent: the table searches
+  // the rows it holds.
+  onDebouncedChange?: (value: string) => void;
 }
 
 export type { FilterOption as DataTableFilterOption } from "@/lib/table/filterOptions";
@@ -47,6 +50,7 @@ export interface DataTableFiltersConfig {
   // filters its rows in memory.
   values?: DataTableFilterValues;
   onFilterChange?: (filterId: string, value: DataTableFilterValue | undefined) => void;
+  // Clears the caller's search as well as its filters, in one step.
   onClearAll?: () => void;
 }
 
@@ -59,6 +63,8 @@ export interface DataTableProps<TData> {
   toolbarAction?: React.ReactNode;
   // Shows an Export button; the downloaded file is named after it.
   exportFileName?: string;
+  // A server-paged table holds one page; this fetches every matching row to export.
+  exportRows?: () => Promise<TData[]>;
   emptyMessage?: string;
   // First load (skeleton rows) vs background refetch (a progress bar, rows stay).
   // toTableQueryProps(query) fills these four from a useQuery result.
@@ -69,7 +75,11 @@ export interface DataTableProps<TData> {
   onRetry?: () => void;
   // Presence of these two switches the table into server-driven mode.
   sorting?: { state: SortingState; onSortingChange: (state: SortingState) => void };
-  pagination?: { state: PaginationState; onPaginationChange: (state: PaginationState) => void };
+  // `replace` corrects the page without adding a history entry.
+  pagination?: {
+    state: PaginationState;
+    onPaginationChange: (state: PaginationState, options?: { replace?: boolean }) => void;
+  };
   search?: DataTableSearchConfig;
   filters?: DataTableFiltersConfig;
   meta?: PaginationMeta;

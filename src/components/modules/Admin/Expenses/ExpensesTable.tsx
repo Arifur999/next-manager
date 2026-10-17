@@ -107,7 +107,7 @@ const ExpensesTable = () => {
         emptyMessage="No expenses recorded yet."
         toolbarAction={<RecordExpenseModal />}
         search={{
-          initialValue: search,
+          value: search,
           placeholder: "Search vendor, notes or category...",
           onDebouncedChange: setSearch,
         }}

@@ -2,6 +2,9 @@
 
 import MonthlyChart from "@/components/modules/Admin/Reports/MonthlyChart"
 import StatTile from "@/components/shared/StatTile"
+import ErrorState from "@/components/shared/state/ErrorState"
+import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import { Card } from "@/components/ui/card"
 import { formatBdt, formatPercent, formatUsd } from "@/lib/currency"
 import { useQuery } from "@tanstack/react-query"
 import { ArrowDownLeft, Receipt, TrendingUp, Wallet } from "lucide-react"
@@ -15,51 +18,65 @@ import { monthlySeriesQuery, profitAndLossListQuery } from "@/queries/insights.q
  * answers is one nobody reads to the bottom of.
  */
 const BusinessReport = () => {
-  const { data: plData } = useQuery(profitAndLossListQuery())
-  const { data: monthlyData } = useQuery(monthlySeriesQuery(12))
+  const plQuery = useQuery(profitAndLossListQuery())
+  const monthlyQuery = useQuery(monthlySeriesQuery(12))
+  const pl = plQuery.data?.data
 
-  const pl = plData?.data
-  const monthly = monthlyData?.data ?? []
+  const renderTiles = () => {
+    if (plQuery.isError) {
+      return (
+        <Card>
+          <ErrorState
+            message="Profit and loss did not load."
+            onRetry={() => void plQuery.refetch()}
+            isRetrying={plQuery.isFetching}
+          />
+        </Card>
+      )
+    }
+    if (!pl) return <LoadingBlock height="h-32" rounded />
+
+    return (
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatTile
+          label="Revenue"
+          value={formatUsd(pl.revenue.usd)}
+          secondary={`${formatBdt(pl.revenue.bdt_reporting)} at recorded rates`}
+          hint={`${pl.revenue.payment_count} payment${pl.revenue.payment_count === 1 ? "" : "s"}`}
+          icon={<ArrowDownLeft className="size-5" />}
+          tone={1}
+        />
+        <StatTile
+          label="Operating cost"
+          value={formatBdt(pl.cost.operating_expense_bdt)}
+          hint="Excludes employee-type categories"
+          icon={<Receipt className="size-5" />}
+          tone={4}
+        />
+        <StatTile
+          label="People cost"
+          value={formatBdt(pl.cost.team_payout_bdt + pl.cost.employee_expense_bdt)}
+          secondary={`${formatBdt(pl.cost.team_payout_bdt)} payouts · ${formatBdt(pl.cost.employee_expense_bdt)} salary expenses`}
+          icon={<Wallet className="size-5" />}
+          tone={5}
+        />
+        <StatTile
+          label="Net profit"
+          value={formatBdt(pl.net_profit_bdt)}
+          // Owner withdrawals are deliberately not a cost here: that is
+          // profit already earned, leaving.
+          hint={`${formatPercent(pl.margin_pct)} margin · withdrawals are not counted as cost`}
+          icon={<TrendingUp className="size-5" />}
+          tone={3}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
-      {pl && (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatTile
-            label="Revenue"
-            value={formatUsd(pl.revenue.usd)}
-            secondary={`${formatBdt(pl.revenue.bdt_reporting)} at recorded rates`}
-            hint={`${pl.revenue.payment_count} payment${pl.revenue.payment_count === 1 ? "" : "s"}`}
-            icon={<ArrowDownLeft className="size-5" />}
-            tone={1}
-          />
-          <StatTile
-            label="Operating cost"
-            value={formatBdt(pl.cost.operating_expense_bdt)}
-            hint="Excludes employee-type categories"
-            icon={<Receipt className="size-5" />}
-            tone={4}
-          />
-          <StatTile
-            label="People cost"
-            value={formatBdt(pl.cost.team_payout_bdt + pl.cost.employee_expense_bdt)}
-            secondary={`${formatBdt(pl.cost.team_payout_bdt)} payouts · ${formatBdt(pl.cost.employee_expense_bdt)} salary expenses`}
-            icon={<Wallet className="size-5" />}
-            tone={5}
-          />
-          <StatTile
-            label="Net profit"
-            value={formatBdt(pl.net_profit_bdt)}
-            // Owner withdrawals are deliberately not a cost here: that is
-            // profit already earned, leaving.
-            hint={`${formatPercent(pl.margin_pct)} margin · withdrawals are not counted as cost`}
-            icon={<TrendingUp className="size-5" />}
-            tone={3}
-          />
-        </div>
-      )}
-
-      <MonthlyChart data={monthly} />
+      {renderTiles()}
+      <MonthlyChart query={monthlyQuery} />
     </div>
   )
 }

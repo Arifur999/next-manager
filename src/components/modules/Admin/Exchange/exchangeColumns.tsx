@@ -14,8 +14,8 @@ export const exchangeColumns: ColumnDef<IExchange>[] = [
   },
   {
     id: "route",
+    accessorFn: (exchange) => `${exchange.from_account?.name ?? ""} → ${exchange.to_account?.name ?? ""}`,
     header: "From → To",
-    meta: { exportValue: (exchange) => `${exchange.from_account?.name ?? ""} → ${exchange.to_account?.name ?? ""}` },
     enableSorting: false,
     cell: ({ row }) => (
       <div className="flex items-center gap-2 text-sm">

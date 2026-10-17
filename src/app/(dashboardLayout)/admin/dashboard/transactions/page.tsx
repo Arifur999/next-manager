@@ -1,7 +1,7 @@
 import TransactionsBoard from "@/components/modules/Admin/Transactions/TransactionsBoard";
+import { TRANSACTIONS_TABLE } from "@/components/modules/Admin/Transactions/transactionsTable.config";
+import { buildTableQueryString, type SearchParamsRecord } from "@/lib/table/urlState";
 import type { QueryClient } from "@tanstack/react-query";
-import { buildQueryString, pickAllowed } from "@/lib/queryString";
-import { TRANSACTION_KINDS } from "@/types/finance.types";
 import type { Metadata } from "next";
 import { transactionsListQuery } from "@/queries/finance.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
@@ -10,18 +10,12 @@ export const metadata: Metadata = {
   title: "Transactions",
 };
 
-const TransactionsPage = async ({
-  searchParams,
-}: {
-  searchParams: Promise<{ kind?: string | string[] }>;
-}) => {
-  const kind = pickAllowed((await searchParams).kind, TRANSACTION_KINDS);
+const TransactionsPage = async ({ searchParams }: { searchParams: Promise<SearchParamsRecord> }) => {
+  // Built from the same config as the board's, so the prefetched page is the
+  // one the board asks for and the first paint is the view in the URL.
+  const queryString = buildTableQueryString(await searchParams, TRANSACTIONS_TABLE);
 
-  // The filter is read here as well as in the board, so the first paint is the
-  // view that was asked for rather than every row followed by a correction.
-  const query = buildQueryString({ kind });
-
-  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(transactionsListQuery(query));
+  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(transactionsListQuery(queryString));
 
   return (
     <div className="space-y-6">

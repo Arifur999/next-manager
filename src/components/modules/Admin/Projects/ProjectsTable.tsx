@@ -2,93 +2,73 @@
 
 import ProjectFormModal from "@/components/modules/Admin/Projects/ProjectFormModal"
 import { projectsColumns } from "@/components/modules/Admin/Projects/projectsColumns"
+import { PROJECTS_TABLE } from "@/components/modules/Admin/Projects/projectsTable.config"
+import type { DataTableFilterConfig } from "@/components/shared/table/dataTable.types"
 import DataTable from "@/components/shared/table/DataTable"
 import { useRowActionModalState } from "@/hooks/useRowActionModalState"
+import { useServerDataTable } from "@/hooks/useServerDataTable"
 import { toTableQueryProps } from "@/lib/table/queryProps"
-import type { IProject } from "@/types/project.types"
-import { useQuery } from "@tanstack/react-query"
-import { useRouter, useSearchParams } from "next/navigation"
-import { useState } from "react"
 import { projectsListQuery } from "@/queries/project.queries"
+import { workflowStatusesListQuery } from "@/queries/work.queries"
+import type { IProject } from "@/types/project.types"
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useRouter } from "next/navigation"
+import { useMemo } from "react"
 
 /**
- * The projects list.
+ * The projects list. Every sidebar sub-view (Planning, Active, Review, On
+ * Hold, Completed, My Projects) is this one table reading its filter from the
+ * URL, where paging and search live too.
  *
- * Every sub-view in the sidebar - Planning, Active, Review, On Hold, Completed,
- * My Projects - is this one table reading its filter off the URL. Built as six
- * pages it would be six copies of one query and six places to fix one bug.
- *
- * The status is matched by NAME because a sidebar href is a static string: an
- * id differs per agency, and category cannot tell Active from Review since both
- * are `active`.
- *
- * `canManage` decides whether this is a list somebody works from or one they
- * only read. Operations opens it to see the projects they are on — the API
- * returns only those — and refuses them every write behind it, so the create
- * and edit forms come off rather than failing.
+ * `canManage` decides whether the create and edit forms are offered. Operations
+ * opens the list to see the projects they are on (the API returns only those)
+ * and is refused every write, so the forms come off rather than failing.
  */
 const ProjectsTable = ({ canManage = true }: { canManage?: boolean }) => {
   const router = useRouter()
-  const params = useSearchParams()
-  const [search, setSearch] = useState("")
+  const { data: statusData } = useQuery(workflowStatusesListQuery("kind=project"))
 
-  const status = params.get("status") ?? ""
-  const mine = params.get("mine") === "true"
+  // The agency's own statuses, matched by name like the sidebar links.
+  const tableConfig = useMemo(() => {
+    const statusFilter: DataTableFilterConfig = {
+      id: "status",
+      type: "single-select",
+      label: "Status",
+      options: (statusData?.data ?? []).map((status) => ({ label: status.name, value: status.name })),
+    }
+    return { ...PROJECTS_TABLE, filters: [statusFilter] }
+  }, [statusData])
 
-  const {
-    editingItem,
-    isEditModalOpen,
-    onEditOpenChange,
-    tableActions,
-  } = useRowActionModalState<IProject>({ enableView: true, enableDelete: false })
+  const queryClient = useQueryClient()
+  const { queryString, filterQueryString, dataTableProps } = useServerDataTable<IProject>(tableConfig)
+  const projectsQuery = useQuery({ ...projectsListQuery(queryString), placeholderData: keepPreviousData })
 
-  // Built the same way the page builds it, so the two agree on the cache key
-  // and the first paint is the view that was asked for.
-  const query = [
-    search ? `search=${encodeURIComponent(search)}` : "",
-    status ? `status=${encodeURIComponent(status)}` : "",
-    mine ? "mine=true" : "",
-  ]
-    .filter(Boolean)
-    .join("&")
-
-  const projectsQuery = useQuery(projectsListQuery(query))
-
-  const projects = projectsQuery.data?.data ?? []
+  const { editingItem, isEditModalOpen, onEditOpenChange, tableActions } = useRowActionModalState<IProject>({
+    enableView: true,
+    enableDelete: false,
+  })
 
   return (
     <>
       <DataTable
-        data={projects}
+        data={projectsQuery.data?.data ?? []}
         columns={projectsColumns}
         tableId="projects"
         exportFileName="projects"
+        exportRows={async () => (await queryClient.fetchQuery(projectsListQuery(filterQueryString))).data}
+        {...dataTableProps}
         {...toTableQueryProps(projectsQuery)}
         emptyMessage="No projects yet."
         toolbarAction={canManage ? <ProjectFormModal /> : undefined}
-        search={{
-          initialValue: search,
-          placeholder: "Search name, code or client...",
-          onDebouncedChange: setSearch,
-        }}
-        // Delete is deliberately absent from the row menu: a project with
-        // money against it cannot be deleted anyway, and marking it completed
-        // or cancelled from the edit form is what actually happens.
+        // No Delete in the row menu: a project with money against it cannot be
+        // deleted, and completing or cancelling it from the form is what happens.
         actions={{
-          // Viewing stays for everybody; editing is dropped for anybody the
-          // API would refuse, rather than offered and then rejected.
           ...(canManage ? tableActions : {}),
           onView: (project) => router.push(`/admin/dashboard/projects/${project.id}`),
         }}
       />
 
-      {canManage && (
-        <ProjectFormModal
-          project={editingItem}
-          open={isEditModalOpen}
-          onOpenChange={onEditOpenChange}
-        />
-      )}
+      {canManage && <ProjectFormModal project={editingItem} open={isEditModalOpen} onOpenChange={onEditOpenChange} />}
     </>
   )
 }

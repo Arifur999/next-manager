@@ -6,16 +6,24 @@ import { Search, X } from "lucide-react";
 import { useState } from "react";
 
 type DataTableSearchProps = {
+  inputRef: React.RefObject<HTMLInputElement | null>;
   value: string;
   onDebouncedChange: (value: string) => void;
   placeholder?: string;
   debounceMs?: number;
 };
 
-const DataTableSearch = ({ value, onDebouncedChange, placeholder = "Search...", debounceMs = 400 }: DataTableSearchProps) => {
+const DataTableSearch = ({
+  inputRef,
+  value,
+  onDebouncedChange,
+  placeholder = "Search...",
+  debounceMs = 400,
+}: DataTableSearchProps) => {
   const [inputValue, setInputValue] = useState(value);
   const [syncedValue, setSyncedValue] = useState(value);
-  const [sentValue, setSentValue] = useState(value);
+  // The term this box last sent, until the URL echoes it back.
+  const [sentValue, setSentValue] = useState<string | null>(null);
 
   const debounced = useDebouncedCallback((next: string) => {
     const term = next.trim();
@@ -23,20 +31,23 @@ const DataTableSearch = ({ value, onDebouncedChange, placeholder = "Search...", 
     onDebouncedChange(term);
   }, debounceMs);
 
-  // Follow a change made elsewhere (a reset, a link) without remounting the
-  // input, which would drop focus mid-typing. Our own debounced value coming
-  // back is not such a change and must not overwrite newer keystrokes.
+  // Follow a change made elsewhere (a reset, Back, a link) without remounting
+  // the input, which would drop focus mid-typing. The box's own term coming back
+  // is consumed instead: it must not overwrite newer keystrokes.
   if (value !== syncedValue) {
     setSyncedValue(value);
-    if (value !== sentValue) setInputValue(value);
+    if (value === sentValue) setSentValue(null);
+    else setInputValue(value);
   }
 
   // Applied at once, and the pending debounce dropped, so clearing fires one query.
+  // Focus goes back to the box: the clear button it was on has just gone.
   const clear = () => {
     debounced.cancel();
     setInputValue("");
     setSentValue("");
     onDebouncedChange("");
+    inputRef.current?.focus();
   };
 
   return (
@@ -45,6 +56,7 @@ const DataTableSearch = ({ value, onDebouncedChange, placeholder = "Search...", 
         <Search aria-hidden="true" />
       </InputGroupAddon>
       <InputGroupInput
+        ref={inputRef}
         type="search"
         value={inputValue}
         onChange={(event) => {
