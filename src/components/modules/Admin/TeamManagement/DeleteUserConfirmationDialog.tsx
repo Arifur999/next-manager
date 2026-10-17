@@ -11,10 +11,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { type IUser } from "@/types/user.types"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useRouter } from "next/navigation"
-import { toast } from "sonner"
 import { queryKeys } from "@/lib/queryKeys"
 
 type DeleteUserConfirmationDialogProps = {
@@ -28,29 +26,14 @@ const DeleteUserConfirmationDialog = ({
   onOpenChange,
   user,
 }: DeleteUserConfirmationDialogProps) => {
-  const queryClient = useQueryClient()
-  const router = useRouter()
-
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (id: string) => deleteUserAction(id),
+  // No successMessage: the toast is the server's "User deleted successfully".
+  const { run: removeMember, isPending } = useActionMutation({
+    action: deleteUserAction,
+    invalidateKeys: [queryKeys.users.all],
   })
 
   const handleConfirm = async () => {
-    if (!user) return
-
-    const result = await mutateAsync(user.id)
-
-    if (!result.success) {
-      toast.error(result.message || "Failed to delete team member")
-      return
-    }
-
-    toast.success(result.message || "Team member deleted successfully")
-    onOpenChange(false)
-
-    // invalidate for the client cache, refresh for the server-rendered part.
-    void queryClient.invalidateQueries({ queryKey: queryKeys.users.all })
-    router.refresh()
+    if (user && (await removeMember(user.id))) onOpenChange(false)
   }
 
   return (
