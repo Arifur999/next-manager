@@ -1,16 +1,17 @@
 "use client"
 
 import LogTimeModal from "@/components/modules/Admin/Time/LogTimeModal"
+import TimeEntryRow from "@/components/modules/Admin/Time/TimeEntryRow"
 import { isoDay, weekLabel, weekStart } from "@/components/modules/Admin/Time/week"
 import StatTile from "@/components/shared/StatTile"
 import EmptyState from "@/components/shared/state/EmptyState"
 import PanelState from "@/components/shared/state/PanelState"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
+import { formatHours, formatRange } from "@/lib/dates"
 import { useQuery } from "@tanstack/react-query"
 import { addDays, format } from "date-fns"
-import { ChevronLeft, ChevronRight, Clock, Lock, TrendingUp } from "lucide-react"
+import { ChevronLeft, ChevronRight, Clock, TrendingUp } from "lucide-react"
 import { useState } from "react"
 import { timeEntriesListQuery, timeSummaryQuery } from "@/queries/work.queries"
 
@@ -62,8 +63,8 @@ const TimesheetBoard = ({ userId }: { userId: string }) => {
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <StatTile
             label="Logged this week"
-            value={`${(summary?.total_hours ?? 0).toFixed(2)} h`}
-            secondary={`${(summary?.billable_hours ?? 0).toFixed(2)} h billable`}
+            value={formatHours(summary?.total_hours ?? 0)}
+            secondary={`${formatHours(summary?.billable_hours ?? 0)} billable`}
             icon={<Clock className="size-5" />}
             tone={1}
           />
@@ -81,7 +82,7 @@ const TimesheetBoard = ({ userId }: { userId: string }) => {
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
           <div>
             <CardTitle className="text-base">
-              {format(start, "MMM dd")} – {format(end, "MMM dd, yyyy")}
+              {formatRange(start, end)}
             </CardTitle>
             <p className="text-sm text-muted-foreground">
               {weekLabel(offset, start)}
@@ -133,13 +134,13 @@ const TimesheetBoard = ({ userId }: { userId: string }) => {
                   }`}
                 >
                   <p className="text-xs text-muted-foreground">{format(day, "EEE")}</p>
-                  <p className="text-xs text-muted-foreground">{format(day, "dd")}</p>
+                  <p className="text-xs text-muted-foreground">{format(day, "d")}</p>
                   <p
                     className={`mt-1 text-sm font-medium tabular-nums ${
                       hours === 0 ? "text-muted-foreground" : ""
                     }`}
                   >
-                    {hours === 0 ? "—" : `${hours.toFixed(1)}h`}
+                    {hours === 0 ? "—" : formatHours(hours)}
                   </p>
                 </div>
               )
@@ -155,38 +156,7 @@ const TimesheetBoard = ({ userId }: { userId: string }) => {
         >
           <ul className="divide-y">
             {entries.map((entry) => (
-              <li key={entry.id} className="flex items-center justify-between gap-3 px-5 py-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">
-                    {entry.project?.name ?? "Project"}
-                    {entry.task ? ` · ${entry.task.title}` : ""}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {format(new Date(entry.date), "EEE dd MMM")}
-                    {entry.notes ? ` · ${entry.notes}` : ""}
-                  </p>
-                </div>
-
-                <div className="flex shrink-0 items-center gap-2">
-                  {!entry.is_billable && (
-                    <Badge variant="outline" className="text-xs">
-                      non-billable
-                    </Badge>
-                  )}
-                  {entry.approved_at && (
-                    // Approved entries cannot be edited, so the lock is not
-                    // decoration — it says why the row is now read-only.
-                    <span
-                      className="flex items-center gap-1 text-xs text-muted-foreground"
-                      title="Approved — no longer editable"
-                    >
-                      <Lock className="size-3" aria-hidden="true" />
-                      approved
-                    </span>
-                  )}
-                  <span className="text-sm font-medium tabular-nums">{entry.hours.toFixed(2)} h</span>
-                </div>
-              </li>
+              <TimeEntryRow key={entry.id} entry={entry} />
             ))}
           </ul>
         </PanelState>
