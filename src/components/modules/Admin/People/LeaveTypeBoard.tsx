@@ -5,7 +5,7 @@ import {
   setLeaveTypeActiveAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/leave-settings/_action"
 import EmptyState from "@/components/shared/state/EmptyState"
-import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -41,8 +41,8 @@ const newLeaveType: ILeaveTypeFormValues = { name: "", days_per_year: "", is_pai
  * not having the feature.
  */
 const LeaveTypeBoard = () => {
-  const { data, isLoading } = useQuery(leaveTypesQuery())
-  const types = data?.data ?? []
+  const typeList = useQuery(leaveTypesQuery())
+  const types = typeList.data?.data ?? []
 
   const { run: addLeaveType, isPending } = useActionMutation({
     action: createLeaveTypeAction,
@@ -159,13 +159,16 @@ const LeaveTypeBoard = () => {
           </p>
         </CardHeader>
 
-        {isLoading && types.length === 0 ? (
-          <LoadingBlock />
-        ) : types.length === 0 ? (
-          <EmptyState icon={CalendarOff}>
-            No kinds of leave yet. Nobody can ask to be away until there is one.
-          </EmptyState>
-        ) : (
+        <PanelState
+          query={typeList}
+          errorMessage="The kinds of leave did not load."
+          isEmpty={types.length === 0}
+          empty={
+            <EmptyState icon={CalendarOff}>
+              No kinds of leave yet. Nobody can ask to be away until there is one.
+            </EmptyState>
+          }
+        >
           <ul className="divide-y">
             {types.map((type) => (
               <li
@@ -200,7 +203,7 @@ const LeaveTypeBoard = () => {
               </li>
             ))}
           </ul>
-        )}
+        </PanelState>
       </Card>
     </div>
   )
