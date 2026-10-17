@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { ICredential, ICredentialAccessEntry } from "@/types/workspace.types"
 import { useMutation } from "@tanstack/react-query"
 import { format } from "date-fns"
@@ -50,8 +51,14 @@ const CredentialCard = ({ credential }: { credential: ICredential }) => {
   const [logOpen, setLogOpen] = useState(false)
   const [log, setLog] = useState<ICredentialAccessEntry[]>([])
 
-  const { mutateAsync: reveal, isPending: isRevealing } = useMutation({
-    mutationFn: () => revealCredentialAction(credential.id),
+  const { run: reveal, isPending: isRevealing } = useActionMutation({
+    action: revealCredentialAction,
+    // The password appearing is the confirmation.
+    successMessage: false,
+    refresh: false,
+    onSuccess: (result) => {
+      if (result.success) setRevealed(result.data.password)
+    },
   })
 
   const { mutateAsync: loadLog, isPending: isLoadingLog } = useMutation({
@@ -72,14 +79,7 @@ const CredentialCard = ({ credential }: { credential: ICredential }) => {
       return
     }
 
-    const result = await reveal()
-
-    if (!result.success) {
-      toast.error(result.message || "Failed to reveal credential")
-      return
-    }
-
-    setRevealed("data" in result ? result.data.password : null)
+    await reveal(credential.id)
   }
 
   const handleCopy = async () => {
