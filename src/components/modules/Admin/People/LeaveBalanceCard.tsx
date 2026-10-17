@@ -5,16 +5,8 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { useQuery } from "@tanstack/react-query"
 import { leaveBalanceQuery } from "@/queries/people.queries"
 
-/**
- * What is left of somebody's allowance this year.
- *
- * An uncapped type shows "no limit" rather than a number. `remaining` is null
- * for those, and rendering null as zero would say the opposite of what is true
- * — "tracked but not capped" and "you have none left" are opposite answers.
- *
- * Only approved days are counted, which is worth saying: a balance that moved
- * on pending requests would drop and jump back when one was turned down.
- */
+// What is left of each allowance this year, from approved days only. An uncapped
+// kind has a null `remaining` and reads "no limit": zero would mean none left.
 const LeaveBalanceCard = () => {
   const balanceList = useQuery(leaveBalanceQuery())
   const balances = balanceList.data?.data ?? []

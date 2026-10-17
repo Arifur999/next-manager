@@ -146,8 +146,6 @@ const LeaveRequestCard = () => {
                 disabled={isPending}
               />
               <p className="text-xs text-muted-foreground">
-                {/* The dates cannot know about weekends or half days, so the
-                    number is editable and it is the one that is stored. */}
                 Counted from the dates, but yours to change — weekends and half days are
                 your agency&apos;s business, not ours.
               </p>

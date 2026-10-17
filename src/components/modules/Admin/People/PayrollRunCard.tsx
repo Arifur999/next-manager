@@ -20,17 +20,8 @@ import { format, parseISO } from "date-fns"
 import { Trash2 } from "lucide-react"
 import { useState } from "react"
 
-/**
- * One month of payroll.
- *
- * A draft is editable and a completed run is not, and the card looks different
- * enough that nobody has to check which they are on: paid rows show the payout
- * they produced rather than an input.
- *
- * Paying is behind an explicit account choice, because that is the moment money
- * leaves a real account and there is no undo on this screen — reversing means
- * reversing the payouts, where they live.
- */
+// One month of payroll: a draft has inputs, a paid run shows its payouts. Paying
+// waits for an account to be chosen, since money then leaves it with no undo here.
 
 type Draft = Record<string, { gross: string; deductions: string }>
 type PayrollItem = IPayrollRun["items"][number]

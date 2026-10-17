@@ -27,19 +27,8 @@ const newAttendanceDay = (): IAttendanceFormValues => ({
   check_out: "",
 })
 
-/**
- * Writing down somebody else's day.
- *
- * Somebody forgets to clock in, or was on a client's site all morning. The row
- * this writes is marked `admin` rather than `self`, and the board labels it
- * "recorded for them" — "they clocked in" and "somebody wrote it down" are
- * different claims, and a record that blurred them would be worth less than no
- * record.
- *
- * Both times are optional on purpose. Absent is "not recorded", which has to
- * stay different from midnight, and a morning somebody arrived with no leaving
- * time yet is a real half-answer.
- */
+// Writing down somebody else's day. The server files it as `admin`, not `self`:
+// "they clocked in" and "somebody wrote it down" are different claims.
 const RecordAttendanceCard = () => {
   const memberList = useQuery(usersListQuery())
   const members = (memberList.data?.data ?? []).filter((member) => member.status === "active")

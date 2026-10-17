@@ -19,15 +19,8 @@ import { CalendarOff } from "lucide-react"
 import { leaveRequestsListQuery } from "@/queries/people.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
-/**
- * Asking to be away, and deciding.
- *
- * Whether the decide buttons appear is decided by the API, not by this
- * component reading the viewer's role: an approver gets 200 and everybody else
- * gets 403, so showing the buttons to somebody who cannot use them would only
- * teach them the app is broken. They are shown when `canDecide` is passed in,
- * which the page knows from the role it rendered for.
- */
+// Asking to be away, and deciding. The decide buttons follow `canDecide` from the
+// page, because the API refuses everybody but an approver with a 403.
 
 const STATUS_TONE: Record<LeaveStatus, "secondary" | "outline" | "destructive"> = {
   pending: "outline",

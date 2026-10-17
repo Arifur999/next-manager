@@ -14,21 +14,8 @@ import { CalendarCheck, LogIn, LogOut } from "lucide-react"
 import { attendanceQuery } from "@/queries/people.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
-/**
- * Who was here.
- *
- * Being present is not the same as logging hours — somebody can be in all day
- * and log nothing against a task. This screen answers the first question only,
- * and the timesheet answers the second.
- *
- * A row with no check-out is somebody still in, not a gap in the data, and it
- * says so rather than showing a blank.
- *
- * Writing down somebody else's day is a different claim and lives in its own
- * card, shown only to the roles the route lets do it. `canRecord` is passed in
- * from the page rather than read here, the same way the leave board is told
- * whether to offer Approve.
- */
+// Who was here, which is not the hours logged against a task: that is the
+// timesheet. `canRecord` comes from the page, as `canDecide` does on the leave board.
 
 const hoursBetween = (from: string | null, to: string | null) => {
   if (!from || !to) return null

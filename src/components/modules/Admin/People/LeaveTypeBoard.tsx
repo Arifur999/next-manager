@@ -26,20 +26,8 @@ const LEAVE_TYPE_KEYS = [queryKeys.leaveTypes.all, queryKeys.leaveBalance.all]
 
 const newLeaveType: ILeaveTypeFormValues = { name: "", days_per_year: "", is_paid: true }
 
-/**
- * The kinds of leave an agency gives.
- *
- * A kind is retired, never deleted: leave already approved against it has to
- * keep saying what it was for, and a request pointing at a row that no longer
- * exists is a hole in somebody's record rather than a tidy list. That is why
- * there is a Power button here and no bin, unlike the category boards this
- * otherwise follows.
- *
- * Zero days means uncapped, not none. The distinction is the whole reason
- * unpaid leave works — the balance reports `null` for it and the card says "no
- * limit", where a zero allowance that refused every request would be worse than
- * not having the feature.
- */
+// The kinds of leave. A kind is retired, never deleted, so leave approved against
+// it keeps saying what it was for. Zero days means uncapped ("no limit"), not none.
 const LeaveTypeBoard = () => {
   const typeList = useQuery(leaveTypesQuery())
   const types = typeList.data?.data ?? []

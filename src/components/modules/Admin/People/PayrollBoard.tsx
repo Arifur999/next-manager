@@ -34,15 +34,8 @@ const PAYROLL_KEYS = [
   queryKeys.transactions.all,
 ]
 
-/**
- * A month's salaries.
- *
- * The board holds only what the runs share; one run is its own component. The
- * screen says plainly that completing a run is what creates the money, because
- * that is the one irreversible action here — the payouts it writes are the same
- * rows a manual payout produces, and they cannot be un-written by coming back
- * to this page.
- */
+// A month's salaries. Paying a run is the one irreversible action here: its
+// payouts are ordinary team payouts, reversed where they live, not on this page.
 const PayrollBoard = () => {
   const [month, setMonth] = useState(format(new Date(), "yyyy-MM"))
   const [discarding, setDiscarding] = useState<IPayrollRun | null>(null)
