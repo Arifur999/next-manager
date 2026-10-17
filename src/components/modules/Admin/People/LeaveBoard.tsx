@@ -38,18 +38,21 @@ const LeaveBoard = ({ canDecide }: { canDecide: boolean }) => {
   const requests = requestList.data?.data ?? []
 
   // No successMessage: the server says "Leave approved" or "Leave turned down".
-  const { run: decide } = useActionMutation({
+  const { run: decide, isPending: isDeciding } = useActionMutation({
     action: ({ id, approve }: { id: string; approve: boolean }) => decideLeaveAction(id, { approve }),
     invalidateKeys: LEAVE_KEYS,
     refresh: false,
   })
 
-  const { run: withdraw } = useActionMutation({
+  const { run: withdraw, isPending: isWithdrawing } = useActionMutation({
     action: cancelLeaveAction,
     successMessage: "Withdrawn",
     invalidateKeys: LEAVE_KEYS,
     refresh: false,
   })
+
+  // One change to a request at a time, so a double click cannot send it twice.
+  const isBusy = isDeciding || isWithdrawing
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
@@ -100,6 +103,7 @@ const LeaveBoard = ({ canDecide }: { canDecide: boolean }) => {
                       <>
                         <Button
                           size="sm"
+                          disabled={isBusy}
                           onClick={() => void decide({ id: request.id, approve: true })}
                         >
                           Approve
@@ -107,13 +111,19 @@ const LeaveBoard = ({ canDecide }: { canDecide: boolean }) => {
                         <Button
                           size="sm"
                           variant="outline"
+                          disabled={isBusy}
                           onClick={() => void decide({ id: request.id, approve: false })}
                         >
                           Turn down
                         </Button>
                       </>
                     )}
-                    <Button size="sm" variant="ghost" onClick={() => void withdraw(request.id)}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={isBusy}
+                      onClick={() => void withdraw(request.id)}
+                    >
                       Withdraw
                     </Button>
                   </div>
