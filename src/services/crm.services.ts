@@ -1,6 +1,7 @@
 "use server"
 
 import { httpClient } from "@/lib/axios/httpClient"
+import { isMissingRecord } from "@/lib/missingRecord"
 import { toParams } from "@/lib/queryString"
 import type {
     IClient,
@@ -15,8 +16,16 @@ import type {
 export const getClients = async (queryString?: string) =>
     httpClient.get<IClient[]>("/clients", { params: toParams(queryString) })
 
-export const getClient = async (id: string) =>
-    httpClient.get<IClientDetail>(`/clients/${id}`)
+// Null when there is no such client for this company, so the page can say so
+// instead of retrying a question with no answer.
+export const getClient = async (id: string) => {
+    try {
+        return await httpClient.get<IClientDetail>(`/clients/${id}`)
+    } catch (error) {
+        if (isMissingRecord(error)) return null
+        throw error
+    }
+}
 
 export const getClientFinancials = async (id: string) =>
     httpClient.get<IClientFinancials>(`/clients/${id}/financials`)

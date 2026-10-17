@@ -1,6 +1,7 @@
 "use server"
 
 import { httpClient } from "@/lib/axios/httpClient"
+import { isMissingRecord } from "@/lib/missingRecord"
 import { toParams } from "@/lib/queryString"
 import type {
     IAssignmentRow,
@@ -14,8 +15,16 @@ import type {
 export const getProjects = async (queryString?: string) =>
     httpClient.get<IProject[]>("/projects", { params: toParams(queryString) })
 
-export const getProject = async (id: string) =>
-    httpClient.get<IProject>(`/projects/${id}`)
+// Null when there is no such project for this company (or it is not theirs to
+// see), so the page can say so instead of retrying.
+export const getProject = async (id: string) => {
+    try {
+        return await httpClient.get<IProject>(`/projects/${id}`)
+    } catch (error) {
+        if (isMissingRecord(error)) return null
+        throw error
+    }
+}
 
 export const getProjectFinancials = async (id: string) =>
     httpClient.get<IProjectFinancials>(`/projects/${id}/financials`)

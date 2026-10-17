@@ -6,6 +6,7 @@ import {
 } from "@/app/(dashboardLayout)/admin/dashboard/projects/_action"
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
+import AppTextarea from "@/components/shared/form/AppTextarea"
 import EntitySelect from "@/components/shared/form/EntitySelect"
 import { Button } from "@/components/ui/button"
 import {
@@ -42,7 +43,14 @@ const emptyValues: IProjectFormValues = {
   notes: "",
 }
 
-const ProjectForm = ({ project, onDone }: { project?: IProject | null; onDone: () => void }) => {
+type ProjectFormProps = {
+  project?: IProject | null
+  /** The client a new project starts on, when it is added from that client's page. */
+  clientId?: string
+  onDone: () => void
+}
+
+const ProjectForm = ({ project, clientId, onDone }: ProjectFormProps) => {
   const isEdit = Boolean(project)
 
   const { data: clientsData } = useQuery(clientsListQuery())
@@ -56,7 +64,8 @@ const ProjectForm = ({ project, onDone }: { project?: IProject | null; onDone: (
     action: (values: IProjectFormValues) =>
       project ? updateProjectAction(project.id, values) : createProjectAction(values),
     successMessage: isEdit ? "Project updated successfully" : "Project created successfully",
-    invalidateKeys: [queryKeys.projects.all, queryKeys.dashboard.all],
+    // The client's page lists its projects, so it moves with them.
+    invalidateKeys: [queryKeys.projects.all, queryKeys.clients.all, queryKeys.dashboard.all],
   })
 
   const form = useForm({
@@ -72,7 +81,7 @@ const ProjectForm = ({ project, onDone }: { project?: IProject | null; onDone: (
           description: project.description ?? "",
           notes: project.notes ?? "",
         }
-      : emptyValues,
+      : { ...emptyValues, client_id: clientId ?? "" },
     onSubmit: async ({ value }) => {
       if (await saveProject(value)) onDone()
     },
@@ -175,6 +184,28 @@ const ProjectForm = ({ project, onDone }: { project?: IProject | null; onDone: (
         </form.Field>
       </div>
 
+      <form.Field name="description">
+        {(field) => (
+          <AppTextarea
+            field={field}
+            label="Description"
+            placeholder="What is being delivered, in a sentence or two"
+            disabled={isPending}
+          />
+        )}
+      </form.Field>
+
+      <form.Field name="notes">
+        {(field) => (
+          <AppTextarea
+            field={field}
+            label="Notes"
+            placeholder="Anything the team should know: access, contacts, quirks"
+            disabled={isPending}
+          />
+        )}
+      </form.Field>
+
       <DialogFooter>
         <DialogClose asChild>
           <Button type="button" variant="outline" disabled={isPending}>
@@ -195,10 +226,13 @@ const ProjectForm = ({ project, onDone }: { project?: IProject | null; onDone: (
 
 const ProjectFormModal = ({
   project,
+  clientId,
   open,
   onOpenChange,
 }: {
   project?: IProject | null
+  /** Starts a new project on this client. */
+  clientId?: string
   open?: boolean
   onOpenChange?: (open: boolean) => void
 }) => {
@@ -244,6 +278,7 @@ const ProjectFormModal = ({
             <ProjectForm
               key={project?.id ?? "create"}
               project={project}
+              clientId={clientId}
               onDone={() => setOpen(false)}
             />
           </div>

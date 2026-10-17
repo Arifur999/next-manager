@@ -1,22 +1,35 @@
 "use client"
 
 import ClientFinanceTiles from "@/components/modules/Admin/Clients/ClientFinanceTiles"
+import ClientHeaderActions, { type ClientAbilities } from "@/components/modules/Admin/Clients/ClientHeaderActions"
 import ClientInvoicesPanel from "@/components/modules/Admin/Clients/ClientInvoicesPanel"
+import ClientLinksPanel from "@/components/modules/Admin/Clients/ClientLinksPanel"
 import ClientPaymentsPanel from "@/components/modules/Admin/Clients/ClientPaymentsPanel"
+import CredentialsPanel from "@/components/modules/Admin/Vault/CredentialsPanel"
+import PageHeader from "@/components/shared/PageHeader"
 import EmptyState from "@/components/shared/state/EmptyState"
 import ErrorState from "@/components/shared/state/ErrorState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
-import PanelState from "@/components/shared/state/PanelState"
-import { Badge } from "@/components/ui/badge"
+import NotFoundState from "@/components/shared/state/NotFoundState"
+import StatusBadge from "@/components/shared/status/StatusBadge"
 import { Card } from "@/components/ui/card"
-import ClientLinksPanel from "@/components/modules/Admin/Clients/ClientLinksPanel"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { formatUsd } from "@/lib/currency"
-import { useQuery } from "@tanstack/react-query"
-import { FolderKanban, KeyRound } from "lucide-react"
-import Link from "next/link"
+import { sentenceCase } from "@/lib/text"
 import { clientDetailQuery, clientFinancialsQuery } from "@/queries/crm.queries"
-import { credentialsListQuery } from "@/queries/workspace.queries"
+import { useQuery } from "@tanstack/react-query"
+import { FolderKanban } from "lucide-react"
+import Link from "next/link"
+
+const CLIENTS_HREF = "/admin/dashboard/clients"
+
+type ClientDetailProps = ClientAbilities & {
+  clientId: string
+  canSeeMoney?: boolean
+  /** Admin, sales and project managers keep a client's links and open the Vault. */
+  canManageLinks?: boolean
+  canOpenVault?: boolean
+}
 
 /**
  * One client, and how much of them somebody may see.
@@ -31,20 +44,22 @@ import { credentialsListQuery } from "@/queries/workspace.queries"
 const ClientDetail = ({
   clientId,
   canSeeMoney = false,
-}: {
-  clientId: string
-  canSeeMoney?: boolean
-}) => {
+  canManageLinks = false,
+  canOpenVault = false,
+  canEdit,
+  canAddProject,
+  canRaiseInvoice,
+}: ClientDetailProps) => {
   const clientQuery = useQuery(clientDetailQuery(clientId))
-
   const { data: financeData } = useQuery({ ...clientFinancialsQuery(clientId), enabled: canSeeMoney })
-
-  const credentialsQuery = useQuery(credentialsListQuery(`client_id=${clientId}`))
 
   const client = clientQuery.data?.data
   const finance = financeData?.data
 
-  const credentials = credentialsQuery.data?.data ?? []
+  // Null is the API saying there is no such client here: nothing to retry.
+  if (clientQuery.data === null) {
+    return <NotFoundState homeHref={CLIENTS_HREF} homeLabel="Back to clients" />
+  }
 
   // A failed refresh keeps the client it already has on screen; only a page
   // with nothing to show says it did not load.
@@ -70,19 +85,20 @@ const ClientDetail = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight">{client.name}</h1>
-            <Badge variant="outline" className="capitalize">
-              {client.status}
-            </Badge>
-          </div>
-          <p className="mt-1 truncate text-sm text-muted-foreground">
-            {[client.company, client.email, client.country].filter(Boolean).join(" · ") || "—"}
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title={client.name}
+        breadcrumb={[{ label: "Clients", href: CLIENTS_HREF }]}
+        actions={
+          <ClientHeaderActions
+            client={client}
+            canEdit={canEdit}
+            canAddProject={canAddProject}
+            canRaiseInvoice={canRaiseInvoice}
+          />
+        }
+      >
+        {[sentenceCase(client.status), client.company, client.email, client.country].filter(Boolean).join(" · ")}
+      </PageHeader>
 
       {/* Undefined for anybody who may not see it, because the query never
           ran — not because a flag is checked in two places. */}
@@ -115,13 +131,9 @@ const ClientDetail = ({
                         <p className="truncate text-xs text-muted-foreground">{project.code}</p>
                       </div>
                       <div className="flex shrink-0 items-center gap-3">
-                        <Badge variant="outline" className="capitalize">
-                          {project.status.name}
-                        </Badge>
+                        <StatusBadge category={project.status.category} label={project.status.name} />
                         {canSeeMoney && project.contract_value_usd !== undefined && (
-                          <span className="text-sm tabular-nums">
-                            {formatUsd(project.contract_value_usd)}
-                          </span>
+                          <span className="text-sm tabular-nums">{formatUsd(project.contract_value_usd)}</span>
                         )}
                       </div>
                     </Link>
@@ -133,56 +145,30 @@ const ClientDetail = ({
         </TabsContent>
 
         <TabsContent value="links" className="mt-4">
-          <ClientLinksPanel clientId={clientId} />
+          <ClientLinksPanel clientId={clientId} canManage={canManageLinks} />
         </TabsContent>
 
         {/* Rendered for money roles only: both panels fetch admin-only lists,
             which anybody else would be refused. */}
         {canSeeMoney && (
-        <>
-        <TabsContent value="payments" className="mt-4">
-          <ClientPaymentsPanel clientId={clientId} />
-        </TabsContent>
+          <>
+            <TabsContent value="payments" className="mt-4">
+              <ClientPaymentsPanel clientId={clientId} />
+            </TabsContent>
 
-        <TabsContent value="invoices" className="mt-4">
-          <ClientInvoicesPanel clientId={clientId} />
-        </TabsContent>
-        </>
+            <TabsContent value="invoices" className="mt-4">
+              <ClientInvoicesPanel clientId={clientId} />
+            </TabsContent>
+          </>
         )}
 
         <TabsContent value="vault" className="mt-4">
-          <Card className="gap-0 overflow-hidden p-0">
-            <PanelState
-              query={credentialsQuery}
-              errorMessage="The vault entries did not load."
-              isEmpty={credentials.length === 0}
-              empty={<EmptyState icon={KeyRound}>Nothing stored against this client yet.</EmptyState>}
-            >
-              <ul className="divide-y">
-                {credentials.map((credential) => (
-                  <li
-                    key={credential.id}
-                    className="flex items-center justify-between gap-3 px-5 py-3.5"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{credential.label}</p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {credential.username || "no username"}
-                        {credential.url ? ` · ${credential.url}` : ""}
-                      </p>
-                    </div>
-
-                    {/* Masked here on purpose. Revealing is logged against a
-                        person, so it belongs on the Vault screen where that
-                        consequence is spelled out. */}
-                    <span className="shrink-0 font-mono text-xs text-muted-foreground">
-                      {credential.password}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </PanelState>
-          </Card>
+          <CredentialsPanel
+            filter={`client_id=${clientId}`}
+            title="Credentials for this client"
+            emptyMessage="Nothing stored against this client yet."
+            canOpenVault={canOpenVault}
+          />
         </TabsContent>
 
         <TabsContent value="notes" className="mt-4">

@@ -6,6 +6,7 @@ import {
 } from "@/app/(dashboardLayout)/admin/dashboard/clients/_action"
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
+import AppTextarea from "@/components/shared/form/AppTextarea"
 import EntitySelect from "@/components/shared/form/EntitySelect"
 import { Button } from "@/components/ui/button"
 import {
@@ -18,9 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Textarea } from "@/components/ui/textarea"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IClient } from "@/types/crm.types"
 import { clientFormZodSchema, type IClientFormValues } from "@/zod/crm.validation"
@@ -138,20 +137,7 @@ const ClientForm = ({ client, onDone }: { client?: IClient | null; onDone: () =>
       </form.Field>
 
       <form.Field name="notes">
-        {(field) => (
-          <div className="space-y-1.5">
-            <Label htmlFor={field.name}>Notes</Label>
-            <Textarea
-              id={field.name}
-              name={field.name}
-              rows={3}
-              value={field.state.value ?? ""}
-              onBlur={field.handleBlur}
-              onChange={(event) => field.handleChange(event.target.value)}
-              disabled={isPending}
-            />
-          </div>
-        )}
+        {(field) => <AppTextarea field={field} label="Notes" disabled={isPending} />}
       </form.Field>
 
       <DialogFooter>

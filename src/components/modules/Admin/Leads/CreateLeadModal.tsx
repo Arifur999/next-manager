@@ -3,6 +3,7 @@
 import { createLeadAction, updateLeadAction } from "@/app/(dashboardLayout)/admin/dashboard/leads/_action"
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
+import AppTextarea from "@/components/shared/form/AppTextarea"
 import EntitySelect from "@/components/shared/form/EntitySelect"
 import { Button } from "@/components/ui/button"
 import {
@@ -15,8 +16,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { queryKeys } from "@/lib/queryKeys"
 import { sentenceCase } from "@/lib/text"
@@ -173,20 +172,7 @@ const LeadForm = ({ lead, onDone }: { lead?: ILead | null; onDone: () => void })
       </form.Field>
 
       <form.Field name="notes" validators={{ onChange: leadFormZodSchema.shape.notes }}>
-        {(field) => (
-          <div className="space-y-1.5">
-            <Label htmlFor={field.name}>Notes</Label>
-            <Textarea
-              id={field.name}
-              name={field.name}
-              rows={3}
-              value={field.state.value ?? ""}
-              onBlur={field.handleBlur}
-              onChange={(event) => field.handleChange(event.target.value)}
-              disabled={isPending}
-            />
-          </div>
-        )}
+        {(field) => <AppTextarea field={field} label="Notes" disabled={isPending} />}
       </form.Field>
 
       <DialogFooter>

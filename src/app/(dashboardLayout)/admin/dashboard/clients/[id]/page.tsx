@@ -19,6 +19,10 @@ const ClientDetailPage = async ({ params }: { params: Promise<{ id: string }> })
   // relationship, not the money it brings in, so the page stops asking rather
   // than rendering three panels that come back refused.
   const canSeeMoney = user?.role === "admin";
+  const role = user?.role;
+  // The rest follow the API's role gates for each write.
+  const canEdit = role === "admin" || role === "sales";
+  const canAddProject = canEdit || role === "project_manager";
 
   const prefetch = (queryClient: QueryClient) => Promise.all([
     queryClient.prefetchQuery(clientDetailQuery(id)),
@@ -35,7 +39,15 @@ const ClientDetailPage = async ({ params }: { params: Promise<{ id: string }> })
 
   return (
     <QueryPrefetch prefetch={prefetch}>
-      <ClientDetail clientId={id} canSeeMoney={canSeeMoney} />
+      <ClientDetail
+        clientId={id}
+        canSeeMoney={canSeeMoney}
+        canEdit={canEdit}
+        canAddProject={canAddProject}
+        canRaiseInvoice={canEdit}
+        canManageLinks={canAddProject}
+        canOpenVault={canAddProject}
+      />
     </QueryPrefetch>
   );
 };

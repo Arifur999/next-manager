@@ -23,6 +23,8 @@ const ProjectDetailPage = async ({ params }: { params: Promise<{ id: string }> }
   // The same pair, and for the same reason: the milestone, team and link
   // panels are all admin/PM at the API.
   const canManage = canSeeMoney;
+  // Operations reaches neither the client pages nor the Vault.
+  const canOpenClient = user?.role !== "operations";
 
   // Prefetched in parallel rather than one after another — the page needs them
   // all before it can paint, so serialising would just add round-trips.
@@ -38,7 +40,7 @@ const ProjectDetailPage = async ({ params }: { params: Promise<{ id: string }> }
 
   return (
     <QueryPrefetch prefetch={prefetch}>
-      <ProjectDetail projectId={id} canSeeMoney={canSeeMoney} canManage={canManage} />
+      <ProjectDetail projectId={id} canSeeMoney={canSeeMoney} canManage={canManage} canOpenClient={canOpenClient} />
     </QueryPrefetch>
   );
 };
