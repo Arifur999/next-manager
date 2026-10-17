@@ -1,11 +1,12 @@
 "use client"
 
 import EmptyState from "@/components/shared/state/EmptyState"
-import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import PanelState from "@/components/shared/state/PanelState"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
 import type { IShareholderDistribution } from "@/types/finance.types"
+import type { UseQueryResult } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { HandCoins, Trash2 } from "lucide-react"
 
@@ -19,11 +20,11 @@ import { HandCoins, Trash2 } from "lucide-react"
  */
 const DistributionList = ({
   distributions,
-  isLoading,
+  query,
   onDelete,
 }: {
   distributions: IShareholderDistribution[]
-  isLoading: boolean
+  query: Pick<UseQueryResult, "isError" | "isLoading" | "isFetching" | "refetch">
   onDelete: (distribution: IShareholderDistribution) => void
 }) => (
   <Card className="gap-0 overflow-hidden p-0">
@@ -35,11 +36,12 @@ const DistributionList = ({
       </p>
     </CardHeader>
 
-    {isLoading && distributions.length === 0 ? (
-      <LoadingBlock />
-    ) : distributions.length === 0 ? (
-      <EmptyState icon={HandCoins}>Nothing paid out yet.</EmptyState>
-    ) : (
+    <PanelState
+      query={query}
+      errorMessage="Distributions did not load."
+      isEmpty={distributions.length === 0}
+      empty={<EmptyState icon={HandCoins}>Nothing paid out yet.</EmptyState>}
+    >
       <ul className="divide-y">
         {distributions.map((distribution) => (
           <li
@@ -69,7 +71,7 @@ const DistributionList = ({
           </li>
         ))}
       </ul>
-    )}
+    </PanelState>
   </Card>
 )
 

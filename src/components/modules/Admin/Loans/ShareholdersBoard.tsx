@@ -40,19 +40,18 @@ const ShareholdersBoard = () => {
   const [shareholderToDelete, setShareholderToDelete] = useState<IShareholder | null>(null)
   const [distributionToReverse, setDistributionToReverse] = useState<IShareholderDistribution | null>(null)
 
-  const { data, isLoading } = useQuery(shareholdersQuery())
-  const { data: distributionData, isLoading: loadingDistributions } = useQuery(distributionsListQuery())
+  const ownersQuery = useQuery(shareholdersQuery())
+  const distributionQuery = useQuery(distributionsListQuery())
   const { data: accountData } = useQuery(accountsQuery())
 
-  const shareholders = data?.data ?? []
-  const distributions = distributionData?.data ?? []
+  const shareholders = ownersQuery.data?.data ?? []
+  const distributions = distributionQuery.data?.data ?? []
   const accounts = ((accountData?.data ?? [])).filter(
     (account) => account.currency === "BDT" && account.is_active
   )
   // The server counts this across active holders; reading it back rather than
   // recomputing keeps one answer to "who owns the rest".
-  const unallocated =
-    typeof data?.meta?.unallocated_pct === "number" ? data.meta.unallocated_pct : null
+  const unallocated = ownersQuery.data?.meta?.unallocated_pct ?? null
 
   // The server's own message is the success toast for all of these, and its
   // refusals ("Shares would total 120%. The others already hold 90%.") are
@@ -117,13 +116,13 @@ const ShareholdersBoard = () => {
         <ShareholderList
           shareholders={shareholders}
           unallocatedPct={unallocated}
-          isLoading={isLoading}
+          query={ownersQuery}
           onToggle={(shareholder) => void toggleShareholder(shareholder)}
           onDelete={setShareholderToDelete}
         />
         <DistributionList
           distributions={distributions}
-          isLoading={loadingDistributions}
+          query={distributionQuery}
           onDelete={setDistributionToReverse}
         />
       </div>

@@ -1,12 +1,13 @@
 "use client"
 
 import EmptyState from "@/components/shared/state/EmptyState"
-import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
 import type { IShareholder } from "@/types/finance.types"
+import type { UseQueryResult } from "@tanstack/react-query"
 import { PieChart, Power, Trash2 } from "lucide-react"
 
 /**
@@ -22,13 +23,13 @@ import { PieChart, Power, Trash2 } from "lucide-react"
 const ShareholderList = ({
   shareholders,
   unallocatedPct,
-  isLoading,
+  query,
   onToggle,
   onDelete,
 }: {
   shareholders: IShareholder[]
   unallocatedPct: number | null
-  isLoading: boolean
+  query: Pick<UseQueryResult, "isError" | "isLoading" | "isFetching" | "refetch">
   onToggle: (shareholder: IShareholder) => void
   onDelete: (shareholder: IShareholder) => void
 }) => (
@@ -44,11 +45,12 @@ const ShareholderList = ({
       </p>
     </CardHeader>
 
-    {isLoading && shareholders.length === 0 ? (
-      <LoadingBlock />
-    ) : shareholders.length === 0 ? (
-      <EmptyState icon={PieChart}>Nobody recorded yet.</EmptyState>
-    ) : (
+    <PanelState
+      query={query}
+      errorMessage="Shareholders did not load."
+      isEmpty={shareholders.length === 0}
+      empty={<EmptyState icon={PieChart}>Nobody recorded yet.</EmptyState>}
+    >
       <ul className="divide-y">
         {shareholders.map((shareholder) => (
           <li
@@ -100,7 +102,7 @@ const ShareholderList = ({
           </li>
         ))}
       </ul>
-    )}
+    </PanelState>
   </Card>
 )
 
