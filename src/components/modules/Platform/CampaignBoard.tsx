@@ -11,7 +11,7 @@ import RemoveAnnouncementDialog from "@/components/modules/Platform/RemoveAnnoun
 import SentAnnouncements from "@/components/modules/Platform/SentAnnouncements"
 import ErrorState from "@/components/shared/state/ErrorState"
 import { useActionMutation } from "@/hooks/useActionMutation"
-import type { IAnnouncement } from "@/types/platform.types"
+import type { IAnnouncement, ISentAnnouncement } from "@/types/platform.types"
 import type { IAnnouncementFormValues } from "@/zod/platform.validation"
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
@@ -33,6 +33,8 @@ import { queryKeys } from "@/lib/queryKeys"
  * later finds nobody got it has been misled by their own tool.
  */
 
+const isSent = (row: IAnnouncement): row is ISentAnnouncement => row.published_at !== null
+
 const emptyDraft: IAnnouncementFormValues = { title: "", body: "", audience: "all", send_email: false }
 
 const CampaignBoard = () => {
@@ -45,7 +47,7 @@ const CampaignBoard = () => {
 
   const announcements = announcementsList.data?.data ?? []
   const drafts = announcements.filter((row) => !row.published_at)
-  const sent = announcements.filter((row) => row.published_at)
+  const sent = announcements.filter(isSent)
 
   const reset = () => {
     setDraft(emptyDraft)

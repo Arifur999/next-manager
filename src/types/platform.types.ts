@@ -299,6 +299,9 @@ export interface IAnnouncement {
     _count?: { reads: number };
 }
 
+/** One that has gone out: only these have a publish date. */
+export type ISentAnnouncement = IAnnouncement & { published_at: string };
+
 /** What the publish call reports back about the mail it tried to send. */
 export interface IPublishResult extends IAnnouncement {
     email: { attempted: number; delivered: number; reason: string | null } | null;

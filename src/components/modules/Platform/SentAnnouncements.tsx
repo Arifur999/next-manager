@@ -4,12 +4,12 @@ import { AUDIENCE_LABEL } from "@/components/modules/Platform/announcementAudien
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import type { IAnnouncement } from "@/types/platform.types"
+import type { IAnnouncement, ISentAnnouncement } from "@/types/platform.types"
 import { format, parseISO } from "date-fns"
 import { Eye, Mail, Trash2 } from "lucide-react"
 
 type SentAnnouncementsProps = {
-  sent: IAnnouncement[]
+  sent: ISentAnnouncement[]
   isLoading: boolean
   onRemove: (announcement: IAnnouncement) => void
 }
@@ -38,7 +38,7 @@ const SentAnnouncements = ({ sent, isLoading, onRemove }: SentAnnouncementsProps
               <p className="font-medium">{row.title}</p>
               <p className="line-clamp-2 text-sm text-muted-foreground">{row.body}</p>
               <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                <span>{format(parseISO(row.published_at as string), "d MMM yyyy, HH:mm")}</span>
+                <span>{format(parseISO(row.published_at), "d MMM yyyy, HH:mm")}</span>
                 <span className="inline-flex items-center gap-1">
                   <Eye className="size-3" aria-hidden="true" />
                   read by {row._count?.reads ?? 0}
