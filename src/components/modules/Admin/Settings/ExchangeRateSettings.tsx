@@ -4,6 +4,7 @@ import {
   refreshRateAction,
   setDefaultRateAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/finance-config/_action"
+import ErrorState from "@/components/shared/state/ErrorState"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -29,9 +30,9 @@ import { queryKeys } from "@/lib/queryKeys"
 const ExchangeRateSettings = () => {
   const [draft, setDraft] = useState("")
 
-  const { data } = useQuery(rateSettingsQuery())
+  const rateQuery = useQuery(rateSettingsQuery())
 
-  const rates = data?.data
+  const rates = rateQuery.data?.data
 
   const isClearingRate = draft.trim() === ""
 
@@ -68,29 +69,39 @@ const ExchangeRateSettings = () => {
       </CardHeader>
 
       <div className="space-y-5 px-5 py-5">
-        <div className="flex flex-wrap items-end gap-4">
-          <div>
-            <p className="text-xs text-muted-foreground">In force now</p>
-            <p className="text-2xl font-semibold tabular-nums">
-              {rates?.effective_rate ? formatRate(rates.effective_rate) : "—"}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {rates?.effective_source === "manual" ? "your default" : "today's market rate"}
-            </p>
-          </div>
+        {/* A dash and "today's market rate" would be a claim about a rate that
+            never arrived. */}
+        {rateQuery.isError ? (
+          <ErrorState
+            message="The exchange rate did not load."
+            onRetry={() => void rateQuery.refetch()}
+            isRetrying={rateQuery.isFetching}
+          />
+        ) : (
+          <div className="flex flex-wrap items-end gap-4">
+            <div>
+              <p className="text-xs text-muted-foreground">In force now</p>
+              <p className="text-2xl font-semibold tabular-nums">
+                {rates?.effective_rate ? formatRate(rates.effective_rate) : "—"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {rates?.effective_source === "manual" ? "your default" : "today's market rate"}
+              </p>
+            </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => void fetchMarketRate(undefined)}
-            disabled={isRefreshing}
-            className="ml-auto"
-          >
-            <RefreshCw className={`size-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
-            {isRefreshing ? "Fetching..." : "Fetch market rate"}
-          </Button>
-        </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void fetchMarketRate(undefined)}
+              disabled={isRefreshing}
+              className="ml-auto"
+            >
+              <RefreshCw className={`size-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+              {isRefreshing ? "Fetching..." : "Fetch market rate"}
+            </Button>
+          </div>
+        )}
 
         <div className="space-y-1.5">
           <Label htmlFor="default-rate">Your own default</Label>
