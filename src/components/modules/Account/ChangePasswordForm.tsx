@@ -5,10 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useMutation } from "@tanstack/react-query"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { toast } from "sonner"
 
 /**
  * Changing your own password.
@@ -29,28 +28,21 @@ const ChangePasswordForm = () => {
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
 
-  const { mutate: submit, isPending } = useMutation({
-    mutationFn: () =>
-      changePasswordAction({ old_password: oldPassword, new_password: newPassword }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        // "Current password is incorrect" comes from the server and is the
-        // only useful thing to say here, so it is passed through.
-        toast.error(result.message || "Could not change your password")
-        return
-      }
-
-      toast.success("Password changed. Sign in again with the new one.")
-      router.replace("/login")
-      // The session is over on the server - the action cleared the cookies -
-      // but Next's client Router Cache still holds the RSC payload for the
-      // signed-in layout. Without this, going back or clicking another
-      // dashboard route renders the authenticated shell for a session that no
-      // longer exists. DashboardNavbar's sign-out does the same thing for the
-      // same reason.
-      router.refresh()
-    },
+  // A refusal ("Current password is incorrect") is the server's own words.
+  const { run: changePassword, isPending } = useActionMutation({
+    action: changePasswordAction,
+    successMessage: "Password changed. Sign in again with the new one.",
+    refresh: false,
   })
+
+  const handleSubmit = async () => {
+    if (!(await changePassword({ old_password: oldPassword, new_password: newPassword }))) return
+
+    router.replace("/login")
+    // The action cleared the cookies, but the client Router Cache still holds the
+    // signed-in layout; without this, Back renders a shell for a dead session.
+    router.refresh()
+  }
 
   // Checked here as well as on the server: making somebody submit a form to be
   // told they mistyped the confirmation is a round-trip for nothing.
@@ -74,7 +66,7 @@ const ChangePasswordForm = () => {
         onSubmit={(event) => {
           event.preventDefault()
           if (!ready) return
-          submit()
+          void handleSubmit()
         }}
       >
         <div className="space-y-1.5">
