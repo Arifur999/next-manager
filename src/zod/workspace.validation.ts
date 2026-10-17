@@ -20,7 +20,7 @@ export type ICredentialFormValues = z.infer<typeof credentialFormZodSchema>
 export const organizationFormZodSchema = z.object({
     name: z.string().min(1, "Name is required"),
     legal_name: z.string().optional(),
-    email: z.string().email("Enter a valid email address").optional().or(z.literal("")),
+    email: z.email("Enter a valid email address").optional().or(z.literal("")),
     phone: z.string().optional(),
     website: z.string().optional(),
     address: z.string().optional(),
