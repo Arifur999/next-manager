@@ -12,10 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { useState } from "react"
-import { toast } from "sonner"
 import { usersListQuery } from "@/queries/people.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -33,7 +33,6 @@ import { queryKeys } from "@/lib/queryKeys"
  * time yet is a real half-answer.
  */
 const RecordAttendanceCard = () => {
-  const queryClient = useQueryClient()
   const [userId, setUserId] = useState("")
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"))
   const [checkIn, setCheckIn] = useState("")
@@ -42,21 +41,20 @@ const RecordAttendanceCard = () => {
   const { data } = useQuery(usersListQuery())
   const members = ((data?.data ?? [])).filter((member) => member.status === "active")
 
-  const { mutate: save, isPending } = useMutation({
-    mutationFn: () =>
-      recordAttendanceAction({ user_id: userId, date, check_in: checkIn, check_out: checkOut }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        // "Check-out has to be after check-in" arrives here.
-        toast.error(result.message || "Could not record it")
-        return
-      }
-      toast.success("Recorded")
+  // A refusal such as "Check-out has to be after check-in" keeps what was typed.
+  const { run: recordDay, isPending } = useActionMutation({
+    action: recordAttendanceAction,
+    successMessage: "Recorded",
+    invalidateKeys: [queryKeys.attendance.all],
+    refresh: false,
+  })
+
+  const handleRecord = async () => {
+    if (await recordDay({ user_id: userId, date, check_in: checkIn, check_out: checkOut })) {
       setCheckIn("")
       setCheckOut("")
-      void queryClient.invalidateQueries({ queryKey: queryKeys.attendance.all })
-    },
-  })
+    }
+  }
 
   return (
     <Card className="h-fit">
@@ -73,7 +71,7 @@ const RecordAttendanceCard = () => {
         onSubmit={(event) => {
           event.preventDefault()
           if (!userId || !date) return
-          save()
+          void handleRecord()
         }}
       >
         <div className="space-y-1.5">
