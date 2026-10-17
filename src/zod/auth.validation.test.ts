@@ -4,6 +4,7 @@ import {
   changePasswordServerZodSchema,
   forgotPasswordServerZodSchema,
   joinServerZodSchema,
+  loginServerZodSchema,
   newPassword,
   registerServerZodSchema,
   requiredEmail,
@@ -145,5 +146,20 @@ describe("agencyJoinServerZodSchema", () => {
   it("refuses an agency without a name or with one too long", () => {
     expect(agencyJoinServerZodSchema.safeParse({ ...valid, company_name: "" }).success).toBe(false)
     expect(agencyJoinServerZodSchema.safeParse({ ...valid, company_name: "x".repeat(121) }).success).toBe(false)
+  })
+})
+
+describe("loginServerZodSchema", () => {
+  it("sends only the email and the password", () => {
+    expect(loginServerZodSchema.parse({ email: "rina@northwind.com", password: "x", remember: true })).toEqual({
+      email: "rina@northwind.com",
+      password: "x",
+    })
+  })
+
+  it("refuses an empty password and a malformed email", () => {
+    const noPassword = loginServerZodSchema.safeParse({ email: "rina@northwind.com", password: "" })
+    expect(noPassword.error?.issues[0]?.message).toBe("Password is required")
+    expect(loginServerZodSchema.safeParse({ email: "rina", password: "x" }).success).toBe(false)
   })
 })

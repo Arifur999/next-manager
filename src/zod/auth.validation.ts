@@ -111,3 +111,6 @@ export const resetPasswordServerZodSchema = resetPasswordFormZodSchema
 export const joinServerZodSchema = joinFormZodSchema
 
 export const agencyJoinServerZodSchema = agencyJoinFormZodSchema
+
+// The form already holds the API's payload.
+export const loginServerZodSchema = loginFormZodSchema
