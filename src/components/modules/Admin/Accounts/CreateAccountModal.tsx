@@ -24,7 +24,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { accountFormZodSchema, type IAccountFormValues } from "@/zod/finance.validation"
-import { toNumber } from "@/zod/formFields"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
@@ -67,8 +66,7 @@ const CreateAccountModal = () => {
   const router = useRouter()
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IAccountFormValues) =>
-      createAccountAction({ ...values, opening_balance: toNumber(values.opening_balance) ?? 0 }),
+    mutationFn: (values: IAccountFormValues) => createAccountAction(values),
   })
 
   const form = useForm({

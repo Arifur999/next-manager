@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { isoDate, optionalNonNegative, positiveAmount } from "./formFields"
+import { isoDate, optionalNonNegative, positiveAmount, toNumber } from "./formFields"
 
 export const accountFormZodSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -14,6 +14,17 @@ export const accountFormZodSchema = z.object({
 })
 
 export type IAccountFormValues = z.infer<typeof accountFormZodSchema>
+
+// Server schemas: the form's string values, checked again on the server and
+// turned into the payload the API's request schema expects.
+export const createAccountServerZodSchema = accountFormZodSchema.transform((values) => ({
+    name: values.name,
+    type: values.type,
+    currency: values.currency,
+    // A blank opening balance is an empty wallet.
+    opening_balance: toNumber(values.opening_balance) ?? 0,
+    notes: values.notes,
+}))
 
 // Exported beside the refined schema so per-field validators can reach
 // `.shape`; a refined schema has none.
