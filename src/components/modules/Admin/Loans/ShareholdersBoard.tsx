@@ -51,7 +51,7 @@ const ShareholdersBoard = () => {
   // The server's own message is the success toast for all of these, and its
   // refusals ("Shares would total 120%. The others already hold 90%.") are
   // the failure toast.
-  const { run: addShareholder, isPending } = useActionMutation({
+  const { run: addShareholder, isPending: isAdding } = useActionMutation({
     action: createShareholderAction,
     invalidateKeys: SHAREHOLDER_KEYS,
     refresh: false,
@@ -76,7 +76,7 @@ const ShareholdersBoard = () => {
     }
   }
 
-  const { run: payDistribution, isPending: paying } = useActionMutation({
+  const { run: payDistribution, isPending: isPaying } = useActionMutation({
     action: createDistributionAction,
     invalidateKeys: SHAREHOLDER_KEYS,
     refresh: false,
@@ -97,13 +97,13 @@ const ShareholdersBoard = () => {
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
       <div className="space-y-4">
-        <ShareholderFormCard onSubmit={addShareholder} isPending={isPending} />
+        <ShareholderFormCard onSubmit={addShareholder} isPending={isAdding} />
 
         <DistributionFormCard
           shareholders={shareholders}
           accounts={accounts}
           onSubmit={payDistribution}
-          isPending={paying}
+          isPending={isPaying}
         />
       </div>
 
