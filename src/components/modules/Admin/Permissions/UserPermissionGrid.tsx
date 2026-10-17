@@ -10,7 +10,7 @@ import { scopeAt } from "@/components/shared/permission/usePermissionGrid"
 import {
   ACTION_LABEL,
   MODULE_LABEL,
-  titleise,
+  roleTitle,
   type IPermissionGrid,
 } from "@/types/permission.types"
 
@@ -53,7 +53,7 @@ const UserPermissionGrid = ({ grid, disabled, save }: UserPermissionGridProps) =
                 next === INHERIT
                   ? {
                       run: () => clearUserPermissionAction(person.id, module, action),
-                      note: `${person.full_name} follows ${titleise(person.role)} again here`,
+                      note: `${person.full_name} follows ${roleTitle(person.role)} again here`,
                     }
                   : {
                       run: () =>

@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ROLE_LABEL, titleise } from "@/types/permission.types"
+import { roleTitle } from "@/types/permission.types"
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { usersListQuery } from "@/queries/people.queries"
@@ -78,7 +78,7 @@ const PermissionsBoard = () => {
           <TabsList>
             {roles.map((role) => (
               <TabsTrigger key={role} value={role}>
-                {ROLE_LABEL[role] ?? titleise(role)}
+                {roleTitle(role)}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -88,7 +88,7 @@ const PermissionsBoard = () => {
               <Card className="gap-0 overflow-hidden p-0">
                 <CardHeader className="border-b px-5 py-4">
                   <CardTitle className="text-base">
-                    {ROLE_LABEL[role] ?? titleise(role)}
+                    {roleTitle(role)}
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">
                     Everybody in this role, unless they have been given an exception on
@@ -131,7 +131,7 @@ const PermissionsBoard = () => {
                       {user.full_name}
                       <span className="text-muted-foreground">
                         {" "}
-                        — {ROLE_LABEL[user.role] ?? titleise(user.role)}
+                        — {roleTitle(user.role)}
                       </span>
                     </SelectItem>
                   ))}

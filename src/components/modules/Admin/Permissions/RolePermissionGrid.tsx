@@ -9,8 +9,7 @@ import { scopeAt } from "@/components/shared/permission/usePermissionGrid"
 import {
   ACTION_LABEL,
   MODULE_LABEL,
-  ROLE_LABEL,
-  titleise,
+  roleTitle,
   type IPermissionGrid,
 } from "@/types/permission.types"
 
@@ -40,7 +39,7 @@ const RolePermissionGrid = ({ grid, role, disabled, save }: RolePermissionGridPr
 
         return (
           <ScopeSelect
-            label={`${ROLE_LABEL[role] ?? titleise(role)}: ${ACTION_LABEL[action] ?? action} ${MODULE_LABEL[module] ?? module}`}
+            label={`${roleTitle(role)}: ${ACTION_LABEL[action] ?? action} ${MODULE_LABEL[module] ?? module}`}
             value={scope}
             disabled={disabled}
             onChange={(next) =>
@@ -52,7 +51,7 @@ const RolePermissionGrid = ({ grid, role, disabled, save }: RolePermissionGridPr
                     action,
                     scope: next,
                   }),
-                note: `${ROLE_LABEL[role] ?? titleise(role)} — ${MODULE_LABEL[module] ?? module} ${action} saved`,
+                note: `${roleTitle(role)} — ${MODULE_LABEL[module] ?? module} ${action} saved`,
               })
             }
           />
