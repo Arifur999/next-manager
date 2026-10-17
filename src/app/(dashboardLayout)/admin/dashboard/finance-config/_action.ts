@@ -1,51 +1,22 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
-import { createExpenseCategory, deleteExpenseCategory } from "@/services/spending.services"
+import { requireId, runAction, runValidatedAction } from "@/lib/runAction"
 import { refreshRate, setDefaultRate } from "@/services/finance.services"
-import type { IExpenseCategory } from "@/types/spending.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+import { createExpenseCategory, deleteExpenseCategory } from "@/services/spending.services"
+import { setDefaultRateServerZodSchema } from "@/zod/finance.validation"
+import { createExpenseCategoryServerZodSchema } from "@/zod/spending.validation"
 
-export const setDefaultRateAction = async (
-    rate: number | null,
-): Promise<ApiResponse<unknown> | ApiErrorResponse> => {
-    try {
-        return await setDefaultRate(rate)
-    } catch (error: unknown) {
-        // The server range-checks this — a typo like 1180 would inflate every
-        // reported figure by ten, and its message says so.
-        return { success: false, message: getActionErrorMessage(error, "Failed to set the rate") }
-    }
-}
+// The API range-checks the rate (a typo like 1180 would inflate every reported
+// figure tenfold), and its refusal says so.
+export const setDefaultRateAction = async (values: unknown) =>
+    runValidatedAction(setDefaultRateServerZodSchema, values, "Failed to set the rate", (payload) =>
+        setDefaultRate(payload.default_usd_rate),
+    )
 
-export const refreshRateAction = async (): Promise<
-    ApiResponse<{ rate: number; provider: string }> | ApiErrorResponse
-> => {
-    try {
-        return await refreshRate()
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to refresh the rate") }
-    }
-}
+export const refreshRateAction = async () => runAction("Failed to refresh the rate", () => refreshRate())
 
-export const createCategoryAction = async (
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<IExpenseCategory> | ApiErrorResponse> => {
-    try {
-        return await createExpenseCategory(payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to create the category") }
-    }
-}
+export const createCategoryAction = async (values: unknown) =>
+    runValidatedAction(createExpenseCategoryServerZodSchema, values, "Failed to create the category", createExpenseCategory)
 
-export const deleteCategoryAction = async (
-    id: string,
-): Promise<ApiResponse<{ message: string }> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid category id" }
-
-    try {
-        return await deleteExpenseCategory(id)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to delete the category") }
-    }
-}
+export const deleteCategoryAction = async (id: string) =>
+    requireId(id, "category") ?? runAction("Failed to delete the category", () => deleteExpenseCategory(id))

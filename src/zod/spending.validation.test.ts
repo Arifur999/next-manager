@@ -50,6 +50,11 @@ describe("createExpenseServerZodSchema", () => {
 })
 
 describe("createExpenseCategoryServerZodSchema", () => {
+    it("trims the name, and refuses one that is only spaces", () => {
+        expect(createExpenseCategoryServerZodSchema.parse({ name: " Rent ", type: "general" }).name).toBe("Rent")
+        expect(createExpenseCategoryServerZodSchema.safeParse({ name: "  ", type: "general" }).success).toBe(false)
+    })
+
     it("drops a blank budget", () => {
         expect(createExpenseCategoryServerZodSchema.parse({ name: "Rent", type: "general", monthly_budget: "" })).toEqual({
             name: "Rent",

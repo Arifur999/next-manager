@@ -42,7 +42,7 @@ const CategorySettings = () => {
   const categories = data?.data ?? []
 
   const { mutateAsync: create, isPending: isCreating } = useMutation({
-    mutationFn: () => createCategoryAction({ name: name.trim(), type }),
+    mutationFn: () => createCategoryAction({ name, type }),
   })
 
   const { mutateAsync: remove } = useMutation({

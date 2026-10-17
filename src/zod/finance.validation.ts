@@ -128,3 +128,19 @@ export const createDistributionServerZodSchema = distributionFormZodSchema.trans
     amount_bdt: Number(values.amount_bdt),
     account_id: values.account_id,
 }))
+
+// Only checks that it reads as a number: the API owns the sanity range and
+// says "That rate looks wrong" itself.
+export const defaultRateFormZodSchema = z.object({
+    default_usd_rate: z
+        .string()
+        .trim()
+        .refine((value) => value === "" || Number.isFinite(Number(value)), "That is not a number"),
+})
+
+export type IDefaultRateFormValues = z.infer<typeof defaultRateFormZodSchema>
+
+export const setDefaultRateServerZodSchema = defaultRateFormZodSchema.transform((values) => ({
+    // Blank clears the agency's own rate, and reports go back to the market rate.
+    default_usd_rate: values.default_usd_rate === "" ? null : Number(values.default_usd_rate),
+}))

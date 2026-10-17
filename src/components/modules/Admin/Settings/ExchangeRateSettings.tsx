@@ -9,6 +9,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { formatRate } from "@/lib/currency"
+import type { IDefaultRateFormValues } from "@/zod/finance.validation"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { RefreshCw } from "lucide-react"
@@ -34,7 +35,7 @@ const ExchangeRateSettings = () => {
   const rates = data?.data
 
   const { mutateAsync: save, isPending: isSaving } = useMutation({
-    mutationFn: (rate: number | null) => setDefaultRateAction(rate),
+    mutationFn: (values: IDefaultRateFormValues) => setDefaultRateAction(values),
   })
 
   const { mutateAsync: refresh, isPending: isRefreshing } = useMutation({
@@ -42,21 +43,14 @@ const ExchangeRateSettings = () => {
   })
 
   const handleSave = async () => {
-    const value = draft.trim() === "" ? null : Number(draft)
-
-    if (value !== null && !Number.isFinite(value)) {
-      toast.error("That is not a number")
-      return
-    }
-
-    const result = await save(value)
+    const result = await save({ default_usd_rate: draft })
 
     if (!result.success) {
       toast.error(result.message || "Failed to set the rate")
       return
     }
 
-    toast.success(value === null ? "Using the market rate again" : "Default rate saved")
+    toast.success(draft.trim() === "" ? "Using the market rate again" : "Default rate saved")
     setDraft("")
     void queryClient.invalidateQueries({ queryKey: queryKeys.rateSettings.all })
   }

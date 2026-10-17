@@ -14,7 +14,7 @@ export const expenseFormZodSchema = z.object({
 export type IExpenseFormValues = z.infer<typeof expenseFormZodSchema>
 
 export const expenseCategoryFormZodSchema = z.object({
-    name: z.string().min(1, "Name is required"),
+    name: z.string().trim().min(1, "Name is required"),
     type: z.enum(["general", "employee"], { message: "Choose a type" }),
     monthly_budget: optionalNonNegative("Monthly budget"),
 })

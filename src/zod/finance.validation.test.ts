@@ -6,6 +6,7 @@ import {
     createLoanServerZodSchema,
     createShareholderServerZodSchema,
     payInstalmentServerZodSchema,
+    setDefaultRateServerZodSchema,
     shareholderStatusServerZodSchema,
 } from "./finance.validation"
 
@@ -200,5 +201,21 @@ describe("createDistributionServerZodSchema", () => {
 
     it("rejects a distribution of nothing", () => {
         expect(createDistributionServerZodSchema.safeParse({ ...distribution, amount_bdt: "0" }).success).toBe(false)
+    })
+})
+
+describe("setDefaultRateServerZodSchema", () => {
+    it("sends a typed rate as a number", () => {
+        expect(setDefaultRateServerZodSchema.parse({ default_usd_rate: " 119.50 " })).toEqual({ default_usd_rate: 119.5 })
+    })
+
+    it("clears the rate when the box is left empty", () => {
+        expect(setDefaultRateServerZodSchema.parse({ default_usd_rate: "" })).toEqual({ default_usd_rate: null })
+    })
+
+    it("refuses something that is not a number", () => {
+        expect(setDefaultRateServerZodSchema.safeParse({ default_usd_rate: "abc" }).error?.issues[0]?.message).toBe(
+            "That is not a number",
+        )
     })
 })
