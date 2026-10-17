@@ -66,6 +66,9 @@ export interface DataTableProps<TData> {
   // A server-paged table holds one page; this fetches every matching row to export.
   exportRows?: () => Promise<TData[]>;
   emptyMessage?: string;
+  // Shown under the empty message when the list is truly empty (not filtered
+  // empty), for the one thing to do about it: usually the create button.
+  emptyAction?: React.ReactNode;
   // First load (skeleton rows) vs background refetch (a progress bar, rows stay).
   // toTableQueryProps(query) fills these four from a useQuery result.
   isLoading?: boolean;

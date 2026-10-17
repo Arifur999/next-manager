@@ -1,25 +1,39 @@
+import EmptyState from "@/components/shared/state/EmptyState";
 import { Button } from "@/components/ui/button";
-import { SearchX } from "lucide-react";
+import { Inbox, SearchX } from "lucide-react";
+import type { ReactNode } from "react";
 
 interface DataTableEmptyProps {
   message: string;
   canReset: boolean;
   onReset: () => void;
+  /** The one thing to do about an empty list, such as a create button. */
+  action?: ReactNode;
 }
 
 // With a search or filter applied, "nothing here" is about the filter, not
-// the business, so it says so and offers the way back.
-const DataTableEmpty = ({ message, canReset, onReset }: DataTableEmptyProps) => {
-  if (!canReset) return <p className="py-8 text-center text-sm text-muted-foreground">{message}</p>;
+// the business, so it says so and offers the way back instead of a create
+// button that would not change what the filter shows.
+const DataTableEmpty = ({ message, canReset, onReset, action }: DataTableEmptyProps) => {
+  if (!canReset) {
+    return (
+      <EmptyState icon={Inbox} action={action}>
+        {message}
+      </EmptyState>
+    );
+  }
 
   return (
-    <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
-      <SearchX className="size-7 text-muted-foreground/60" aria-hidden="true" />
-      <p className="text-sm text-muted-foreground">Nothing matches the current search or filters.</p>
-      <Button variant="outline" size="sm" onClick={onReset}>
-        Clear filters
-      </Button>
-    </div>
+    <EmptyState
+      icon={SearchX}
+      action={
+        <Button variant="outline" size="sm" onClick={onReset}>
+          Clear filters
+        </Button>
+      }
+    >
+      Nothing matches the current search or filters.
+    </EmptyState>
   );
 };
 

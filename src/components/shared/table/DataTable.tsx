@@ -14,6 +14,7 @@ const DataTable = <TData,>(props: DataTableProps<TData>) => {
     exportFileName,
     exportRows,
     emptyMessage,
+    emptyAction,
     isLoading = false,
     isFetching = false,
     isError = false,
@@ -85,6 +86,7 @@ const DataTable = <TData,>(props: DataTableProps<TData>) => {
         <DataTableContent
           table={table}
           emptyMessage={emptyMessage}
+          emptyAction={emptyAction}
           isLoading={isLoading}
           isError={isError}
           isRetrying={isFetching}

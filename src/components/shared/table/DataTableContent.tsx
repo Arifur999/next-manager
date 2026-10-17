@@ -3,6 +3,7 @@
 import ErrorState from "@/components/shared/state/ErrorState";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { flexRender, type Header, type Table as TanStackTable } from "@tanstack/react-table";
+import type { ReactNode } from "react";
 import DataTableColumnHeader from "./DataTableColumnHeader";
 import DataTableEmpty from "./DataTableEmpty";
 import DataTableSkeleton from "./DataTableSkeleton";
@@ -10,6 +11,7 @@ import DataTableSkeleton from "./DataTableSkeleton";
 interface DataTableContentProps<TData> {
   table: TanStackTable<TData>;
   emptyMessage?: string;
+  emptyAction?: ReactNode;
   isLoading: boolean;
   isError: boolean;
   isRetrying: boolean;
@@ -28,6 +30,7 @@ const renderHeader = <TData,>(header: Header<TData, unknown>) => {
 const DataTableContent = <TData,>({
   table,
   emptyMessage,
+  emptyAction,
   isLoading,
   isError,
   isRetrying,
@@ -55,7 +58,12 @@ const DataTableContent = <TData,>({
       return (
         <TableRow>
           <TableCell colSpan={columnCount} className="p-0">
-            <DataTableEmpty message={emptyMessage || "No data available."} canReset={canReset} onReset={onReset} />
+            <DataTableEmpty
+              message={emptyMessage || "No data available."}
+              action={emptyAction}
+              canReset={canReset}
+              onReset={onReset}
+            />
           </TableCell>
         </TableRow>
       );
