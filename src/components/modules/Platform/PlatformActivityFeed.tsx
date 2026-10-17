@@ -1,11 +1,12 @@
 "use client"
 
+import { actionLabel, readableSummary } from "@/components/modules/Platform/activityWords"
 import RelativeTime from "@/components/shared/RelativeTime"
 import EmptyState from "@/components/shared/state/EmptyState"
 import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardHeader } from "@/components/ui/card"
 import {
   Select,
   SelectContent,
@@ -39,10 +40,12 @@ const ENTITY_LABELS: Record<string, string> = {
   expense: "Expenses",
 }
 
-// Suspending a customer and removing an operator are what somebody comes here
-// looking for; the rest is the context around them.
-const toneOf = (action: string): "destructive" | "secondary" | "outline" =>
-  action === "deleted" ? "destructive" : action === "created" ? "secondary" : "outline"
+// Removals are what somebody comes here looking for; the rest is the context around them.
+const toneOf = (action: string): "destructive" | "secondary" | "outline" => {
+  if (action === "deleted") return "destructive"
+  if (action === "created") return "secondary"
+  return "outline"
+}
 
 const dayLabel = (iso: string) => {
   const date = parseISO(iso)
@@ -77,13 +80,7 @@ const PlatformActivityFeed = () => {
   return (
     <Card className="gap-0 overflow-hidden p-0">
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
-        <div>
-          <CardTitle className="text-base">Admin activity</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Everything the platform team has done, in the words recorded at the time.
-            Nothing here can be edited or removed.
-          </p>
-        </div>
+        <p className="text-sm text-muted-foreground">Newest first, grouped by day.</p>
 
         <Select value={entityType} onValueChange={setEntityType}>
           <SelectTrigger className="w-44" aria-label="Filter by what was touched">
@@ -102,7 +99,7 @@ const PlatformActivityFeed = () => {
 
       <PanelState
         query={feed}
-        errorMessage="Admin activity did not load."
+        errorMessage="The activity log did not load."
         isEmpty={entries.length === 0}
         empty={
           <EmptyState icon={History}>
@@ -123,11 +120,11 @@ const PlatformActivityFeed = () => {
                 {dayEntries.map((entry) => (
                   <li key={entry.id} className="flex flex-wrap items-start gap-3 px-5 py-3.5">
                     <Badge variant={toneOf(entry.action)} className="mt-0.5 shrink-0 text-xs">
-                      {entry.action.replace(/_/g, " ")}
+                      {actionLabel(entry.action)}
                     </Badge>
 
                     <div className="min-w-40 flex-1">
-                      <p className="text-sm">{entry.summary}</p>
+                      <p className="text-sm">{readableSummary(entry.summary)}</p>
                       <p className="text-xs text-muted-foreground">
                         {/* Removing an operator nulls the link but keeps what
                             they did, so an unattributed entry is a real state. */}
