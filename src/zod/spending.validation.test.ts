@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest"
-import { createExpenseCategoryServerZodSchema, createExpenseServerZodSchema } from "./spending.validation"
+import {
+    createExpenseCategoryServerZodSchema,
+    createExpenseServerZodSchema,
+    createTeamPayoutServerZodSchema,
+} from "./spending.validation"
 
 const valid = {
     date: "2026-10-12",
@@ -49,5 +53,45 @@ describe("createExpenseCategoryServerZodSchema", () => {
             type: "general",
             monthly_budget: undefined,
         })
+    })
+})
+
+describe("createTeamPayoutServerZodSchema", () => {
+    const payout = {
+        user_id: "u1",
+        project_id: "",
+        date: "2026-10-12",
+        amount_bdt: "45000",
+        type: "salary",
+        account_id: "bdt-1",
+        notes: "",
+    }
+
+    it("builds the API payload, with no project for a general salary", () => {
+        expect(createTeamPayoutServerZodSchema.parse(payout)).toEqual({
+            user_id: "u1",
+            project_id: null,
+            date: "2026-10-12",
+            amount_bdt: 45000,
+            type: "salary",
+            account_id: "bdt-1",
+            notes: "",
+        })
+    })
+
+    it("ties a payout to a chosen project", () => {
+        expect(createTeamPayoutServerZodSchema.parse({ ...payout, project_id: "p1" }).project_id).toBe("p1")
+    })
+
+    it("rejects a payout type the API does not know", () => {
+        expect(createTeamPayoutServerZodSchema.safeParse({ ...payout, type: "gift" }).success).toBe(false)
+    })
+
+    it("requires a team member and a BDT account", () => {
+        const result = createTeamPayoutServerZodSchema.safeParse({ ...payout, user_id: "", account_id: "" })
+        expect(result.error?.issues.map((issue) => issue.message)).toEqual([
+            "Choose a team member",
+            "Choose a BDT account",
+        ])
     })
 })

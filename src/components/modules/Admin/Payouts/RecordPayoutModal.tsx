@@ -63,12 +63,7 @@ const RecordPayoutModal = () => {
   const bdtAccounts = accounts.filter((account) => account.currency === "BDT" && account.is_active)
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: ITeamPayoutFormValues) =>
-      createTeamPayoutAction({
-        ...values,
-        amount_bdt: Number(values.amount_bdt),
-        project_id: values.project_id || null,
-      }),
+    mutationFn: (values: ITeamPayoutFormValues) => createTeamPayoutAction(values),
   })
 
   const form = useForm({

@@ -34,7 +34,7 @@ export const teamPayoutFormZodSchema = z.object({
 export type ITeamPayoutFormValues = z.infer<typeof teamPayoutFormZodSchema>
 
 // Server schemas: the form's string values, checked again on the server and
-// turned into the payload the API's createExpenseZodSchema expects.
+// turned into the payload the API's request schema expects.
 export const createExpenseServerZodSchema = expenseFormZodSchema.transform((values) => ({
     date: values.date,
     category_id: values.category_id,
@@ -49,4 +49,14 @@ export const createExpenseCategoryServerZodSchema = expenseCategoryFormZodSchema
     name: values.name,
     type: values.type,
     monthly_budget: toNumber(values.monthly_budget),
+}))
+
+export const createTeamPayoutServerZodSchema = teamPayoutFormZodSchema.transform((values) => ({
+    user_id: values.user_id,
+    project_id: values.project_id || null,
+    date: values.date,
+    amount_bdt: Number(values.amount_bdt),
+    type: values.type,
+    account_id: values.account_id,
+    notes: values.notes,
 }))
