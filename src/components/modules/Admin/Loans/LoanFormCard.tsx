@@ -34,7 +34,8 @@ const LoanFormCard = ({
   isPending,
 }: {
   accounts: IAccount[]
-  onSubmit: (values: ILoanFormValues) => void
+  // Resolves true once the loan is saved.
+  onSubmit: (values: ILoanFormValues) => Promise<boolean>
   isPending: boolean
 }) => {
   const [lender, setLender] = useState("")
@@ -44,8 +45,8 @@ const LoanFormCard = ({
   const [months, setMonths] = useState("12")
   const [accountId, setAccountId] = useState("")
 
-  const submit = () => {
-    onSubmit({
+  const submit = async () => {
+    const isSaved = await onSubmit({
       lender,
       principal_bdt: principal,
       interest_rate: rate,
@@ -53,6 +54,8 @@ const LoanFormCard = ({
       term_months: months,
       account_id: accountId,
     })
+    // A refusal keeps what was typed, so it can be corrected rather than retyped.
+    if (!isSaved) return
     setLender("")
     setPrincipal("")
     setRate("")
@@ -73,7 +76,7 @@ const LoanFormCard = ({
         onSubmit={(event) => {
           event.preventDefault()
           if (!lender.trim() || !Number(principal) || !Number(months)) return
-          submit()
+          void submit()
         }}
       >
         <div className="space-y-1.5">
