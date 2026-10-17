@@ -4,12 +4,14 @@ import {
   addPlatformExpenseAction,
   removePlatformExpenseAction,
 } from "@/app/(dashboardLayout)/platform/_financeAction"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import MetricTile, { count, pct, usd } from "@/components/shared/kpi/MetricTile"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useActionMutation } from "@/hooks/useActionMutation"
+import type { IPlatformExpense } from "@/types/platform.types"
 import { useQuery } from "@tanstack/react-query"
 import { endOfMonth, format, parseISO, startOfMonth } from "date-fns"
 import { Receipt, Trash2 } from "lucide-react"
@@ -43,6 +45,7 @@ const PlatformFinance = () => {
   const [description, setDescription] = useState("")
   const [category, setCategory] = useState("")
   const [amount, setAmount] = useState("")
+  const [removing, setRemoving] = useState<IPlatformExpense | null>(null)
 
   const range = `from=${from}&to=${to}`
 
@@ -67,6 +70,10 @@ const PlatformFinance = () => {
     invalidateKeys: FINANCE_KEYS,
     refresh: false,
   })
+
+  const handleRemove = async () => {
+    if (removing && (await removeExpense(removing.id))) setRemoving(null)
+  }
 
   const handleRecord = async () => {
     if (!(await recordExpense({ date, description, category, amount_usd: amount }))) return
@@ -271,7 +278,7 @@ const PlatformFinance = () => {
                     variant="outline"
                     size="sm"
                     disabled={isRemoving}
-                    onClick={() => void removeExpense(expense.id)}
+                    onClick={() => setRemoving(expense)}
                   >
                     <Trash2 className="size-3.5" />
                     <span className="sr-only">Remove {expense.description}</span>
@@ -282,6 +289,28 @@ const PlatformFinance = () => {
           </ul>
         )}
       </Card>
+
+      <ConfirmDialog
+        open={Boolean(removing)}
+        onOpenChange={(open) => {
+          if (!open) setRemoving(null)
+        }}
+        title="Remove this expense?"
+        description={
+          removing && (
+            <>
+              <span className="font-medium text-foreground">{removing.description}</span>,{" "}
+              {usd(removing.amount_usd)}, comes off this window&apos;s costs. The removal is
+              recorded in admin activity.
+            </>
+          )
+        }
+        variant="destructive"
+        confirmLabel="Remove"
+        pendingLabel="Removing..."
+        isPending={isRemoving}
+        onConfirm={() => void handleRemove()}
+      />
     </div>
   )
 }
