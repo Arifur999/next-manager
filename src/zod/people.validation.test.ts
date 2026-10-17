@@ -7,6 +7,7 @@ import {
     createPayrollRunServerZodSchema,
     departmentServerZodSchema,
     leaveTypeServerZodSchema,
+    recordAttendanceServerZodSchema,
     setPayrollItemsServerZodSchema,
 } from "./people.validation"
 
@@ -145,5 +146,28 @@ describe("capacityServerZodSchema", () => {
 
     it("refuses a negative rate", () => {
         expect(capacityServerZodSchema.safeParse({ weekly_hours: "40", standard_rate_usd: "-5" }).success).toBe(false)
+    })
+})
+
+describe("recordAttendanceServerZodSchema", () => {
+    const day = { user_id: "u1", date: "2026-10-12", check_in: "09:15", check_out: "17:40" }
+
+    it("sends both times as HH:MM", () => {
+        expect(recordAttendanceServerZodSchema.parse(day)).toEqual(day)
+    })
+
+    it("leaves a blank time out, so it stays not recorded", () => {
+        const payload = recordAttendanceServerZodSchema.parse({ ...day, check_out: "" })
+        expect(payload).toEqual({ user_id: "u1", date: "2026-10-12", check_in: "09:15", check_out: undefined })
+    })
+
+    it.each(["25:00", "9:15"])("refuses %s as a check-in", (check_in) => {
+        const result = recordAttendanceServerZodSchema.safeParse({ ...day, check_in })
+        expect(result.error?.issues[0]?.message).toBe("Check-in must be HH:MM")
+    })
+
+    it("requires somebody to record it for", () => {
+        const result = recordAttendanceServerZodSchema.safeParse({ ...day, user_id: "" })
+        expect(result.error?.issues[0]?.message).toBe("Choose somebody")
     })
 })

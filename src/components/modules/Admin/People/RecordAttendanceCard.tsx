@@ -44,13 +44,7 @@ const RecordAttendanceCard = () => {
 
   const { mutate: save, isPending } = useMutation({
     mutationFn: () =>
-      recordAttendanceAction({
-        user_id: userId,
-        date,
-        // Empty is "not recorded", so it is left out rather than sent as "".
-        ...(checkIn ? { check_in: checkIn } : {}),
-        ...(checkOut ? { check_out: checkOut } : {}),
-      }),
+      recordAttendanceAction({ user_id: userId, date, check_in: checkIn, check_out: checkOut }),
     onSuccess: (result) => {
       if (!result.success) {
         // "Check-out has to be after check-in" arrives here.

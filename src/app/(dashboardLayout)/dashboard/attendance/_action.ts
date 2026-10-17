@@ -1,27 +1,12 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
+import { runAction, runValidatedAction } from "@/lib/runAction"
 import { clockAttendance, recordAttendance } from "@/services/people.services"
-import type { IAttendance } from "@/types/people.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+import { recordAttendanceServerZodSchema } from "@/zod/people.validation"
 
-type Result = ApiResponse<IAttendance> | ApiErrorResponse
+// "You have already checked out today" is the server's refusal, shown as it is.
+export const clockAction = async () => runAction("Could not record that", clockAttendance)
 
-export const clockAction = async (): Promise<Result> => {
-    try {
-        return await clockAttendance()
-    } catch (error: unknown) {
-        // "You have already checked out today" arrives here.
-        return { success: false, message: getActionErrorMessage(error, "Could not record that") }
-    }
-}
-
-export const recordAttendanceAction = async (
-    payload: Record<string, unknown>,
-): Promise<Result> => {
-    try {
-        return await recordAttendance(payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not record it") }
-    }
-}
+// Whether check-out comes after check-in is the server's call.
+export const recordAttendanceAction = async (values: unknown) =>
+    runValidatedAction(recordAttendanceServerZodSchema, values, "Could not record it", recordAttendance)

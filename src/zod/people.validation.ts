@@ -1,6 +1,6 @@
 import { endOfMonth, format, parseISO } from "date-fns"
 import { z } from "zod"
-import { optionalNonNegative, positiveAmount, toNumber } from "./formFields"
+import { isoDate, optionalNonNegative, positiveAmount, toNumber } from "./formFields"
 
 // Turning a department or a kind of leave off or on again. Neither is deleted
 // once in use, so this is how one is retired.
@@ -100,4 +100,27 @@ export const capacityServerZodSchema = capacityFormZodSchema.transform((values) 
     weekly_hours: Number(values.weekly_hours),
     // Zero is how the API stores "no rate". Left out, the old rate would stay.
     standard_rate_usd: toNumber(values.standard_rate_usd) ?? 0,
+}))
+
+const CLOCK_TIME = /^([01]\d|2[0-3]):[0-5]\d$/
+
+// Blank is "not recorded", which has to stay different from midnight.
+const optionalClockTime = (label: string) =>
+    z.string().refine((value) => value === "" || CLOCK_TIME.test(value), `${label} must be HH:MM`)
+
+export const attendanceFormZodSchema = z.object({
+    user_id: z.string().min(1, "Choose somebody"),
+    date: isoDate,
+    check_in: optionalClockTime("Check-in"),
+    check_out: optionalClockTime("Check-out"),
+})
+
+export type IAttendanceFormValues = z.infer<typeof attendanceFormZodSchema>
+
+export const recordAttendanceServerZodSchema = attendanceFormZodSchema.transform((values) => ({
+    user_id: values.user_id,
+    date: values.date,
+    // Left out when blank rather than sent as "".
+    check_in: values.check_in || undefined,
+    check_out: values.check_out || undefined,
 }))
