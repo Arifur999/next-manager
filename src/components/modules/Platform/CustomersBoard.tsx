@@ -7,6 +7,8 @@ import DataTable from "@/components/shared/table/DataTable"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { toTableQueryProps } from "@/lib/table/queryProps"
+import type { ICompanyRow } from "@/types/platform.types"
 import { useQuery } from "@tanstack/react-query"
 import { Search } from "lucide-react"
 import Link from "next/link"
@@ -36,6 +38,25 @@ const FILTERS: Array<{ value: string; label: string }> = [
   { value: "cancelled", label: "Left" },
 ]
 
+const CustomerCount = ({ companies }: { companies: ICompanyRow[] | undefined }) => {
+  // Unknown until the list arrives, and "0 companies" must never stand in for that.
+  if (!companies) return null
+
+  const quiet = companies.filter((row) => isQuietSince(row.last_active_at)).length
+
+  return (
+    <>
+      {companies.length} {companies.length === 1 ? "company" : "companies"}
+      {quiet > 0 && (
+        <>
+          {" · "}
+          <span className="text-foreground">{quiet} quiet for a month or more</span>
+        </>
+      )}
+    </>
+  )
+}
+
 const CustomersBoard = ({ defaultFilter = ALL }: { defaultFilter?: string }) => {
   const [filter, setFilter] = useState(defaultFilter)
   const [search, setSearch] = useState("")
@@ -48,9 +69,7 @@ const CustomersBoard = ({ defaultFilter = ALL }: { defaultFilter?: string }) => 
     .join("&")
 
   const companiesQuery = useQuery(companiesListQuery(query))
-
-  const companies = companiesQuery.data?.data ?? []
-  const quiet = companies.filter((row) => isQuietSince(row.last_active_at)).length
+  const companies = companiesQuery.data?.data
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
@@ -59,15 +78,7 @@ const CustomersBoard = ({ defaultFilter = ALL }: { defaultFilter?: string }) => 
           <div>
             <CardTitle className="text-base">Customers</CardTitle>
             <p className="text-sm text-muted-foreground">
-              {companies.length} {companies.length === 1 ? "company" : "companies"}
-              {quiet > 0 && (
-                <>
-                  {" · "}
-                  <span className="text-foreground">
-                    {quiet} quiet for a month or more
-                  </span>
-                </>
-              )}
+              <CustomerCount companies={companies} />
             </p>
           </div>
 
@@ -106,11 +117,10 @@ const CustomersBoard = ({ defaultFilter = ALL }: { defaultFilter?: string }) => 
 
       <div className="p-4">
         <DataTable
-          data={companies}
+          data={companies ?? []}
           columns={customersColumns}
           tableId="customers"
-          isLoading={companiesQuery.isPending}
-          isFetching={companiesQuery.isFetching}
+          {...toTableQueryProps(companiesQuery)}
           emptyMessage={search.trim() || filter !== ALL ? "Nothing matches that." : "Nobody has signed up yet."}
         />
       </div>
