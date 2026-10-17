@@ -31,12 +31,10 @@ import {
   createUserFormZodSchema,
   type ICreateUserFormValues,
 } from "@/zod/user.validation"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
-import { toast } from "sonner"
 import { queryKeys } from "@/lib/queryKeys"
 
 const defaultValues: ICreateUserFormValues = {
@@ -52,30 +50,20 @@ const ROLE_OPTIONS = ASSIGNABLE_ROLES.map((value) => ({ value, label: ROLE_LABEL
 
 const CreateUserFormModal = () => {
   const [open, setOpen] = useState(false)
-  const queryClient = useQueryClient()
-  const router = useRouter()
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: ICreateUserFormValues) => createUserAction(values),
+  // No successMessage: the toast is the server's "User created successfully".
+  const { run: addMember, isPending } = useActionMutation({
+    action: createUserAction,
+    invalidateKeys: [queryKeys.users.all],
   })
 
   const form = useForm({
     defaultValues,
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      // The action never throws, so success is a value to branch on.
-      if (!result.success) {
-        toast.error(result.message || "Failed to create team member")
-        return
+      if (await addMember(value)) {
+        setOpen(false)
+        form.reset()
       }
-
-      toast.success(result.message || "Team member created successfully")
-      setOpen(false)
-      form.reset()
-
-      void queryClient.invalidateQueries({ queryKey: queryKeys.users.all })
-      router.refresh()
     },
   })
 
