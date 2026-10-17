@@ -9,12 +9,12 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { ITimeEntry } from "@/types/work.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { addDays, format, startOfWeek } from "date-fns"
 import { ChevronLeft, ChevronRight, Clock, Undo2, UserCheck } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { timeEntriesListQuery } from "@/queries/work.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -72,7 +72,6 @@ const groupByPerson = (entries: ITimeEntry[]): Group[] => {
 const ApprovalQueue = ({ viewerId }: { viewerId: string }) => {
   const [offset, setOffset] = useState(0)
   const [tab, setTab] = useState<"pending" | "approved">("pending")
-  const queryClient = useQueryClient()
 
   const start = weekStart(offset)
   const end = addDays(start, 6)
@@ -87,33 +86,18 @@ const ApprovalQueue = ({ viewerId }: { viewerId: string }) => {
     .filter((entry) => entry.is_billable)
     .reduce((running, entry) => running + entry.hours, 0)
 
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.timeEntries.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.timeSummary.all })
-  }
-
-  const { mutate: approve, isPending: isApproving } = useMutation({
-    mutationFn: (id: string) => approveTimeAction(id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Failed to approve")
-        return
-      }
-      toast.success("Approved")
-      refresh()
-    },
+  const { run: approve, isPending: isApproving } = useActionMutation({
+    action: approveTimeAction,
+    successMessage: "Approved",
+    invalidateKeys: [queryKeys.timeEntries.all, queryKeys.timeSummary.all],
+    refresh: false,
   })
 
-  const { mutate: unapprove, isPending: isUnapproving } = useMutation({
-    mutationFn: (id: string) => unapproveTimeAction(id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Failed to reopen")
-        return
-      }
-      toast.success("Reopened for editing")
-      refresh()
-    },
+  const { run: unapprove, isPending: isUnapproving } = useActionMutation({
+    action: unapproveTimeAction,
+    successMessage: "Reopened for editing",
+    invalidateKeys: [queryKeys.timeEntries.all, queryKeys.timeSummary.all],
+    refresh: false,
   })
 
   const isBusy = isApproving || isUnapproving
@@ -237,7 +221,7 @@ const ApprovalQueue = ({ viewerId }: { viewerId: string }) => {
                             // The server refuses self-approval, so the button
                             // is off rather than failing after the click.
                             disabled={isBusy || group.userId === viewerId}
-                            onClick={() => approve(entry.id)}
+                            onClick={() => void approve(entry.id)}
                           >
                             Approve
                           </Button>
@@ -247,7 +231,7 @@ const ApprovalQueue = ({ viewerId }: { viewerId: string }) => {
                             size="sm"
                             variant="outline"
                             disabled={isBusy}
-                            onClick={() => unapprove(entry.id)}
+                            onClick={() => void unapprove(entry.id)}
                           >
                             <Undo2 className="size-3.5" />
                             Reopen
