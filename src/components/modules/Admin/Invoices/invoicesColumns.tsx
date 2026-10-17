@@ -14,6 +14,10 @@ const STATUS_TONE: Record<InvoiceStatus, string> = {
   cancelled: "bg-muted text-muted-foreground line-through",
 }
 
+const INVOICE_STATUSES: InvoiceStatus[] = ["draft", "sent", "partially_paid", "paid", "overdue", "cancelled"]
+
+export const INVOICE_STATUS_OPTIONS = INVOICE_STATUSES.map((status) => ({ label: status.replace(/_/g, " "), value: status }))
+
 export const invoicesColumns: ColumnDef<IInvoice>[] = [
   {
     id: "invoice_number",
@@ -46,19 +50,15 @@ export const invoicesColumns: ColumnDef<IInvoice>[] = [
   },
   {
     id: "status",
-    accessorKey: "status",
+    // is_overdue is derived from today's date on the server, so it can be true
+    // while status still reads "sent"; the derived state is the honest one.
+    accessorFn: (invoice): InvoiceStatus => (invoice.is_overdue ? "overdue" : invoice.status),
     header: "Status",
-    meta: { exportValue: (invoice) => (invoice.is_overdue ? "overdue" : invoice.status) },
     cell: ({ row }) => {
-      // is_overdue is derived from today's date on the server, so it can be
-      // true while status still reads "sent". Showing the derived state is
-      // the honest one.
-      const label = row.original.is_overdue ? "overdue" : row.original.status
-      const tone = row.original.is_overdue ? STATUS_TONE.overdue : STATUS_TONE[row.original.status]
-
+      const status = row.getValue<InvoiceStatus>("status")
       return (
-        <span className={`rounded-md px-2 py-0.5 text-xs font-medium capitalize ${tone}`}>
-          {label.replace(/_/g, " ")}
+        <span className={`rounded-md px-2 py-0.5 text-xs font-medium capitalize ${STATUS_TONE[status]}`}>
+          {status.replace(/_/g, " ")}
         </span>
       )
     },
