@@ -26,21 +26,29 @@ export const readPaging = (source: ParamsSource, defaultLimit: number) => ({
   limit: Math.min(toPositiveInt(readAll(source, "limit")[0], defaultLimit), MAX_PAGE_SIZE),
 })
 
-// The query string a server-paged table fetches with: page and limit first,
-// then only the keys the endpoint accepts, in config order. The page's prefetch
-// and the browser both build it here, so they land on the same query key.
-export const buildTableQueryString = (
-  source: ParamsSource,
-  config: { paramKeys: readonly string[]; defaultLimit: number },
-): string => {
-  const { page, limit } = readPaging(source, config.defaultLimit)
-  const params = new URLSearchParams({ page: String(page), limit: String(limit) })
-  for (const key of config.paramKeys) {
+// Only the keys the endpoint accepts, in config order, so a stray
+// ?utm_source never reaches the API. Without page and limit, the API returns
+// every matching row, which is what an export needs.
+export const buildFilterQueryString = (source: ParamsSource, paramKeys: readonly string[]): string => {
+  const params = new URLSearchParams()
+  for (const key of paramKeys) {
     for (const value of readAll(source, key)) {
       if (value !== "") params.append(key, value)
     }
   }
   return params.toString()
+}
+
+// The query string a server-paged table fetches with: page and limit first,
+// then the filters. The page's prefetch and the browser both build it here,
+// so they land on the same query key.
+export const buildTableQueryString = (
+  source: ParamsSource,
+  config: { paramKeys: readonly string[]; defaultLimit: number },
+): string => {
+  const { page, limit } = readPaging(source, config.defaultLimit)
+  const filters = buildFilterQueryString(source, config.paramKeys)
+  return `page=${page}&limit=${limit}${filters ? `&${filters}` : ""}`
 }
 
 const rangeKeys = (config: Extract<DataTableFilterConfig, { type: "date-range" }>) => ({

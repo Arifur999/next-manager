@@ -1,6 +1,13 @@
 import type { DataTableFilterConfig } from "@/components/shared/table/dataTable.types"
 import { describe, expect, it } from "vitest"
-import { buildTableQueryString, filterParamKeys, readFilterValues, readPaging, writeFilterValue } from "./urlState"
+import {
+  buildFilterQueryString,
+  buildTableQueryString,
+  filterParamKeys,
+  readFilterValues,
+  readPaging,
+  writeFilterValue,
+} from "./urlState"
 
 const CONFIG = { paramKeys: ["search", "kind", "from", "to"], defaultLimit: 20 }
 
@@ -24,6 +31,14 @@ describe("buildTableQueryString", () => {
 
   it("keeps repeated keys", () => {
     expect(buildTableQueryString({ kind: ["income", "expense"] }, CONFIG)).toBe("page=1&limit=20&kind=income&kind=expense")
+  })
+})
+
+describe("buildFilterQueryString", () => {
+  it("keeps the filters and drops paging, for a fetch of every matching row", () => {
+    expect(buildFilterQueryString({ page: "3", limit: "50", kind: "income", search: "rent" }, CONFIG.paramKeys)).toBe(
+      "search=rent&kind=income",
+    )
   })
 })
 

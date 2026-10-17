@@ -13,6 +13,7 @@ const DataTable = <TData,>(props: DataTableProps<TData>) => {
   const {
     toolbarAction,
     exportFileName,
+    exportRows,
     emptyMessage,
     isLoading = false,
     isFetching = false,
@@ -65,6 +66,7 @@ const DataTable = <TData,>(props: DataTableProps<TData>) => {
         onReset={reset}
         toolbarAction={toolbarAction}
         exportFileName={exportFileName}
+        exportRows={exportRows}
       />
 
       <div className="font-condensed relative overflow-hidden rounded-lg border">

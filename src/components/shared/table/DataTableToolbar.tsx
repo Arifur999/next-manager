@@ -15,6 +15,7 @@ interface DataTableToolbarProps<TData> {
   filters?: DataTableFiltersConfig;
   toolbarAction?: React.ReactNode;
   exportFileName?: string;
+  exportRows?: () => Promise<TData[]>;
   canReset: boolean;
   onReset: () => void;
 }
@@ -25,6 +26,7 @@ const DataTableToolbar = <TData,>({
   filters,
   toolbarAction,
   exportFileName,
+  exportRows,
   canReset,
   onReset,
 }: DataTableToolbarProps<TData>) => {
@@ -51,7 +53,7 @@ const DataTableToolbar = <TData,>({
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
-        {exportFileName && <DataTableExportButton table={table} fileName={exportFileName} />}
+        {exportFileName && <DataTableExportButton table={table} fileName={exportFileName} fetchRows={exportRows} />}
         <DataTableViewOptions table={table} />
         {toolbarAction}
       </div>

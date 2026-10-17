@@ -62,6 +62,8 @@ export interface DataTableProps<TData> {
   toolbarAction?: React.ReactNode;
   // Shows an Export button; the downloaded file is named after it.
   exportFileName?: string;
+  // A server-paged table holds one page; this fetches every matching row to export.
+  exportRows?: () => Promise<TData[]>;
   emptyMessage?: string;
   // First load (skeleton rows) vs background refetch (a progress bar, rows stay).
   // toTableQueryProps(query) fills these four from a useQuery result.

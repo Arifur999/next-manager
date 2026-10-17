@@ -5,7 +5,14 @@ import type {
   DataTableFilterValue,
   DataTableProps,
 } from "@/components/shared/table/dataTable.types"
-import { buildTableQueryString, filterParamKeys, readFilterValues, readPaging, writeFilterValue } from "@/lib/table/urlState"
+import {
+  buildFilterQueryString,
+  buildTableQueryString,
+  filterParamKeys,
+  readFilterValues,
+  readPaging,
+  writeFilterValue,
+} from "@/lib/table/urlState"
 import type { PaginationState } from "@tanstack/react-table"
 import { usePathname, useSearchParams } from "next/navigation"
 import { useCallback, useMemo } from "react"
@@ -25,8 +32,8 @@ const NO_FILTERS: DataTableFilterConfig[] = []
 
 // The URL is the single source of truth for a server-paged table: page, page
 // size, search and filters all live in it, so a view can be reloaded, shared
-// and stepped back through. Returns the query string to fetch with and the
-// props to spread onto DataTable.
+// and stepped back through. Returns the query string to fetch with, the
+// filters without paging, and the props to spread onto DataTable.
 export const useServerDataTable = <TData,>(config: ServerDataTableConfig) => {
   const { filters = NO_FILTERS, search, defaultLimit } = config
   const searchParams = useSearchParams()
@@ -96,5 +103,10 @@ export const useServerDataTable = <TData,>(config: ServerDataTableConfig) => {
         : undefined,
   }
 
-  return { queryString: buildTableQueryString(searchParams, config), dataTableProps }
+  return {
+    queryString: buildTableQueryString(searchParams, config),
+    // The same filters with no paging: every matching row, for an export.
+    filterQueryString: buildFilterQueryString(searchParams, config.paramKeys),
+    dataTableProps,
+  }
 }
