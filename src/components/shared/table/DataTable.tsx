@@ -9,6 +9,7 @@ import { DEFAULT_PAGE_SIZE, useDataTable } from "./useDataTable";
 const DataTable = <TData,>(props: DataTableProps<TData>) => {
   const {
     toolbarAction,
+    exportFileName,
     emptyMessage,
     isLoading = false,
     isFetching = false,
@@ -36,7 +37,13 @@ const DataTable = <TData,>(props: DataTableProps<TData>) => {
 
   return (
     <div>
-      <DataTableToolbar table={table} search={searchFromFirstPage} toolbarAction={toolbarAction} isLoading={isLoading} />
+      <DataTableToolbar
+        table={table}
+        search={searchFromFirstPage}
+        toolbarAction={toolbarAction}
+        exportFileName={exportFileName}
+        isLoading={isLoading}
+      />
 
       <div className="font-condensed relative overflow-hidden rounded-lg border">
         {/* Rows stay on screen during a refetch; only this bar says it is running. */}

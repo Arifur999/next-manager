@@ -1,6 +1,7 @@
 "use client";
 
 import type { Table } from "@tanstack/react-table";
+import DataTableExportButton from "./DataTableExportButton";
 import DataTableSearch from "./DataTableSearch";
 import DataTableViewOptions from "./DataTableViewOptions";
 import type { DataTableSearchConfig } from "./dataTable.types";
@@ -9,10 +10,11 @@ interface DataTableToolbarProps<TData> {
   table: Table<TData>;
   search?: DataTableSearchConfig;
   toolbarAction?: React.ReactNode;
+  exportFileName?: string;
   isLoading?: boolean;
 }
 
-const DataTableToolbar = <TData,>({ table, search, toolbarAction, isLoading }: DataTableToolbarProps<TData>) => {
+const DataTableToolbar = <TData,>({ table, search, toolbarAction, exportFileName, isLoading }: DataTableToolbarProps<TData>) => {
   return (
     <div className="mb-4 flex flex-wrap items-start gap-3">
       {search && (
@@ -27,6 +29,7 @@ const DataTableToolbar = <TData,>({ table, search, toolbarAction, isLoading }: D
       )}
 
       <div className="ml-auto flex shrink-0 items-center gap-2">
+        {exportFileName && <DataTableExportButton table={table} fileName={exportFileName} />}
         <DataTableViewOptions table={table} />
         {toolbarAction}
       </div>

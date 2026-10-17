@@ -32,6 +32,8 @@ export interface DataTableProps<TData> {
   tableId?: string;
   actions?: DataTableActions<TData>;
   toolbarAction?: React.ReactNode;
+  // Shows an Export button; the downloaded file is named after it.
+  exportFileName?: string;
   emptyMessage?: string;
   // First load (skeleton rows) vs background refetch (a progress bar, rows stay).
   // toTableQueryProps(query) fills these four from a useQuery result.
