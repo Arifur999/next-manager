@@ -134,8 +134,8 @@ describe("capacityServerZodSchema", () => {
         })
     })
 
-    it("leaves a blank rate out", () => {
-        expect(capacityServerZodSchema.parse({ weekly_hours: "40", standard_rate_usd: "" }).standard_rate_usd).toBeUndefined()
+    it("sends a cleared rate as zero, which unsets it", () => {
+        expect(capacityServerZodSchema.parse({ weekly_hours: "40", standard_rate_usd: "" }).standard_rate_usd).toBe(0)
     })
 
     it("refuses a week of no hours", () => {

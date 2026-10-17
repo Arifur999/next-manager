@@ -98,6 +98,6 @@ export type ICapacityFormValues = z.infer<typeof capacityFormZodSchema>
 
 export const capacityServerZodSchema = capacityFormZodSchema.transform((values) => ({
     weekly_hours: Number(values.weekly_hours),
-    // A blank rate is left out of the payload.
-    standard_rate_usd: toNumber(values.standard_rate_usd),
+    // Zero is how the API stores "no rate". Left out, the old rate would stay.
+    standard_rate_usd: toNumber(values.standard_rate_usd) ?? 0,
 }))
