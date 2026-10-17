@@ -27,6 +27,15 @@ import { workflowStatusesListQuery } from "@/queries/work.queries"
 import { queryKeys } from "@/lib/queryKeys"
 import { usersListQuery } from "@/queries/people.queries"
 
+const emptyTask: ITaskFormValues = {
+  project_id: "",
+  title: "",
+  assignee_id: "",
+  status_id: "",
+  priority: "medium",
+  due_date: "",
+}
+
 const CreateTaskModal = () => {
   const [open, setOpen] = useState(false)
 
@@ -34,7 +43,7 @@ const CreateTaskModal = () => {
   const { data: usersData } = useQuery({ ...usersListQuery(), enabled: open })
 
   const projects = projectsData?.data ?? []
-  const users = ((usersData?.data ?? [])).filter((user) => user.status === "active")
+  const users = (usersData?.data ?? []).filter((user) => user.status === "active")
 
   // The agency's own columns, rather than a list of words baked in here.
   const { data: statusData } = useQuery(workflowStatusesListQuery("kind=task"))
@@ -47,17 +56,8 @@ const CreateTaskModal = () => {
     refresh: false,
   })
 
-  const defaultValues: ITaskFormValues = {
-    project_id: "",
-    title: "",
-    assignee_id: "",
-    status_id: "",
-    priority: "medium",
-    due_date: "",
-  }
-
   const form = useForm({
-    defaultValues,
+    defaultValues: emptyTask,
     onSubmit: async ({ value }) => {
       if (await createTask(value)) {
         setOpen(false)

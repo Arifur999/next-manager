@@ -25,6 +25,16 @@ import { useCallback, useState } from "react"
 import { leadSourcesQuery } from "@/queries/crm.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
+const emptyLead: ILeadFormValues = {
+  name: "",
+  company: "",
+  email: "",
+  phone: "",
+  source_id: "",
+  stage: "new",
+  estimated_value_usd: "",
+}
+
 const CreateLeadModal = () => {
   const [open, setOpen] = useState(false)
 
@@ -32,9 +42,7 @@ const CreateLeadModal = () => {
 
   // Retired marketplaces stay out of the picker but keep their history on the
   // leads that already point at them.
-  const activeSources = ((sourcesData?.data ?? [])).filter(
-    (source) => source.is_active,
-  )
+  const activeSources = (sourcesData?.data ?? []).filter((source) => source.is_active)
 
   const { run: addLead, isPending } = useActionMutation({
     action: createLeadAction,
@@ -43,18 +51,8 @@ const CreateLeadModal = () => {
     refresh: false,
   })
 
-  const defaultValues: ILeadFormValues = {
-    name: "",
-    company: "",
-    email: "",
-    phone: "",
-    source_id: "",
-    stage: "new",
-    estimated_value_usd: "",
-  }
-
   const form = useForm({
-    defaultValues,
+    defaultValues: emptyLead,
     onSubmit: async ({ value }) => {
       if (await addLead(value)) {
         setOpen(false)
