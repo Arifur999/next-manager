@@ -52,7 +52,7 @@ const AgencyInvites = () => {
   const [email, setEmail] = useState("")
   const [companyName, setCompanyName] = useState("")
   const [planId, setPlanId] = useState(NO_PLAN)
-  const [trialDays, setTrialDays] = useState(14)
+  const [trialDays, setTrialDays] = useState("14")
   const [freshLink, setFreshLink] = useState<string | null>(null)
   const [mailed, setMailed] = useState<{ delivered: boolean; reason: string | null } | null>(null)
   const [copied, setCopied] = useState(false)
@@ -67,9 +67,9 @@ const AgencyInvites = () => {
   const { mutate: invite, isPending } = useMutation({
     mutationFn: () =>
       inviteAgencyAction({
-        email: email.trim(),
-        ...(companyName.trim() ? { company_name: companyName.trim() } : {}),
-        ...(planId === NO_PLAN ? {} : { plan_id: planId }),
+        email,
+        company_name: companyName,
+        plan_id: planId === NO_PLAN ? "" : planId,
         trial_days: trialDays,
       }),
     onSuccess: (result) => {
@@ -212,14 +212,14 @@ const AgencyInvites = () => {
                   min={0}
                   max={365}
                   value={trialDays}
-                  onChange={(event) => setTrialDays(Number(event.target.value))}
+                  onChange={(event) => setTrialDays(event.target.value)}
                   disabled={isPending}
                   className="w-28"
                 />
                 <span className="text-sm text-muted-foreground">days</span>
               </div>
               <p className="text-xs text-muted-foreground">
-                {trialDays === 0
+                {Number(trialDays) === 0
                   ? "No trial — they start paying the day they open it."
                   : `Free for ${trialDays} days, then the plan is charged.`}
               </p>

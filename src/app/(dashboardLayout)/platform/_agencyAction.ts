@@ -1,36 +1,12 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
+import { requireId, runAction, runValidatedAction } from "@/lib/runAction"
 import { createAgencyInvite, revokeAgencyInvite } from "@/services/platform.services"
-import type { IAgencyInvite } from "@/types/platform.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+import { agencyInviteServerZodSchema } from "@/zod/platform.validation"
 
-export const inviteAgencyAction = async (
-    payload: Record<string, unknown>,
-): Promise<
-    | ApiResponse<{
-          invite: IAgencyInvite
-          join_url: string
-          email: { delivered: boolean; reason: string | null }
-      }>
-    | ApiErrorResponse
-> => {
-    try {
-        return await createAgencyInvite(payload)
-    } catch (error: unknown) {
-        // "One address cannot own two agencies" arrives here.
-        return { success: false, message: getActionErrorMessage(error, "Could not send the invite") }
-    }
-}
+// "One address cannot own two agencies" is the server's wording.
+export const inviteAgencyAction = async (values: unknown) =>
+    runValidatedAction(agencyInviteServerZodSchema, values, "Could not send the invite", createAgencyInvite)
 
-export const revokeAgencyInviteAction = async (
-    id: string,
-): Promise<ApiResponse<{ message: string }> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid invite id" }
-
-    try {
-        return await revokeAgencyInvite(id)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not revoke the invite") }
-    }
-}
+export const revokeAgencyInviteAction = async (id: string) =>
+    requireId(id, "invite") ?? runAction("Could not revoke the invite", () => revokeAgencyInvite(id))

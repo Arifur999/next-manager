@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+    agencyInviteServerZodSchema,
     createCompanyServerZodSchema,
     createPlanServerZodSchema,
     setSubscriptionServerZodSchema,
@@ -109,5 +110,32 @@ describe("createCompanyServerZodSchema", () => {
         expect(createCompanyServerZodSchema.safeParse({ ...valid, admin_password: "short" }).success).toBe(false)
         const badEmail = createCompanyServerZodSchema.safeParse({ ...valid, admin_email: "rina" })
         expect(badEmail.error?.issues[0]?.message).toBe("Enter a valid email address for the admin")
+    })
+})
+
+describe("agencyInviteServerZodSchema", () => {
+    const valid = { email: " owner@northwind.com ", company_name: " Northwind ", plan_id: "p1", trial_days: "14" }
+
+    it("builds the API payload", () => {
+        expect(agencyInviteServerZodSchema.parse(valid)).toEqual({
+            email: "owner@northwind.com",
+            company_name: "Northwind",
+            plan_id: "p1",
+            trial_days: 14,
+        })
+    })
+
+    it("leaves out an empty name and plan, and reads an empty trial as none", () => {
+        expect(agencyInviteServerZodSchema.parse({ ...valid, company_name: " ", plan_id: "", trial_days: "" })).toEqual({
+            email: "owner@northwind.com",
+            company_name: undefined,
+            plan_id: undefined,
+            trial_days: 0,
+        })
+    })
+
+    it("rejects an invalid email and a trial over a year", () => {
+        expect(agencyInviteServerZodSchema.safeParse({ ...valid, email: "owner" }).success).toBe(false)
+        expect(agencyInviteServerZodSchema.safeParse({ ...valid, trial_days: "400" }).success).toBe(false)
     })
 })

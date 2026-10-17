@@ -77,6 +77,23 @@ export const companyFormZodSchema = z.object({
 
 export type ICompanyFormValues = z.infer<typeof companyFormZodSchema>
 
+export const agencyInviteFormZodSchema = z.object({
+    email: z.string().trim().min(1, "Email is required").pipe(z.email("A valid email is required")),
+    // Empty lets the owner name their own agency on the way in.
+    company_name: z.string().trim().max(120, "That is longer than a name"),
+    // Empty means whatever new sign-ups get, from the platform settings.
+    plan_id: z.string(),
+    trial_days: z
+        .string()
+        .trim()
+        .refine(
+            (value) => isBlank(value) || isWholeNumberBetween(value, 0, 365),
+            "A trial is a whole number of days, from 0 to 365",
+        ),
+})
+
+export type IAgencyInviteFormValues = z.infer<typeof agencyInviteFormZodSchema>
+
 // Server schemas: the form values checked again on the server and turned into
 // the payloads platform.validation.ts on the API expects.
 
@@ -103,4 +120,12 @@ export const createCompanyServerZodSchema = companyFormZodSchema.transform((valu
     admin_password: values.admin_password,
     plan_id: values.plan_id || undefined,
     trial_days: toNumber(values.trial_days),
+}))
+
+export const agencyInviteServerZodSchema = agencyInviteFormZodSchema.transform((values) => ({
+    email: values.email,
+    company_name: values.company_name || undefined,
+    plan_id: values.plan_id || undefined,
+    // An emptied box is no trial, as it was when the field held a number.
+    trial_days: toNumber(values.trial_days) ?? 0,
 }))
