@@ -18,12 +18,14 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
+import { z } from "zod";
 import { createActionsColumn } from "./columns/createActionsColumn";
 import type { DataTableProps } from "./dataTable.types";
 
 export const DEFAULT_PAGE_SIZE = 10;
 
 const ALL_COLUMNS_VISIBLE: VisibilityState = {};
+const columnVisibilitySchema = z.record(z.string(), z.boolean());
 
 // The TanStack instance behind DataTable. Passing `sorting` or `pagination`
 // hands that concern to the caller (server-driven); otherwise it stays in memory.
@@ -44,6 +46,7 @@ export const useDataTable = <TData,>({
   const [columnVisibility, setColumnVisibility] = usePersistentState(
     tableId ? `data-table:${tableId}:columns` : undefined,
     ALL_COLUMNS_VISIBLE,
+    columnVisibilitySchema,
   );
 
   // The actions column is appended here rather than declared per feature, so
