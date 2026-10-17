@@ -78,5 +78,8 @@ export const getProjectLinks = async (queryString?: string) =>
 export const createProjectLink = async (payload: Record<string, unknown>) =>
     httpClient.post<IProjectLink>("/project-links", payload)
 
+export const updateProjectLink = async (id: string, payload: Record<string, unknown>) =>
+    httpClient.patch<IProjectLink>(`/project-links/${id}`, payload)
+
 export const deleteProjectLink = async (id: string) =>
     httpClient.delete<{ message: string }>(`/project-links/${id}`)

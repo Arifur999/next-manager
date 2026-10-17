@@ -67,5 +67,8 @@ export const getClientLinks = async (queryString?: string) =>
 export const createClientLink = async (payload: Record<string, unknown>) =>
     httpClient.post<IClientLink>("/client-links", payload)
 
+export const updateClientLink = async (id: string, payload: Record<string, unknown>) =>
+    httpClient.patch<IClientLink>(`/client-links/${id}`, payload)
+
 export const deleteClientLink = async (id: string) =>
     httpClient.delete<{ message: string }>(`/client-links/${id}`)

@@ -46,6 +46,9 @@ export const createClientLinkServerZodSchema = clientLinkFormZodSchema
         url: values.url,
     }))
 
+// Renaming or repointing a link: the form already holds the payload, trimmed.
+export const updateClientLinkServerZodSchema = clientLinkFormZodSchema
+
 export const leadFormZodSchema = z.object({
     name: z.string().min(1, "Name is required"),
     company: z.string().optional(),

@@ -74,6 +74,9 @@ export const createProjectLinkServerZodSchema = projectLinkFormZodSchema
         url: values.url,
     }))
 
+// Renaming or repointing a link: the form already holds the payload, trimmed.
+export const updateProjectLinkServerZodSchema = projectLinkFormZodSchema
+
 export const milestoneFormZodSchema = z.object({
     title: z.string().trim().min(1, "Title is required"),
     due_date: isoDate,
