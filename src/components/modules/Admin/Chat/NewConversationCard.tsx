@@ -29,7 +29,7 @@ const NewConversationCard = ({
   isPending,
 }: {
   meId: string | null
-  onCreate: (values: IConversationFormValues) => void
+  onCreate: (values: IConversationFormValues) => Promise<boolean>
   isPending: boolean
 }) => {
   const [type, setType] = useState<"direct" | "group">("direct")
@@ -46,8 +46,10 @@ const NewConversationCard = ({
       current.includes(id) ? current.filter((value) => value !== id) : [...current, id]
     )
 
-  const submit = () => {
-    onCreate({ type, name, member_ids: selected })
+  // Cleared only once the conversation exists, so a refusal keeps the picks.
+  const submit = async () => {
+    if (!(await onCreate({ type, name, member_ids: selected }))) return
+
     setName("")
     setSelected([])
   }
@@ -60,7 +62,7 @@ const NewConversationCard = ({
       onSubmit={(event) => {
         event.preventDefault()
         if (!ready) return
-        submit()
+        void submit()
       }}
     >
       <div className="space-y-1.5">

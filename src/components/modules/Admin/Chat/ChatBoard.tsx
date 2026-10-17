@@ -110,11 +110,7 @@ const ChatBoard = ({ meId }: { meId: string | null }) => {
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
       <Card className="gap-0 overflow-hidden p-0">
-        <NewConversationCard
-          meId={meId}
-          onCreate={(values) => void startConversation(values)}
-          isPending={starting}
-        />
+        <NewConversationCard meId={meId} onCreate={startConversation} isPending={starting} />
         <ConversationList
           conversations={conversations}
           activeId={activeId}
