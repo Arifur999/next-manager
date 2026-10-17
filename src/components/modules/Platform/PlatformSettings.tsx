@@ -4,6 +4,7 @@ import { site } from "@/data/site"
 import { updateSettingsAction } from "@/app/(dashboardLayout)/platform/_settingsAction"
 import { planOptionLabel } from "@/components/modules/Platform/planLabel"
 import ErrorState from "@/components/shared/state/ErrorState"
+import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -48,7 +49,7 @@ const PlatformSettings = () => {
   const settings = data?.data
 
   if (isLoading) {
-    return <div className="h-72 animate-pulse rounded-xl bg-muted/40" />
+    return <LoadingBlock height="h-72" rounded />
   }
 
   // Only when nothing ever arrived: a failed background refetch keeps the form.

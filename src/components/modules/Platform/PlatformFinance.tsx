@@ -3,6 +3,7 @@
 import FinanceFigures from "@/components/modules/Platform/FinanceFigures"
 import PlatformExpenses from "@/components/modules/Platform/PlatformExpenses"
 import ErrorState from "@/components/shared/state/ErrorState"
+import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
@@ -42,7 +43,7 @@ const PlatformFinance = () => {
   // Only the figures wait or fail: the window picker stays, so a window that
   // cannot be loaded can still be changed.
   const renderFigures = () => {
-    if (financeQuery.isLoading) return <div className="h-64 animate-pulse rounded-xl bg-muted/40" />
+    if (financeQuery.isLoading) return <LoadingBlock height="h-64" rounded />
 
     if (financeQuery.isError || !finance) {
       return (

@@ -2,6 +2,7 @@
 
 import MetricTile, { count, usd } from "@/components/shared/kpi/MetricTile"
 import ErrorState from "@/components/shared/state/ErrorState"
+import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { useQuery } from "@tanstack/react-query"
@@ -32,7 +33,7 @@ const PlatformOverview = () => {
   const overview = data?.data
 
   if (isLoading && !overview) {
-    return <div className="h-48 animate-pulse rounded-xl bg-muted/40" />
+    return <LoadingBlock height="h-48" rounded />
   }
 
   if (isError || !overview) {

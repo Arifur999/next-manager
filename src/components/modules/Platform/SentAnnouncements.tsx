@@ -1,6 +1,7 @@
 "use client"
 
 import { AUDIENCE_LABEL } from "@/components/modules/Platform/announcementAudience"
+import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -25,7 +26,7 @@ const SentAnnouncements = ({ sent, isLoading, onRemove }: SentAnnouncementsProps
     </CardHeader>
 
     {isLoading ? (
-      <div className="h-32 animate-pulse bg-muted/40" />
+      <LoadingBlock height="h-32" />
     ) : sent.length === 0 ? (
       <p className="px-5 py-10 text-center text-sm text-muted-foreground">
         You have not sent anything yet.

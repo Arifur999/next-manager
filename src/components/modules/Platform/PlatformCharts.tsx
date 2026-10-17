@@ -2,6 +2,7 @@
 
 import ChartCard from "@/components/modules/Platform/ChartCard"
 import ErrorState from "@/components/shared/state/ErrorState"
+import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { formatUsd } from "@/lib/currency"
 import { useQuery } from "@tanstack/react-query"
 import { format, parse, parseISO } from "date-fns"
@@ -64,7 +65,7 @@ const PlatformCharts = () => {
   const trend = data?.data
 
   if (isLoading && !trend) {
-    return <div className="h-64 animate-pulse rounded-xl bg-muted/40" />
+    return <LoadingBlock height="h-64" rounded />
   }
 
   if (isError || !trend) {
