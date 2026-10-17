@@ -70,13 +70,15 @@ const DepartmentsBoard = () => {
     successMessage: "Department deleted",
     invalidateKeys: [queryKeys.departments.all],
     refresh: false,
-    onSuccess: () => {
-      if (editingId) reset()
-    },
   })
 
   const handleSave = async () => {
     if (await saveDepartment({ name, description })) reset()
+  }
+
+  // Only the department being edited takes the form with it.
+  const handleDelete = async (id: string) => {
+    if ((await removeDepartment(id)) && editingId === id) reset()
   }
 
   return (
@@ -213,7 +215,7 @@ const DepartmentsBoard = () => {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => void removeDepartment(department.id)}
+                      onClick={() => void handleDelete(department.id)}
                       aria-label={`Delete ${department.name}`}
                     >
                       <Trash2 className="size-4" />
