@@ -5,6 +5,7 @@ import {
   invitePlatformAdminAction,
   revokePlatformInviteAction,
 } from "@/app/(dashboardLayout)/platform/_teamAction"
+import InviteLinkPanel from "@/components/modules/Platform/InviteLinkPanel"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -22,7 +23,7 @@ import {
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { useQuery } from "@tanstack/react-query"
 import { format, isPast, parseISO } from "date-fns"
-import { Check, Copy, MailPlus, Trash2, TriangleAlert } from "lucide-react"
+import { MailPlus, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 import { platformInvitesQuery } from "@/queries/platform.queries"
@@ -51,7 +52,6 @@ const PlatformInvites = () => {
   const [permissions, setPermissions] = useState<string[]>([])
   const [freshLink, setFreshLink] = useState<string | null>(null)
   const [mailed, setMailed] = useState<{ delivered: boolean; reason: string | null } | null>(null)
-  const [copied, setCopied] = useState(false)
   const [revoking, setRevoking] = useState<IPlatformInvite | null>(null)
 
   const { data, isLoading } = useQuery(platformInvitesQuery())
@@ -73,7 +73,6 @@ const PlatformInvites = () => {
 
       if (mail.delivered) toast.success(result.message)
       else toast.warning(result.message, { description: mail.reason ?? undefined })
-      setCopied(false)
     },
   })
 
@@ -93,17 +92,6 @@ const PlatformInvites = () => {
 
     setEmail("")
     setPermissions([])
-  }
-
-  const copy = async () => {
-    if (!freshLink) return
-
-    try {
-      await navigator.clipboard.writeText(freshLink)
-      setCopied(true)
-    } catch {
-      toast.message("Copy it from the box above")
-    }
   }
 
   const toggle = (permission: PlatformPermission, on: boolean) =>
@@ -187,49 +175,15 @@ const PlatformInvites = () => {
         </form>
 
         {freshLink && (
-          <div className="border-t bg-muted/40 px-5 py-4">
-            {/* The link is shown either way. Mail can be filtered, and a
-                sending domain that is not yet verified reaches nobody but your
-                own address — an operator with no way to pass the link on is
-                stuck waiting on somebody else's spam folder. */}
-            <p className="flex items-center gap-2 text-sm font-medium">
-              {mailed?.delivered ? (
-                <>
-                  <Check className="size-4" aria-hidden="true" />
-                  Emailed to them
-                </>
-              ) : (
-                <>
-                  <TriangleAlert className="size-4" aria-hidden="true" />
-                  Not emailed — send them this link yourself
-                </>
-              )}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {mailed?.delivered
-                ? "Keep a copy anyway, in case it lands in their spam. This is the only time it can be read — lose it and you revoke the invite and send another."
-                : (mailed?.reason ??
-                  "This is the only time it can be read. Lose it and you revoke the invite and send another.")}
-            </p>
-
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Input readOnly value={freshLink} className="min-w-64 flex-1 font-mono text-xs" />
-              <Button type="button" variant="outline" onClick={copy}>
-                {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-                {copied ? "Copied" : "Copy"}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => {
-                  setFreshLink(null)
-                  setMailed(null)
-                }}
-              >
-                Done
-              </Button>
-            </div>
-          </div>
+          <InviteLinkPanel
+            key={freshLink}
+            link={freshLink}
+            mail={mailed}
+            onDone={() => {
+              setFreshLink(null)
+              setMailed(null)
+            }}
+          />
         )}
       </Card>
 
