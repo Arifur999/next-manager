@@ -4,6 +4,7 @@ import { inviteAgencyAction } from "@/app/(dashboardLayout)/platform/_agencyActi
 import AgencyInviteList from "@/components/modules/Platform/AgencyInviteList"
 import InviteLinkPanel from "@/components/modules/Platform/InviteLinkPanel"
 import { planOptionLabel } from "@/components/modules/Platform/planLabel"
+import AppField from "@/components/shared/form/AppField"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -16,6 +17,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useActionMutation } from "@/hooks/useActionMutation"
+import { agencyInviteFormZodSchema, type IAgencyInviteFormValues } from "@/zod/platform.validation"
+import { useForm } from "@tanstack/react-form"
 import { useQuery } from "@tanstack/react-query"
 import { Send } from "lucide-react"
 import Link from "next/link"
@@ -36,13 +39,12 @@ import { queryKeys } from "@/lib/queryKeys"
  * nothing behind on the customers list.
  */
 
+// A Select cannot hold "", which is what the form keeps for "the sign-up default".
 const NO_PLAN = "__none__"
 
+const inviteDefaults: IAgencyInviteFormValues = { email: "", company_name: "", plan_id: "", trial_days: "14" }
+
 const AgencyInvites = () => {
-  const [email, setEmail] = useState("")
-  const [companyName, setCompanyName] = useState("")
-  const [planId, setPlanId] = useState(NO_PLAN)
-  const [trialDays, setTrialDays] = useState("14")
   const [freshLink, setFreshLink] = useState<string | null>(null)
   const [mailed, setMailed] = useState<{ delivered: boolean; reason: string | null } | null>(null)
 
@@ -68,20 +70,18 @@ const AgencyInvites = () => {
     },
   })
 
-  const handleInvite = async () => {
-    const sent = await sendInvite({
-      email,
-      company_name: companyName,
-      plan_id: planId === NO_PLAN ? "" : planId,
-      trial_days: trialDays,
-    })
-    if (!sent) return
+  const form = useForm({
+    defaultValues: inviteDefaults,
+    onSubmit: async ({ value, formApi }) => {
+      if (!(await sendInvite(value))) return
 
-    setEmail("")
-    setCompanyName("")
-  }
-
-  const chosenPlan = plans.find((plan) => plan.id === planId)
+      // The plan and trial stay as chosen, for the next agency invited on the same deal.
+      formApi.reset(
+        { ...inviteDefaults, plan_id: value.plan_id, trial_days: value.trial_days },
+        { keepDefaultValues: true },
+      )
+    },
+  })
 
   return (
     <div className="space-y-6">
@@ -97,104 +97,128 @@ const AgencyInvites = () => {
 
         <form
           className="space-y-5 p-5"
+          noValidate
           onSubmit={(event) => {
             event.preventDefault()
-            if (!email.trim()) return
-            void handleInvite()
+            event.stopPropagation()
+            void form.handleSubmit()
           }}
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="agency-email">Owner&apos;s email</Label>
-              <Input
-                id="agency-email"
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="owner@theiragency.com"
-                disabled={isPending}
-              />
+              <form.Field name="email" validators={{ onChange: agencyInviteFormZodSchema.shape.email }}>
+                {(field) => (
+                  <AppField
+                    field={field}
+                    label="Owner's email"
+                    type="email"
+                    placeholder="owner@theiragency.com"
+                    disabled={isPending}
+                  />
+                )}
+              </form.Field>
               <p className="text-xs text-muted-foreground">
                 The link is bound to this address and works once.
               </p>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="agency-name">Agency name</Label>
-              <Input
-                id="agency-name"
-                value={companyName}
-                onChange={(event) => setCompanyName(event.target.value)}
-                placeholder="Leave empty and they name it themselves"
-                disabled={isPending}
-              />
-              <p className="text-xs text-muted-foreground">
-                {companyName.trim()
-                  ? "Fixed on the way in — this is the agency the deal was agreed with."
-                  : "They will type their own agency name when they open it."}
-              </p>
-            </div>
+            <form.Field
+              name="company_name"
+              validators={{ onChange: agencyInviteFormZodSchema.shape.company_name }}
+            >
+              {(field) => (
+                <div className="space-y-1.5">
+                  <AppField
+                    field={field}
+                    label="Agency name"
+                    placeholder="Leave empty and they name it themselves"
+                    disabled={isPending}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {field.state.value.trim()
+                      ? "Fixed on the way in — this is the agency the deal was agreed with."
+                      : "They will type their own agency name when they open it."}
+                  </p>
+                </div>
+              )}
+            </form.Field>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="agency-plan">Plan</Label>
-              <Select value={planId} onValueChange={setPlanId}>
-                <SelectTrigger id="agency-plan" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NO_PLAN}>Whatever new sign-ups get</SelectItem>
-                  {plans.map((plan) => (
-                    <SelectItem key={plan.id} value={plan.id}>
-                      {planOptionLabel(plan)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                {chosenPlan ? (
-                  `They are told this before they choose a password.`
-                ) : (
-                  <>
-                    Falls back to the default on{" "}
-                    <Link
-                      href="/platform/settings"
-                      className="text-primary underline-offset-4 hover:underline"
-                    >
-                      settings
-                    </Link>
-                    . With none set they arrive unprovisioned.
-                  </>
-                )}
-              </p>
-            </div>
+            <form.Field name="plan_id">
+              {(field) => (
+                <div className="space-y-1.5">
+                  <Label htmlFor="agency-plan">Plan</Label>
+                  <Select
+                    value={field.state.value || NO_PLAN}
+                    onValueChange={(value) => field.handleChange(value === NO_PLAN ? "" : value)}
+                  >
+                    <SelectTrigger id="agency-plan" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NO_PLAN}>Whatever new sign-ups get</SelectItem>
+                      {plans.map((plan) => (
+                        <SelectItem key={plan.id} value={plan.id}>
+                          {planOptionLabel(plan)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {plans.some((plan) => plan.id === field.state.value) ? (
+                      "They are told this before they choose a password."
+                    ) : (
+                      <>
+                        Falls back to the default on{" "}
+                        <Link
+                          href="/platform/settings"
+                          className="text-primary underline-offset-4 hover:underline"
+                        >
+                          settings
+                        </Link>
+                        . With none set they arrive unprovisioned.
+                      </>
+                    )}
+                  </p>
+                </div>
+              )}
+            </form.Field>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="agency-trial">Trial length</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="agency-trial"
-                  type="number"
-                  min={0}
-                  max={365}
-                  value={trialDays}
-                  onChange={(event) => setTrialDays(event.target.value)}
-                  disabled={isPending}
-                  className="w-28"
-                />
-                <span className="text-sm text-muted-foreground">days</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {Number(trialDays) === 0
-                  ? "No trial — they start paying the day they open it."
-                  : `Free for ${trialDays} days, then the plan is charged.`}
-              </p>
-            </div>
+            <form.Field name="trial_days">
+              {(field) => (
+                <div className="space-y-1.5">
+                  <Label htmlFor="agency-trial">Trial length</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="agency-trial"
+                      type="number"
+                      min={0}
+                      max={365}
+                      value={field.state.value}
+                      onChange={(event) => field.handleChange(event.target.value)}
+                      onBlur={field.handleBlur}
+                      disabled={isPending}
+                      className="w-28"
+                    />
+                    <span className="text-sm text-muted-foreground">days</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {Number(field.state.value) === 0
+                      ? "No trial — they start paying the day they open it."
+                      : `Free for ${field.state.value} days, then the plan is charged.`}
+                  </p>
+                </div>
+              )}
+            </form.Field>
           </div>
 
-          <Button type="submit" disabled={isPending || !email.trim()}>
-            <Send className="size-4" />
-            {isPending ? "Sending..." : "Send invite"}
-          </Button>
+          <form.Subscribe selector={({ values }) => values.email.trim() !== ""}>
+            {(hasEmail) => (
+              <Button type="submit" disabled={isPending || !hasEmail}>
+                <Send className="size-4" />
+                {isPending ? "Sending..." : "Send invite"}
+              </Button>
+            )}
+          </form.Subscribe>
         </form>
 
         {freshLink && (
