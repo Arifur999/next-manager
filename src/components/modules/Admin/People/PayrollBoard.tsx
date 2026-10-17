@@ -56,7 +56,7 @@ const PayrollBoard = () => {
     refresh: false,
   })
 
-  const { run: savePayrollItems } = useActionMutation({
+  const { run: savePayrollItems, isPending: isSaving } = useActionMutation({
     action: ({ id, items }: { id: string; items: IPayrollItemFormValues[] }) =>
       setPayrollItemsAction(id, { items }),
     successMessage: "Saved",
@@ -65,7 +65,7 @@ const PayrollBoard = () => {
   })
 
   // No successMessage: the server counts what it actually paid.
-  const { run: payPayroll } = useActionMutation({
+  const { run: payPayroll, isPending: isPaying } = useActionMutation({
     action: ({ id, accountId }: { id: string; accountId: string }) =>
       completePayrollAction(id, { account_id: accountId }),
     invalidateKeys: PAYROLL_KEYS,
@@ -150,6 +150,7 @@ const PayrollBoard = () => {
           accounts={accounts}
           onSave={(items) => void savePayrollItems({ id: run.id, items })}
           onPay={(accountId) => void payPayroll({ id: run.id, accountId })}
+          isBusy={isSaving || isPaying}
           onDiscard={() => setDiscarding(run)}
         />
       ))}

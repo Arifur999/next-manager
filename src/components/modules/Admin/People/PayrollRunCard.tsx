@@ -32,12 +32,15 @@ const PayrollRunCard = ({
   onSave,
   onPay,
   onDiscard,
+  isBusy,
 }: {
   run: IPayrollRun
   accounts: IAccount[]
   onSave: (items: IPayrollItemFormValues[]) => void
   onPay: (accountId: string) => void
   onDiscard: () => void
+  /** A save or payment is in flight, so neither can be sent twice. */
+  isBusy: boolean
 }) => {
   const [draft, setDraft] = useState<Draft>({})
   const [accountId, setAccountId] = useState("")
@@ -174,7 +177,7 @@ const PayrollRunCard = ({
                 }))
               )
             }
-            disabled={Object.keys(draft).length === 0}
+            disabled={isBusy || Object.keys(draft).length === 0}
           >
             Save numbers
           </Button>
@@ -192,7 +195,7 @@ const PayrollRunCard = ({
             </SelectContent>
           </Select>
 
-          <Button disabled={!accountId || total <= 0} onClick={() => onPay(accountId)}>
+          <Button disabled={isBusy || !accountId || total <= 0} onClick={() => onPay(accountId)}>
             Pay {formatBdt(total)}
           </Button>
 
