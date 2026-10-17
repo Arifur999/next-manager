@@ -73,12 +73,7 @@ const LogTimeModal = ({ defaultDate }: { defaultDate: string }) => {
   const projects = projectsData?.data ?? []
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: ILogTimeFormValues) =>
-      logTimeAction({
-        ...values,
-        hours: Number(values.hours),
-        task_id: values.task_id || null,
-      }),
+    mutationFn: (values: ILogTimeFormValues) => logTimeAction(values),
   })
 
   const defaultValues: ILogTimeFormValues = {

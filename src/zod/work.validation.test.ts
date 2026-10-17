@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
     createTaskServerZodSchema,
     createWorkflowStatusServerZodSchema,
+    logTimeServerZodSchema,
     moveTaskServerZodSchema,
     updateWorkflowStatusServerZodSchema,
 } from "./work.validation"
@@ -79,5 +80,40 @@ describe("updateWorkflowStatusServerZodSchema", () => {
     it("rejects a negative or fractional position", () => {
         expect(updateWorkflowStatusServerZodSchema.safeParse({ sort_order: -1 }).success).toBe(false)
         expect(updateWorkflowStatusServerZodSchema.safeParse({ sort_order: 1.5 }).success).toBe(false)
+    })
+})
+
+describe("logTimeServerZodSchema", () => {
+    const validEntry = {
+        project_id: "p1",
+        task_id: "t1",
+        date: "2026-10-16",
+        hours: "6.5",
+        is_billable: true,
+        notes: "Pricing page",
+    }
+
+    it("builds the API payload with the hours as a number", () => {
+        expect(logTimeServerZodSchema.parse(validEntry)).toEqual({ ...validEntry, hours: 6.5 })
+    })
+
+    it("sends a blank task as null", () => {
+        expect(logTimeServerZodSchema.parse({ ...validEntry, task_id: "" }).task_id).toBeNull()
+    })
+
+    it("rejects zero hours and more than a day", () => {
+        expect(logTimeServerZodSchema.safeParse({ ...validEntry, hours: "0" }).error?.issues[0]?.message).toBe(
+            "Hours must be greater than zero",
+        )
+        expect(logTimeServerZodSchema.safeParse({ ...validEntry, hours: "65" }).error?.issues[0]?.message).toBe(
+            "A day is 24 hours — check the decimal point",
+        )
+    })
+
+    it("requires a project and a date", () => {
+        expect(logTimeServerZodSchema.safeParse({ ...validEntry, project_id: "" }).error?.issues[0]?.message).toBe(
+            "Choose a project",
+        )
+        expect(logTimeServerZodSchema.safeParse({ ...validEntry, date: "16/10/2026" }).success).toBe(false)
     })
 })

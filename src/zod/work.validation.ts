@@ -80,3 +80,12 @@ export const updateWorkflowStatusServerZodSchema = z.object({
 })
 
 export type IWorkflowStatusChange = z.infer<typeof updateWorkflowStatusServerZodSchema>
+
+export const logTimeServerZodSchema = logTimeFormZodSchema.transform((values) => ({
+    project_id: values.project_id,
+    task_id: values.task_id || null,
+    date: values.date,
+    hours: Number(values.hours),
+    is_billable: values.is_billable,
+    notes: values.notes,
+}))
