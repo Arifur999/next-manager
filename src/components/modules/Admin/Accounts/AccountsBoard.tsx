@@ -2,6 +2,7 @@
 
 import CreateAccountModal from "@/components/modules/Admin/Accounts/CreateAccountModal"
 import StatTile from "@/components/shared/StatTile"
+import ErrorState from "@/components/shared/state/ErrorState"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt, formatMoney, formatUsd } from "@/lib/currency"
@@ -73,11 +74,24 @@ const CurrencyColumn = ({
  * addition this app refuses to do anywhere else.
  */
 const AccountsBoard = () => {
-  const { data, isLoading } = useQuery(accountsQuery())
+  const { data, isLoading, isError, isFetching, refetch } = useQuery(accountsQuery())
 
   const accounts = data?.data ?? []
   const usd = accounts.filter((account) => account.currency === "USD")
   const bdt = accounts.filter((account) => account.currency === "BDT")
+
+  // Two empty columns and a zero balance would read as "no money".
+  if (isError) {
+    return (
+      <Card>
+        <ErrorState
+          message="Accounts did not load."
+          onRetry={() => void refetch()}
+          isRetrying={isFetching}
+        />
+      </Card>
+    )
+  }
 
   if (isLoading && accounts.length === 0) {
     return (
