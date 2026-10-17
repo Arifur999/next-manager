@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
     assignProjectMemberServerZodSchema,
+    createProjectLinkServerZodSchema,
     createProjectServerZodSchema,
     updateProjectServerZodSchema,
 } from "./project.validation"
@@ -72,5 +73,26 @@ describe("assignProjectMemberServerZodSchema", () => {
             "Choose someone",
         )
         expect(assignProjectMemberServerZodSchema.safeParse({ ...validAssignment, project_id: "" }).success).toBe(false)
+    })
+})
+
+describe("createProjectLinkServerZodSchema", () => {
+    const validLink = { project_id: "p1", label: "Figma file", url: "https://figma.com/file/x" }
+
+    it("trims the label and URL into the API payload", () => {
+        expect(
+            createProjectLinkServerZodSchema.parse({ ...validLink, label: " Figma file ", url: "https://figma.com/file/x  " }),
+        ).toEqual(validLink)
+    })
+
+    it("rejects a label or URL that is only spaces", () => {
+        expect(createProjectLinkServerZodSchema.safeParse({ ...validLink, label: "  " }).error?.issues[0]?.message).toBe(
+            "Give it a name",
+        )
+        expect(createProjectLinkServerZodSchema.safeParse({ ...validLink, url: "" }).success).toBe(false)
+    })
+
+    it("requires the project it belongs to", () => {
+        expect(createProjectLinkServerZodSchema.safeParse({ ...validLink, project_id: "" }).success).toBe(false)
     })
 })

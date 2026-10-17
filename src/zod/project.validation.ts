@@ -56,3 +56,20 @@ export const assignProjectMemberServerZodSchema = projectMemberFormZodSchema
         user_id: values.user_id,
         role_on_project: values.role_on_project,
     }))
+
+// Whether the URL is a full http(s) one is the server's call; its message
+// says what to fix.
+export const projectLinkFormZodSchema = z.object({
+    label: z.string().trim().min(1, "Give it a name"),
+    url: z.string().trim().min(1, "Enter a full URL, including https://"),
+})
+
+export type IProjectLinkFormValues = z.infer<typeof projectLinkFormZodSchema>
+
+export const createProjectLinkServerZodSchema = projectLinkFormZodSchema
+    .extend({ project_id: z.string().min(1, "Invalid project id") })
+    .transform((values) => ({
+        project_id: values.project_id,
+        label: values.label,
+        url: values.url,
+    }))

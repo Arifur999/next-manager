@@ -61,8 +61,7 @@ const ProjectLinksPanel = ({
   }
 
   const { mutate: add, isPending } = useMutation({
-    mutationFn: () =>
-      addProjectLinkAction({ project_id: projectId, label: label.trim(), url: url.trim() }),
+    mutationFn: () => addProjectLinkAction({ project_id: projectId, label, url }),
     onSuccess: (result) => {
       if (!result.success) {
         // "Only http and https links can be stored" arrives here.
