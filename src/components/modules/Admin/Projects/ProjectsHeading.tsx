@@ -9,16 +9,16 @@ const ProjectsHeading = () => {
   const status = params.get("status")
   const isMine = params.get("mine") === "true"
 
-  const description = isMine
-    ? "Projects you are on the team for."
-    : status
-      ? `Projects sitting at ${status}.`
-      : "Work for clients. Payments, expenses and payouts can all be tied to one."
+  const describe = () => {
+    if (isMine) return "Projects you are on the team for."
+    if (status) return `Projects sitting at ${status}.`
+    return "Work for clients. Payments, expenses and payouts can all be tied to one."
+  }
 
   return (
     <div>
       <h1 className="text-2xl font-semibold tracking-tight">{isMine ? "My projects" : (status ?? "Projects")}</h1>
-      <p className="text-sm text-muted-foreground">{description}</p>
+      <p className="text-sm text-muted-foreground">{describe()}</p>
     </div>
   )
 }
