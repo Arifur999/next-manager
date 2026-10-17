@@ -12,7 +12,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import {
@@ -26,22 +25,14 @@ import { useActionMutation } from "@/hooks/useActionMutation"
 import { companyFormZodSchema, type ICompanyFormValues } from "@/zod/platform.validation"
 import { useForm, useStore } from "@tanstack/react-form"
 import { useQuery } from "@tanstack/react-query"
-import { Plus } from "lucide-react"
-import { useState } from "react"
 import { plansQuery } from "@/queries/platform.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
 /**
- * Provisioning a company by hand.
- *
- * For a customer who agreed a price before ever seeing the sign-up form. It
- * creates the workspace, its first admin and its subscription together,
- * because a workspace nobody can sign in to is not a workspace.
- *
- * The password is set here and handed over out of band. That is not ideal and
- * the copy says so — the admin should change it, and the reset flow exists for
- * exactly this. Emailing an invite instead would be better and is a bigger
- * change than this screen.
+ * Provisioning a company by hand, for a customer who agreed a price before
+ * seeing the sign-up form. The workspace, its first admin and its subscription
+ * are created together. The password is handed over out of band, which is why
+ * an invite link is the recommended way in and this is the fallback.
  */
 
 // A Select cannot hold "", which is what the form keeps for "let the API pick".
@@ -56,9 +47,12 @@ const companyDefaults: ICompanyFormValues = {
   trial_days: "14",
 }
 
-const CreateCompanyModal = () => {
-  const [open, setOpen] = useState(false)
+type CreateCompanyModalProps = {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}
 
+const CreateCompanyModal = ({ open, onOpenChange }: CreateCompanyModalProps) => {
   const { data: plansData } = useQuery({ ...plansQuery(), enabled: open })
 
   const plans = plansData?.data ?? []
@@ -68,7 +62,7 @@ const CreateCompanyModal = () => {
     onSubmit: async ({ value, formApi }) => {
       if (!(await createCompany(value))) return
 
-      setOpen(false)
+      onOpenChange(false)
       // The plan and trial stay as chosen, for the next company sold the same way.
       formApi.reset(
         { ...companyDefaults, plan_id: value.plan_id, trial_days: value.trial_days },
@@ -87,21 +81,13 @@ const CreateCompanyModal = () => {
   })
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button type="button">
-          <Plus className="size-4" />
-          New company
-        </Button>
-      </DialogTrigger>
-
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create a company</DialogTitle>
           <DialogDescription>
-            Sets up the workspace, its first admin and its subscription in one go. You
-            hand the password over yourself — they should change it, and the reset flow
-            is there if they do not.
+            Sets up the workspace, its first admin and its subscription at once. You hand
+            the password over yourself and ask them to change it.
           </DialogDescription>
         </DialogHeader>
 
@@ -119,7 +105,7 @@ const CreateCompanyModal = () => {
               <AppField
                 field={field}
                 label="Company name"
-                placeholder="Bright Pixel Agency"
+                placeholder="e.g. Bright Pixel Agency"
                 disabled={isPending}
               />
             )}
@@ -130,7 +116,7 @@ const CreateCompanyModal = () => {
               name="admin_name"
               validators={{ onChange: companyFormZodSchema.shape.admin_name }}
             >
-              {(field) => <AppField field={field} label="Admin's name" disabled={isPending} />}
+              {(field) => <AppField field={field} label="Admin's name" autoComplete="off" disabled={isPending} />}
             </form.Field>
 
             <form.Field
@@ -138,29 +124,25 @@ const CreateCompanyModal = () => {
               validators={{ onChange: companyFormZodSchema.shape.admin_email }}
             >
               {(field) => (
-                <AppField field={field} label="Admin's email" type="email" disabled={isPending} />
+                <AppField field={field} label="Admin's email" type="email" autoComplete="off" disabled={isPending} />
               )}
             </form.Field>
           </div>
 
-          <div className="space-y-1.5">
-            <form.Field
-              name="admin_password"
-              validators={{ onChange: companyFormZodSchema.shape.admin_password }}
-            >
-              {(field) => (
-                <AppField
-                  field={field}
-                  label="Starting password"
-                  placeholder="At least 8 characters, with a letter and a number"
-                  disabled={isPending}
-                />
-              )}
-            </form.Field>
-            <p className="text-xs text-muted-foreground">
-              Not hidden, because you have to read it to pass it on.
-            </p>
-          </div>
+          <form.Field
+            name="admin_password"
+            validators={{ onChange: companyFormZodSchema.shape.admin_password }}
+          >
+            {(field) => (
+              <AppField
+                field={field}
+                label="Starting password"
+                autoComplete="off"
+                description="At least 8 characters, with a letter and a number. Shown, not hidden, because you pass it on."
+                disabled={isPending}
+              />
+            )}
+          </form.Field>
 
           <div className="grid gap-5 sm:grid-cols-2">
             <form.Field name="plan_id">
@@ -188,26 +170,21 @@ const CreateCompanyModal = () => {
               )}
             </form.Field>
 
-            <div className="space-y-1.5">
-              <form.Field
-                name="trial_days"
-                validators={{ onChange: companyFormZodSchema.shape.trial_days }}
-              >
-                {(field) => (
-                  <AppField
-                    field={field}
-                    label="Trial (days)"
-                    type="number"
-                    placeholder="none"
-                    className="tabular-nums"
-                    disabled={isPending}
-                  />
-                )}
-              </form.Field>
-              <p className="text-xs text-muted-foreground">
-                Leave empty to start them paying immediately.
-              </p>
-            </div>
+            <form.Field
+              name="trial_days"
+              validators={{ onChange: companyFormZodSchema.shape.trial_days }}
+            >
+              {(field) => (
+                <AppField
+                  field={field}
+                  label="Trial (days)"
+                  type="number"
+                  className="tabular-nums"
+                  description="Leave empty to start them paying now."
+                  disabled={isPending}
+                />
+              )}
+            </form.Field>
           </div>
 
           <DialogFooter>
@@ -216,20 +193,9 @@ const CreateCompanyModal = () => {
                 Cancel
               </Button>
             </DialogClose>
-            <form.Subscribe
-              selector={({ values }) =>
-                values.name.trim() !== "" &&
-                values.admin_name.trim() !== "" &&
-                values.admin_email.trim() !== "" &&
-                values.admin_password.length >= 8
-              }
-            >
-              {(isReady) => (
-                <Button type="submit" disabled={isPending || !isReady}>
-                  {isPending ? "Creating..." : "Create company"}
-                </Button>
-              )}
-            </form.Subscribe>
+            <Button type="submit" disabled={isPending}>
+              {isPending ? "Creating..." : "Create company"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

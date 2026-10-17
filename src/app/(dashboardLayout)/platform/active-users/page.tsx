@@ -1,22 +1,29 @@
 import CustomersBoard from "@/components/modules/Platform/CustomersBoard";
-import type { Metadata } from "next";
+import { onlyPaying, PAYING_COMPANIES_TABLE } from "@/components/modules/Platform/companiesTable.config";
 import PageHeader from "@/components/shared/PageHeader";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import { buildTableQueryString, type SearchParamsRecord } from "@/lib/table/urlState";
+import { companiesListQuery } from "@/queries/platform.queries";
+import type { QueryClient } from "@tanstack/react-query";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Active users",
+  title: "Paying companies",
 };
 
-// The same board with a different default filter. Two screens would have been
-// two places to fix the same bug.
-const ActiveUsersPage = () => (
-  <div className="space-y-6">
-    <PageHeader title="Active users">
-      Companies on a paid plan. Trials are on the All users screen — they are worth
-      nothing yet, by definition.
-    </PageHeader>
+const PayingCompaniesPage = async ({ searchParams }: { searchParams: Promise<SearchParamsRecord> }) => {
+  const queryString = onlyPaying(buildTableQueryString(await searchParams, PAYING_COMPANIES_TABLE));
+  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(companiesListQuery(queryString));
 
-    <CustomersBoard defaultFilter="active" />
-  </div>
-);
+  return (
+    <div className="space-y-6">
+      <PageHeader title="Paying companies">Companies on a paid plan. Trials are listed under Companies.</PageHeader>
 
-export default ActiveUsersPage;
+      <QueryPrefetch prefetch={prefetch}>
+        <CustomersBoard payingOnly />
+      </QueryPrefetch>
+    </div>
+  );
+};
+
+export default PayingCompaniesPage;
