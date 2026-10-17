@@ -7,6 +7,7 @@ import {
   reopenMilestoneAction,
   submitMilestoneAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/projects/_milestoneAction"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -20,6 +21,7 @@ import { useForm } from "@tanstack/react-form"
 import { useQuery } from "@tanstack/react-query"
 import { format, isAfter, parseISO } from "date-fns"
 import { CalendarCheck, Plus, Trash2, Undo2 } from "lucide-react"
+import { useState } from "react"
 import { milestonesListQuery } from "@/queries/project.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -84,6 +86,8 @@ const ProjectMilestonePanel = ({
   projectId: string
   canManage?: boolean
 }) => {
+  const [milestoneToDelete, setMilestoneToDelete] = useState<IMilestone | null>(null)
+
   const { data, isLoading } = useQuery(milestonesListQuery(`project_id=${projectId}`))
 
   const milestones = data?.data ?? []
@@ -107,6 +111,10 @@ const ProjectMilestonePanel = ({
       if (await addMilestone({ project_id: projectId, ...value })) formApi.reset()
     },
   })
+
+  const handleDelete = async () => {
+    if (milestoneToDelete && (await remove(milestoneToDelete.id))) setMilestoneToDelete(null)
+  }
 
   const isBusy = isSubmitting || isAccepting || isReopening || isRemoving
 
@@ -256,7 +264,7 @@ const ProjectMilestonePanel = ({
                     size="sm"
                     variant="outline"
                     disabled={isBusy}
-                    onClick={() => void remove(milestone.id)}
+                    onClick={() => setMilestoneToDelete(milestone)}
                   >
                     <Trash2 className="size-3.5" />
                     <span className="sr-only">Delete</span>
@@ -268,6 +276,26 @@ const ProjectMilestonePanel = ({
           })}
         </ul>
       )}
+
+      <ConfirmDialog
+        open={milestoneToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setMilestoneToDelete(null)
+        }}
+        title="Delete this milestone?"
+        description={
+          <>
+            <span className="font-medium text-foreground">{milestoneToDelete?.title}</span> and its
+            delivery record go for good. A missed milestone deleted here also stops counting against
+            the on-time rate.
+          </>
+        }
+        variant="destructive"
+        confirmLabel="Delete"
+        pendingLabel="Deleting..."
+        isPending={isRemoving}
+        onConfirm={() => void handleDelete()}
+      />
     </Card>
   )
 }
