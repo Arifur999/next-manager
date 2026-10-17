@@ -4,6 +4,7 @@ import {
   createInviteAction,
   revokeInviteAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/team-management/_inviteAction"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -44,6 +45,7 @@ const InvitesPanel = () => {
   const [email, setEmail] = useState("")
   const [freshLink, setFreshLink] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [revoking, setRevoking] = useState<ITeamInvite | null>(null)
 
   const { data, isLoading } = useQuery(invitesQuery())
 
@@ -69,6 +71,10 @@ const InvitesPanel = () => {
     invalidateKeys: [queryKeys.teamInvites.all],
     refresh: false,
   })
+
+  const confirmRevoke = async () => {
+    if (revoking && (await revokeInvite(revoking.id))) setRevoking(null)
+  }
 
   const copy = async () => {
     if (!freshLink) return
@@ -186,7 +192,7 @@ const InvitesPanel = () => {
                         variant="outline"
                         size="sm"
                         disabled={isRevoking}
-                        onClick={() => void revokeInvite(invite.id)}
+                        onClick={() => setRevoking(invite)}
                       >
                         <Trash2 className="size-3.5" />
                         <span className="sr-only">Revoke</span>
@@ -199,6 +205,25 @@ const InvitesPanel = () => {
           </ul>
         )}
       </Card>
+
+      <ConfirmDialog
+        open={revoking !== null}
+        onOpenChange={(open) => {
+          if (!open) setRevoking(null)
+        }}
+        title="Revoke this invite?"
+        description={
+          <>
+            The link sent to <span className="font-medium text-foreground">{revoking?.email}</span>{" "}
+            stops working immediately. You can create a new invite for them afterwards.
+          </>
+        }
+        variant="destructive"
+        confirmLabel="Revoke"
+        pendingLabel="Revoking..."
+        isPending={isRevoking}
+        onConfirm={() => void confirmRevoke()}
+      />
     </div>
   )
 }
