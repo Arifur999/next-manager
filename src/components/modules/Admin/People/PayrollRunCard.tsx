@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select"
 import { formatBdt } from "@/lib/currency"
 import type { IPayrollRun } from "@/types/people.types"
+import { roleTitle } from "@/types/permission.types"
 import type { IAccount } from "@/types/finance.types"
 import type { IPayrollItemFormValues } from "@/zod/people.validation"
 import { format, parseISO } from "date-fns"
@@ -117,7 +118,7 @@ const PayrollRunCard = ({
                 <td className="px-5 py-2.5">
                   <p>{item.user.full_name}</p>
                   <p className="text-xs capitalize text-muted-foreground">
-                    {item.user.role.replace(/_/g, " ")}
+                    {roleTitle(item.user.role)}
                   </p>
                 </td>
 

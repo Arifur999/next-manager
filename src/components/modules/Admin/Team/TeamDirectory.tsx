@@ -5,6 +5,7 @@ import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { roleTitle } from "@/types/permission.types"
 import { useQuery } from "@tanstack/react-query"
 import { UsersRound } from "lucide-react"
 import { useState } from "react"
@@ -77,9 +78,7 @@ const TeamDirectory = () => {
               <div className="min-w-48 flex-1">
                 <p className="flex items-center gap-2 font-medium">
                   {person.full_name}
-                  <Badge variant="outline" className="capitalize">
-                    {person.role.replace(/_/g, " ")}
-                  </Badge>
+                  <Badge variant="outline">{roleTitle(person.role)}</Badge>
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {person.email}

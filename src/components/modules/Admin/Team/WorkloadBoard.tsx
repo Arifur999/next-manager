@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
+import { roleTitle } from "@/types/permission.types"
 import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { UsersRound } from "lucide-react"
@@ -73,7 +74,7 @@ const WorkloadBoard = ({ mode }: { mode: "load" | "free" }) => {
                       )}
                     </p>
                     <p className="text-xs capitalize text-muted-foreground">
-                      {row.user.role.replace(/_/g, " ")}
+                      {roleTitle(row.user.role)}
                       {row.user.department?.name ? ` · ${row.user.department.name}` : ""}
                     </p>
                   </div>

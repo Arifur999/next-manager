@@ -5,6 +5,7 @@ import PanelState from "@/components/shared/state/PanelState"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
+import { roleTitle } from "@/types/permission.types"
 import { useQuery } from "@tanstack/react-query"
 import { UsersRound } from "lucide-react"
 import Link from "next/link"
@@ -48,8 +49,8 @@ const AssignmentOverview = () => {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="truncate text-sm font-medium">{row.user.full_name}</p>
-                  <Badge variant="outline" className="text-xs capitalize">
-                    {row.user.role.replace(/_/g, " ")}
+                  <Badge variant="outline" className="text-xs">
+                    {roleTitle(row.user.role)}
                   </Badge>
                 </div>
 
