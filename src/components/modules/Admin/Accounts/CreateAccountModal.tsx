@@ -24,13 +24,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { accountFormZodSchema, type IAccountFormValues } from "@/zod/finance.validation"
-import { useForm } from "@tanstack/react-form"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Plus } from "lucide-react"
-import { useRouter } from "next/navigation"
-import { useCallback, useState } from "react"
-import { toast } from "sonner"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { queryKeys } from "@/lib/queryKeys"
+import { useForm } from "@tanstack/react-form"
+import { Plus } from "lucide-react"
+import { useCallback, useState } from "react"
 
 const defaultValues: IAccountFormValues = {
   name: "",
@@ -62,30 +60,21 @@ const TYPES_BY_CURRENCY = {
 
 const CreateAccountModal = () => {
   const [open, setOpen] = useState(false)
-  const queryClient = useQueryClient()
-  const router = useRouter()
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IAccountFormValues) => createAccountAction(values),
+  const { run: createAccount, isPending } = useActionMutation({
+    action: createAccountAction,
+    successMessage: "Account created successfully",
+    invalidateKeys: [queryKeys.accounts.all, queryKeys.dashboard.all],
   })
 
   const form = useForm({
     defaultValues,
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        toast.error(result.message || "Failed to create account")
-        return
+      // A failure keeps the dialog open with what was typed.
+      if (await createAccount(value)) {
+        setOpen(false)
+        form.reset()
       }
-
-      toast.success(result.message || "Account created successfully")
-      setOpen(false)
-      form.reset()
-
-      void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
-      router.refresh()
     },
   })
 
