@@ -1,6 +1,7 @@
 import { isQuietSince } from "@/components/modules/Platform/customerActivity"
 import RelativeTime from "@/components/shared/RelativeTime"
 import { Badge } from "@/components/ui/badge"
+import { formatUsd } from "@/lib/currency"
 import { toDate } from "@/lib/dates"
 import type { ICompanyRow, SubscriptionStatus } from "@/types/platform.types"
 import type { ColumnDef } from "@tanstack/react-table"
@@ -73,7 +74,7 @@ export const customersColumns: ColumnDef<ICompanyRow>[] = [
       return (
         <>
           <p>{subscription.plan.name}</p>
-          <p className="text-xs text-muted-foreground tabular-nums">${subscription.plan.price_usd}/mo</p>
+          <p className="text-xs text-muted-foreground tabular-nums">{formatUsd(subscription.plan.price_usd)}/mo</p>
         </>
       )
     },
