@@ -1,7 +1,7 @@
 "use server"
 
 import { httpClient } from "@/lib/axios/httpClient"
-import { isMissingRecord } from "@/lib/missingRecord"
+import { isMissingRecordError } from "@/lib/apiFailure"
 import { toParams } from "@/lib/queryString"
 import type {
     IClient,
@@ -22,7 +22,7 @@ export const getClient = async (id: string) => {
     try {
         return await httpClient.get<IClientDetail>(`/clients/${id}`)
     } catch (error) {
-        if (isMissingRecord(error)) return null
+        if (isMissingRecordError(error)) return null
         throw error
     }
 }
