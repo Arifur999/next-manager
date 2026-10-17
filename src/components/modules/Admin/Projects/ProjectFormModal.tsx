@@ -56,22 +56,8 @@ const ProjectForm = ({ project, onDone }: { project?: IProject | null; onDone: (
   const statuses = statusData?.data ?? []
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IProjectFormValues) => {
-      const payload = {
-        ...values,
-        contract_value_usd: values.contract_value_usd ? Number(values.contract_value_usd) : 0,
-        start_date: values.start_date || null,
-        end_date: values.end_date || null,
-      }
-      // The code is fixed after creation — the server rejects it on update, and
-      // sending it anyway would look like an edit that silently did nothing.
-      if (project) {
-        const { code: _code, ...rest } = payload
-        void _code
-        return updateProjectAction(project.id, rest)
-      }
-      return createProjectAction(payload)
-    },
+    mutationFn: (values: IProjectFormValues) =>
+      project ? updateProjectAction(project.id, values) : createProjectAction(values),
   })
 
   const form = useForm({
