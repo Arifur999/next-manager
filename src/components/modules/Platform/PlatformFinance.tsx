@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IPlatformExpense } from "@/types/platform.types"
-import { useQuery } from "@tanstack/react-query"
+import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import { endOfMonth, format, parseISO, startOfMonth } from "date-fns"
 import { Receipt, Trash2 } from "lucide-react"
 import { useState } from "react"
@@ -49,9 +49,17 @@ const PlatformFinance = () => {
 
   const range = `from=${from}&to=${to}`
 
-  const { data: financeData, isLoading } = useQuery(platformFinanceQuery(range))
+  // The last window stays on screen while a new one loads. Without it the page
+  // fell back to its skeleton, unmounting the date input being typed into.
+  const { data: financeData, isLoading } = useQuery({
+    ...platformFinanceQuery(range),
+    placeholderData: keepPreviousData,
+  })
 
-  const { data: expensesData } = useQuery(platformExpensesListQuery(range))
+  const { data: expensesData } = useQuery({
+    ...platformExpensesListQuery(range),
+    placeholderData: keepPreviousData,
+  })
 
   const finance = financeData?.data
   const expenses = expensesData?.data ?? []
