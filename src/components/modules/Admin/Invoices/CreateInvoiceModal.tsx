@@ -25,14 +25,8 @@ import { useCallback, useState } from "react"
 import { clientsListQuery } from "@/queries/crm.queries"
 import { projectsListQuery } from "@/queries/project.queries"
 
-/**
- * Creating an invoice.
- *
- * The total is NOT a field. It is worked out from the line items here for the
- * preview, and worked out again on the server from the same items — the server's
- * figure is the one that counts. A client that could send its own total could
- * send a wrong one straight into receivables.
- */
+// Creating an invoice. There is no total field: the server works it out from
+// the lines, so a client cannot send a wrong one into receivables.
 const CreateInvoiceModal = () => {
   const [open, setOpen] = useState(false)
 

@@ -45,9 +45,8 @@ const InvoiceDetail = ({ invoiceId }: { invoiceId: string }) => {
 
   return (
     <div className="space-y-6" data-print="page">
-      {/* Letterhead. Only on the printed copy — on screen the sidebar already
-          says whose agency this is, but a page being sent to a client has to
-          carry it or it is a screenshot rather than a document. */}
+      {/* Letterhead on the printed copy only: on screen the sidebar says whose
+          agency this is, but a page sent to a client has to carry it. */}
       {organization && (
         <div className="hidden border-b pb-4 print:block">
           <p className="text-lg font-semibold">{organization.legal_name || organization.name}</p>
