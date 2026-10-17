@@ -3,12 +3,12 @@
 import { moveTaskAction } from "@/app/(dashboardLayout)/admin/dashboard/tasks/_action"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useActionMutation } from "@/hooks/useActionMutation"
-import type { ITask, IWorkflowStatus } from "@/types/work.types"
+import type { ITask, IWorkflowStatus, TaskPriority } from "@/types/work.types"
 import { format, isBefore, startOfToday } from "date-fns"
 import { toast } from "sonner"
 import { queryKeys } from "@/lib/queryKeys"
 
-const PRIORITY_TONE: Record<string, string> = {
+const PRIORITY_TONE: Record<TaskPriority, string> = {
   urgent: "bg-destructive/12 text-destructive",
   high: "bg-chart-2/15 text-chart-2",
   medium: "bg-chart-3/15 text-chart-3",
