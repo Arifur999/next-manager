@@ -7,6 +7,7 @@ import {
   reopenMilestoneAction,
   submitMilestoneAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/projects/_milestoneAction"
+import { dayOf, statusOf } from "@/components/modules/Admin/Projects/milestoneStatus"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -19,7 +20,7 @@ import type { IMilestone } from "@/types/project.types"
 import { milestoneFormZodSchema, type IMilestoneFormValues } from "@/zod/project.validation"
 import { useForm } from "@tanstack/react-form"
 import { useQuery } from "@tanstack/react-query"
-import { format, isAfter, parseISO } from "date-fns"
+import { format } from "date-fns"
 import { CalendarCheck, Plus, Trash2, Undo2 } from "lucide-react"
 import { useState } from "react"
 import { milestonesListQuery } from "@/queries/project.queries"
@@ -36,34 +37,6 @@ import { queryKeys } from "@/lib/queryKeys"
  * itself. A milestone delivered three days late that nobody ever labelled late
  * is how an on-time rate quietly becomes fiction.
  */
-
-const dayOf = (value: string) => parseISO(value.slice(0, 10))
-
-type Status = {
-  label: string
-  late: boolean
-  tone: "outline" | "secondary" | "destructive"
-}
-
-const statusOf = (milestone: IMilestone): Status => {
-  if (milestone.submitted_at) {
-    const late = isAfter(dayOf(milestone.submitted_at), dayOf(milestone.due_date))
-
-    if (milestone.accepted_at) {
-      return { label: late ? "accepted, late" : "accepted", late, tone: late ? "destructive" : "secondary" }
-    }
-
-    // Submitted and waiting. Worth its own state: delivered is not done, and
-    // rolling the two together hides work sitting on a client's desk.
-    return { label: late ? "submitted, late" : "submitted", late, tone: late ? "destructive" : "outline" }
-  }
-
-  if (isAfter(new Date(), dayOf(milestone.due_date))) {
-    return { label: "overdue", late: true, tone: "destructive" }
-  }
-
-  return { label: "due", late: false, tone: "outline" }
-}
 
 // Submit, accept, reopen and delete show their result on the row itself, so
 // only a failure gets a toast.
