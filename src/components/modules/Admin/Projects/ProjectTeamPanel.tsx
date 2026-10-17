@@ -105,7 +105,7 @@ const ProjectTeamPanel = ({
               onValueChange={field.handleChange}
               disabled={isAssigning || users.length === 0}
             >
-              <SelectTrigger className="min-w-0 flex-1">
+              <SelectTrigger className="min-w-0 flex-1" aria-label="Team member to assign">
                 <SelectValue placeholder={users.length === 0 ? "Invite a team member first" : "Choose someone"} />
               </SelectTrigger>
               <SelectContent>
@@ -126,6 +126,7 @@ const ProjectTeamPanel = ({
               onBlur={field.handleBlur}
               onChange={(event) => field.handleChange(event.target.value)}
               placeholder="Role on this project"
+              aria-label="Role on this project"
               className="w-44"
               disabled={isAssigning}
             />
