@@ -4,13 +4,12 @@ import CreateCompanyModal from "@/components/modules/Platform/CreateCompanyModal
 import { isQuietSince } from "@/components/modules/Platform/customerActivity"
 import { customersColumns } from "@/components/modules/Platform/customersColumns"
 import DataTable from "@/components/shared/table/DataTable"
-import { Button } from "@/components/ui/button"
+import type { DataTableFilterConfig } from "@/components/shared/table/dataTable.types"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
+import { buildQueryString } from "@/lib/queryString"
 import { toTableQueryProps } from "@/lib/table/queryProps"
-import type { ICompanyRow } from "@/types/platform.types"
+import type { ICompanyRow, SubscriptionStatus } from "@/types/platform.types"
 import { useQuery } from "@tanstack/react-query"
-import { Search } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 import { companiesListQuery } from "@/queries/platform.queries"
@@ -27,16 +26,18 @@ import { companiesListQuery } from "@/queries/platform.queries"
  * arrives. Two screens would have been two places to fix the same bug.
  */
 
-const ALL = "__all__"
-
-const FILTERS: Array<{ value: string; label: string }> = [
-  { value: ALL, label: "Everyone" },
-  { value: "trialing", label: "On trial" },
-  { value: "active", label: "Paying" },
-  { value: "past_due", label: "Past due" },
-  { value: "suspended", label: "Suspended" },
-  { value: "cancelled", label: "Left" },
-]
+const STANDING_FILTER: DataTableFilterConfig = {
+  id: "status",
+  type: "single-select",
+  label: "Standing",
+  options: [
+    { label: "On trial", value: "trialing" },
+    { label: "Paying", value: "active" },
+    { label: "Past due", value: "past_due" },
+    { label: "Suspended", value: "suspended" },
+    { label: "Left", value: "cancelled" },
+  ],
+}
 
 const CustomerCount = ({ companies }: { companies: ICompanyRow[] | undefined }) => {
   // Unknown until the list arrives, and "0 companies" must never stand in for that.
@@ -57,23 +58,18 @@ const CustomerCount = ({ companies }: { companies: ICompanyRow[] | undefined }) 
   )
 }
 
-const CustomersBoard = ({ defaultFilter = ALL }: { defaultFilter?: string }) => {
-  const [filter, setFilter] = useState(defaultFilter)
+const CustomersBoard = ({ defaultFilter }: { defaultFilter?: SubscriptionStatus }) => {
+  const [status, setStatus] = useState<string | undefined>(defaultFilter)
   const [search, setSearch] = useState("")
 
-  const query = [
-    filter === ALL ? "" : `status=${filter}`,
-    search.trim() ? `search=${encodeURIComponent(search.trim())}` : "",
-  ]
-    .filter(Boolean)
-    .join("&")
-
-  const companiesQuery = useQuery(companiesListQuery(query))
+  // Both are applied by the API, whose search also matches a company's other
+  // admins, which the rows do not carry.
+  const companiesQuery = useQuery(companiesListQuery(buildQueryString({ status, search })))
   const companies = companiesQuery.data?.data
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
-      <CardHeader className="space-y-3 border-b px-5 py-4">
+      <CardHeader className="border-b px-5 py-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <CardTitle className="text-base">Customers</CardTitle>
@@ -84,35 +80,6 @@ const CustomersBoard = ({ defaultFilter = ALL }: { defaultFilter?: string }) => 
 
           <CreateCompanyModal />
         </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {FILTERS.map((option) => (
-            <Button
-              key={option.value}
-              type="button"
-              size="sm"
-              variant={option.value === filter ? "default" : "outline"}
-              onClick={() => setFilter(option.value)}
-              aria-pressed={option.value === filter}
-            >
-              {option.label}
-            </Button>
-          ))}
-
-          <div className="relative ml-auto min-w-52">
-            <Search
-              className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Company or the person you sold to"
-              className="pl-8"
-              aria-label="Search customers"
-            />
-          </div>
-        </div>
       </CardHeader>
 
       <div className="p-4">
@@ -120,8 +87,19 @@ const CustomersBoard = ({ defaultFilter = ALL }: { defaultFilter?: string }) => 
           data={companies ?? []}
           columns={customersColumns}
           tableId="customers"
+          search={{ value: search, placeholder: "Company or the person you sold to", onDebouncedChange: setSearch }}
+          filters={{
+            configs: [STANDING_FILTER],
+            values: { status },
+            onFilterChange: (_filterId, value) => setStatus(typeof value === "string" ? value : undefined),
+            onClearAll: () => {
+              setStatus(undefined)
+              setSearch("")
+            },
+          }}
           {...toTableQueryProps(companiesQuery)}
-          emptyMessage={search.trim() || filter !== ALL ? "Nothing matches that." : "Nobody has signed up yet."}
+          // Shown only when nothing narrows the list; a filtered view says so itself.
+          emptyMessage="Nobody has signed up yet."
         />
       </div>
 
