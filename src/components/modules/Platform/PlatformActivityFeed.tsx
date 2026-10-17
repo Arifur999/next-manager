@@ -1,5 +1,7 @@
 "use client"
 
+import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -101,14 +103,16 @@ const PlatformActivityFeed = () => {
         </Select>
       </CardHeader>
 
-      {feed.isLoading && entries.length === 0 ? (
-        <div className="h-40 animate-pulse bg-muted/40" />
-      ) : entries.length === 0 ? (
-        <p className="flex flex-col items-center gap-2 px-6 py-12 text-center text-sm text-muted-foreground">
-          <History className="size-7" aria-hidden="true" />
-          Nothing matches that filter.
-        </p>
-      ) : (
+      <PanelState
+        query={feed}
+        errorMessage="Admin activity did not load."
+        isEmpty={entries.length === 0}
+        empty={
+          <EmptyState icon={History}>
+            {entityType === ALL ? "Nothing recorded yet." : "Nothing matches that filter."}
+          </EmptyState>
+        }
+      >
         <div>
           {grouped.map(([day, dayEntries]) => (
             <section key={day}>
@@ -162,7 +166,7 @@ const PlatformActivityFeed = () => {
             </div>
           )}
         </div>
-      )}
+      </PanelState>
     </Card>
   )
 }
