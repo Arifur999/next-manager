@@ -1,6 +1,10 @@
+import type { DateRangeValue } from "@/lib/table/filterFns";
+import type { FilterOption } from "@/lib/table/filterOptions";
 import type { PaginationMeta } from "@/types/api.types";
 import type { ColumnDef, PaginationState, SortingState } from "@tanstack/react-table";
 import type { LucideIcon } from "lucide-react";
+
+export type { DateRangeValue };
 
 export interface DataTableRowAction<TData> {
   label: string;
@@ -25,6 +29,27 @@ export interface DataTableSearchConfig {
   onDebouncedChange: (value: string) => void;
 }
 
+export type { FilterOption as DataTableFilterOption } from "@/lib/table/filterOptions";
+
+// In memory, `id` is the column the filter reads. Server-driven, it is the URL
+// parameter (a date range uses `from` and `to` unless told otherwise).
+export type DataTableFilterConfig =
+  | { id: string; type: "single-select"; label: string; options: FilterOption[] }
+  | { id: string; type: "multi-select"; label: string; options: FilterOption[] }
+  | { id: string; type: "date-range"; label: string; fromKey?: string; toKey?: string };
+
+export type DataTableFilterValue = string | string[] | DateRangeValue;
+export type DataTableFilterValues = Record<string, DataTableFilterValue | undefined>;
+
+export interface DataTableFiltersConfig {
+  configs: DataTableFilterConfig[];
+  // Present: the caller drives the filters (from the URL). Absent: the table
+  // filters its rows in memory.
+  values?: DataTableFilterValues;
+  onFilterChange?: (filterId: string, value: DataTableFilterValue | undefined) => void;
+  onClearAll?: () => void;
+}
+
 export interface DataTableProps<TData> {
   data: TData[];
   columns: ColumnDef<TData>[];
@@ -46,5 +71,6 @@ export interface DataTableProps<TData> {
   sorting?: { state: SortingState; onSortingChange: (state: SortingState) => void };
   pagination?: { state: PaginationState; onPaginationChange: (state: PaginationState) => void };
   search?: DataTableSearchConfig;
+  filters?: DataTableFiltersConfig;
   meta?: PaginationMeta;
 }

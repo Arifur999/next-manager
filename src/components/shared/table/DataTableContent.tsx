@@ -4,6 +4,7 @@ import ErrorState from "@/components/shared/state/ErrorState";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { flexRender, type Header, type Table as TanStackTable } from "@tanstack/react-table";
 import DataTableColumnHeader from "./DataTableColumnHeader";
+import DataTableEmpty from "./DataTableEmpty";
 import DataTableSkeleton from "./DataTableSkeleton";
 
 interface DataTableContentProps<TData> {
@@ -13,6 +14,8 @@ interface DataTableContentProps<TData> {
   isError: boolean;
   isRetrying: boolean;
   onRetry?: () => void;
+  canReset: boolean;
+  onReset: () => void;
 }
 
 // A plain-string header gets the sort and hide menu; a custom one renders as written.
@@ -29,6 +32,8 @@ const DataTableContent = <TData,>({
   isError,
   isRetrying,
   onRetry,
+  canReset,
+  onReset,
 }: DataTableContentProps<TData>) => {
   const rows = table.getRowModel().rows;
   const columnCount = table.getVisibleLeafColumns().length;
@@ -49,8 +54,8 @@ const DataTableContent = <TData,>({
     if (rows.length === 0) {
       return (
         <TableRow>
-          <TableCell colSpan={columnCount} className="h-24 text-center">
-            {emptyMessage || "No data available."}
+          <TableCell colSpan={columnCount} className="p-0">
+            <DataTableEmpty message={emptyMessage || "No data available."} canReset={canReset} onReset={onReset} />
           </TableCell>
         </TableRow>
       );

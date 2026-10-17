@@ -1,13 +1,15 @@
 import type { Row } from "@tanstack/react-table"
 import { describe, expect, it } from "vitest"
-import { smartColumnFilterFn } from "./filterFns"
+import { createSmartColumnFilterFn } from "./filterFns"
+
+const smartColumnFilterFn = createSmartColumnFilterFn<unknown>()
 
 // The filter only reads the cell through getValue, so a row is just that.
 const rowWith = (value: unknown): Pick<Row<unknown>, "getValue"> => ({ getValue: <TValue,>() => value as TValue })
 const matches = (cellValue: unknown, filterValue: unknown) =>
   smartColumnFilterFn(rowWith(cellValue) as Row<unknown>, "column", filterValue, () => {})
 
-describe("smartColumnFilterFn", () => {
+describe("createSmartColumnFilterFn", () => {
   it("matches a faceted selection by equality", () => {
     expect(matches("paid", ["paid", "sent"])).toBe(true)
     expect(matches("draft", ["paid"])).toBe(false)

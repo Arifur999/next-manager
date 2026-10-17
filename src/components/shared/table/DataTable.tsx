@@ -3,6 +3,7 @@
 import DataTableContent from "./DataTableContent";
 import DataTablePagination from "./DataTablePagination";
 import DataTableToolbar from "./DataTableToolbar";
+import { useDataTableReset } from "./useDataTableReset";
 import type { DataTableProps } from "./dataTable.types";
 import { DEFAULT_PAGE_SIZE, useDataTable } from "./useDataTable";
 
@@ -17,6 +18,7 @@ const DataTable = <TData,>(props: DataTableProps<TData>) => {
     onRetry,
     pagination,
     search,
+    filters,
     meta,
   } = props;
   const table = useDataTable(props);
@@ -34,12 +36,16 @@ const DataTable = <TData,>(props: DataTableProps<TData>) => {
       search.onDebouncedChange(value);
     },
   };
+  const { canReset, reset } = useDataTableReset(table, searchFromFirstPage, filters);
 
   return (
     <div>
       <DataTableToolbar
         table={table}
         search={searchFromFirstPage}
+        filters={filters}
+        canReset={canReset}
+        onReset={reset}
         toolbarAction={toolbarAction}
         exportFileName={exportFileName}
       />
@@ -57,6 +63,8 @@ const DataTable = <TData,>(props: DataTableProps<TData>) => {
           isError={isError}
           isRetrying={isFetching}
           onRetry={onRetry}
+          canReset={canReset}
+          onReset={reset}
         />
 
         {showPagination && (
