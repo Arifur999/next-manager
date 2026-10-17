@@ -1,11 +1,21 @@
 import type { PaginationMeta } from "@/types/api.types";
 import type { ColumnDef, PaginationState, SortingState } from "@tanstack/react-table";
+import type { LucideIcon } from "lucide-react";
+
+export interface DataTableRowAction<TData> {
+  label: string;
+  icon?: LucideIcon;
+  onClick: (row: TData) => void;
+  destructive?: boolean;
+  hidden?: (row: TData) => boolean;
+}
 
 // A handler that is undefined does not render its menu item.
 export interface DataTableActions<TData> {
   onView?: (row: TData) => void;
   onEdit?: (row: TData) => void;
   onDelete?: (row: TData) => void;
+  extra?: DataTableRowAction<TData>[];
 }
 
 export interface DataTableSearchConfig {

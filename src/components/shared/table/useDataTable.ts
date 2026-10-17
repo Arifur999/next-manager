@@ -12,7 +12,7 @@ import {
   type SortingState,
   type VisibilityState,
 } from "@tanstack/react-table";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createActionsColumn } from "./columns/createActionsColumn";
 import type { DataTableProps } from "./dataTable.types";
 
@@ -31,13 +31,20 @@ export const useDataTable = <TData,>({ data, columns, tableId, actions, sorting,
   );
 
   // The actions column is appended here rather than declared per feature, so
-  // every table in the app has the same row menu in the same place.
-  const tableColumns = actions ? [...columns, createActionsColumn(actions)] : columns;
+  // every table has the same row menu in the same place. It is built once: a
+  // new column object per render would remount every row menu and close it.
+  const actionsColumn = useMemo(() => createActionsColumn<TData>(), []);
+  const hasActions = Boolean(actions);
+  const tableColumns = useMemo(
+    () => (hasActions ? [...columns, actionsColumn] : columns),
+    [columns, hasActions, actionsColumn],
+  );
 
   // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table is intentionally used here and React Compiler already skips memoization for this hook.
   const table = useReactTable({
     data,
     columns: tableColumns,
+    meta: { rowActions: actions },
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
