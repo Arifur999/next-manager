@@ -20,12 +20,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { LeaveStatus } from "@/types/people.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { CalendarOff } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { leaveRequestsListQuery, leaveTypesQuery } from "@/queries/people.queries"
 import { queryKeys } from "@/lib/queryKeys"
 import { suggestedLeaveDays } from "@/zod/people.validation"
@@ -47,8 +47,10 @@ const STATUS_TONE: Record<LeaveStatus, "secondary" | "outline" | "destructive"> 
   cancelled: "outline",
 }
 
+// Every change to a request moves the requester's balance too.
+const LEAVE_KEYS = [queryKeys.leaveRequests.all, queryKeys.leaveBalance.all]
+
 const LeaveBoard = ({ canDecide }: { canDecide: boolean }) => {
-  const queryClient = useQueryClient()
   const [typeId, setTypeId] = useState("")
   const [from, setFrom] = useState("")
   const [to, setTo] = useState("")
@@ -60,56 +62,39 @@ const LeaveBoard = ({ canDecide }: { canDecide: boolean }) => {
   const requests = data?.data ?? []
   const types = ((typeData?.data ?? [])).filter((type) => type.is_active)
 
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.leaveRequests.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.leaveBalance.all })
-  }
-
   const suggestedDays = suggestedLeaveDays(from, to)
 
   const [days, setDays] = useState("")
 
-  const { mutate: ask, isPending } = useMutation({
-    mutationFn: () =>
-      requestLeaveAction({ leave_type_id: typeId, from_date: from, to_date: to, days, reason }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not send it")
-        return
-      }
-      toast.success("Sent for approval")
+  const { run: requestLeave, isPending } = useActionMutation({
+    action: requestLeaveAction,
+    successMessage: "Sent for approval",
+    invalidateKeys: LEAVE_KEYS,
+    refresh: false,
+  })
+
+  // No successMessage: the server says "Leave approved" or "Leave turned down".
+  const { run: decide } = useActionMutation({
+    action: ({ id, approve }: { id: string; approve: boolean }) => decideLeaveAction(id, { approve }),
+    invalidateKeys: LEAVE_KEYS,
+    refresh: false,
+  })
+
+  const { run: withdraw } = useActionMutation({
+    action: cancelLeaveAction,
+    successMessage: "Withdrawn",
+    invalidateKeys: LEAVE_KEYS,
+    refresh: false,
+  })
+
+  const handleRequest = async () => {
+    if (await requestLeave({ leave_type_id: typeId, from_date: from, to_date: to, days, reason })) {
       setFrom("")
       setTo("")
       setDays("")
       setReason("")
-      refresh()
-    },
-  })
-
-  const { mutate: decide } = useMutation({
-    mutationFn: ({ id, approve }: { id: string; approve: boolean }) =>
-      decideLeaveAction(id, { approve }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not decide it")
-        return
-      }
-      toast.success(result.message)
-      refresh()
-    },
-  })
-
-  const { mutate: withdraw } = useMutation({
-    mutationFn: (id: string) => cancelLeaveAction(id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not withdraw it")
-        return
-      }
-      toast.success("Withdrawn")
-      refresh()
-    },
-  })
+    }
+  }
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
@@ -124,7 +109,7 @@ const LeaveBoard = ({ canDecide }: { canDecide: boolean }) => {
             onSubmit={(event) => {
               event.preventDefault()
               if (!typeId || !from || !to) return
-              ask()
+              void handleRequest()
             }}
           >
             <div className="space-y-1.5">
@@ -253,20 +238,20 @@ const LeaveBoard = ({ canDecide }: { canDecide: boolean }) => {
                       <>
                         <Button
                           size="sm"
-                          onClick={() => decide({ id: request.id, approve: true })}
+                          onClick={() => void decide({ id: request.id, approve: true })}
                         >
                           Approve
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => decide({ id: request.id, approve: false })}
+                          onClick={() => void decide({ id: request.id, approve: false })}
                         >
                           Turn down
                         </Button>
                       </>
                     )}
-                    <Button size="sm" variant="ghost" onClick={() => withdraw(request.id)}>
+                    <Button size="sm" variant="ghost" onClick={() => void withdraw(request.id)}>
                       Withdraw
                     </Button>
                   </div>
