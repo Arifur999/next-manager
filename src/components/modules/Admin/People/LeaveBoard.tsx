@@ -7,7 +7,7 @@ import {
 import LeaveBalanceCard from "@/components/modules/Admin/People/LeaveBalanceCard"
 import LeaveRequestCard from "@/components/modules/Admin/People/LeaveRequestCard"
 import EmptyState from "@/components/shared/state/EmptyState"
-import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -40,9 +40,9 @@ const STATUS_TONE: Record<LeaveStatus, "secondary" | "outline" | "destructive"> 
 const LEAVE_KEYS = [queryKeys.leaveRequests.all, queryKeys.leaveBalance.all]
 
 const LeaveBoard = ({ canDecide }: { canDecide: boolean }) => {
-  const { data, isLoading } = useQuery(leaveRequestsListQuery())
+  const requestList = useQuery(leaveRequestsListQuery())
 
-  const requests = data?.data ?? []
+  const requests = requestList.data?.data ?? []
 
   // No successMessage: the server says "Leave approved" or "Leave turned down".
   const { run: decide } = useActionMutation({
@@ -75,11 +75,12 @@ const LeaveBoard = ({ canDecide }: { canDecide: boolean }) => {
           </p>
         </CardHeader>
 
-        {isLoading && requests.length === 0 ? (
-          <LoadingBlock />
-        ) : requests.length === 0 ? (
-          <EmptyState icon={CalendarOff}>Nothing asked for yet.</EmptyState>
-        ) : (
+        <PanelState
+          query={requestList}
+          errorMessage="Leave requests did not load."
+          isEmpty={requests.length === 0}
+          empty={<EmptyState icon={CalendarOff}>Nothing asked for yet.</EmptyState>}
+        >
           <ul className="divide-y">
             {requests.map((request) => (
               <li
@@ -127,7 +128,7 @@ const LeaveBoard = ({ canDecide }: { canDecide: boolean }) => {
               </li>
             ))}
           </ul>
-        )}
+        </PanelState>
       </Card>
     </div>
   )
