@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IUser } from "@/types/user.types"
-import { ROLE_LABELS } from "@/zod/user.validation"
+import { ROLE_LABELS, isAssignableRole } from "@/zod/user.validation"
 import { useQuery } from "@tanstack/react-query"
 import { formatDistanceToNow, parseISO } from "date-fns"
 import { UserCheck } from "lucide-react"
@@ -99,7 +99,7 @@ const PendingApprovals = () => {
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">{person.full_name}</p>
                 <p className="truncate text-xs text-muted-foreground">
-                  {person.email} · {ROLE_LABELS[person.role as keyof typeof ROLE_LABELS] ?? person.role}
+                  {person.email} · {isAssignableRole(person.role) ? ROLE_LABELS[person.role] : person.role}
                   {person.created_at
                     ? ` · asked ${formatDistanceToNow(parseISO(person.created_at), { addSuffix: true })}`
                     : ""}
