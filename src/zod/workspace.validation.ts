@@ -28,14 +28,12 @@ export const organizationFormZodSchema = z.object({
 
 export type IOrganizationFormValues = z.infer<typeof organizationFormZodSchema>
 
-// Exported apart from the refined schema below so per-field validators can reach `.shape`.
-export const conversationFormFields = z.object({
-    type: z.enum(["direct", "group"], { message: "Choose direct or group" }),
-    name: z.string().max(120, "That name is too long"),
-    member_ids: z.array(z.string()).min(1, "Choose who it is with"),
-})
-
-export const conversationFormZodSchema = conversationFormFields
+export const conversationFormZodSchema = z
+    .object({
+        type: z.enum(["direct", "group"], { message: "Choose direct or group" }),
+        name: z.string().max(120, "That name is too long"),
+        member_ids: z.array(z.string()).min(1, "Choose who it is with"),
+    })
     .refine((values) => values.type !== "direct" || values.member_ids.length === 1, {
         message: "A direct conversation is between you and exactly one other person",
         path: ["member_ids"],
