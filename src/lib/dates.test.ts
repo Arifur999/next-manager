@@ -1,6 +1,15 @@
 import { format } from "date-fns"
 import { afterEach, describe, expect, it } from "vitest"
-import { isCalendarDay, toDate, todayIsoDate } from "./dates"
+import {
+  formatDateTime,
+  formatDay,
+  formatDayShort,
+  formatHours,
+  formatRange,
+  isCalendarDay,
+  toDate,
+  todayIsoDate,
+} from "./dates"
 
 const originalTimeZone = process.env.TZ
 
@@ -54,5 +63,68 @@ describe("todayIsoDate", () => {
     const twoThirtyInDhaka = new Date("2026-10-16T20:30:00Z")
     expect(twoThirtyInDhaka.toISOString().slice(0, 10)).toBe("2026-10-16")
     expect(todayIsoDate(twoThirtyInDhaka)).toBe("2026-10-17")
+  })
+})
+
+describe("formatDay", () => {
+  afterEach(() => {
+    process.env.TZ = originalTimeZone
+  })
+
+  it("writes the day first with a short month", () => {
+    expect(formatDay("2026-10-17")).toBe("17 Oct 2026")
+  })
+
+  it("keeps a calendar day on its day west of Greenwich", () => {
+    process.env.TZ = "America/New_York"
+    expect(formatDay("2026-09-01")).toBe("1 Sep 2026")
+  })
+
+  it("takes a Date", () => {
+    expect(formatDay(new Date(2026, 0, 5))).toBe("5 Jan 2026")
+  })
+})
+
+describe("formatDayShort", () => {
+  it("drops the year", () => {
+    expect(formatDayShort("2026-10-17")).toBe("17 Oct")
+  })
+})
+
+describe("formatDateTime", () => {
+  it("adds a 24-hour time", () => {
+    expect(formatDateTime("2026-10-17T14:05:00Z")).toBe("17 Oct 2026, 14:05")
+  })
+})
+
+describe("formatRange", () => {
+  it("writes one day once", () => {
+    expect(formatRange("2026-10-17", "2026-10-17")).toBe("17 Oct 2026")
+  })
+
+  it("shares the month and year inside one month", () => {
+    expect(formatRange("2026-10-17", "2026-10-24")).toBe("17–24 Oct 2026")
+  })
+
+  it("shares the year across months", () => {
+    expect(formatRange("2026-10-28", "2026-11-03")).toBe("28 Oct – 3 Nov 2026")
+  })
+
+  it("writes both years across a new year", () => {
+    expect(formatRange("2026-12-28", "2027-01-03")).toBe("28 Dec 2026 – 3 Jan 2027")
+  })
+})
+
+describe("formatHours", () => {
+  it("trims trailing zeros and keeps quarter hours", () => {
+    expect(formatHours(8)).toBe("8 h")
+    expect(formatHours(7.5)).toBe("7.5 h")
+    expect(formatHours(7.25)).toBe("7.25 h")
+    expect(formatHours(0)).toBe("0 h")
+  })
+
+  it("rounds to two decimals and groups thousands", () => {
+    expect(formatHours(1.333333)).toBe("1.33 h")
+    expect(formatHours(1234.5)).toBe("1,234.5 h")
   })
 })
