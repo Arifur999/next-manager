@@ -1,5 +1,5 @@
 import type { IMilestone } from "@/types/project.types"
-import { isAfter, parseISO } from "date-fns"
+import { isAfter, isBefore, parseISO, startOfToday } from "date-fns"
 
 export const dayOf = (value: string) => parseISO(value.slice(0, 10))
 
@@ -22,7 +22,9 @@ export const statusOf = (milestone: IMilestone): MilestoneStatus => {
     return { label: late ? "submitted, late" : "submitted", late, tone: late ? "destructive" : "outline" }
   }
 
-  if (isAfter(new Date(), dayOf(milestone.due_date))) {
+  // Overdue once the due day is over, not from its first minute: a delivery on
+  // the due day still counts as on time.
+  if (isBefore(dayOf(milestone.due_date), startOfToday())) {
     return { label: "overdue", late: true, tone: "destructive" }
   }
 

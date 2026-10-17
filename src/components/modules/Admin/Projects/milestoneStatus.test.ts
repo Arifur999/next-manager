@@ -29,6 +29,11 @@ describe("statusOf", () => {
     expect(statusOf(milestone({}))).toEqual({ label: "due", late: false, tone: "outline" })
   })
 
+  it("is still due, not overdue, during the due day itself", () => {
+    vi.setSystemTime(new Date("2026-10-10T15:00:00Z"))
+    expect(statusOf(milestone({}))).toEqual({ label: "due", late: false, tone: "outline" })
+  })
+
   it("is overdue once the due day has passed without a submission", () => {
     vi.setSystemTime(new Date("2026-10-12T09:00:00Z"))
     expect(statusOf(milestone({}))).toEqual({ label: "overdue", late: true, tone: "destructive" })
