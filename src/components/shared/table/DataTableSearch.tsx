@@ -1,8 +1,8 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { useState } from "react";
 
 type DataTableSearchProps = {
@@ -31,10 +31,21 @@ const DataTableSearch = ({ value, onDebouncedChange, placeholder = "Search...", 
     if (value !== sentValue) setInputValue(value);
   }
 
+  // Applied at once, and the pending debounce dropped, so clearing fires one query.
+  const clear = () => {
+    debounced.cancel();
+    setInputValue("");
+    setSentValue("");
+    onDebouncedChange("");
+  };
+
   return (
-    <div className="relative w-full max-w-sm">
-      <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-      <Input
+    <InputGroup className="w-full max-w-sm">
+      <InputGroupAddon>
+        <Search aria-hidden="true" />
+      </InputGroupAddon>
+      <InputGroupInput
+        type="search"
         value={inputValue}
         onChange={(event) => {
           setInputValue(event.target.value);
@@ -42,9 +53,17 @@ const DataTableSearch = ({ value, onDebouncedChange, placeholder = "Search...", 
         }}
         placeholder={placeholder}
         aria-label={placeholder}
-        className="pl-9"
+        // The clear button below replaces the browser's own, which would double it.
+        className="[&::-webkit-search-cancel-button]:appearance-none"
       />
-    </div>
+      {inputValue && (
+        <InputGroupAddon align="inline-end">
+          <InputGroupButton size="icon-xs" aria-label="Clear search" onClick={clear}>
+            <X aria-hidden="true" />
+          </InputGroupButton>
+        </InputGroupAddon>
+      )}
+    </InputGroup>
   );
 };
 
