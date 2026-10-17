@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IBaselineFormValues } from "@/zod/project.validation"
+import { useForm } from "@tanstack/react-form"
 import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { Lock } from "lucide-react"
@@ -26,9 +27,9 @@ import { queryKeys } from "@/lib/queryKeys"
  * make this number lie without anybody noticing.
  */
 
+const emptyBaseline: IBaselineFormValues = { baseline_hours: "", baseline_value_usd: "" }
+
 const ProjectBaselineCard = ({ projectId }: { projectId: string }) => {
-  const [hours, setHours] = useState("")
-  const [value, setValue] = useState("")
   const [replacing, setReplacing] = useState(false)
 
   const { data } = useQuery(projectDetailQuery(projectId))
@@ -44,13 +45,17 @@ const ProjectBaselineCard = ({ projectId }: { projectId: string }) => {
     refresh: false,
   })
 
-  const handleSave = async () => {
-    if (await saveBaseline({ baseline_hours: hours, baseline_value_usd: value })) {
-      setHours("")
-      setValue("")
-      setReplacing(false)
-    }
-  }
+  // No form-level validator: zero or negative figures are refused by the server
+  // schema, whose message says what is wrong, where a dead button would not.
+  const form = useForm({
+    defaultValues: emptyBaseline,
+    onSubmit: async ({ value, formApi }) => {
+      if (await saveBaseline(value)) {
+        formApi.reset()
+        setReplacing(false)
+      }
+    },
+  })
 
   if (!project) return null
 
@@ -103,43 +108,57 @@ const ProjectBaselineCard = ({ projectId }: { projectId: string }) => {
           className="flex flex-wrap items-end gap-3 px-5 py-4"
           onSubmit={(event) => {
             event.preventDefault()
-            if (!hours.trim() || Number(hours) <= 0) return
-            void handleSave()
+            event.stopPropagation()
+            void form.handleSubmit()
           }}
         >
-          <div className="space-y-1.5">
-            <Label htmlFor="baseline-hours">Hours sold</Label>
-            <Input
-              id="baseline-hours"
-              type="number"
-              step="any"
-              value={hours}
-              onChange={(event) => setHours(event.target.value)}
-              placeholder="120"
-              className="w-32 tabular-nums"
-              disabled={isPending}
-            />
-          </div>
+          <form.Field name="baseline_hours">
+            {(field) => (
+              <div className="space-y-1.5">
+                <Label htmlFor="baseline-hours">Hours sold</Label>
+                <Input
+                  id="baseline-hours"
+                  type="number"
+                  step="any"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  placeholder="120"
+                  className="w-32 tabular-nums"
+                  disabled={isPending}
+                />
+              </div>
+            )}
+          </form.Field>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="baseline-value">Value ($)</Label>
-            <Input
-              id="baseline-value"
-              type="number"
-              step="any"
-              value={value}
-              onChange={(event) => setValue(event.target.value)}
-              // Left blank it takes the contract as it stands, which at
-              // kickoff is exactly what "what we sold" means.
-              placeholder={Number(project.contract_value_usd).toLocaleString()}
-              className="w-36 tabular-nums"
-              disabled={isPending}
-            />
-          </div>
+          <form.Field name="baseline_value_usd">
+            {(field) => (
+              <div className="space-y-1.5">
+                <Label htmlFor="baseline-value">Value ($)</Label>
+                <Input
+                  id="baseline-value"
+                  type="number"
+                  step="any"
+                  value={field.state.value ?? ""}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  // Left blank it takes the contract as it stands, which at
+                  // kickoff is exactly what "what we sold" means.
+                  placeholder={Number(project.contract_value_usd).toLocaleString()}
+                  className="w-36 tabular-nums"
+                  disabled={isPending}
+                />
+              </div>
+            )}
+          </form.Field>
 
-          <Button type="submit" disabled={isPending || !hours.trim()}>
-            {isBaselined ? "Replace baseline" : "Set baseline"}
-          </Button>
+          <form.Subscribe selector={(state) => state.values.baseline_hours.trim() === ""}>
+            {(isHoursBlank) => (
+              <Button type="submit" disabled={isPending || isHoursBlank}>
+                {isBaselined ? "Replace baseline" : "Set baseline"}
+              </Button>
+            )}
+          </form.Subscribe>
 
           {replacing && (
             <Button
