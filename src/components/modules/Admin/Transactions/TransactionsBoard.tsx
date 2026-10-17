@@ -8,7 +8,7 @@ import { pickAllowed } from "@/lib/queryString"
 import { toTableQueryProps } from "@/lib/table/queryProps"
 import { transactionsListQuery } from "@/queries/finance.queries"
 import { TRANSACTION_KINDS, type ITransaction, type TransactionKind } from "@/types/finance.types"
-import { keepPreviousData, useQuery } from "@tanstack/react-query"
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useSearchParams } from "next/navigation"
 import { transactionsColumns } from "./transactionsColumns"
 import { TRANSACTIONS_TABLE } from "./transactionsTable.config"
@@ -32,7 +32,8 @@ const HEADING: Record<TransactionKind, { title: string; blurb: string }> = {
 // into could be made to disagree with the records it summarises.
 const TransactionsBoard = () => {
   const kind = pickAllowed(useSearchParams().get("kind"), TRANSACTION_KINDS)
-  const { queryString, dataTableProps } = useServerDataTable<ITransaction>(TRANSACTIONS_TABLE)
+  const queryClient = useQueryClient()
+  const { queryString, filterQueryString, dataTableProps } = useServerDataTable<ITransaction>(TRANSACTIONS_TABLE)
   const transactionsQuery = useQuery({ ...transactionsListQuery(queryString), placeholderData: keepPreviousData })
 
   const transactions = transactionsQuery.data?.data ?? []
@@ -71,6 +72,7 @@ const TransactionsBoard = () => {
           columns={transactionsColumns}
           tableId="transactions"
           exportFileName="transactions"
+          exportRows={async () => (await queryClient.fetchQuery(transactionsListQuery(filterQueryString))).data}
           {...dataTableProps}
           {...toTableQueryProps(transactionsQuery)}
           emptyMessage={kind ? `Nothing under ${HEADING[kind].title.toLowerCase()} yet.` : "Nothing recorded yet."}
