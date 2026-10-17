@@ -1,6 +1,7 @@
 "use client"
 
 import { logTimeAction } from "@/app/(dashboardLayout)/dashboard/timesheet/_action"
+import TaskPicker from "@/components/modules/Admin/Time/TaskPicker"
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
 import EntitySelect from "@/components/shared/form/EntitySelect"
@@ -25,44 +26,7 @@ import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useCallback, useState } from "react"
 import { projectsListQuery } from "@/queries/project.queries"
-import { tasksListQuery } from "@/queries/work.queries"
 import { queryKeys } from "@/lib/queryKeys"
-
-/**
- * Tasks for the chosen project only.
- *
- * Controlled rather than reaching into the form, and declared at module scope:
- * a component created during render is remounted on every parent re-render,
- * which here would drop the open dropdown mid-selection.
- */
-const TaskPicker = ({
-  projectId,
-  value,
-  onChange,
-  disabled,
-}: {
-  projectId: string
-  value: string
-  onChange: (value: string) => void
-  disabled: boolean
-}) => {
-  const { data } = useQuery({ ...tasksListQuery(`project_id=${projectId}`), enabled: Boolean(projectId) })
-
-  const tasks = data?.data ?? []
-
-  return (
-    <EntitySelect
-      id="task_id"
-      label="Task (optional)"
-      value={value}
-      onChange={onChange}
-      disabled={disabled || !projectId}
-      placeholder={projectId ? "Not tied to a task" : "Choose a project first"}
-      emptyMessage="No tasks on this project"
-      options={tasks.map((task) => ({ value: task.id, label: task.title }))}
-    />
-  )
-}
 
 const LogTimeModal = ({ defaultDate }: { defaultDate: string }) => {
   const [open, setOpen] = useState(false)
