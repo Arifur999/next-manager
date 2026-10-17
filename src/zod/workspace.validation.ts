@@ -35,6 +35,9 @@ export const conversationFormZodSchema = conversationFormFields
 
 export type IConversationFormValues = z.infer<typeof conversationFormZodSchema>
 
+// Who a company's own notifications can go to. super_admin belongs to no company.
+export const NOTIFICATION_AUDIENCE_ROLES = ["admin", "sales", "project_manager", "operations"] as const
+
 export const messageFormZodSchema = z.object({
     body: z
         .string()
@@ -66,3 +69,11 @@ export const createConversationServerZodSchema = conversationFormZodSchema.trans
 
 // The form already holds the API's payload, trimmed.
 export const sendMessageServerZodSchema = messageFormZodSchema
+
+// One switch at a time: absent means "leave it alone". An empty role list is
+// the default audience again, not nobody.
+export const notificationRuleServerZodSchema = z.object({
+    in_app: z.boolean().optional(),
+    email: z.boolean().optional(),
+    roles: z.array(z.enum(NOTIFICATION_AUDIENCE_ROLES, { message: "Unknown role" })).optional(),
+})

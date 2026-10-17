@@ -14,6 +14,7 @@ import Link from "next/link"
 import { toast } from "sonner"
 import { notificationRulesQuery } from "@/queries/workspace.queries"
 import { queryKeys } from "@/lib/queryKeys"
+import { NOTIFICATION_AUDIENCE_ROLES } from "@/zod/workspace.validation"
 
 /**
  * What the company tells its own people about.
@@ -27,8 +28,6 @@ import { queryKeys } from "@/lib/queryKeys"
  * was handed to, whatever their role, so a role picker there would be a control
  * that does nothing — the server drops one if it is sent.
  */
-
-const AUDIENCE_ROLES = ["admin", "sales", "project_manager", "operations"] as const
 
 const roleLabel = (role: string) => role.replace(/_/g, " ")
 
@@ -125,7 +124,7 @@ const NotificationRules = () => {
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">Who hears it</Label>
                 <div className="flex flex-wrap gap-2">
-                  {AUDIENCE_ROLES.map((role) => (
+                  {NOTIFICATION_AUDIENCE_ROLES.map((role) => (
                     <Button
                       key={role}
                       type="button"

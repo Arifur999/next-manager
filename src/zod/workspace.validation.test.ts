@@ -3,6 +3,7 @@ import {
     createConversationServerZodSchema,
     createCredentialServerZodSchema,
     credentialFormZodSchema,
+    notificationRuleServerZodSchema,
     sendMessageServerZodSchema,
 } from "./workspace.validation"
 
@@ -96,5 +97,20 @@ describe("sendMessageServerZodSchema", () => {
     it("refuses an empty or overlong message", () => {
         expect(sendMessageServerZodSchema.safeParse({ body: "   " }).success).toBe(false)
         expect(sendMessageServerZodSchema.safeParse({ body: "x".repeat(4001) }).success).toBe(false)
+    })
+})
+
+describe("notificationRuleServerZodSchema", () => {
+    it("passes one switch through and leaves the rest out", () => {
+        expect(notificationRuleServerZodSchema.parse({ email: true })).toEqual({ email: true })
+        expect(notificationRuleServerZodSchema.parse({ roles: [] })).toEqual({ roles: [] })
+    })
+
+    it("refuses a role a company notification cannot go to", () => {
+        expect(notificationRuleServerZodSchema.safeParse({ roles: ["super_admin"] }).success).toBe(false)
+    })
+
+    it("refuses a switch that is not true or false", () => {
+        expect(notificationRuleServerZodSchema.safeParse({ in_app: "yes" }).success).toBe(false)
     })
 })

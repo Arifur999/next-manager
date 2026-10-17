@@ -1,22 +1,13 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
+import { requireId, runValidatedAction } from "@/lib/runAction"
 import { setNotificationRule } from "@/services/workspace.services"
-import type { INotificationRule } from "@/types/workspace.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+import { notificationRuleServerZodSchema } from "@/zod/workspace.validation"
 
-export const setNotificationRuleAction = async (
-    event: string,
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<INotificationRule> | ApiErrorResponse> => {
-    if (!event) return { success: false, message: "Invalid event" }
-
-    try {
-        return await setNotificationRule(event, payload)
-    } catch (error: unknown) {
-        // "That is not something this app notifies about" arrives here — the
-        // server refuses an event nothing fires rather than storing a setting
-        // that could never take effect.
-        return { success: false, message: getActionErrorMessage(error, "Could not save that") }
-    }
-}
+// An event nothing fires is refused by the server, which says so, rather than
+// stored as a setting that could never take effect.
+export const setNotificationRuleAction = async (event: string, values: unknown) =>
+    requireId(event, "event") ??
+    runValidatedAction(notificationRuleServerZodSchema, values, "Could not save that", (payload) =>
+        setNotificationRule(event, payload),
+    )
