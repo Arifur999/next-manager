@@ -12,8 +12,6 @@ import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import type { ITask } from "@/types/work.types"
-import type { IProject } from "@/types/project.types"
 import ProjectLinksPanel from "@/components/modules/Admin/Projects/ProjectLinksPanel"
 import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
@@ -48,7 +46,7 @@ const ProjectDetail = ({
 
   const credentialsQuery = useQuery(credentialsListQuery(`project_id=${projectId}`))
 
-  const project = projectQuery.data?.data as (IProject & { tasks?: ITask[] }) | undefined
+  const project = projectQuery.data?.data
   const finance = financeData?.data
   const credentials = credentialsQuery.data?.data ?? []
 
