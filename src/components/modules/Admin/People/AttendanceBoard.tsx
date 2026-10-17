@@ -7,10 +7,10 @@ import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { CalendarCheck, LogIn, LogOut } from "lucide-react"
-import { toast } from "sonner"
 import { attendanceQuery } from "@/queries/people.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -37,24 +37,16 @@ const hoursBetween = (from: string | null, to: string | null) => {
 }
 
 const AttendanceBoard = ({ canRecord = false }: { canRecord?: boolean }) => {
-  const queryClient = useQueryClient()
-
   const { data, isLoading } = useQuery(attendanceQuery())
 
   const rows = data?.data ?? []
 
-  const { mutate: clock, isPending } = useMutation({
-    mutationFn: () => clockAction(),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not record that")
-        return
-      }
-      // The server says which happened — asking the client to guess is how the
-      // button ends up claiming the opposite of what was stored.
-      toast.success(result.message)
-      void queryClient.invalidateQueries({ queryKey: queryKeys.attendance.all })
-    },
+  // No successMessage: the server says which happened. Guessing here is how the
+  // button ends up claiming the opposite of what was stored.
+  const { run: clock, isPending } = useActionMutation({
+    action: clockAction,
+    invalidateKeys: [queryKeys.attendance.all],
+    refresh: false,
   })
 
   const today = format(new Date(), "yyyy-MM-dd")
@@ -72,7 +64,7 @@ const AttendanceBoard = ({ canRecord = false }: { canRecord?: boolean }) => {
           </p>
         </div>
 
-        <Button onClick={() => clock()} disabled={isPending} variant={stillIn ? "outline" : "default"}>
+        <Button onClick={() => void clock(undefined)} disabled={isPending} variant={stillIn ? "outline" : "default"}>
           {stillIn ? <LogOut className="size-4" /> : <LogIn className="size-4" />}
           {stillIn ? "Check out" : "Check in"}
         </Button>
