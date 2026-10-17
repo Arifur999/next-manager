@@ -267,6 +267,7 @@ const WithdrawalsBoard = () => {
       <DataTable
         data={withdrawals}
         columns={withdrawalsColumns}
+        tableId="withdrawals"
         isLoading={isPending}
         isFetching={isFetching}
         emptyMessage="No withdrawals recorded yet."

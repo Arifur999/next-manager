@@ -67,6 +67,7 @@ const ClientsTable = ({
       <DataTable
         data={clients}
         columns={clientsColumns}
+        tableId="clients"
         {...toTableQueryProps(clientsQuery)}
         emptyMessage={
           status

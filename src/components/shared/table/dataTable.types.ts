@@ -18,6 +18,8 @@ export interface DataTableSearchConfig {
 export interface DataTableProps<TData> {
   data: TData[];
   columns: ColumnDef<TData>[];
+  // Remembers which columns are hidden, per table, in this browser.
+  tableId?: string;
   actions?: DataTableActions<TData>;
   toolbarAction?: React.ReactNode;
   emptyMessage?: string;

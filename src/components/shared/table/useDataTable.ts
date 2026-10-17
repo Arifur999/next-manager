@@ -1,5 +1,6 @@
 "use client";
 
+import { usePersistentState } from "@/hooks/usePersistentState";
 import { pageCountOf } from "@/types/api.types";
 import {
   functionalUpdate,
@@ -9,6 +10,7 @@ import {
   useReactTable,
   type PaginationState,
   type SortingState,
+  type VisibilityState,
 } from "@tanstack/react-table";
 import { useState } from "react";
 import { createActionsColumn } from "./columns/createActionsColumn";
@@ -16,11 +18,17 @@ import type { DataTableProps } from "./dataTable.types";
 
 export const DEFAULT_PAGE_SIZE = 10;
 
+const ALL_COLUMNS_VISIBLE: VisibilityState = {};
+
 // The TanStack instance behind DataTable. Passing `sorting` or `pagination`
 // hands that concern to the caller (server-driven); otherwise it stays in memory.
-export const useDataTable = <TData,>({ data, columns, actions, sorting, pagination, meta }: DataTableProps<TData>) => {
+export const useDataTable = <TData,>({ data, columns, tableId, actions, sorting, pagination, meta }: DataTableProps<TData>) => {
   const [localSorting, setLocalSorting] = useState<SortingState>([]);
   const [localPagination, setLocalPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: DEFAULT_PAGE_SIZE });
+  const [columnVisibility, setColumnVisibility] = usePersistentState(
+    tableId ? `data-table:${tableId}:columns` : undefined,
+    ALL_COLUMNS_VISIBLE,
+  );
 
   // The actions column is appended here rather than declared per feature, so
   // every table in the app has the same row menu in the same place.
@@ -42,6 +50,7 @@ export const useDataTable = <TData,>({ data, columns, actions, sorting, paginati
     state: {
       sorting: sorting?.state ?? localSorting,
       pagination: pagination?.state ?? localPagination,
+      columnVisibility,
     },
     // Never pass a handler as undefined: TanStack spreads options over its own
     // defaults, so an undefined handler replaces its state updater and the
@@ -52,6 +61,7 @@ export const useDataTable = <TData,>({ data, columns, actions, sorting, paginati
       pagination
         ? pagination.onPaginationChange(functionalUpdate(updater, pagination.state))
         : setLocalPagination(updater),
+    onColumnVisibilityChange: setColumnVisibility,
   });
 
   // When the rows shrink (a delete, a narrower search), do not stay parked on

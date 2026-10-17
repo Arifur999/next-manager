@@ -32,6 +32,7 @@ const PayoutsTable = () => {
       <DataTable
         data={payouts}
         columns={payoutsColumns}
+        tableId="payouts"
         {...toTableQueryProps(payoutsQuery)}
         emptyMessage="No payouts recorded yet."
         toolbarAction={<RecordPayoutModal />}

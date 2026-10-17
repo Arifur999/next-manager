@@ -53,6 +53,7 @@ const ExchangeTable = () => {
       <DataTable
         data={exchanges}
         columns={exchangeColumns}
+        tableId="exchanges"
         {...toTableQueryProps(exchangesQuery)}
         emptyMessage="No exchanges recorded yet."
         toolbarAction={<RecordExchangeModal />}

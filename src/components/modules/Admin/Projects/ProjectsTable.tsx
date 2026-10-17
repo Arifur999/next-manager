@@ -61,6 +61,7 @@ const ProjectsTable = ({ canManage = true }: { canManage?: boolean }) => {
       <DataTable
         data={projects}
         columns={projectsColumns}
+        tableId="projects"
         {...toTableQueryProps(projectsQuery)}
         emptyMessage="No projects yet."
         toolbarAction={canManage ? <ProjectFormModal /> : undefined}

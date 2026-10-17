@@ -74,6 +74,7 @@ const TeamTable = () => {
       <DataTable
         data={users}
         columns={teamColumns}
+        tableId="team"
         {...toTableQueryProps(usersQuery)}
         emptyMessage="No team members yet."
         toolbarAction={<CreateUserFormModal />}

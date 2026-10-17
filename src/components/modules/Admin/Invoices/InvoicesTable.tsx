@@ -51,6 +51,7 @@ const InvoicesTable = () => {
       <DataTable
         data={invoices}
         columns={invoicesColumns}
+        tableId="invoices"
         {...toTableQueryProps(invoicesQuery)}
         emptyMessage="No invoices yet."
         toolbarAction={<CreateInvoiceModal />}

@@ -89,6 +89,7 @@ const ExpensesTable = () => {
       <DataTable
         data={expenses}
         columns={expensesColumns}
+        tableId="expenses"
         {...toTableQueryProps(expensesQuery)}
         emptyMessage="No expenses recorded yet."
         toolbarAction={<RecordExpenseModal />}

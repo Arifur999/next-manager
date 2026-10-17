@@ -39,6 +39,7 @@ const PaymentsTable = () => {
       <DataTable
         data={payments}
         columns={paymentsColumns}
+        tableId="payments"
         {...toTableQueryProps(paymentsQuery)}
         emptyMessage="No payments recorded yet."
         toolbarAction={<RecordPaymentModal />}
