@@ -68,6 +68,7 @@ const ClientsTable = ({
         data={clients}
         columns={clientsColumns}
         tableId="clients"
+        exportFileName="clients"
         {...toTableQueryProps(clientsQuery)}
         emptyMessage={
           status
