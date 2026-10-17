@@ -168,7 +168,7 @@ r = await api(
     account_id: usd,
     date: "2026-09-10",
     amount_usd: 1200,
-    usd_to_bdt_rate: 120,
+    reporting_rate: 120,
   },
   admin
 );
