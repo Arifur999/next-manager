@@ -29,6 +29,11 @@ import { useForm } from "@tanstack/react-form"
 
 const defaultValues: IExpenseCategoryFormValues = { name: "", type: "general" }
 
+const CATEGORY_TYPES = [
+  { value: "general", label: "General" },
+  { value: "employee", label: "Employee" },
+] as const
+
 const ExpenseCategorySettings = () => {
   const [categoryToDelete, setCategoryToDelete] = useState<IExpenseCategory | null>(null)
 
@@ -98,14 +103,20 @@ const ExpenseCategorySettings = () => {
           {(field) => (
             <Select
               value={field.state.value}
-              onValueChange={(value) => field.handleChange(value as IExpenseCategoryFormValues["type"])}
+              onValueChange={(value) => {
+                const type = CATEGORY_TYPES.find((option) => option.value === value)
+                if (type) field.handleChange(type.value)
+              }}
             >
               <SelectTrigger className="w-40" aria-label="Category type">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="general">General</SelectItem>
-                <SelectItem value="employee">Employee</SelectItem>
+                {CATEGORY_TYPES.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           )}
