@@ -22,18 +22,8 @@ import { useState } from "react"
 import { departmentsQuery } from "@/queries/people.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
-/**
- * The teams inside the agency.
- *
- * Deliberately small. A department is a name and whether it is still in use;
- * everything that makes it useful lives somewhere else — the people list, the
- * payout filter, the delivery report. A configuration screen that grows
- * features is one people go to instead of the place the work happens.
- *
- * Turning one off is offered beside deleting it, because that is what the
- * server tells you to do the moment anybody is in it, and the pair reads better
- * than a refusal followed by hunting for the switch.
- */
+// The teams inside the agency: a name and whether it is in use, and deliberately no
+// more; what makes a department useful lives on the people list and the reports.
 
 const emptyDepartment: IDepartmentFormValues = { name: "", description: "" }
 
