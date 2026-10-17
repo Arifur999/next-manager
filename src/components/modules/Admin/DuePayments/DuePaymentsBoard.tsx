@@ -12,14 +12,8 @@ import { format } from "date-fns"
 import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Scale } from "lucide-react"
 import { duePeopleQuery, dueTransactionsListQuery } from "@/queries/spending.queries"
 
-/**
- * Informal lending, in and out.
- *
- * The sign convention is the thing to get right on screen: a POSITIVE balance
- * means the agency has taken more from that person than it has given back, so
- * the agency owes THEM. Showing a bare signed number would leave every reader
- * working that out from scratch, so each row says which way it points.
- */
+// Informal lending, in and out. A positive balance means the agency has taken
+// more from that person than it gave back, so the agency owes them.
 
 // Which way a balance points, in words: a signed number alone makes every
 // reader work the convention out again.
