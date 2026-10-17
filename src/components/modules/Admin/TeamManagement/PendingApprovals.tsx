@@ -5,6 +5,7 @@ import {
   rejectMemberAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/team-management/_inviteAction"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
+import ErrorState from "@/components/shared/state/ErrorState"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { useActionMutation } from "@/hooks/useActionMutation"
@@ -35,9 +36,9 @@ const DECISION_KEYS = [queryKeys.users.all, queryKeys.activity.all]
 const PendingApprovals = () => {
   const [rejecting, setRejecting] = useState<IUser | null>(null)
 
-  const { data } = useQuery(usersListQuery("status=pending"))
+  const pendingList = useQuery(usersListQuery("status=pending"))
 
-  const pending = data?.data ?? []
+  const pending = pendingList.data?.data ?? []
 
   // A full plan is refused as "Starter includes 5 seats and all of them are in use".
   const { run: approve, isPending: isApproving } = useActionMutation({
@@ -56,6 +57,19 @@ const PendingApprovals = () => {
 
   const confirmReject = async () => {
     if (rejecting && (await reject(rejecting.id))) setRejecting(null)
+  }
+
+  // A failed load must not look like an empty queue: somebody may be waiting.
+  if (pendingList.isError && pending.length === 0) {
+    return (
+      <Card className="gap-0 overflow-hidden p-0">
+        <ErrorState
+          message="Join requests did not load."
+          onRetry={() => void pendingList.refetch()}
+          isRetrying={pendingList.isFetching}
+        />
+      </Card>
+    )
   }
 
   if (pending.length === 0) return null
