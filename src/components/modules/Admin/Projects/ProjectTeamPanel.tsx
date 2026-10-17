@@ -4,6 +4,7 @@ import {
   assignProjectMemberAction,
   removeProjectMemberAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/projects/_action"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,9 +20,9 @@ import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IProjectMember } from "@/types/project.types"
 import { projectMemberFormZodSchema, type IProjectMemberFormValues } from "@/zod/project.validation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { UserMinus, UserPlus } from "lucide-react"
-import { toast } from "sonner"
+import { useState } from "react"
 import { projectMembersQuery } from "@/queries/project.queries"
 import { queryKeys } from "@/lib/queryKeys"
 import { usersListQuery } from "@/queries/people.queries"
@@ -36,6 +37,10 @@ const initialsOf = (name: string) =>
 
 const emptyAssignment: IProjectMemberFormValues = { user_id: "", role_on_project: "" }
 
+// Who is on a project shows on the team tab, the people overview and the
+// member count on the project itself.
+const teamKeys = [queryKeys.projectMembers.all, queryKeys.assignmentOverview.all, queryKeys.projects.all]
+
 /** `canManage` is false for anybody the API refuses: the controls that change
  *  things come off rather than failing when pressed. */
 const ProjectTeamPanel = ({
@@ -45,7 +50,7 @@ const ProjectTeamPanel = ({
   projectId: string
   canManage?: boolean
 }) => {
-  const queryClient = useQueryClient()
+  const [memberToRemove, setMemberToRemove] = useState<IProjectMember | null>(null)
 
   const { data: membersData } = useQuery(projectMembersQuery(projectId))
   const { data: usersData } = useQuery(usersListQuery())
@@ -58,19 +63,16 @@ const ProjectTeamPanel = ({
     // The server updates the role when the person is already on the project,
     // so this is also how a role gets changed; hence "Saved".
     successMessage: "Saved",
-    invalidateKeys: [queryKeys.projectMembers.all, queryKeys.assignmentOverview.all, queryKeys.projects.all],
+    invalidateKeys: teamKeys,
     refresh: false,
   })
 
-  const { mutateAsync: remove } = useMutation({
-    mutationFn: (id: string) => removeProjectMemberAction(id),
+  const { run: removeMember, isPending: isRemoving } = useActionMutation({
+    action: removeProjectMemberAction,
+    successMessage: memberToRemove ? `${memberToRemove.user.full_name} removed from the project` : undefined,
+    invalidateKeys: teamKeys,
+    refresh: false,
   })
-
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.projectMembers.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.assignmentOverview.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all })
-  }
 
   const form = useForm({
     defaultValues: emptyAssignment,
@@ -80,16 +82,8 @@ const ProjectTeamPanel = ({
     },
   })
 
-  const handleRemove = async (member: IProjectMember) => {
-    const result = await remove(member.id)
-
-    if (!result.success) {
-      toast.error(result.message || "Failed to remove")
-      return
-    }
-
-    toast.success(`${member.user.full_name} removed from the project`)
-    refresh()
+  const handleRemove = async () => {
+    if (memberToRemove && (await removeMember(memberToRemove.id))) setMemberToRemove(null)
   }
 
   // Somebody already on the project is still offered: re-assigning is how the
@@ -173,7 +167,7 @@ const ProjectTeamPanel = ({
                 type="button"
                 variant="ghost"
                 size="icon"
-                onClick={() => void handleRemove(member)}
+                onClick={() => setMemberToRemove(member)}
               >
                 <UserMinus className="size-4" />
                 <span className="sr-only">Remove {member.user.full_name}</span>
@@ -183,6 +177,25 @@ const ProjectTeamPanel = ({
           ))}
         </ul>
       )}
+
+      <ConfirmDialog
+        open={memberToRemove !== null}
+        onOpenChange={(open) => {
+          if (!open) setMemberToRemove(null)
+        }}
+        title="Remove from this project?"
+        description={
+          <>
+            <span className="font-medium text-foreground">{memberToRemove?.user.full_name}</span> comes
+            off the team for this project. Their tasks and logged hours stay as they are.
+          </>
+        }
+        variant="destructive"
+        confirmLabel="Remove"
+        pendingLabel="Removing..."
+        isPending={isRemoving}
+        onConfirm={() => void handleRemove()}
+      />
     </Card>
   )
 }
