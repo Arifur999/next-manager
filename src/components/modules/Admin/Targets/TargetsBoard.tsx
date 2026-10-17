@@ -20,18 +20,9 @@ import type { IKpiTargetFormValues } from "@/zod/insights.validation"
 // Every dashboard scores against the targets, so they go stale with them.
 const TARGET_KEYS = [queryKeys.kpiTargets.all, queryKeys.kpi.all]
 
-/**
- * The numbers the company commits to.
- *
- * Without a row here every metric on every dashboard reads "No target set" —
- * a fact with no verdict attached. 62% utilization is neither good nor bad
- * until somebody wrote down what it should have been.
- *
- * Two rules the server enforces and this screen surfaces rather than hides:
- * a percentage metric refuses a target above 100, and a period has to start
- * where its type says it does, so the picker computes period_start rather than
- * letting one be typed.
- */
+// The numbers the company commits to; without one, every dashboard shows that
+// metric as a fact with no verdict ("No target set"). The server refuses a
+// percentage above 100 and says so; period_start is computed, never typed.
 const TargetsBoard = () => {
   const [targetToDelete, setTargetToDelete] = useState<IKpiTarget | null>(null)
 

@@ -85,11 +85,6 @@ const START_OF: Record<KpiPeriod, (date: Date) => Date> = {
   year: startOfYear,
 }
 
-/**
- * Where the period starts, computed rather than typed.
- *
- * The server refuses a quarter that starts in August, and rightly — two "Q3"s
- * beginning on different days cannot be told apart. Deriving it here means
- * that refusal is never reached by accident.
- */
+// Where "this" period starts, computed rather than typed: the server refuses a
+// quarter starting in August, since two Q3s on different days could not be told apart.
 export const periodStart = (period: KpiPeriod): string => format(START_OF[period](new Date()), "yyyy-MM-dd")
