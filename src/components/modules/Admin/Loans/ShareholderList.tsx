@@ -30,7 +30,7 @@ const ShareholderList = ({
   unallocatedPct: number | null
   isLoading: boolean
   onToggle: (shareholder: IShareholder) => void
-  onDelete: (id: string) => void
+  onDelete: (shareholder: IShareholder) => void
 }) => (
   <Card className="gap-0 overflow-hidden p-0">
     <CardHeader className="border-b px-5 py-4">
@@ -90,7 +90,7 @@ const ShareholderList = ({
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={() => onDelete(shareholder.id)}
+                  onClick={() => onDelete(shareholder)}
                   aria-label={`Delete ${shareholder.name}`}
                 >
                   <Trash2 className="size-4" />

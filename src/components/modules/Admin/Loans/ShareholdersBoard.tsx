@@ -11,9 +11,11 @@ import DistributionFormCard from "@/components/modules/Admin/Loans/DistributionF
 import DistributionList from "@/components/modules/Admin/Loans/DistributionList"
 import ShareholderFormCard from "@/components/modules/Admin/Loans/ShareholderFormCard"
 import ShareholderList from "@/components/modules/Admin/Loans/ShareholderList"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import type { IShareholder } from "@/types/finance.types"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { useQuery } from "@tanstack/react-query"
+import { useState } from "react"
 import { accountsQuery, distributionsListQuery, shareholdersQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -34,6 +36,8 @@ const SHAREHOLDER_KEYS = [
  * message says what to do about it rather than only that it failed.
  */
 const ShareholdersBoard = () => {
+  const [shareholderToDelete, setShareholderToDelete] = useState<IShareholder | null>(null)
+
   const { data, isLoading } = useQuery(shareholdersQuery())
   const { data: distributionData, isLoading: loadingDistributions } = useQuery(distributionsListQuery())
   const { data: accountData } = useQuery(accountsQuery())
@@ -64,11 +68,17 @@ const ShareholdersBoard = () => {
     refresh: false,
   })
 
-  const { run: deleteShareholder } = useActionMutation({
+  const { run: deleteShareholder, isPending: isDeleting } = useActionMutation({
     action: deleteShareholderAction,
     invalidateKeys: SHAREHOLDER_KEYS,
     refresh: false,
   })
+
+  const handleConfirmDelete = async () => {
+    if (shareholderToDelete && (await deleteShareholder(shareholderToDelete.id))) {
+      setShareholderToDelete(null)
+    }
+  }
 
   const { run: payDistribution, isPending: paying } = useActionMutation({
     action: createDistributionAction,
@@ -101,7 +111,7 @@ const ShareholdersBoard = () => {
           unallocatedPct={unallocated}
           isLoading={isLoading}
           onToggle={(shareholder) => void toggleShareholder(shareholder)}
-          onDelete={(id) => void deleteShareholder(id)}
+          onDelete={setShareholderToDelete}
         />
         <DistributionList
           distributions={distributions}
@@ -109,6 +119,26 @@ const ShareholdersBoard = () => {
           onDelete={(id) => void reverseDistribution(id)}
         />
       </div>
+
+      <ConfirmDialog
+        open={shareholderToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setShareholderToDelete(null)
+        }}
+        title="Delete this shareholder?"
+        description={
+          <>
+            This removes <span className="font-medium text-foreground">{shareholderToDelete?.name}</span> and
+            frees their share. Somebody who has been paid a distribution cannot be deleted — retire
+            them instead, so the payments still say who they went to.
+          </>
+        }
+        variant="destructive"
+        confirmLabel="Delete"
+        pendingLabel="Deleting..."
+        isPending={isDeleting}
+        onConfirm={() => void handleConfirmDelete()}
+      />
     </div>
   )
 }
