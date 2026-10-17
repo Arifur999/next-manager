@@ -55,6 +55,8 @@ const ExchangeTable = () => {
         columns={exchangeColumns}
         tableId="exchanges"
         exportFileName="exchanges"
+        search={{ placeholder: "Search accounts..." }}
+        filters={{ configs: [{ id: "date", type: "date-range", label: "Date" }] }}
         {...toTableQueryProps(exchangesQuery)}
         emptyMessage="No exchanges recorded yet."
         toolbarAction={<RecordExchangeModal />}
