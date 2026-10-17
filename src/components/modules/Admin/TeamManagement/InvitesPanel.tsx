@@ -5,6 +5,8 @@ import {
   revokeInviteAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/team-management/_inviteAction"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
+import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -47,9 +49,9 @@ const InvitesPanel = () => {
   const [copied, setCopied] = useState(false)
   const [revoking, setRevoking] = useState<ITeamInvite | null>(null)
 
-  const { data, isLoading } = useQuery(invitesQuery())
+  const inviteList = useQuery(invitesQuery())
 
-  const invites = data?.data ?? []
+  const invites = inviteList.data?.data ?? []
 
   // No toast: the link appearing below the form is the confirmation.
   const { run: createLink, isPending } = useActionMutation({
@@ -158,13 +160,12 @@ const InvitesPanel = () => {
           </p>
         </CardHeader>
 
-        {isLoading && invites.length === 0 ? (
-          <div className="h-24 animate-pulse bg-muted/40" />
-        ) : invites.length === 0 ? (
-          <p className="px-6 py-10 text-center text-sm text-muted-foreground">
-            No invites sent yet.
-          </p>
-        ) : (
+        <PanelState
+          query={inviteList}
+          errorMessage="Invites did not load."
+          isEmpty={invites.length === 0}
+          empty={<EmptyState icon={MailPlus}>No invites sent yet.</EmptyState>}
+        >
           <ul className="divide-y">
             {invites.map((invite) => {
               const state = statusOf(invite)
@@ -203,7 +204,7 @@ const InvitesPanel = () => {
               )
             })}
           </ul>
-        )}
+        </PanelState>
       </Card>
 
       <ConfirmDialog
