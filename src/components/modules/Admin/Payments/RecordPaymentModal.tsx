@@ -20,7 +20,6 @@ import { formatBdt, formatRate } from "@/lib/currency"
 import { paymentFormZodSchema, type IPaymentFormValues } from "@/zod/billing.validation"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { format } from "date-fns"
 import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useCallback, useState } from "react"
@@ -28,15 +27,12 @@ import { clientsListQuery } from "@/queries/crm.queries"
 import { projectsListQuery } from "@/queries/project.queries"
 import { queryKeys } from "@/lib/queryKeys"
 import { accountsQuery, rateSettingsQuery } from "@/queries/finance.queries"
-
-// The user's own calendar day. toISOString() is UTC, which in Dhaka is still
-// yesterday until 6am.
-const today = () => format(new Date(), "yyyy-MM-dd")
+import { todayIsoDate } from "@/lib/dates"
 
 const getDefaultValues = (): IPaymentFormValues => ({
   client_id: "",
   project_id: "",
-  date: today(),
+  date: todayIsoDate(),
   amount_usd: "",
   reporting_rate: "",
   account_id: "",
