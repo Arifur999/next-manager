@@ -1,15 +1,37 @@
-import DateCell from "@/components/shared/cell/DateCell"
 import { Badge } from "@/components/ui/badge"
 import { formatBdt } from "@/lib/currency"
+import { formatDay } from "@/lib/dates"
+import { toSafeExternalUrl } from "@/lib/safeUrl"
 import type { IExpense } from "@/types/spending.types"
 import { ColumnDef } from "@tanstack/react-table"
+import { ExternalLink } from "lucide-react"
+
+// Only an http(s) link becomes clickable; anything else stored is shown as text.
+const ReceiptLink = ({ url }: { url: string }) => {
+  const safeUrl = toSafeExternalUrl(url)
+  if (!url) return <span className="text-sm text-muted-foreground">—</span>
+  if (!safeUrl) return <span className="block max-w-40 truncate text-sm text-muted-foreground">{url}</span>
+
+  return (
+    <a
+      href={safeUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1 text-sm text-primary underline-offset-4 hover:underline"
+    >
+      Open
+      <ExternalLink className="size-3.5" aria-hidden="true" />
+      <span className="sr-only"> receipt, opens in a new tab</span>
+    </a>
+  )
+}
 
 export const expensesColumns: ColumnDef<IExpense>[] = [
   {
     id: "date",
     accessorKey: "date",
     header: "Date",
-    cell: ({ row }) => <DateCell date={row.original.date} formatString="MMM dd, yyyy" />,
+    cell: ({ row }) => <span className="whitespace-nowrap">{formatDay(row.original.date)}</span>,
   },
   {
     id: "category",
@@ -53,9 +75,17 @@ export const expensesColumns: ColumnDef<IExpense>[] = [
     id: "account",
     header: "Paid from",
     enableSorting: false,
-    meta: { exportValue: (expense) => expense.account?.name },
+    meta: { exportValue: (expense) => expense.account?.name, priority: "low" },
     cell: ({ row }) => (
       <span className="text-sm text-muted-foreground">{row.original.account?.name ?? "N/A"}</span>
     ),
+  },
+  {
+    id: "receipt",
+    accessorKey: "receipt_url",
+    header: "Receipt",
+    enableSorting: false,
+    meta: { priority: "low" },
+    cell: ({ row }) => <ReceiptLink url={row.original.receipt_url} />,
   },
 ]

@@ -6,11 +6,19 @@ import {
     createExpenseCategory,
     deleteExpense,
     deleteExpenseCategory,
+    updateExpense,
 } from "@/services/spending.services"
 import { createExpenseCategoryServerZodSchema, createExpenseServerZodSchema } from "@/zod/spending.validation"
 
 export const createExpenseAction = async (values: unknown) =>
     runValidatedAction(createExpenseServerZodSchema, values, "Failed to record expense", createExpense)
+
+// An edit sends every field, so the create payload schema serves it too.
+export const updateExpenseAction = async (id: string, values: unknown) =>
+    requireId(id, "expense") ??
+    runValidatedAction(createExpenseServerZodSchema, values, "Failed to update expense", (payload) =>
+        updateExpense(id, payload),
+    )
 
 export const deleteExpenseAction = async (id: string) =>
     requireId(id, "expense") ?? runAction("Failed to delete expense", () => deleteExpense(id))

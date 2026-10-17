@@ -28,7 +28,18 @@ describe("createExpenseServerZodSchema", () => {
             project_id: null,
             vendor: "Landlord",
             notes: "",
+            receipt_url: "",
         })
+    })
+
+    it("keeps a receipt link, trimmed", () => {
+        const payload = createExpenseServerZodSchema.parse({ ...valid, receipt_url: " https://drive.example.test/r/1 " })
+        expect(payload.receipt_url).toBe("https://drive.example.test/r/1")
+    })
+
+    it("refuses a receipt link that is not a web address", () => {
+        const result = createExpenseServerZodSchema.safeParse({ ...valid, receipt_url: "javascript:alert(1)" })
+        expect(result.error?.issues[0]?.message).toBe("Enter a full link, starting with https://")
     })
 
     it("keeps a chosen project", () => {

@@ -1,13 +1,19 @@
 "use client"
 
+import { deleteExpenseAction } from "@/app/(dashboardLayout)/admin/dashboard/expenses/_action"
 import RecordExpenseModal from "@/components/modules/Admin/Expenses/RecordExpenseModal"
 import { expensesColumns } from "@/components/modules/Admin/Expenses/expensesColumns"
+import DeleteMoneyRecordDialog from "@/components/modules/Admin/Money/DeleteMoneyRecordDialog"
+import { expenseReversal } from "@/components/modules/Admin/Money/reversalCopy"
 import StatTile from "@/components/shared/StatTile"
 import DataTable from "@/components/shared/table/DataTable"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
+import { useRowActionModalState } from "@/hooks/useRowActionModalState"
 import { formatBdt } from "@/lib/currency"
+import { queryKeys } from "@/lib/queryKeys"
 import { optionsFromValues } from "@/lib/table/filterOptions"
 import { toTableQueryProps } from "@/lib/table/queryProps"
+import { plural } from "@/lib/text"
 import type { IExpense } from "@/types/spending.types"
 import { useQuery } from "@tanstack/react-query"
 import { Receipt, Users } from "lucide-react"
@@ -39,13 +45,23 @@ const ExpensesTable = () => {
 
   const grand = total(expenses)
 
+  const {
+    editingItem,
+    deletingItem,
+    isEditModalOpen,
+    isDeleteDialogOpen,
+    onEditOpenChange,
+    onDeleteOpenChange,
+    tableActions,
+  } = useRowActionModalState<IExpense>({ enableView: false })
+
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <StatTile
           label="Operating expenses"
           value={formatBdt(total(operating))}
-          hint={`${operating.length} entr${operating.length === 1 ? "y" : "ies"}`}
+          hint={plural(operating.length, "entry", "entries")}
           icon={<Receipt className="size-5" />}
           tone={4}
         />
@@ -111,6 +127,20 @@ const ExpensesTable = () => {
           placeholder: "Search vendor, notes or category...",
           onDebouncedChange: setSearch,
         }}
+        actions={tableActions}
+      />
+
+      <RecordExpenseModal expense={editingItem} open={isEditModalOpen} onOpenChange={onEditOpenChange} />
+
+      <DeleteMoneyRecordDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={onDeleteOpenChange}
+        recordId={deletingItem?.id}
+        title="Delete this expense?"
+        description={deletingItem ? expenseReversal(deletingItem) : ""}
+        action={deleteExpenseAction}
+        successMessage="Expense deleted"
+        invalidateKeys={[queryKeys.expenses.all, queryKeys.projectFinancials.all]}
       />
     </div>
   )

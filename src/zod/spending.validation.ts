@@ -1,3 +1,4 @@
+import { toSafeExternalUrl } from "@/lib/safeUrl"
 import { z } from "zod"
 import { isoDate, optionalNonNegative, positiveAmount, toNumber } from "./formFields"
 
@@ -9,6 +10,12 @@ export const expenseFormZodSchema = z.object({
     project_id: z.string().optional(),
     vendor: z.string().optional(),
     notes: z.string().optional(),
+    // Optional, but a real web link when given: the expenses table opens it.
+    receipt_url: z
+        .string()
+        .trim()
+        .optional()
+        .refine((value) => !value || toSafeExternalUrl(value) !== null, "Enter a full link, starting with https://"),
 })
 
 export type IExpenseFormValues = z.infer<typeof expenseFormZodSchema>
@@ -71,6 +78,8 @@ export const createExpenseServerZodSchema = expenseFormZodSchema.transform((valu
     project_id: values.project_id || null,
     vendor: values.vendor,
     notes: values.notes,
+    // Sent even when blank, so clearing the link on an edit removes it.
+    receipt_url: values.receipt_url ?? "",
 }))
 
 export const createExpenseCategoryServerZodSchema = expenseCategoryFormZodSchema.transform((values) => ({
