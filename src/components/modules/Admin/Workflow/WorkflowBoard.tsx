@@ -7,6 +7,8 @@ import {
 import NewStatusForm from "@/components/modules/Admin/Workflow/NewStatusForm"
 import { STATUS_CATEGORIES } from "@/components/modules/Admin/Workflow/statusCategories"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
+import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { STATUS_TONE } from "@/components/shared/status/statusTone"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -15,7 +17,7 @@ import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IWorkflowStatus } from "@/types/work.types"
 import type { IWorkflowStatusChange } from "@/zod/work.validation"
 import { useQuery } from "@tanstack/react-query"
-import { ArrowDown, ArrowUp, Power, Star, Trash2 } from "lucide-react"
+import { ArrowDown, ArrowUp, Columns3, Power, Star, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { workflowStatusesListQuery } from "@/queries/work.queries"
 import { queryKeys } from "@/lib/queryKeys"
@@ -36,9 +38,9 @@ import { queryKeys } from "@/lib/queryKeys"
 const WorkflowBoard = ({ kind }: { kind: "task" | "project" }) => {
   const [statusToDelete, setStatusToDelete] = useState<IWorkflowStatus | null>(null)
 
-  const { data, isLoading } = useQuery(workflowStatusesListQuery(`kind=${kind}`))
+  const statusesQuery = useQuery(workflowStatusesListQuery(`kind=${kind}`))
 
-  const statuses = data?.data ?? []
+  const statuses = statusesQuery.data?.data ?? []
 
   // A move, a new default or a column switched off shows on the board itself.
   const { run: change } = useActionMutation({
@@ -85,9 +87,16 @@ const WorkflowBoard = ({ kind }: { kind: "task" | "project" }) => {
           </p>
         </CardHeader>
 
-        {isLoading && statuses.length === 0 ? (
-          <div className="h-40 animate-pulse bg-muted/40" />
-        ) : (
+        <PanelState
+          query={statusesQuery}
+          errorMessage="The columns did not load."
+          isEmpty={statuses.length === 0}
+          empty={
+            <EmptyState icon={Columns3} hint="Add the first one with the form beside this list.">
+              No columns on this board yet.
+            </EmptyState>
+          }
+        >
           <ul className="divide-y">
             {statuses.map((status, index) => {
               const inUse = (status._count?.tasks ?? 0) + (status._count?.projects ?? 0)
@@ -178,7 +187,7 @@ const WorkflowBoard = ({ kind }: { kind: "task" | "project" }) => {
               )
             })}
           </ul>
-        )}
+        </PanelState>
 
         <div className="border-t px-5 py-3 text-xs text-muted-foreground">
           Turning a column off keeps the work that is already on it and stops anything new
