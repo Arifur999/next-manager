@@ -45,6 +45,11 @@ export const conversationFormZodSchema = z
 
 export type IConversationFormValues = z.infer<typeof conversationFormZodSchema>
 
+// People added to a group: at least one, as the API asks.
+export const addMembersServerZodSchema = z.object({
+    member_ids: z.array(z.string().min(1)).min(1, "Choose who to add"),
+})
+
 // Who a company's own notifications can go to. super_admin belongs to no company.
 export const NOTIFICATION_AUDIENCE_ROLES = ["admin", "sales", "project_manager", "operations"] as const
 

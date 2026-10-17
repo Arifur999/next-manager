@@ -88,5 +88,12 @@ export const sendMessage = async (id: string, payload: Record<string, unknown>) 
 export const markConversationRead = async (id: string) =>
     httpClient.post<{ message: string }>(`/chat/${id}/read`, {})
 
+// Groups only: the API refuses to turn a direct thread into a group.
+export const addConversationMembers = async (id: string, payload: Record<string, unknown>) =>
+    httpClient.post<{ message: string }>(`/chat/${id}/members`, payload)
+
+export const leaveConversation = async (id: string) =>
+    httpClient.post<{ message: string }>(`/chat/${id}/leave`, {})
+
 export const setConversationArchived = async (id: string, archived: boolean) =>
     httpClient.post<{ message: string }>(`/chat/${id}/archive`, { archived })

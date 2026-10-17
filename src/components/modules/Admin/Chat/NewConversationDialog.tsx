@@ -1,57 +1,45 @@
 "use client"
 
+import PeoplePicker from "@/components/modules/Admin/Chat/PeoplePicker"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { useForm } from "@tanstack/react-form"
-import { useQuery } from "@tanstack/react-query"
-import { usersListQuery } from "@/queries/people.queries"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { IConversationFormValues } from "@/zod/workspace.validation"
+import { useForm } from "@tanstack/react-form"
+import { SquarePen } from "lucide-react"
+import { useState } from "react"
 
 const conversationDefaults: IConversationFormValues = { type: "direct", name: "", member_ids: [] }
 
-/**
- * Starting a conversation.
- *
- * Direct asks for one person, a group asks for a name and any number. Asking to
- * talk to somebody you already have a thread with opens that thread rather than
- * making a second one — the server decides that from a sorted key of the two
- * ids, so it holds even if both people click at the same moment.
- */
-const NewConversationCard = ({
-  meId,
-  onCreate,
-  isPending,
-}: {
+type NewConversationFormProps = {
   meId: string | null
   onCreate: (values: IConversationFormValues) => Promise<boolean>
   isPending: boolean
-}) => {
-  const { data } = useQuery(usersListQuery())
-  const people = ((data?.data ?? [])).filter(
-    (person) => person.status === "active" && person.id !== meId
-  )
+  onDone: () => void
+}
 
+const NewConversationForm = ({ meId, onCreate, isPending, onDone }: NewConversationFormProps) => {
   const form = useForm({
     defaultValues: conversationDefaults,
-    onSubmit: async ({ value, formApi }) => {
-      // Cleared only once the conversation exists, so a refusal keeps the picks.
-      if (!(await onCreate(value))) return
-
-      formApi.reset({ ...conversationDefaults, type: value.type }, { keepDefaultValues: true })
+    onSubmit: async ({ value }) => {
+      // Closed only once the conversation exists, so a refusal keeps the picks.
+      if (await onCreate(value)) onDone()
     },
   })
 
   return (
     <form
-      className="space-y-3 border-b p-4"
+      className="space-y-4"
       noValidate
       onSubmit={(event) => {
         event.preventDefault()
@@ -62,7 +50,7 @@ const NewConversationCard = ({
       <form.Field name="type">
         {(field) => (
           <div className="space-y-1.5">
-            <Label htmlFor="chat-type">Start something</Label>
+            <Label htmlFor="chat-type">Kind</Label>
             <Select
               value={field.state.value}
               onValueChange={(value) => {
@@ -110,7 +98,7 @@ const NewConversationCard = ({
             <form.Field name="member_ids">
               {(field) => {
                 const selected = field.state.value
-                const pick = (id: string) => {
+                const toggle = (id: string) => {
                   if (type === "direct") return field.handleChange([id])
                   field.handleChange(
                     selected.includes(id) ? selected.filter((value) => value !== id) : [...selected, id],
@@ -118,27 +106,13 @@ const NewConversationCard = ({
                 }
 
                 return (
-                  <div className="space-y-1.5">
-                    <Label>{type === "direct" ? "Who" : "Who is in it"}</Label>
-                    <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border p-1">
-                      {people.map((person) => (
-                        <button
-                          key={person.id}
-                          type="button"
-                          onClick={() => pick(person.id)}
-                          aria-pressed={selected.includes(person.id)}
-                          className={`w-full rounded px-2 py-1.5 text-left text-sm transition-colors ${
-                            selected.includes(person.id) ? "bg-primary/10 font-medium" : "hover:bg-muted"
-                          }`}
-                        >
-                          {person.full_name}
-                          <span className="ml-2 text-xs capitalize text-muted-foreground">
-                            {person.role.replace(/_/g, " ")}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  <PeoplePicker
+                    label={type === "direct" ? "Who" : "Who is in it"}
+                    selected={selected}
+                    onToggle={toggle}
+                    excludeIds={meId ? [meId] : []}
+                    disabled={isPending}
+                  />
                 )
               }}
             </form.Field>
@@ -146,20 +120,54 @@ const NewConversationCard = ({
         )}
       </form.Subscribe>
 
-      <form.Subscribe
-        selector={({ values }) =>
-          values.member_ids.length > 0 &&
-          (values.type === "direct" ? values.member_ids.length === 1 : values.name.trim() !== "")
-        }
-      >
-        {(isReady) => (
-          <Button type="submit" disabled={isPending || !isReady} className="w-full" size="sm">
-            Start
-          </Button>
-        )}
-      </form.Subscribe>
+      <DialogFooter>
+        <form.Subscribe
+          selector={({ values }) =>
+            values.member_ids.length > 0 &&
+            (values.type === "direct" ? values.member_ids.length === 1 : values.name.trim() !== "")
+          }
+        >
+          {(isReady) => (
+            <Button type="submit" disabled={isPending || !isReady}>
+              Start
+            </Button>
+          )}
+        </form.Subscribe>
+      </DialogFooter>
     </form>
   )
 }
 
-export default NewConversationCard
+/**
+ * Starting a conversation, in a dialog so the list keeps its place.
+ *
+ * Direct asks for one person, a group asks for a name and any number. Asking to
+ * talk to somebody you already have a thread with opens that thread rather than
+ * making a second one — the server decides that from a sorted key of the two
+ * ids, so it holds even if both people click at the same moment.
+ */
+const NewConversationDialog = (props: Omit<NewConversationFormProps, "onDone">) => {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button type="button" size="sm" className="w-full">
+          <SquarePen className="size-4" />
+          New conversation
+        </Button>
+      </DialogTrigger>
+
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>New conversation</DialogTitle>
+          <DialogDescription>A direct message with one colleague, or a named group.</DialogDescription>
+        </DialogHeader>
+
+        {open && <NewConversationForm {...props} onDone={() => setOpen(false)} />}
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+export default NewConversationDialog

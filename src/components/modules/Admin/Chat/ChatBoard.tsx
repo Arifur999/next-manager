@@ -6,15 +6,14 @@ import {
   sendMessageAction,
   setConversationArchivedAction,
 } from "@/app/(dashboardLayout)/dashboard/chat/_action"
+import ConversationHeader from "@/components/modules/Admin/Chat/ConversationHeader"
 import ConversationList from "@/components/modules/Admin/Chat/ConversationList"
 import MessageThread from "@/components/modules/Admin/Chat/MessageThread"
-import NewConversationCard from "@/components/modules/Admin/Chat/NewConversationCard"
-import { Button } from "@/components/ui/button"
+import NewConversationDialog from "@/components/modules/Admin/Chat/NewConversationDialog"
 import { Card } from "@/components/ui/card"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { useChatSocket } from "@/hooks/useChatSocket"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { Archive } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import { conversationsListQuery, messagesQuery } from "@/queries/workspace.queries"
@@ -110,7 +109,9 @@ const ChatBoard = ({ meId }: { meId: string | null }) => {
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
       <Card className="gap-0 overflow-hidden p-0">
-        <NewConversationCard meId={meId} onCreate={startConversation} isPending={starting} />
+        <div className="border-b p-3">
+          <NewConversationDialog meId={meId} onCreate={startConversation} isPending={starting} />
+        </div>
         <ConversationList
           conversations={conversations}
           query={conversationsList}
@@ -122,26 +123,11 @@ const ChatBoard = ({ meId }: { meId: string | null }) => {
       <Card className="flex h-[36rem] flex-col gap-0 overflow-hidden p-0">
         {active ? (
           <>
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
-              <div>
-                <p className="font-medium">{active.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {active.type === "direct"
-                    ? "Just the two of you"
-                    : `${active.members.length} people`}
-                </p>
-              </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() =>
-                  void archiveConversation({ id: active.id, archived: !active.archived_at })
-                }
-              >
-                <Archive className="size-4" />
-                {active.archived_at ? "Restore" : "Archive"}
-              </Button>
-            </div>
+            <ConversationHeader
+              conversation={active}
+              onArchive={() => void archiveConversation({ id: active.id, archived: !active.archived_at })}
+              onLeft={() => setActiveId(null)}
+            />
 
             <MessageThread
               messages={messages}

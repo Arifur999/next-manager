@@ -4,6 +4,7 @@ import RelativeTime from "@/components/shared/RelativeTime"
 import EmptyState from "@/components/shared/state/EmptyState"
 import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
+import { plural } from "@/lib/text"
 import { cn } from "@/lib/utils"
 import type { IConversation } from "@/types/workspace.types"
 import { MessagesSquare } from "lucide-react"
@@ -19,7 +20,7 @@ import type { ComponentProps } from "react"
 // What comes before the time: the project's code, or how many are in a group.
 const contextOf = (conversation: IConversation) => {
   if (conversation.type === "project" && conversation.project) return `${conversation.project.code} · `
-  if (conversation.type === "group") return `${conversation.members.length} people · `
+  if (conversation.type === "group") return `${plural(conversation.members.length, "person", "people")} · `
   return ""
 }
 

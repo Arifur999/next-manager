@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+    addMembersServerZodSchema,
     createConversationServerZodSchema,
     createCredentialServerZodSchema,
     credentialFormZodSchema,
@@ -159,5 +160,15 @@ describe("updateOrganizationServerZodSchema", () => {
         const badEmail = updateOrganizationServerZodSchema.safeParse({ ...valid, email: "billing" })
         expect(badEmail.error?.issues[0]?.message).toBe("Enter a valid email address")
         expect(updateOrganizationServerZodSchema.safeParse({ ...valid, name: "" }).success).toBe(false)
+    })
+})
+
+describe("addMembersServerZodSchema", () => {
+    it("sends the people picked", () => {
+        expect(addMembersServerZodSchema.parse({ member_ids: ["u1", "u2"] })).toEqual({ member_ids: ["u1", "u2"] })
+    })
+
+    it("refuses an empty pick", () => {
+        expect(addMembersServerZodSchema.safeParse({ member_ids: [] }).error?.issues[0]?.message).toBe("Choose who to add")
     })
 })
