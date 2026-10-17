@@ -6,8 +6,7 @@ import { planOptionLabel } from "@/components/modules/Platform/planLabel"
 import InviteLinkPanel from "@/components/shared/InviteLinkPanel"
 import AppField from "@/components/shared/form/AppField"
 import { Button } from "@/components/ui/button"
-import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
+import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -29,15 +28,9 @@ import { queryKeys } from "@/lib/queryKeys"
 import type { IInviteMail } from "@/types/common.types"
 
 /**
- * Bringing an agency on.
- *
- * The whole job of this console. You send a link; the owner sets their own
- * password, names their agency and lands owning it. Everything after that
- * happens inside their workspace — they add their own sales people, project
- * managers and operations team, and none of those accounts come through here.
- *
- * Nothing is created until they accept, so an invite that goes nowhere leaves
- * nothing behind on the customers list.
+ * Bringing an agency on: the owner gets a link, sets their own password and
+ * lands owning their workspace. Their own team is added from inside it.
+ * Nothing is created until the link is opened.
  */
 
 // A Select cannot hold "", which is what the form keeps for "the sign-up default".
@@ -87,15 +80,6 @@ const AgencyInvites = () => {
   return (
     <div className="space-y-6">
       <Card className="gap-0 p-0">
-        <CardHeader className="border-b px-5 py-4">
-          <CardTitle className="text-base">Invite an agency</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            They set their own password and land owning their workspace. From there they
-            add their own sales people, project managers and operations team — none of
-            those accounts come through here.
-          </p>
-        </CardHeader>
-
         <form
           className="space-y-5 p-5"
           noValidate
@@ -106,41 +90,37 @@ const AgencyInvites = () => {
           }}
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <form.Field name="email" validators={{ onChange: agencyInviteFormZodSchema.shape.email }}>
-                {(field) => (
-                  <AppField
-                    field={field}
-                    label="Owner's email"
-                    type="email"
-                    placeholder="owner@theiragency.com"
-                    disabled={isPending}
-                  />
-                )}
-              </form.Field>
-              <p className="text-xs text-muted-foreground">
-                The link is bound to this address and works once.
-              </p>
-            </div>
+            <form.Field name="email" validators={{ onChange: agencyInviteFormZodSchema.shape.email }}>
+              {(field) => (
+                <AppField
+                  field={field}
+                  label="Owner's email"
+                  type="email"
+                  autoComplete="off"
+                  placeholder="e.g. owner@theiragency.com"
+                  description="The link works once, and only for this address."
+                  disabled={isPending}
+                />
+              )}
+            </form.Field>
 
             <form.Field
               name="company_name"
               validators={{ onChange: agencyInviteFormZodSchema.shape.company_name }}
             >
               {(field) => (
-                <div className="space-y-1.5">
-                  <AppField
-                    field={field}
-                    label="Agency name"
-                    placeholder="Leave empty and they name it themselves"
-                    disabled={isPending}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {field.state.value.trim()
-                      ? "Fixed on the way in — this is the agency the deal was agreed with."
-                      : "They will type their own agency name when they open it."}
-                  </p>
-                </div>
+                <AppField
+                  field={field}
+                  label="Agency name (optional)"
+                  autoComplete="off"
+                  placeholder="e.g. Bright Pixel Agency"
+                  description={
+                    field.state.value.trim()
+                      ? "They cannot change it on the way in."
+                      : "Leave it empty and they name the agency when they open the link."
+                  }
+                  disabled={isPending}
+                />
               )}
             </form.Field>
 
@@ -166,17 +146,17 @@ const AgencyInvites = () => {
                   </Select>
                   <p className="text-xs text-muted-foreground">
                     {plans.some((plan) => plan.id === field.state.value) ? (
-                      "They are told this before they choose a password."
+                      "They see the plan before they choose a password."
                     ) : (
                       <>
-                        Falls back to the default on{" "}
+                        Uses the sign-up plan from{" "}
                         <Link
                           href="/platform/settings"
                           className="text-primary underline-offset-4 hover:underline"
                         >
                           settings
                         </Link>
-                        . With none set they arrive unprovisioned.
+                        , or no plan if none is set.
                       </>
                     )}
                   </p>
@@ -184,42 +164,30 @@ const AgencyInvites = () => {
               )}
             </form.Field>
 
-            <form.Field name="trial_days">
+            <form.Field name="trial_days" validators={{ onChange: agencyInviteFormZodSchema.shape.trial_days }}>
               {(field) => (
-                <div className="space-y-1.5">
-                  <Label htmlFor="agency-trial">Trial length</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="agency-trial"
-                      type="number"
-                      min={0}
-                      max={365}
-                      value={field.state.value}
-                      onChange={(event) => field.handleChange(event.target.value)}
-                      onBlur={field.handleBlur}
-                      disabled={isPending}
-                      className="w-28"
-                    />
-                    <span className="text-sm text-muted-foreground">days</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {Number(field.state.value) === 0
-                      ? "No trial — they start paying the day they open it."
-                      : `Free for ${field.state.value} days, then the plan is charged.`}
-                  </p>
-                </div>
+                <AppField
+                  field={field}
+                  label="Trial length (days)"
+                  type="number"
+                  min={0}
+                  max={365}
+                  className="max-w-40"
+                  description={
+                    Number(field.state.value) === 0
+                      ? "No trial. They start paying the day they open it."
+                      : `Free for ${field.state.value} days, then the plan is charged.`
+                  }
+                  disabled={isPending}
+                />
               )}
             </form.Field>
           </div>
 
-          <form.Subscribe selector={({ values }) => values.email.trim() !== ""}>
-            {(hasEmail) => (
-              <Button type="submit" disabled={isPending || !hasEmail}>
-                <Send className="size-4" />
-                {isPending ? "Sending..." : "Send invite"}
-              </Button>
-            )}
-          </form.Subscribe>
+          <Button type="submit" disabled={isPending}>
+            <Send className="size-4" aria-hidden="true" />
+            {isPending ? "Sending..." : "Send invite"}
+          </Button>
         </form>
 
         {freshLink && (

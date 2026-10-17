@@ -1,20 +1,26 @@
 import AgencyInvites from "@/components/modules/Platform/AgencyInvites";
-import type { Metadata } from "next";
 import PageHeader from "@/components/shared/PageHeader";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import { agencyInvitesQuery, plansQuery } from "@/queries/platform.queries";
+import type { QueryClient } from "@tanstack/react-query";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Invite an agency",
 };
 
+const prefetch = (queryClient: QueryClient) =>
+  Promise.all([queryClient.prefetchQuery(agencyInvitesQuery()), queryClient.prefetchQuery(plansQuery())]);
+
 const InviteAgencyPage = () => (
   <div className="space-y-6">
     <PageHeader title="Invite an agency">
-      Hand an agency owner a link. They set their own password and land owning their
-      workspace — and from there they add their own sales people, project managers and
-      operations team.
+      Send an agency owner a link to set up and own their workspace.
     </PageHeader>
 
-    <AgencyInvites />
+    <QueryPrefetch prefetch={prefetch}>
+      <AgencyInvites />
+    </QueryPrefetch>
   </div>
 );
 
