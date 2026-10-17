@@ -55,9 +55,6 @@ export const getCredentials = async (queryString?: string) =>
 export const createCredential = async (payload: Record<string, unknown>) =>
     httpClient.post<ICredential>("/vault", payload)
 
-export const updateCredential = async (id: string, payload: Record<string, unknown>) =>
-    httpClient.patch<ICredential>(`/vault/${id}`, payload)
-
 /** The only call that returns a real password — and the server logs every one. */
 export const revealCredential = async (id: string) =>
     httpClient.get<IRevealedCredential>(`/vault/${id}/reveal`)
@@ -65,14 +62,8 @@ export const revealCredential = async (id: string) =>
 export const getCredentialAccessLog = async (id: string) =>
     httpClient.get<ICredentialAccessEntry[]>(`/vault/${id}/access-log`)
 
-export const deleteCredential = async (id: string) =>
-    httpClient.delete<{ message: string }>(`/vault/${id}`)
-
 export const getConversations = async (queryString?: string) =>
     httpClient.get<IConversation[]>("/chat", { params: toParams(queryString) })
-
-export const getUnreadTotal = async () =>
-    httpClient.get<{ unread_count: number }>("/chat/unread")
 
 export const createConversation = async (payload: Record<string, unknown>) =>
     httpClient.post<{ id: string }>("/chat", payload)
@@ -86,11 +77,5 @@ export const sendMessage = async (id: string, payload: Record<string, unknown>) 
 export const markConversationRead = async (id: string) =>
     httpClient.post<{ message: string }>(`/chat/${id}/read`, {})
 
-export const addConversationMembers = async (id: string, payload: Record<string, unknown>) =>
-    httpClient.post<{ message: string }>(`/chat/${id}/members`, payload)
-
 export const setConversationArchived = async (id: string, archived: boolean) =>
     httpClient.post<{ message: string }>(`/chat/${id}/archive`, { archived })
-
-export const leaveConversation = async (id: string) =>
-    httpClient.post<{ message: string }>(`/chat/${id}/leave`, {})

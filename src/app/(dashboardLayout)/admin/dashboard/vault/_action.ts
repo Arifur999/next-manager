@@ -3,7 +3,6 @@
 import { getActionErrorMessage } from "@/lib/actionError"
 import {
     createCredential,
-    deleteCredential,
     getCredentialAccessLog,
     revealCredential,
 } from "@/services/workspace.services"
@@ -52,17 +51,5 @@ export const getAccessLogAction = async (
         return await getCredentialAccessLog(id)
     } catch (error: unknown) {
         return { success: false, message: getActionErrorMessage(error, "Failed to load access log") }
-    }
-}
-
-export const deleteCredentialAction = async (
-    id: string,
-): Promise<ApiResponse<{ message: string }> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid credential id" }
-
-    try {
-        return await deleteCredential(id)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to delete credential") }
     }
 }
