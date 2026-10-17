@@ -54,7 +54,7 @@ Next.js 16.3 (App Router, `src/proxy.ts` instead of middleware), React 19.2, Typ
 
 ## Contracts with the backend
 
-- Envelope `{ success, message, data, meta }`; errors `{ success: false, message, errorSource, requestId }` plus an `x-request-id` header. Read the page count with `pageCountOf` (`totalPages`, falling back to the deprecated `totalPage`).
+- Envelope `{ success, message, data, meta }`; errors `{ success: false, message, errorSource, requestId }` plus an `x-request-id` header. The page count is `meta.totalPages`.
 - `limit` is capped at 200: lists that grow use `page` + `limit` (`lib/paging.ts`; the activity feeds ask for 50).
 - `GET /api/v1/public/plans` (unauthenticated, cached 300 s) is parsed by `src/zod/publicPlans.validation.ts`.
 - The compose `web` service passes `API_BASE_URL` (or the deprecated `API_INTERNAL_URL`) and `SITE_URL` at runtime; the chat socket is `/ws` on the page origin.

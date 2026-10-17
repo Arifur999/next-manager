@@ -2,7 +2,6 @@
 
 import { usePersistentState } from "@/hooks/usePersistentState";
 import { createSmartColumnFilterFn } from "@/lib/table/filterFns";
-import { pageCountOf } from "@/types/api.types";
 import {
   functionalUpdate,
   getCoreRowModel,
@@ -85,7 +84,7 @@ export const useDataTable = <TData,>({
     // Off: TanStack schedules that reset during render, which under StrictMode
     // can fire before the table has mounted. The clamp below covers shrinking data.
     autoResetPageIndex: false,
-    pageCount: pagination ? Math.max(pageCountOf(meta) ?? 0, 0) : undefined,
+    pageCount: pagination ? Math.max(meta?.totalPages ?? 0, 0) : undefined,
     state: {
       sorting: sorting?.state ?? localSorting,
       pagination: pagination?.state ?? localPagination,
