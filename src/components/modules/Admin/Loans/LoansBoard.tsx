@@ -9,14 +9,17 @@ import {
 } from "@/app/(dashboardLayout)/admin/dashboard/loans/_action"
 import LoanCard from "@/components/modules/Admin/Loans/LoanCard"
 import LoanFormCard from "@/components/modules/Admin/Loans/LoanFormCard"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import EmptyState from "@/components/shared/state/EmptyState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Card } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
+import type { ILoan } from "@/types/finance.types"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { Landmark } from "lucide-react"
+import { useState } from "react"
 import { accountsQuery, loanSummaryQuery, loansListQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -37,6 +40,8 @@ const LOAN_KEYS = [
  * summary strip cannot disagree with the card underneath it.
  */
 const LoansBoard = () => {
+  const [loanToDelete, setLoanToDelete] = useState<ILoan | null>(null)
+
   const { data, isLoading } = useQuery(loansListQuery())
   const { data: summaryData } = useQuery(loanSummaryQuery())
   const { data: accountData } = useQuery(accountsQuery())
@@ -76,11 +81,15 @@ const LoansBoard = () => {
   })
 
   // "This loan has repayments recorded. Close it instead" is the failure toast.
-  const { run: deleteLoan } = useActionMutation({
+  const { run: deleteLoan, isPending: isDeleting } = useActionMutation({
     action: deleteLoanAction,
     invalidateKeys: LOAN_KEYS,
     refresh: false,
   })
+
+  const handleConfirmDelete = async () => {
+    if (loanToDelete && (await deleteLoan(loanToDelete.id))) setLoanToDelete(null)
+  }
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
@@ -146,11 +155,30 @@ const LoansBoard = () => {
               onPay={(instalmentId, accountId) => void payInstalment({ id: instalmentId, accountId })}
               onReverse={(instalmentId) => void reverseInstalment(instalmentId)}
               onClose={() => void closeLoan(loan.id)}
-              onDelete={() => void deleteLoan(loan.id)}
+              onDelete={() => setLoanToDelete(loan)}
             />
           ))
         )}
       </div>
+
+      <ConfirmDialog
+        open={loanToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setLoanToDelete(null)
+        }}
+        title="Delete this loan?"
+        description={
+          <>
+            This removes the <span className="font-medium text-foreground">{loanToDelete?.lender}</span> loan
+            and its schedule. If it was paid into an account, that money comes back out of it.
+          </>
+        }
+        variant="destructive"
+        confirmLabel="Delete"
+        pendingLabel="Deleting..."
+        isPending={isDeleting}
+        onConfirm={() => void handleConfirmDelete()}
+      />
     </div>
   )
 }
