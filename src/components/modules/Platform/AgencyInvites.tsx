@@ -16,8 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IAgencyInvite } from "@/types/platform.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { format, isPast, parseISO } from "date-fns"
 import { Check, Copy, Send, Trash2, TriangleAlert } from "lucide-react"
 import Link from "next/link"
@@ -48,7 +49,6 @@ const statusOf = (invite: IAgencyInvite) => {
 }
 
 const AgencyInvites = () => {
-  const queryClient = useQueryClient()
   const [email, setEmail] = useState("")
   const [companyName, setCompanyName] = useState("")
   const [planId, setPlanId] = useState(NO_PLAN)
@@ -64,46 +64,44 @@ const AgencyInvites = () => {
   const invites = data?.data ?? []
   const plans = ((planData?.data ?? [])).filter((plan) => plan.is_active)
 
-  const { mutate: invite, isPending } = useMutation({
-    mutationFn: () =>
-      inviteAgencyAction({
-        email,
-        company_name: companyName,
-        plan_id: planId === NO_PLAN ? "" : planId,
-        trial_days: trialDays,
-      }),
+  const { run: sendInvite, isPending } = useActionMutation({
+    action: inviteAgencyAction,
+    // The server phrases its message against what happened to the email.
+    successMessage: false,
+    invalidateKeys: [queryKeys.agencyInvites.all],
+    refresh: false,
     onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not send the invite")
-        return
-      }
+      if (!result.success) return
 
-      const url = "data" in result ? result.data?.join_url : undefined
-      const mail = "data" in result ? result.data?.email : undefined
-      setFreshLink(url ?? null)
-      setMailed(mail ?? null)
+      const mail = result.data.email
+      setFreshLink(result.data.join_url)
+      setMailed(mail)
       setCopied(false)
 
-      if (mail?.delivered) toast.success(result.message)
-      else toast.warning(result.message, { description: mail?.reason ?? undefined })
-
-      setEmail("")
-      setCompanyName("")
-      void queryClient.invalidateQueries({ queryKey: queryKeys.agencyInvites.all })
+      if (mail.delivered) toast.success(result.message)
+      else toast.warning(result.message, { description: mail.reason ?? undefined })
     },
   })
 
-  const { mutate: revoke } = useMutation({
-    mutationFn: (id: string) => revokeAgencyInviteAction(id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not revoke")
-        return
-      }
-      toast.success("Invite revoked — the link stops working immediately")
-      void queryClient.invalidateQueries({ queryKey: queryKeys.agencyInvites.all })
-    },
+  const { run: revokeInvite } = useActionMutation({
+    action: revokeAgencyInviteAction,
+    successMessage: "Invite revoked — the link stops working immediately",
+    invalidateKeys: [queryKeys.agencyInvites.all],
+    refresh: false,
   })
+
+  const handleInvite = async () => {
+    const sent = await sendInvite({
+      email,
+      company_name: companyName,
+      plan_id: planId === NO_PLAN ? "" : planId,
+      trial_days: trialDays,
+    })
+    if (!sent) return
+
+    setEmail("")
+    setCompanyName("")
+  }
 
   const copy = async () => {
     if (!freshLink) return
@@ -135,7 +133,7 @@ const AgencyInvites = () => {
           onSubmit={(event) => {
             event.preventDefault()
             if (!email.trim()) return
-            invite()
+            void handleInvite()
           }}
         >
           <div className="grid gap-4 sm:grid-cols-2">
@@ -322,7 +320,7 @@ const AgencyInvites = () => {
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => revoke(invite.id)}
+                        onClick={() => void revokeInvite(invite.id)}
                         aria-label={`Revoke the invite to ${invite.email}`}
                       >
                         <Trash2 className="size-4" />
