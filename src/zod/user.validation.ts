@@ -17,8 +17,6 @@ export const ROLE_LABELS: Record<AssignableRole, string> = {
   operations: "Operations — does the work, logs time",
 }
 
-const assignableRoles = ASSIGNABLE_ROLES
-
 // The Select's value for "no department": it cannot hold "", and null is a real
 // answer here, for somebody who works across all of them.
 export const NO_DEPARTMENT = "__none__"
@@ -36,9 +34,7 @@ export const createUserFormZodSchema = z.object({
     .min(8, "Password must be at least 8 characters")
     .regex(/[A-Za-z]/, "Password must contain a letter")
     .regex(/[0-9]/, "Password must contain a number"),
-  role: z.enum(assignableRoles, { message: "Choose a role" }),
-  // The sentinel for "no department", because a Select cannot hold "" and
-  // null is a real answer here: somebody can work across all of them.
+  role: z.enum(ASSIGNABLE_ROLES, { message: "Choose a role" }),
   department_id: z.string().optional(),
 })
 
@@ -56,9 +52,7 @@ export type ICreateUserPayload = z.output<typeof createUserServerZodSchema>
 export const editUserFormZodSchema = z.object({
   full_name: z.string().min(1, "Full name is required"),
   phone: z.string().optional(),
-  role: z.enum(assignableRoles, { message: "Choose a role" }),
-  // The sentinel for "no department", because a Select cannot hold "" and
-  // null is a real answer here: somebody can work across all of them.
+  role: z.enum(ASSIGNABLE_ROLES, { message: "Choose a role" }),
   department_id: z.string().optional(),
   // `pending` is absent on purpose - it is set by the invite flow and cleared
   // by approval, never assigned by hand.
