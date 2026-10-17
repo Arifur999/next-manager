@@ -75,6 +75,7 @@ const TeamTable = () => {
         data={users}
         columns={teamColumns}
         tableId="team"
+        exportFileName="team"
         {...toTableQueryProps(usersQuery)}
         emptyMessage="No team members yet."
         toolbarAction={<CreateUserFormModal />}
