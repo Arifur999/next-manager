@@ -12,7 +12,7 @@ import { FolderKanban, ListChecks, Package, UserCheck, UserPlus, Users } from "l
 import Link from "next/link"
 import { clientsListQuery } from "@/queries/crm.queries"
 import { projectsListQuery } from "@/queries/project.queries"
-import { taskReportQuery } from "@/queries/work.queries"
+import { tasksListQuery } from "@/queries/work.queries"
 import { servicesListQuery } from "@/queries/catalog.queries"
 
 /**
@@ -34,9 +34,10 @@ const SalesOverview = () => {
   const planning = useCount(projectsListQuery("status=Planning&limit=1"))
   const activeProjects = useCount(projectsListQuery("status=Active&limit=1"))
 
-  const reportQuery = useQuery(taskReportQuery())
-  const reportData = reportQuery.data
-  const report = reportData?.data
+  // Their own tasks, not the board's: the report counts every task sales can
+  // see, which is the whole company's, while the tile says "my".
+  const myTasks = useCount(tasksListQuery("mine=true&limit=1"))
+  const myOverdue = useCount(tasksListQuery("mine=true&overdue=true&limit=1"))
 
   // The list, not just the number: "recently added" is a thing to act on, and a
   // count of it would say nothing useful.
@@ -104,14 +105,14 @@ const SalesOverview = () => {
           },
           {
             label: "My tasks",
-            ...queryFields(reportQuery, report?.total),
-            href: "/dashboard/tasks",
+            ...countFields(myTasks),
+            href: "/admin/dashboard/tasks?mine=true",
             icon: <ListChecks className="size-5" />,
             tone: 2,
           },
           {
             label: "Overdue",
-            ...queryFields(reportQuery, report?.overdue_count),
+            ...countFields(myOverdue),
             href: "/dashboard/tasks?overdue=true",
             icon: <ListChecks className="size-5" />,
             tone: 5,
