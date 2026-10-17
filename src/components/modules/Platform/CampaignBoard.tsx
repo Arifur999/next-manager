@@ -2,13 +2,12 @@
 
 import {
   createAnnouncementAction,
-  deleteAnnouncementAction,
   updateAnnouncementAction,
 } from "@/app/(dashboardLayout)/platform/_campaignAction"
 import AnnouncementComposer from "@/components/modules/Platform/AnnouncementComposer"
 import PublishAnnouncementDialog from "@/components/modules/Platform/PublishAnnouncementDialog"
+import RemoveAnnouncementDialog from "@/components/modules/Platform/RemoveAnnouncementDialog"
 import { AUDIENCE_LABEL } from "@/components/modules/Platform/announcementAudience"
-import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -39,19 +38,6 @@ import { queryKeys } from "@/lib/queryKeys"
 
 const emptyDraft: IAnnouncementFormValues = { title: "", body: "", audience: "all", send_email: false }
 
-const RemovalNote = ({ announcement }: { announcement: IAnnouncement }) => {
-  const title = <span className="font-medium text-foreground">{announcement.title}</span>
-
-  if (!announcement.published_at) return <>{title} has not gone to anybody, so nothing else changes.</>
-
-  return (
-    <>
-      {title} leaves everyone&apos;s notifications.
-      {announcement.send_email && " The email that went with it cannot be recalled."}
-    </>
-  )
-}
-
 const CampaignBoard = () => {
   const [draft, setDraft] = useState(emptyDraft)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -77,25 +63,13 @@ const CampaignBoard = () => {
     refresh: false,
   })
 
-  const { run: removeAnnouncement, isPending: isRemoving } = useActionMutation({
-    action: deleteAnnouncementAction,
-    successMessage: "Removed — it leaves everyone's notifications too",
-    invalidateKeys: [queryKeys.platformAnnouncements.all],
-    refresh: false,
-  })
-
   const handleSave = async () => {
     if (await saveDraft(draft)) reset()
   }
 
-  const handleRemove = async () => {
-    if (!removing || !(await removeAnnouncement(removing.id))) return
-
-    if (removing.id === editingId) reset()
-    setRemoving(null)
+  const handleRemoved = (id: string) => {
+    if (id === editingId) reset()
   }
-
-  const isWithdrawal = Boolean(removing?.published_at)
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
@@ -231,18 +205,10 @@ const CampaignBoard = () => {
 
       <PublishAnnouncementDialog announcement={confirming} onClose={() => setConfirming(null)} />
 
-      <ConfirmDialog
-        open={Boolean(removing)}
-        onOpenChange={(open) => {
-          if (!open) setRemoving(null)
-        }}
-        title={isWithdrawal ? "Withdraw this announcement?" : "Delete this draft?"}
-        description={removing && <RemovalNote announcement={removing} />}
-        variant="destructive"
-        confirmLabel={isWithdrawal ? "Withdraw" : "Delete"}
-        pendingLabel={isWithdrawal ? "Withdrawing..." : "Deleting..."}
-        isPending={isRemoving}
-        onConfirm={() => void handleRemove()}
+      <RemoveAnnouncementDialog
+        announcement={removing}
+        onClose={() => setRemoving(null)}
+        onRemoved={handleRemoved}
       />
     </div>
   )
