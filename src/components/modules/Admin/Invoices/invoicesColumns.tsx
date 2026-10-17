@@ -48,6 +48,7 @@ export const invoicesColumns: ColumnDef<IInvoice>[] = [
     id: "status",
     accessorKey: "status",
     header: "Status",
+    meta: { exportValue: (invoice) => (invoice.is_overdue ? "overdue" : invoice.status) },
     cell: ({ row }) => {
       // is_overdue is derived from today's date on the server, so it can be
       // true while status still reads "sent". Showing the derived state is

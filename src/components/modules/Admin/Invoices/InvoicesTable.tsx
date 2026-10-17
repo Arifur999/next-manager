@@ -52,6 +52,7 @@ const InvoicesTable = () => {
         data={invoices}
         columns={invoicesColumns}
         tableId="invoices"
+        exportFileName="invoices"
         {...toTableQueryProps(invoicesQuery)}
         emptyMessage="No invoices yet."
         toolbarAction={<CreateInvoiceModal />}
