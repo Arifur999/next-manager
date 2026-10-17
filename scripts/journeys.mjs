@@ -526,3 +526,6 @@ console.log(
 ${checked} steps walked. ` +
     `${problems === 0 ? "Every journey completed. No problems found." : `${problems} PROBLEM(S) above`}`
 );
+
+// exitCode rather than exit(), for the reason given in login-flow.mjs.
+process.exitCode = problems ? 1 : 0;

@@ -453,3 +453,6 @@ if (!superEmail || !superPassword) {
 }
 
 console.log(`\n${bad === 0 ? "ROLE ROUTING CORRECT" : `${bad} ROUTING PROBLEM(S)`}`);
+
+// exitCode rather than exit(), for the reason given in login-flow.mjs.
+process.exitCode = bad ? 1 : 0;

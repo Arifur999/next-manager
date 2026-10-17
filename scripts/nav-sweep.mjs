@@ -105,3 +105,6 @@ for (const [role, cookie] of Object.entries(cookies)) {
 console.log(
   `\n${checked} nav links checked. ${broken === 0 ? "Every link opens for the role that is offered it." : `${broken} BROKEN`}`
 );
+
+// exitCode rather than exit(), for the reason given in login-flow.mjs.
+process.exitCode = broken ? 1 : 0;
