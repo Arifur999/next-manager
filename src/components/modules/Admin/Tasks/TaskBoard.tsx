@@ -5,6 +5,7 @@ import TaskCalendar from "@/components/modules/Admin/Tasks/TaskCalendar"
 import TaskColumns from "@/components/modules/Admin/Tasks/TaskColumns"
 import TaskList from "@/components/modules/Admin/Tasks/TaskList"
 import EmptyState from "@/components/shared/state/EmptyState"
+import ErrorState from "@/components/shared/state/ErrorState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Card } from "@/components/ui/card"
 import { useQuery } from "@tanstack/react-query"
@@ -75,21 +76,33 @@ const TaskBoard = ({
     .filter(Boolean)
     .join("&")
 
-  const { data, isLoading } = useQuery(tasksListQuery(query))
+  const tasksQuery = useQuery(tasksListQuery(query))
 
   // The columns are the agency's own now, so the board asks for them instead
   // of carrying a list of four words that used to be true.
-  const { data: statusData } = useQuery(workflowStatusesListQuery("kind=task"))
+  const statusesQuery = useQuery(workflowStatusesListQuery("kind=task"))
 
-  const tasks = data?.data ?? []
-  const statuses = ((statusData?.data ?? [])).filter(
+  const tasks = tasksQuery.data?.data ?? []
+  const statuses = ((statusesQuery.data?.data ?? [])).filter(
     // A retired column still holds work, so it is drawn when something is on
     // it - just never offered as somewhere to put anything new.
     (status) => status.is_active || tasks.some((task) => task.status.id === status.id)
   )
 
   const renderTasks = () => {
-    if (isLoading && tasks.length === 0) {
+    if (!tasksQuery.data && tasksQuery.isError) {
+      return (
+        <Card>
+          <ErrorState
+            message="The tasks did not load."
+            onRetry={() => void tasksQuery.refetch()}
+            isRetrying={tasksQuery.isFetching}
+          />
+        </Card>
+      )
+    }
+
+    if (tasksQuery.isLoading && tasks.length === 0) {
       return (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {(statuses.length > 0 ? statuses : [null, null, null, null]).map((column, index) => (
@@ -115,6 +128,20 @@ const TaskBoard = ({
     // the same query, not a different screen.
     if (asCalendar) return <TaskCalendar tasks={tasks} />
     if (asList) return <TaskList tasks={tasks} />
+
+    // Without its columns the board would draw nothing, tasks and all.
+    if (!statusesQuery.data && statusesQuery.isError) {
+      return (
+        <Card>
+          <ErrorState
+            message="The board's columns did not load."
+            onRetry={() => void statusesQuery.refetch()}
+            isRetrying={statusesQuery.isFetching}
+          />
+        </Card>
+      )
+    }
+
     return <TaskColumns tasks={tasks} statuses={statuses} />
   }
 
