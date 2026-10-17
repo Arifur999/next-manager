@@ -12,7 +12,6 @@ import {
   ROLE_LABEL,
   titleise,
   type IPermissionGrid,
-  type PermissionScope,
 } from "@/types/permission.types"
 
 /**
@@ -51,7 +50,7 @@ const RolePermissionGrid = ({ grid, role, disabled, save }: RolePermissionGridPr
                     role,
                     module,
                     action,
-                    scope: next as PermissionScope,
+                    scope: next,
                   }),
                 note: `${ROLE_LABEL[role] ?? titleise(role)} — ${MODULE_LABEL[module] ?? module} ${action} saved`,
               })

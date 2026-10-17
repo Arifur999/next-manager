@@ -12,7 +12,6 @@ import {
   MODULE_LABEL,
   titleise,
   type IPermissionGrid,
-  type PermissionScope,
 } from "@/types/permission.types"
 
 /**
@@ -61,7 +60,7 @@ const UserPermissionGrid = ({ grid, disabled, save }: UserPermissionGridProps) =
                         setUserPermissionAction(person.id, {
                           module,
                           action,
-                          scope: next as PermissionScope,
+                          scope: next,
                         }),
                       note: `${person.full_name} — ${MODULE_LABEL[module] ?? module} ${action} saved`,
                     },
