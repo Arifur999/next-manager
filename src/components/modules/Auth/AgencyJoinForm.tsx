@@ -14,12 +14,11 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation } from "@tanstack/react-query"
 import { CircleCheck, Eye, EyeOff, LinkIcon } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
-import { toast } from "sonner"
 import { agencyJoinFormZodSchema, type IAgencyJoinFormValues } from "@/zod/auth.validation"
 
 /**
@@ -48,8 +47,11 @@ const AgencyJoinForm = ({
   // record, and it should not change on the way in.
   const nameIsFixed = Boolean(invite?.company_name)
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IAgencyJoinFormValues) => acceptAgencyInviteAction(token, values),
+  // The "is open" screen that follows is the confirmation.
+  const { run: openAgency, isPending } = useActionMutation({
+    action: (values: IAgencyJoinFormValues) => acceptAgencyInviteAction(token, values),
+    successMessage: false,
+    refresh: false,
   })
 
   const form = useForm({
@@ -59,14 +61,7 @@ const AgencyJoinForm = ({
       password: "",
     } satisfies IAgencyJoinFormValues,
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        toast.error(result.message || "Could not open your agency")
-        return
-      }
-
-      setOpened(value.company_name)
+      if (await openAgency(value)) setOpened(value.company_name)
     },
   })
 
