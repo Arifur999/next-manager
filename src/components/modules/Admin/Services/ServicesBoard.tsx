@@ -6,6 +6,7 @@ import {
 } from "@/app/(dashboardLayout)/admin/dashboard/services/_action"
 import ServiceFormCard from "@/components/modules/Admin/Services/ServiceFormCard"
 import ServiceList from "@/components/modules/Admin/Services/ServiceList"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IService } from "@/types/catalog.types"
 import { useQuery } from "@tanstack/react-query"
@@ -29,6 +30,7 @@ import { queryKeys } from "@/lib/queryKeys"
  */
 const ServicesBoard = ({ canManage = true }: { canManage?: boolean }) => {
   const [editing, setEditing] = useState<IService | null>(null)
+  const [removing, setRemoving] = useState<IService | null>(null)
 
   const { data, isLoading } = useQuery(servicesListQuery())
   const { data: categoryData } = useQuery(serviceCategoriesQuery())
@@ -44,16 +46,22 @@ const ServicesBoard = ({ canManage = true }: { canManage?: boolean }) => {
     refresh: false,
   })
 
-  const { run: removeService } = useActionMutation({
+  const { run: removeService, isPending: isRemoving } = useActionMutation({
     action: deleteServiceAction,
     successMessage: "Removed from the catalogue",
     invalidateKeys: [queryKeys.services.all],
     refresh: false,
   })
 
-  // Only the service being edited takes the form with it.
-  const handleDelete = async (service: IService) => {
-    if ((await removeService(service.id)) && editing?.id === service.id) setEditing(null)
+  // The dialog stays open on a refusal, so "turn it off instead" is read in place.
+  const confirmRemove = async () => {
+    if (!removing) return
+    const isRemoved = await removeService(removing.id)
+    if (!isRemoved) return
+
+    // Only the service being edited takes the form with it.
+    if (editing?.id === removing.id) setEditing(null)
+    setRemoving(null)
   }
 
   return (
@@ -80,7 +88,27 @@ const ServicesBoard = ({ canManage = true }: { canManage?: boolean }) => {
         onEdit={setEditing}
         onEditable={canManage}
         onToggle={(service) => void toggleSold(service)}
-        onDelete={(service) => void handleDelete(service)}
+        onDelete={setRemoving}
+      />
+
+      <ConfirmDialog
+        open={removing !== null}
+        onOpenChange={(open) => {
+          if (!open) setRemoving(null)
+        }}
+        title="Remove this service?"
+        description={
+          <>
+            This takes <span className="font-medium text-foreground">{removing?.name}</span> off the
+            catalogue. A service on invoices, projects or packages cannot be removed: turn it off
+            instead, so their history survives.
+          </>
+        }
+        variant="destructive"
+        confirmLabel="Remove"
+        pendingLabel="Removing..."
+        isPending={isRemoving}
+        onConfirm={() => void confirmRemove()}
       />
     </div>
   )
