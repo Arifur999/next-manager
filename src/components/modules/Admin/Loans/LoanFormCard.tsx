@@ -1,20 +1,13 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
+import AppField from "@/components/shared/form/AppField"
+import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
+import EntitySelect from "@/components/shared/form/EntitySelect"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import type { IAccount } from "@/types/finance.types"
-import type { ILoanFormValues } from "@/zod/finance.validation"
+import { loanFormZodSchema, type ILoanFormValues } from "@/zod/finance.validation"
+import { useForm } from "@tanstack/react-form"
 import { format } from "date-fns"
-import { useState } from "react"
 
 /**
  * Recording a loan.
@@ -38,28 +31,27 @@ const LoanFormCard = ({
   onSubmit: (values: ILoanFormValues) => Promise<boolean>
   isPending: boolean
 }) => {
-  const [lender, setLender] = useState("")
-  const [principal, setPrincipal] = useState("")
-  const [rate, setRate] = useState("")
-  const [startedOn, setStartedOn] = useState(format(new Date(), "yyyy-MM-dd"))
-  const [months, setMonths] = useState("12")
-  const [accountId, setAccountId] = useState("")
-
-  const submit = async () => {
-    const isSaved = await onSubmit({
-      lender,
-      principal_bdt: principal,
-      interest_rate: rate,
-      started_on: startedOn,
-      term_months: months,
-      account_id: accountId,
-    })
-    // A refusal keeps what was typed, so it can be corrected rather than retyped.
-    if (!isSaved) return
-    setLender("")
-    setPrincipal("")
-    setRate("")
+  const defaultValues: ILoanFormValues = {
+    lender: "",
+    principal_bdt: "",
+    interest_rate: "",
+    started_on: format(new Date(), "yyyy-MM-dd"),
+    term_months: "12",
+    account_id: "",
   }
+
+  const form = useForm({
+    defaultValues,
+    validators: { onSubmit: loanFormZodSchema },
+    onSubmit: async ({ value, formApi }) => {
+      // A refusal keeps what was typed, so it can be corrected rather than
+      // retyped. A success clears the loan itself and keeps the term, start
+      // and account, which the next loan often shares.
+      if (await onSubmit(value)) {
+        formApi.reset({ ...value, lender: "", principal_bdt: "", interest_rate: "" }, { keepDefaultValues: true })
+      }
+    },
+  })
 
   return (
     <Card className="h-fit">
@@ -72,106 +64,74 @@ const LoanFormCard = ({
       </CardHeader>
 
       <form
+        method="POST"
+        action="#"
+        noValidate
         className="space-y-4 px-6 pb-6"
         onSubmit={(event) => {
           event.preventDefault()
-          if (!lender.trim() || !Number(principal) || !Number(months)) return
-          void submit()
+          event.stopPropagation()
+          form.handleSubmit()
         }}
       >
-        <div className="space-y-1.5">
-          <Label htmlFor="loan-lender">Who lent it</Label>
-          <Input
-            id="loan-lender"
-            value={lender}
-            maxLength={120}
-            onChange={(event) => setLender(event.target.value)}
-            placeholder="City Bank"
-            disabled={isPending}
-          />
-        </div>
+        <form.Field name="lender">
+          {(field) => (
+            <AppField field={field} label="Who lent it" placeholder="City Bank" disabled={isPending} />
+          )}
+        </form.Field>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="loan-principal">Amount</Label>
-          <Input
-            id="loan-principal"
-            type="number"
-            min={1}
-            step="1"
-            value={principal}
-            onChange={(event) => setPrincipal(event.target.value)}
-            disabled={isPending}
-          />
-        </div>
+        <form.Field name="principal_bdt">
+          {(field) => <AppField field={field} label="Amount" type="number" disabled={isPending} />}
+        </form.Field>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="loan-months">Months</Label>
-            <Input
-              id="loan-months"
-              type="number"
-              min={1}
-              max={600}
-              step="1"
-              value={months}
-              onChange={(event) => setMonths(event.target.value)}
+          <form.Field name="term_months">
+            {(field) => <AppField field={field} label="Months" type="number" disabled={isPending} />}
+          </form.Field>
+
+          <form.Field name="interest_rate">
+            {(field) => (
+              <AppField
+                field={field}
+                label="Rate a year (%)"
+                type="number"
+                placeholder="0"
+                disabled={isPending}
+              />
+            )}
+          </form.Field>
+        </div>
+
+        <form.Field name="started_on">
+          {(field) => <AppField field={field} label="Started on" type="date" disabled={isPending} />}
+        </form.Field>
+
+        <form.Field name="account_id">
+          {(field) => (
+            <EntitySelect
+              id={field.name}
+              label="Paid into"
+              value={field.state.value ?? ""}
+              onChange={field.handleChange}
               disabled={isPending}
+              placeholder="Nowhere — already part repaid"
+              emptyMessage="Nowhere — already part repaid"
+              description="Leave it empty for a loan you are entering after the fact. Choosing an account puts the money into it — the cash is real, but it is borrowed, so it never counts as revenue."
+              options={accounts.map((account) => ({ value: account.id, label: account.name }))}
             />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="loan-rate">Rate a year (%)</Label>
-            <Input
-              id="loan-rate"
-              type="number"
-              min={0}
-              step="0.001"
-              value={rate}
-              placeholder="0"
-              onChange={(event) => setRate(event.target.value)}
-              disabled={isPending}
-            />
-          </div>
-        </div>
+          )}
+        </form.Field>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="loan-start">Started on</Label>
-          <Input
-            id="loan-start"
-            type="date"
-            value={startedOn}
-            onChange={(event) => setStartedOn(event.target.value)}
-            disabled={isPending}
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="loan-account">Paid into</Label>
-          <Select value={accountId} onValueChange={setAccountId} disabled={isPending}>
-            <SelectTrigger id="loan-account" className="w-full">
-              <SelectValue placeholder="Nowhere — already part repaid" />
-            </SelectTrigger>
-            <SelectContent>
-              {accounts.map((account) => (
-                <SelectItem key={account.id} value={account.id}>
-                  {account.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-muted-foreground">
-            Leave it empty for a loan you are entering after the fact. Choosing an account
-            puts the money into it — the cash is real, but it is borrowed, so it never
-            counts as revenue.
-          </p>
-        </div>
-
-        <Button
-          type="submit"
-          disabled={isPending || !lender.trim() || !Number(principal)}
-          className="w-full"
+        {/* Pressable once there is a lender and an amount, as before. */}
+        <form.Subscribe
+          selector={(state) => !state.values.lender.trim() || !Number(state.values.principal_bdt)}
         >
-          Record it
-        </Button>
+          {(isIncomplete) => (
+            <AppSubmitButton isPending={isPending} pendingLabel="Recording..." disabled={isIncomplete}>
+              Record it
+            </AppSubmitButton>
+          )}
+        </form.Subscribe>
 
         <p className="text-xs text-muted-foreground">
           A schedule is filled in for the whole term with interest at zero. Edit the rows
