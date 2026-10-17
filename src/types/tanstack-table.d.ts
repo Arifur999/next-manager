@@ -1,5 +1,6 @@
 import "@tanstack/react-table";
 import type { DataTableActions } from "@/components/shared/table/dataTable.types";
+import type { ColumnPriority } from "@/lib/table/columnPriority";
 import type { RowData } from "@tanstack/react-table";
 
 // Per-column and per-table settings the shared DataTable understands, declared
@@ -11,6 +12,8 @@ declare module "@tanstack/react-table" {
     label?: string;
     // What the CSV export writes for this column; defaults to the accessor value.
     exportValue?: (row: TData) => string | number | boolean | null | undefined;
+    // "low" hides the column below md (see columnPriorityClass).
+    priority?: ColumnPriority;
   }
 
   interface TableMeta<TData extends RowData> {

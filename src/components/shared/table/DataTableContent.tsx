@@ -2,7 +2,8 @@
 
 import ErrorState from "@/components/shared/state/ErrorState";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { flexRender, type Header, type Table as TanStackTable } from "@tanstack/react-table";
+import { columnPriorityClass } from "@/lib/table/columnPriority";
+import { flexRender, type Column, type Header, type Table as TanStackTable } from "@tanstack/react-table";
 import type { ReactNode } from "react";
 import DataTableColumnHeader from "./DataTableColumnHeader";
 import DataTableEmpty from "./DataTableEmpty";
@@ -27,6 +28,9 @@ const renderHeader = <TData,>(header: Header<TData, unknown>) => {
   return flexRender(content, header.getContext());
 };
 
+const priorityClassOf = <TData,>(column: Column<TData, unknown>) =>
+  columnPriorityClass(column.columnDef.meta?.priority);
+
 const DataTableContent = <TData,>({
   table,
   emptyMessage,
@@ -39,10 +43,11 @@ const DataTableContent = <TData,>({
   onReset,
 }: DataTableContentProps<TData>) => {
   const rows = table.getRowModel().rows;
-  const columnCount = table.getVisibleLeafColumns().length;
+  const visibleColumns = table.getVisibleLeafColumns();
+  const columnCount = visibleColumns.length;
 
   const renderBody = () => {
-    if (isLoading) return <DataTableSkeleton columnCount={columnCount} />;
+    if (isLoading) return <DataTableSkeleton cellClassNames={visibleColumns.map(priorityClassOf)} />;
 
     if (isError) {
       return (
@@ -72,7 +77,9 @@ const DataTableContent = <TData,>({
     return rows.map((row) => (
       <TableRow key={row.id}>
         {row.getVisibleCells().map((cell) => (
-          <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+          <TableCell key={cell.id} className={priorityClassOf(cell.column)}>
+            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          </TableCell>
         ))}
       </TableRow>
     ));
@@ -84,7 +91,9 @@ const DataTableContent = <TData,>({
         {table.getHeaderGroups().map((headerGroup) => (
           <TableRow key={headerGroup.id}>
             {headerGroup.headers.map((header) => (
-              <TableHead key={header.id}>{header.isPlaceholder ? null : renderHeader(header)}</TableHead>
+              <TableHead key={header.id} className={priorityClassOf(header.column)}>
+                {header.isPlaceholder ? null : renderHeader(header)}
+              </TableHead>
             ))}
           </TableRow>
         ))}
