@@ -44,7 +44,7 @@ const PlatformOverview = () => {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 lg:grid-cols-3">
-        <TileLink href="/platform/finance" label="Monthly revenue: open the financial report">
+        <TileLink href="/platform/finance">
           <MetricTile
             label="Monthly revenue"
             metric={{ value: overview.mrr_usd }}
@@ -55,7 +55,7 @@ const PlatformOverview = () => {
           />
         </TileLink>
 
-        <TileLink href="/platform/customers" label="Companies: open the companies list">
+        <TileLink href="/platform/customers">
           <MetricTile
             label="Companies"
             metric={{ value: companies.total }}
