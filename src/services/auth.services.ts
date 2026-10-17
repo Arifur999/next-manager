@@ -12,6 +12,7 @@ import { classifyMeResponse } from "@/lib/session"
 import type { ApiResponse } from "@/types/api.types"
 import { type IUser } from "@/types/user.types"
 import type {
+    IAgencyJoinFormValues,
     IForgotPasswordFormValues,
     IJoinFormValues,
     IRegisterPayload,
@@ -107,3 +108,7 @@ export const acceptInvite = async (token: string, payload: IJoinFormValues) =>
 /** Joining the platform team: the account waits for an existing operator to approve it. */
 export const acceptPlatformInvite = async (token: string, payload: IJoinFormValues) =>
     postPublic(`/platform-join/${encodeURIComponent(token)}/accept`, payload)
+
+/** Opening an agency. The role is fixed to admin server-side, so this link cannot make an operator. */
+export const acceptAgencyInvite = async (token: string, payload: IAgencyJoinFormValues) =>
+    postPublic(`/agency-join/${encodeURIComponent(token)}/accept`, payload)

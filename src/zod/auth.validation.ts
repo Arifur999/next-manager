@@ -77,7 +77,8 @@ export const joinFormZodSchema = z.object({
 export type IJoinFormValues = z.infer<typeof joinFormZodSchema>
 
 export const agencyJoinFormZodSchema = joinFormZodSchema.extend({
-  company_name: z.string().min(1, "Your agency needs a name"),
+  // Only read when the invite carries no name; one agreed with the deal stays.
+  company_name: z.string().min(1, "Your agency needs a name").max(120, "That is longer than a name"),
 })
 
 export type IAgencyJoinFormValues = z.infer<typeof agencyJoinFormZodSchema>
@@ -108,3 +109,5 @@ export const resetPasswordServerZodSchema = resetPasswordFormZodSchema
 
 // A name and a password; the email and the company come from the invite.
 export const joinServerZodSchema = joinFormZodSchema
+
+export const agencyJoinServerZodSchema = agencyJoinFormZodSchema

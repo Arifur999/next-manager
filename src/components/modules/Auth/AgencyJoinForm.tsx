@@ -49,12 +49,7 @@ const AgencyJoinForm = ({
   const nameIsFixed = Boolean(invite?.company_name)
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IAgencyJoinFormValues) =>
-      acceptAgencyInviteAction(token, {
-        full_name: values.full_name,
-        password: values.password,
-        company_name: values.company_name,
-      }),
+    mutationFn: (values: IAgencyJoinFormValues) => acceptAgencyInviteAction(token, values),
   })
 
   const form = useForm({

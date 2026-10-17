@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+  agencyJoinServerZodSchema,
   changePasswordServerZodSchema,
   forgotPasswordServerZodSchema,
   joinServerZodSchema,
@@ -131,5 +132,18 @@ describe("joinServerZodSchema", () => {
   it("refuses a missing name and a weak password", () => {
     expect(joinServerZodSchema.safeParse({ full_name: "", password: "welcome12" }).success).toBe(false)
     expect(joinServerZodSchema.safeParse({ full_name: "Alex", password: "12345678" }).success).toBe(false)
+  })
+})
+
+describe("agencyJoinServerZodSchema", () => {
+  const valid = { full_name: "Alex", company_name: "Northwind Studio", password: "welcome12" }
+
+  it("sends the owner's name, the agency's name and the password", () => {
+    expect(agencyJoinServerZodSchema.parse({ ...valid, role: "super_admin" })).toEqual(valid)
+  })
+
+  it("refuses an agency without a name or with one too long", () => {
+    expect(agencyJoinServerZodSchema.safeParse({ ...valid, company_name: "" }).success).toBe(false)
+    expect(agencyJoinServerZodSchema.safeParse({ ...valid, company_name: "x".repeat(121) }).success).toBe(false)
   })
 })
