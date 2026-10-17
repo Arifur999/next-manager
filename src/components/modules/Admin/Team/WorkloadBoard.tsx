@@ -1,7 +1,7 @@
 "use client"
 
 import EmptyState from "@/components/shared/state/EmptyState"
-import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -25,8 +25,8 @@ import { workloadQuery } from "@/queries/work.queries"
  * to deserves to know which denominators were guessed.
  */
 const WorkloadBoard = ({ mode }: { mode: "load" | "free" }) => {
-  const { data, isLoading } = useQuery(workloadQuery())
-  const workload = data?.data
+  const workloadResult = useQuery(workloadQuery())
+  const workload = workloadResult.data?.data
   const rows = workload?.rows ?? []
 
   return (
@@ -42,11 +42,12 @@ const WorkloadBoard = ({ mode }: { mode: "load" | "free" }) => {
         </p>
       </CardHeader>
 
-      {isLoading && rows.length === 0 ? (
-        <LoadingBlock />
-      ) : rows.length === 0 ? (
-        <EmptyState icon={UsersRound}>Nobody on the team yet.</EmptyState>
-      ) : (
+      <PanelState
+        query={workloadResult}
+        errorMessage="Workload did not load."
+        isEmpty={rows.length === 0}
+        empty={<EmptyState icon={UsersRound}>Nobody on the team yet.</EmptyState>}
+      >
         <ul className="divide-y">
           {rows.map((row) => {
             // Over 100% is real and worth seeing, so the bar is clamped for
@@ -95,7 +96,7 @@ const WorkloadBoard = ({ mode }: { mode: "load" | "free" }) => {
             )
           })}
         </ul>
-      )}
+      </PanelState>
     </Card>
   )
 }
