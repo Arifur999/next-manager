@@ -5,6 +5,8 @@ import {
   deleteCategoryAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/finance-config/_action"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
+import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -20,7 +22,7 @@ import { queryKeys } from "@/lib/queryKeys"
 import { expenseCategoriesQuery } from "@/queries/spending.queries"
 import { useQuery } from "@tanstack/react-query"
 import type { IExpenseCategory } from "@/types/spending.types"
-import { Trash2 } from "lucide-react"
+import { Tags, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { expenseCategoryFormZodSchema, type IExpenseCategoryFormValues } from "@/zod/spending.validation"
 import { useForm } from "@tanstack/react-form"
@@ -30,9 +32,9 @@ const defaultValues: IExpenseCategoryFormValues = { name: "", type: "general" }
 const ExpenseCategorySettings = () => {
   const [categoryToDelete, setCategoryToDelete] = useState<IExpenseCategory | null>(null)
 
-  const { data } = useQuery(expenseCategoriesQuery())
+  const categoriesQuery = useQuery(expenseCategoriesQuery())
 
-  const categories = data?.data ?? []
+  const categories = categoriesQuery.data?.data ?? []
 
   const { run: addCategory, isPending: isCreating } = useActionMutation({
     action: createCategoryAction,
@@ -123,9 +125,16 @@ const ExpenseCategorySettings = () => {
         operating expenses, so the same money is not counted twice.
       </p>
 
-      {categories.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">No categories yet.</p>
-      ) : (
+      <PanelState
+        query={categoriesQuery}
+        errorMessage="Categories did not load."
+        isEmpty={categories.length === 0}
+        empty={
+          <EmptyState icon={Tags} hint="Add the kinds of cost the agency pays for, such as rent or software.">
+            No categories yet.
+          </EmptyState>
+        }
+      >
         <ul className="divide-y rounded-lg border">
           {categories.map((category) => (
             <li key={category.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
@@ -149,7 +158,7 @@ const ExpenseCategorySettings = () => {
             </li>
           ))}
         </ul>
-      )}
+      </PanelState>
 
       <ConfirmDialog
         open={categoryToDelete !== null}
