@@ -4,6 +4,7 @@ import {
   approveMemberAction,
   rejectMemberAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/team-management/_inviteAction"
+import RelativeTime from "@/components/shared/RelativeTime"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import ErrorState from "@/components/shared/state/ErrorState"
 import { Button } from "@/components/ui/button"
@@ -12,7 +13,6 @@ import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IUser } from "@/types/user.types"
 import { ROLE_LABELS, isAssignableRole } from "@/zod/user.validation"
 import { useQuery } from "@tanstack/react-query"
-import { formatDistanceToNow, parseISO } from "date-fns"
 import { UserCheck } from "lucide-react"
 import { useState } from "react"
 import { usersListQuery } from "@/queries/people.queries"
@@ -91,9 +91,9 @@ const PendingApprovals = () => {
                 <p className="truncate text-sm font-medium">{person.full_name}</p>
                 <p className="truncate text-xs text-muted-foreground">
                   {person.email} · {isAssignableRole(person.role) ? ROLE_LABELS[person.role] : person.role}
-                  {person.created_at
-                    ? ` · asked ${formatDistanceToNow(parseISO(person.created_at), { addSuffix: true })}`
-                    : ""}
+                  {person.created_at && (
+                    <> · asked <RelativeTime value={person.created_at} /></>
+                  )}
                 </p>
               </div>
 
