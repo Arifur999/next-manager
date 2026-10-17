@@ -19,11 +19,11 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt } from "@/lib/currency"
 import type { IDuePerson } from "@/types/spending.types"
 import { dueTransactionFormZodSchema, type IDueTransactionFormValues } from "@/zod/spending.validation"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useCallback, useState } from "react"
-import { toast } from "sonner"
 import { accountsQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -40,7 +40,6 @@ const today = () => new Date().toISOString().slice(0, 10)
 
 const RecordTransactionModal = ({ people }: { people: IDuePerson[] }) => {
   const [open, setOpen] = useState(false)
-  const queryClient = useQueryClient()
 
   const { data: accountsData } = useQuery({ ...accountsQuery(), enabled: open })
 
@@ -48,8 +47,11 @@ const RecordTransactionModal = ({ people }: { people: IDuePerson[] }) => {
     (account) => account.currency === "BDT" && account.is_active,
   )
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IDueTransactionFormValues) => createDueTransactionAction(values),
+  const { run: recordTransaction, isPending } = useActionMutation({
+    action: createDueTransactionAction,
+    successMessage: "Transaction recorded",
+    invalidateKeys: [queryKeys.duePeople.all, queryKeys.dueTransactions.all, queryKeys.accounts.all],
+    refresh: false,
   })
 
   // Annotated rather than `satisfies`: the latter narrows `direction` to the
@@ -66,20 +68,11 @@ const RecordTransactionModal = ({ people }: { people: IDuePerson[] }) => {
   const form = useForm({
     defaultValues,
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        toast.error(result.message || "Failed to record transaction")
-        return
+      // A failure keeps the dialog open with what was typed.
+      if (await recordTransaction(value)) {
+        setOpen(false)
+        form.reset()
       }
-
-      toast.success("Transaction recorded")
-      setOpen(false)
-      form.reset()
-
-      void queryClient.invalidateQueries({ queryKey: queryKeys.duePeople.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.dueTransactions.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
     },
   })
 
