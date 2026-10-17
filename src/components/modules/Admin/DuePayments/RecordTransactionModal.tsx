@@ -28,15 +28,6 @@ import { useCallback, useState } from "react"
 import { accountsQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
-/**
- * Informal lending, in and out.
- *
- * The sign convention is the thing to get right on screen: a POSITIVE balance
- * means the agency has taken more from that person than it has given back, so
- * the agency owes THEM. Showing a bare signed number would leave every reader
- * working that out from scratch, so each row says which way it points.
- */
-
 // The user's own calendar day. toISOString() is UTC, which in Dhaka is still
 // yesterday until 6am.
 const today = () => format(new Date(), "yyyy-MM-dd")

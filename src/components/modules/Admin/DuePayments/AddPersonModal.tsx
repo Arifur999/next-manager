@@ -21,15 +21,6 @@ import { useState } from "react"
 import { queryKeys } from "@/lib/queryKeys"
 import { duePersonFormZodSchema } from "@/zod/spending.validation"
 
-/**
- * Informal lending, in and out.
- *
- * The sign convention is the thing to get right on screen: a POSITIVE balance
- * means the agency has taken more from that person than it has given back, so
- * the agency owes THEM. Showing a bare signed number would leave every reader
- * working that out from scratch, so each row says which way it points.
- */
-
 const AddPersonModal = () => {
   const [open, setOpen] = useState(false)
 
