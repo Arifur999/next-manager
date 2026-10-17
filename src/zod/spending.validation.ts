@@ -21,6 +21,18 @@ export const expenseCategoryFormZodSchema = z.object({
 
 export type IExpenseCategoryFormValues = z.infer<typeof expenseCategoryFormZodSchema>
 
+export const teamPayoutFormZodSchema = z.object({
+    user_id: z.string().min(1, "Choose a team member"),
+    project_id: z.string().optional(),
+    date: isoDate,
+    amount_bdt: positiveAmount("Amount"),
+    type: z.enum(["salary", "project_bonus", "commission", "reimbursement"]),
+    account_id: z.string().min(1, "Choose a BDT account"),
+    notes: z.string().optional(),
+})
+
+export type ITeamPayoutFormValues = z.infer<typeof teamPayoutFormZodSchema>
+
 // Server schemas: the form's string values, checked again on the server and
 // turned into the payload the API's createExpenseZodSchema expects.
 export const createExpenseServerZodSchema = expenseFormZodSchema.transform((values) => ({

@@ -17,33 +17,17 @@ import {
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt } from "@/lib/currency"
+import { teamPayoutFormZodSchema, type ITeamPayoutFormValues } from "@/zod/spending.validation"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
-import { z } from "zod"
 import { projectsListQuery } from "@/queries/project.queries"
 import { accountsQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
 import { usersListQuery } from "@/queries/people.queries"
-
-const payoutFormSchema = z.object({
-  user_id: z.string().min(1, "Choose a team member"),
-  project_id: z.string().optional(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date"),
-  amount_bdt: z
-    .string()
-    .min(1, "Amount is required")
-    .refine((value) => Number.isFinite(Number(value)), "Amount must be a number")
-    .refine((value) => Number(value) > 0, "Amount must be greater than zero"),
-  type: z.enum(["salary", "project_bonus", "commission", "reimbursement"]),
-  account_id: z.string().min(1, "Choose a BDT account"),
-  notes: z.string().optional(),
-})
-
-type PayoutFormValues = z.infer<typeof payoutFormSchema>
 
 const TYPES = [
   { value: "salary", label: "Salary" },
@@ -54,7 +38,7 @@ const TYPES = [
 
 const today = () => new Date().toISOString().slice(0, 10)
 
-const defaultValues: PayoutFormValues = {
+const defaultValues: ITeamPayoutFormValues = {
   user_id: "",
   project_id: "",
   date: today(),
@@ -79,7 +63,7 @@ const RecordPayoutModal = () => {
   const bdtAccounts = accounts.filter((account) => account.currency === "BDT" && account.is_active)
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: PayoutFormValues) =>
+    mutationFn: (values: ITeamPayoutFormValues) =>
       createTeamPayoutAction({
         ...values,
         amount_bdt: Number(values.amount_bdt),
@@ -150,7 +134,7 @@ const RecordPayoutModal = () => {
               }}
               className="space-y-5"
             >
-              <form.Field name="user_id" validators={{ onChange: payoutFormSchema.shape.user_id }}>
+              <form.Field name="user_id" validators={{ onChange: teamPayoutFormZodSchema.shape.user_id }}>
                 {(field) => (
                   <EntitySelect
                     id={field.name}
@@ -180,7 +164,7 @@ const RecordPayoutModal = () => {
 
                 <form.Field
                   name="amount_bdt"
-                  validators={{ onChange: payoutFormSchema.shape.amount_bdt }}
+                  validators={{ onChange: teamPayoutFormZodSchema.shape.amount_bdt }}
                 >
                   {(field) => (
                     <AppField
@@ -200,7 +184,7 @@ const RecordPayoutModal = () => {
                     id={field.name}
                     label="Type"
                     value={field.state.value}
-                    onChange={(value) => field.handleChange(value as PayoutFormValues["type"])}
+                    onChange={(value) => field.handleChange(value as ITeamPayoutFormValues["type"])}
                     disabled={isPending}
                     options={TYPES.map((type) => ({ value: type.value, label: type.label }))}
                   />
@@ -229,7 +213,7 @@ const RecordPayoutModal = () => {
 
               <form.Field
                 name="account_id"
-                validators={{ onChange: payoutFormSchema.shape.account_id }}
+                validators={{ onChange: teamPayoutFormZodSchema.shape.account_id }}
               >
                 {(field) => (
                   <EntitySelect
