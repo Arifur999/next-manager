@@ -1,6 +1,6 @@
-import DateCell from "@/components/shared/cell/DateCell"
 import { Badge } from "@/components/ui/badge"
 import { formatBdt, formatRate, formatUsd } from "@/lib/currency"
+import { formatDay } from "@/lib/dates"
 import type { IPayment } from "@/types/billing.types"
 import { ColumnDef } from "@tanstack/react-table"
 
@@ -9,7 +9,7 @@ export const paymentsColumns: ColumnDef<IPayment>[] = [
     id: "date",
     accessorKey: "date",
     header: "Date",
-    cell: ({ row }) => <DateCell date={row.original.date} formatString="MMM dd, yyyy" />,
+    cell: ({ row }) => <span className="whitespace-nowrap">{formatDay(row.original.date)}</span>,
   },
   {
     id: "client",
@@ -36,7 +36,7 @@ export const paymentsColumns: ColumnDef<IPayment>[] = [
   {
     id: "reporting_rate",
     header: "Rate",
-    meta: { exportValue: (payment) => payment.reporting_rate },
+    meta: { exportValue: (payment) => payment.reporting_rate, priority: "low" },
     enableSorting: false,
     cell: ({ row }) => (
       <span className="text-sm text-muted-foreground tabular-nums">
@@ -47,7 +47,7 @@ export const paymentsColumns: ColumnDef<IPayment>[] = [
   {
     id: "amount_bdt_reporting",
     header: "BDT (reporting)",
-    meta: { exportValue: (payment) => payment.amount_bdt_reporting },
+    meta: { exportValue: (payment) => payment.amount_bdt_reporting, priority: "low" },
     enableSorting: false,
     cell: ({ row }) => (
       // Muted on purpose: this is a frozen reporting figure, not money that
@@ -72,6 +72,7 @@ export const paymentsColumns: ColumnDef<IPayment>[] = [
     accessorKey: "reference",
     header: "Reference",
     enableSorting: false,
+    meta: { priority: "low" },
     cell: ({ row }) => (
       <span className="text-sm text-muted-foreground">{row.original.reference || "N/A"}</span>
     ),
