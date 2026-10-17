@@ -14,7 +14,7 @@ import EmptyState from "@/components/shared/state/EmptyState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Card } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
-import type { ILoan } from "@/types/finance.types"
+import type { ILoan, ILoanInstalment } from "@/types/finance.types"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
@@ -41,6 +41,7 @@ const LOAN_KEYS = [
  */
 const LoansBoard = () => {
   const [loanToDelete, setLoanToDelete] = useState<ILoan | null>(null)
+  const [instalmentToReverse, setInstalmentToReverse] = useState<ILoanInstalment | null>(null)
 
   const { data, isLoading } = useQuery(loansListQuery())
   const { data: summaryData } = useQuery(loanSummaryQuery())
@@ -68,11 +69,17 @@ const LoansBoard = () => {
     refresh: false,
   })
 
-  const { run: reverseInstalment } = useActionMutation({
+  const { run: reverseInstalment, isPending: isReversing } = useActionMutation({
     action: reverseLoanInstalmentAction,
     invalidateKeys: LOAN_KEYS,
     refresh: false,
   })
+
+  const handleConfirmReverse = async () => {
+    if (instalmentToReverse && (await reverseInstalment(instalmentToReverse.id))) {
+      setInstalmentToReverse(null)
+    }
+  }
 
   const { run: closeLoan } = useActionMutation({
     action: closeLoanAction,
@@ -153,7 +160,7 @@ const LoansBoard = () => {
               loan={loan}
               accounts={accounts}
               onPay={(instalmentId, accountId) => void payInstalment({ id: instalmentId, accountId })}
-              onReverse={(instalmentId) => void reverseInstalment(instalmentId)}
+              onReverse={setInstalmentToReverse}
               onClose={() => void closeLoan(loan.id)}
               onDelete={() => setLoanToDelete(loan)}
             />
@@ -178,6 +185,25 @@ const LoansBoard = () => {
         pendingLabel="Deleting..."
         isPending={isDeleting}
         onConfirm={() => void handleConfirmDelete()}
+      />
+
+      <ConfirmDialog
+        open={instalmentToReverse !== null}
+        onOpenChange={(open) => {
+          if (!open) setInstalmentToReverse(null)
+        }}
+        title="Reverse this repayment?"
+        description={
+          <>
+            Instalment {instalmentToReverse?.seq} goes back to unpaid, and the money it took returns
+            to {instalmentToReverse?.paid_from_account?.name ?? "the account it was paid from"}. The
+            ledger keeps both rows, so the history still shows it was paid and reversed.
+          </>
+        }
+        confirmLabel="Reverse"
+        pendingLabel="Reversing..."
+        isPending={isReversing}
+        onConfirm={() => void handleConfirmReverse()}
       />
     </div>
   )

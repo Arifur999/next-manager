@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
-import type { IAccount, ILoan } from "@/types/finance.types"
+import type { IAccount, ILoan, ILoanInstalment } from "@/types/finance.types"
 import { format, parseISO } from "date-fns"
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react"
 import { useState } from "react"
@@ -39,7 +39,7 @@ const LoanCard = ({
   loan: ILoan
   accounts: IAccount[]
   onPay: (instalmentId: string, accountId: string) => void
-  onReverse: (instalmentId: string) => void
+  onReverse: (instalment: ILoanInstalment) => void
   onClose: () => void
   onDelete: () => void
 }) => {

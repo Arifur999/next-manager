@@ -35,7 +35,7 @@ const LoanScheduleTable = ({
   instalments: ILoanInstalment[]
   accounts: IAccount[]
   onPay: (instalmentId: string, accountId: string) => void
-  onReverse: (instalmentId: string) => void
+  onReverse: (instalment: ILoanInstalment) => void
 }) => {
   const [accountId, setAccountId] = useState("")
   const today = startOfToday()
@@ -108,7 +108,7 @@ const LoanScheduleTable = ({
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={() => onReverse(item.id)}
+                          onClick={() => onReverse(item)}
                           aria-label={`Reverse instalment ${item.seq}`}
                           title="Reverse"
                         >
