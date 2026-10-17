@@ -11,7 +11,7 @@ import { pickAllowed } from "@/lib/queryString"
 import { toTableQueryProps } from "@/lib/table/queryProps"
 import { clientsListQuery } from "@/queries/crm.queries"
 import { CLIENT_STATUSES, type IClient } from "@/types/crm.types"
-import { keepPreviousData, useQuery } from "@tanstack/react-query"
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRouter, useSearchParams } from "next/navigation"
 
 /**
@@ -26,7 +26,8 @@ import { useRouter, useSearchParams } from "next/navigation"
 const ClientsTable = ({ canManage = true, canOpen = true }: { canManage?: boolean; canOpen?: boolean }) => {
   const router = useRouter()
   const status = pickAllowed(useSearchParams().get("status"), CLIENT_STATUSES)
-  const { queryString, dataTableProps } = useServerDataTable<IClient>(CLIENTS_TABLE)
+  const queryClient = useQueryClient()
+  const { queryString, filterQueryString, dataTableProps } = useServerDataTable<IClient>(CLIENTS_TABLE)
   const clientsQuery = useQuery({ ...clientsListQuery(queryString), placeholderData: keepPreviousData })
 
   const {
@@ -46,6 +47,7 @@ const ClientsTable = ({ canManage = true, canOpen = true }: { canManage?: boolea
         columns={clientsColumns}
         tableId="clients"
         exportFileName="clients"
+        exportRows={async () => (await queryClient.fetchQuery(clientsListQuery(filterQueryString))).data}
         {...dataTableProps}
         {...toTableQueryProps(clientsQuery)}
         // Names the filtered list: "No clients yet" on the archived view would be untrue.
