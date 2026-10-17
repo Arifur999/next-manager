@@ -22,12 +22,11 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt } from "@/lib/currency"
 import { ownerWithdrawalFormZodSchema, type IOwnerWithdrawalFormValues } from "@/zod/spending.validation"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { PiggyBank, Plus, ShieldAlert } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
-import { toast } from "sonner"
 import { accountsQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
 import { ownerWithdrawalsListQuery } from "@/queries/spending.queries"
@@ -44,36 +43,26 @@ const defaultValues: IOwnerWithdrawalFormValues = {
 
 const RecordWithdrawalModal = () => {
   const [open, setOpen] = useState(false)
-  const queryClient = useQueryClient()
-  const router = useRouter()
 
   const { data: accountsData } = useQuery({ ...accountsQuery(), enabled: open })
 
   const accounts = accountsData?.data ?? []
   const bdtAccounts = accounts.filter((account) => account.currency === "BDT" && account.is_active)
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IOwnerWithdrawalFormValues) => createWithdrawalAction(values),
+  const { run: recordWithdrawal, isPending } = useActionMutation({
+    action: createWithdrawalAction,
+    successMessage: "Withdrawal recorded successfully",
+    invalidateKeys: [queryKeys.withdrawals.all, queryKeys.accounts.all, queryKeys.dashboard.all],
   })
 
   const form = useForm({
     defaultValues,
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        toast.error(result.message || "Failed to record withdrawal")
-        return
+      // A failure keeps the dialog open with what was typed.
+      if (await recordWithdrawal(value)) {
+        setOpen(false)
+        form.reset()
       }
-
-      toast.success(result.message || "Withdrawal recorded successfully")
-      setOpen(false)
-      form.reset()
-
-      void queryClient.invalidateQueries({ queryKey: queryKeys.withdrawals.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
-      router.refresh()
     },
   })
 
