@@ -16,28 +16,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { taskFormZodSchema, type ITaskFormValues } from "@/zod/work.validation"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
-import { z } from "zod"
 import { projectsListQuery } from "@/queries/project.queries"
 import { workflowStatusesListQuery } from "@/queries/work.queries"
 import { queryKeys } from "@/lib/queryKeys"
 import { usersListQuery } from "@/queries/people.queries"
-
-const taskFormSchema = z.object({
-  project_id: z.string().min(1, "Choose a project"),
-  title: z.string().min(1, "Title is required"),
-  assignee_id: z.string().optional(),
-  // An id, not a word: the columns belong to the agency now.
-  status_id: z.string().optional(),
-  priority: z.enum(["low", "medium", "high", "urgent"]),
-  due_date: z.string().optional(),
-})
-
-type TaskFormValues = z.infer<typeof taskFormSchema>
 
 const CreateTaskModal = () => {
   const [open, setOpen] = useState(false)
@@ -54,7 +42,7 @@ const CreateTaskModal = () => {
   const statuses = statusData?.data ?? []
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: TaskFormValues) =>
+    mutationFn: (values: ITaskFormValues) =>
       createTaskAction({
         ...values,
         assignee_id: values.assignee_id || null,
@@ -62,7 +50,7 @@ const CreateTaskModal = () => {
       }),
   })
 
-  const defaultValues: TaskFormValues = {
+  const defaultValues: ITaskFormValues = {
     project_id: "",
     title: "",
     assignee_id: "",
@@ -136,7 +124,7 @@ const CreateTaskModal = () => {
               }}
               className="space-y-5"
             >
-              <form.Field name="title" validators={{ onChange: taskFormSchema.shape.title }}>
+              <form.Field name="title" validators={{ onChange: taskFormZodSchema.shape.title }}>
                 {(field) => (
                   <AppField
                     field={field}
@@ -149,7 +137,7 @@ const CreateTaskModal = () => {
 
               <form.Field
                 name="project_id"
-                validators={{ onChange: taskFormSchema.shape.project_id }}
+                validators={{ onChange: taskFormZodSchema.shape.project_id }}
               >
                 {(field) => (
                   <EntitySelect
@@ -213,7 +201,7 @@ const CreateTaskModal = () => {
                       label="Priority"
                       value={field.state.value}
                       onChange={(value) =>
-                        field.handleChange(value as TaskFormValues["priority"])
+                        field.handleChange(value as ITaskFormValues["priority"])
                       }
                       disabled={isPending}
                       options={[
