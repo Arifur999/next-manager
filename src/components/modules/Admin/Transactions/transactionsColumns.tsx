@@ -58,6 +58,9 @@ export const transactionsColumns: ColumnDef<ITransaction>[] = [
     id: "account",
     accessorFn: (transaction) => transaction.account.name,
     header: "Account",
+    // The currency travels with the account, so the Amount column stays a
+    // plain number a spreadsheet can sum.
+    meta: { exportValue: (transaction) => `${transaction.account.name} (${transaction.account.currency})` },
     cell: ({ row }) => (
       <span>
         {row.original.account.name}
@@ -69,7 +72,6 @@ export const transactionsColumns: ColumnDef<ITransaction>[] = [
     id: "amount",
     accessorKey: "amount",
     header: "Amount",
-    meta: { exportValue: (transaction) => `${transaction.amount} ${transaction.currency}` },
     cell: ({ row }) => {
       const kind = KIND_OF[row.original.source_type]
       return (
