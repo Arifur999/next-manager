@@ -1,8 +1,12 @@
-import CompaniesBoard from "@/components/modules/Platform/CompaniesBoard";
-import PlansBoard from "@/components/modules/Platform/PlansBoard";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Metadata } from "next";
+import { COMPANIES_TABLE } from "@/components/modules/Platform/companiesTable.config";
+import { plansPageTab } from "@/components/modules/Platform/plansPageTab";
+import PlansTabs from "@/components/modules/Platform/PlansTabs";
 import PageHeader from "@/components/shared/PageHeader";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import { buildTableQueryString, type SearchParamsRecord } from "@/lib/table/urlState";
+import { companiesListQuery, plansQuery } from "@/queries/platform.queries";
+import type { QueryClient } from "@tanstack/react-query";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Plans",
@@ -10,28 +14,27 @@ export const metadata: Metadata = {
 
 // Plans and the companies on them stay together: changing a tier and moving a
 // customer onto it are the same job, done minutes apart.
-const PlansPage = () => (
-  <div className="space-y-6">
-    <PageHeader title="Plans">
-      The tiers you sell, and which company is on which. Editing a tier moves every
-      company on it at once.
-    </PageHeader>
+const PlansPage = async ({ searchParams }: { searchParams: Promise<SearchParamsRecord> }) => {
+  const params = await searchParams;
 
-    <Tabs defaultValue="plans">
-      <TabsList>
-        <TabsTrigger value="plans">Plans</TabsTrigger>
-        <TabsTrigger value="assignments">Who is on what</TabsTrigger>
-      </TabsList>
+  // Only the open tab's list is fetched ahead, so the first paint has no skeleton.
+  const prefetch = (queryClient: QueryClient) =>
+    Promise.all([
+      queryClient.prefetchQuery(plansQuery()),
+      plansPageTab(params.tab) === "assignments"
+        ? queryClient.prefetchQuery(companiesListQuery(buildTableQueryString(params, COMPANIES_TABLE)))
+        : undefined,
+    ]);
 
-      <TabsContent value="plans" className="mt-4">
-        <PlansBoard />
-      </TabsContent>
+  return (
+    <div className="space-y-6">
+      <PageHeader title="Plans">The tiers you sell and which company is on each one.</PageHeader>
 
-      <TabsContent value="assignments" className="mt-4">
-        <CompaniesBoard />
-      </TabsContent>
-    </Tabs>
-  </div>
-);
+      <QueryPrefetch prefetch={prefetch}>
+        <PlansTabs />
+      </QueryPrefetch>
+    </div>
+  );
+};
 
 export default PlansPage;
