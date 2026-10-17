@@ -7,7 +7,7 @@ import {
 } from "@/app/(dashboardLayout)/admin/dashboard/services/_action"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import EmptyState from "@/components/shared/state/EmptyState"
-import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -35,9 +35,9 @@ const CategoriesBoard = () => {
   const [name, setName] = useState("")
   const [removing, setRemoving] = useState<IServiceCategory | null>(null)
 
-  const { data, isLoading } = useQuery(serviceCategoriesQuery())
+  const categoryList = useQuery(serviceCategoriesQuery())
 
-  const categories = data?.data ?? []
+  const categories = categoryList.data?.data ?? []
 
   // No toast when adding or switching: the list shows the change.
   const { run: addCategory, isPending } = useActionMutation({
@@ -105,13 +105,16 @@ const CategoriesBoard = () => {
           </form>
         </CardHeader>
 
-        {isLoading && categories.length === 0 ? (
-          <LoadingBlock />
-        ) : categories.length === 0 ? (
-          <EmptyState icon={FolderTree}>
-            No categories yet. Services work perfectly well without one.
-          </EmptyState>
-        ) : (
+        <PanelState
+          query={categoryList}
+          errorMessage="Categories did not load."
+          isEmpty={categories.length === 0}
+          empty={
+            <EmptyState icon={FolderTree}>
+              No categories yet. Services work perfectly well without one.
+            </EmptyState>
+          }
+        >
           <ul className="divide-y">
             {categories.map((category) => (
               <li
@@ -153,7 +156,7 @@ const CategoriesBoard = () => {
               </li>
             ))}
           </ul>
-        )}
+        </PanelState>
       </Card>
 
       <ConfirmDialog
