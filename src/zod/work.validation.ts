@@ -34,3 +34,30 @@ export const createTaskServerZodSchema = taskFormZodSchema.transform((values) =>
 export const moveTaskServerZodSchema = z.object({
     status_id: z.string().min(1, "Choose a column"),
 })
+
+// What a status MEANS is chosen, never guessed from its name: a meaning read
+// off a label would change the day somebody renamed it.
+export const workflowStatusFormZodSchema = z.object({
+    name: z.string().trim().min(1, "Give it a name").max(40, "That is longer than a column heading"),
+    category: z.enum(["open", "active", "blocked", "done", "cancelled"], { message: "Say what this status means" }),
+})
+
+export type IWorkflowStatusFormValues = z.infer<typeof workflowStatusFormZodSchema>
+
+export const createWorkflowStatusServerZodSchema = workflowStatusFormZodSchema
+    .extend({ kind: z.enum(["task", "project"], { message: "Choose a board" }) })
+    .transform((values) => ({
+        kind: values.kind,
+        name: values.name,
+        category: values.category,
+    }))
+
+// The board changes one setting at a time: a column's place, whether new work
+// starts there, or whether it is switched on.
+export const updateWorkflowStatusServerZodSchema = z.object({
+    sort_order: z.number().int().min(0).optional(),
+    is_default: z.boolean().optional(),
+    is_active: z.boolean().optional(),
+})
+
+export type IWorkflowStatusChange = z.infer<typeof updateWorkflowStatusServerZodSchema>

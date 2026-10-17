@@ -1,47 +1,19 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
-import {
-    createWorkflowStatus,
-    deleteWorkflowStatus,
-    updateWorkflowStatus,
-} from "@/services/work.services"
-import type { IWorkflowStatus } from "@/types/work.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+import { requireId, runAction, runValidatedAction } from "@/lib/runAction"
+import { createWorkflowStatus, deleteWorkflowStatus, updateWorkflowStatus } from "@/services/work.services"
+import { createWorkflowStatusServerZodSchema, updateWorkflowStatusServerZodSchema } from "@/zod/work.validation"
 
-export const createWorkflowStatusAction = async (
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<IWorkflowStatus> | ApiErrorResponse> => {
-    try {
-        return await createWorkflowStatus(payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not add it") }
-    }
-}
+export const createWorkflowStatusAction = async (values: unknown) =>
+    runValidatedAction(createWorkflowStatusServerZodSchema, values, "Could not add it", createWorkflowStatus)
 
-export const updateWorkflowStatusAction = async (
-    id: string,
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<IWorkflowStatus> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid status id" }
+export const updateWorkflowStatusAction = async (id: string, values: unknown) =>
+    requireId(id, "status") ??
+    runValidatedAction(updateWorkflowStatusServerZodSchema, values, "Could not change it", (payload) =>
+        updateWorkflowStatus(id, payload),
+    )
 
-    try {
-        return await updateWorkflowStatus(id, payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not change it") }
-    }
-}
-
-export const deleteWorkflowStatusAction = async (
-    id: string,
-): Promise<ApiResponse<{ message: string }> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid status id" }
-
-    try {
-        return await deleteWorkflowStatus(id)
-    } catch (error: unknown) {
-        // "4 tasks are on In QA. Move them first, or turn it off instead of
-        // deleting it." arrives here and already says what to do.
-        return { success: false, message: getActionErrorMessage(error, "Could not remove it") }
-    }
-}
+// "4 tasks are on In QA. Move them first, or turn it off instead of deleting
+// it." comes from the server and already says what to do.
+export const deleteWorkflowStatusAction = async (id: string) =>
+    requireId(id, "status") ?? runAction("Could not remove it", () => deleteWorkflowStatus(id))

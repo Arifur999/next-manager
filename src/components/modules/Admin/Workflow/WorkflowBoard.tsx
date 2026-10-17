@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import type { StatusCategory } from "@/types/common.types"
+import type { IWorkflowStatusChange } from "@/zod/work.validation"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ArrowDown, ArrowUp, Plus, Power, Star, Trash2 } from "lucide-react"
 import { useState } from "react"
@@ -66,7 +67,7 @@ const WorkflowBoard = ({ kind }: { kind: "task" | "project" }) => {
   const refresh = () => queryClient.invalidateQueries({ queryKey: queryKeys.workflowStatuses.all })
 
   const { mutate: add, isPending: isAdding } = useMutation({
-    mutationFn: () => createWorkflowStatusAction({ kind, name: name.trim(), category }),
+    mutationFn: () => createWorkflowStatusAction({ kind, name, category }),
     onSuccess: (result) => {
       if (!result.success) {
         toast.error(result.message || "Could not add it")
@@ -79,7 +80,7 @@ const WorkflowBoard = ({ kind }: { kind: "task" | "project" }) => {
   })
 
   const { mutate: change } = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: Record<string, unknown> }) =>
+    mutationFn: ({ id, payload }: { id: string; payload: IWorkflowStatusChange }) =>
       updateWorkflowStatusAction(id, payload),
     onSuccess: (result) => {
       if (!result.success) {
