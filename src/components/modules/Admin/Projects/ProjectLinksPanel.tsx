@@ -5,15 +5,18 @@ import {
   addProjectLinkAction,
   removeProjectLinkAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/projects/_linkAction"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useActionMutation } from "@/hooks/useActionMutation"
+import type { IProjectLink } from "@/types/project.types"
 import { projectLinkFormZodSchema, type IProjectLinkFormValues } from "@/zod/project.validation"
 import { useForm } from "@tanstack/react-form"
 import { useQuery } from "@tanstack/react-query"
 import { ExternalLink, FolderOpen, Trash2 } from "lucide-react"
+import { useState } from "react"
 import { projectLinksListQuery } from "@/queries/project.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -51,6 +54,8 @@ const ProjectLinksPanel = ({
   projectId: string
   canManage?: boolean
 }) => {
+  const [linkToRemove, setLinkToRemove] = useState<IProjectLink | null>(null)
+
   const { data, isLoading } = useQuery(projectLinksListQuery(`project_id=${projectId}`))
 
   const links = data?.data ?? []
@@ -76,6 +81,10 @@ const ProjectLinksPanel = ({
       if (await addLink({ project_id: projectId, ...value })) formApi.reset()
     },
   })
+
+  const handleRemove = async () => {
+    if (linkToRemove && (await removeLink(linkToRemove.id))) setLinkToRemove(null)
+  }
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
@@ -181,7 +190,7 @@ const ProjectLinksPanel = ({
                   variant="outline"
                   size="sm"
                   disabled={isRemoving}
-                  onClick={() => void removeLink(link.id)}
+                  onClick={() => setLinkToRemove(link)}
                 >
                   <Trash2 className="size-3.5" />
                   <span className="sr-only">Remove {link.label}</span>
@@ -192,6 +201,25 @@ const ProjectLinksPanel = ({
           })}
         </ul>
       )}
+
+      <ConfirmDialog
+        open={linkToRemove !== null}
+        onOpenChange={(open) => {
+          if (!open) setLinkToRemove(null)
+        }}
+        title="Remove this link?"
+        description={
+          <>
+            <span className="font-medium text-foreground">{linkToRemove?.label}</span> comes off this
+            project&apos;s page. The folder or file it points to is not touched.
+          </>
+        }
+        variant="destructive"
+        confirmLabel="Remove"
+        pendingLabel="Removing..."
+        isPending={isRemoving}
+        onConfirm={() => void handleRemove()}
+      />
     </Card>
   )
 }
