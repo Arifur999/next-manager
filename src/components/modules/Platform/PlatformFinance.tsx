@@ -2,6 +2,7 @@
 
 import FinanceFigures from "@/components/modules/Platform/FinanceFigures"
 import PlatformExpenses from "@/components/modules/Platform/PlatformExpenses"
+import ErrorState from "@/components/shared/state/ErrorState"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
@@ -30,20 +31,32 @@ const PlatformFinance = () => {
 
   const range = `from=${from}&to=${to}`
 
-  // The last window stays on screen while a new one loads. Without it the page
-  // fell back to its skeleton, unmounting the date input being typed into.
-  const { data: financeData, isLoading } = useQuery({
+  // The last window's figures stay up while a new window loads, instead of a skeleton.
+  const financeQuery = useQuery({
     ...platformFinanceQuery(range),
     placeholderData: keepPreviousData,
   })
 
-  const finance = financeData?.data
+  const finance = financeQuery.data?.data
 
-  if (isLoading && !finance) {
-    return <div className="h-64 animate-pulse rounded-xl bg-muted/40" />
+  // Only the figures wait or fail: the window picker stays, so a window that
+  // cannot be loaded can still be changed.
+  const renderFigures = () => {
+    if (financeQuery.isLoading) return <div className="h-64 animate-pulse rounded-xl bg-muted/40" />
+
+    if (financeQuery.isError || !finance) {
+      return (
+        <ErrorState
+          className="rounded-xl border border-dashed"
+          message="The financial report did not load."
+          onRetry={() => void financeQuery.refetch()}
+          isRetrying={financeQuery.isFetching}
+        />
+      )
+    }
+
+    return <FinanceFigures finance={finance} />
   }
-
-  if (!finance) return null
 
   return (
     <div className="space-y-6">
@@ -72,7 +85,7 @@ const PlatformFinance = () => {
         </p>
       </div>
 
-      <FinanceFigures finance={finance} />
+      {renderFigures()}
 
       <PlatformExpenses range={range} />
     </div>
