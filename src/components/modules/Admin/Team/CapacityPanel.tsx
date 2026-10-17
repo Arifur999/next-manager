@@ -1,6 +1,9 @@
 "use client"
 
 import { setCapacityAction } from "@/app/(dashboardLayout)/admin/dashboard/team-management/_capacityAction"
+import EmptyState from "@/components/shared/state/EmptyState"
+import ErrorState from "@/components/shared/state/ErrorState"
+import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,6 +12,7 @@ import { useActionMutation } from "@/hooks/useActionMutation"
 import type { ICapacityRow } from "@/types/work.types"
 import type { ICapacityFormValues } from "@/zod/people.validation"
 import { useQuery } from "@tanstack/react-query"
+import { UsersRound } from "lucide-react"
 import { useState } from "react"
 import { capacitiesQuery } from "@/queries/work.queries"
 import { queryKeys } from "@/lib/queryKeys"
@@ -103,9 +107,9 @@ const CapacityRow = ({ row }: { row: ICapacityRow }) => {
 }
 
 const CapacityPanel = () => {
-  const { data, isLoading } = useQuery(capacitiesQuery())
+  const capacityList = useQuery(capacitiesQuery())
 
-  const rows = data?.data ?? []
+  const rows = capacityList.data?.data ?? []
   const unrated = rows.filter((row) => row.standard_rate_usd <= 0).length
 
   return (
@@ -119,9 +123,23 @@ const CapacityPanel = () => {
         </p>
       </CardHeader>
 
-      {isLoading && rows.length === 0 ? (
-        <div className="h-32 animate-pulse bg-muted/40" />
-      ) : (
+      {/* The error shows only when nothing loaded: each row holds figures
+          being typed, and a failed refetch must not take them away. */}
+      {capacityList.isError && rows.length === 0 && (
+        <ErrorState
+          message="Capacities did not load."
+          onRetry={() => void capacityList.refetch()}
+          isRetrying={capacityList.isFetching}
+        />
+      )}
+
+      {capacityList.isLoading && <LoadingBlock height="h-32" />}
+
+      {capacityList.isSuccess && rows.length === 0 && (
+        <EmptyState icon={UsersRound}>Nobody on the team yet.</EmptyState>
+      )}
+
+      {rows.length > 0 && (
         <ul className="divide-y">
           {rows.map((row) => (
             // Keyed by user so a saved row keeps its own input state rather
