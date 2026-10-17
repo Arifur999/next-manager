@@ -3,17 +3,18 @@
 import RecordWithdrawalModal from "@/components/modules/Admin/Withdrawals/RecordWithdrawalModal"
 import { withdrawalsColumns } from "@/components/modules/Admin/Withdrawals/withdrawalsColumns"
 import StatTile from "@/components/shared/StatTile"
+import ErrorState from "@/components/shared/state/ErrorState"
 import DataTable from "@/components/shared/table/DataTable"
 import { Card } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
 import { useQuery } from "@tanstack/react-query"
-import { PiggyBank, ShieldAlert } from "lucide-react"
+import { PiggyBank } from "lucide-react"
 import { ownerWithdrawalsListQuery } from "@/queries/spending.queries"
 
 const WithdrawalsBoard = () => {
-  const { data, isPending, isFetching, error } = useQuery({ ...ownerWithdrawalsListQuery(), // The route is owner-only, so anyone else gets a 403. One retry is enough
-    // to rule out a blip without hammering a wall that will not move.
-    retry: 1 })
+  // One automatic retry rules out a blip; past that, the Retry button is
+  // quicker than a backoff.
+  const { data, isPending, isFetching, isError, refetch } = useQuery({ ...ownerWithdrawalsListQuery(), retry: 1 })
 
   const withdrawals = data?.data ?? []
 
@@ -24,16 +25,18 @@ const WithdrawalsBoard = () => {
     .filter((row) => row.type === "reinvestment")
     .reduce((running, row) => running + row.amount_bdt, 0)
 
-  // A 403 here is the role gate doing its job, not a bug — say so rather than
-  // showing an empty table that looks like "no withdrawals".
-  if (error) {
+  // Never an empty table that reads as "no withdrawals". Not a permission
+  // message either: the page and the API are both admin-only, and a thrown
+  // server-action error reaches the browser without its status, so a 403
+  // cannot be told from an outage here.
+  if (isError) {
     return (
-      <Card className="flex flex-col items-center gap-2 px-6 py-16 text-center">
-        <ShieldAlert className="size-8 text-muted-foreground" aria-hidden="true" />
-        <p className="text-sm font-medium">Owner only</p>
-        <p className="max-w-sm text-sm text-muted-foreground">
-          What the owner takes out of the business is not visible to other roles, including admins.
-        </p>
+      <Card>
+        <ErrorState
+          message="Withdrawals did not load."
+          onRetry={() => void refetch()}
+          isRetrying={isFetching}
+        />
       </Card>
     )
   }
