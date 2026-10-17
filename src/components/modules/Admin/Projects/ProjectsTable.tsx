@@ -1,7 +1,7 @@
 "use client"
 
 import ProjectFormModal from "@/components/modules/Admin/Projects/ProjectFormModal"
-import { projectsColumns } from "@/components/modules/Admin/Projects/projectsColumns"
+import { projectsColumnsFor } from "@/components/modules/Admin/Projects/projectsColumns"
 import { PROJECTS_TABLE } from "@/components/modules/Admin/Projects/projectsTable.config"
 import type { DataTableFilterConfig } from "@/components/shared/table/dataTable.types"
 import DataTable from "@/components/shared/table/DataTable"
@@ -42,6 +42,7 @@ const ProjectsTable = ({ canManage = true }: { canManage?: boolean }) => {
   const queryClient = useQueryClient()
   const { queryString, filterQueryString, dataTableProps } = useServerDataTable<IProject>(tableConfig)
   const projectsQuery = useQuery({ ...projectsListQuery(queryString), placeholderData: keepPreviousData })
+  const projects = projectsQuery.data?.data ?? []
 
   const { editingItem, isEditModalOpen, onEditOpenChange, tableActions } = useRowActionModalState<IProject>({
     enableView: true,
@@ -51,8 +52,8 @@ const ProjectsTable = ({ canManage = true }: { canManage?: boolean }) => {
   return (
     <>
       <DataTable
-        data={projectsQuery.data?.data ?? []}
-        columns={projectsColumns}
+        data={projects}
+        columns={projectsColumnsFor(projects)}
         tableId="projects"
         exportFileName="projects"
         exportRows={async () => (await queryClient.fetchQuery(projectsListQuery(filterQueryString))).data}

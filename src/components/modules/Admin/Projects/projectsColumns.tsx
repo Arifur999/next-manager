@@ -1,12 +1,11 @@
+import StatusBadge from "@/components/shared/status/StatusBadge"
 import { Badge } from "@/components/ui/badge"
 import { formatUsd } from "@/lib/currency"
-import { STATUS_TONE } from "@/components/shared/status/statusTone"
+import { plural } from "@/lib/text"
 import type { IProject } from "@/types/project.types"
 import { ColumnDef } from "@tanstack/react-table"
 
-// Status carries meaning, so it gets colour rather than the same outline for
-// all five: active is the working state, cancelled is a failure, the rest are
-// neutral waypoints.
+const CONTRACT_VALUE = "contract_value_usd"
 
 export const projectsColumns: ColumnDef<IProject>[] = [
   {
@@ -34,23 +33,17 @@ export const projectsColumns: ColumnDef<IProject>[] = [
     accessorKey: "status",
     header: "Status",
     meta: { exportValue: (project) => project.status.name },
-    cell: ({ row }) => (
-      <span
-        className={`rounded-md px-2 py-0.5 text-xs font-medium capitalize ${
-          STATUS_TONE[row.original.status.category]
-        }`}
-      >
-        {row.original.status.name}
-      </span>
-    ),
+    // Coloured by what the status means, so a renamed column keeps its look.
+    cell: ({ row }) => <StatusBadge category={row.original.status.category} label={row.original.status.name} />,
   },
   {
-    id: "contract_value_usd",
-    accessorKey: "contract_value_usd",
+    id: CONTRACT_VALUE,
+    accessorKey: CONTRACT_VALUE,
     header: "Contract value",
-    cell: ({ row }) => (
-      <span className="font-medium tabular-nums">{formatUsd(row.original.contract_value_usd)}</span>
-    ),
+    cell: ({ row }) => {
+      const value = row.original.contract_value_usd
+      return value === undefined ? null : <span className="font-medium tabular-nums">{formatUsd(value)}</span>
+    },
   },
   {
     id: "tasks",
@@ -60,7 +53,7 @@ export const projectsColumns: ColumnDef<IProject>[] = [
     cell: ({ row }) => (
       <div className="flex items-center gap-1.5">
         <Badge variant="outline" className="text-xs">
-          {row.original._count?.tasks ?? 0} tasks
+          {plural(row.original._count?.tasks ?? 0, "task")}
         </Badge>
         <Badge variant="outline" className="text-xs">
           {row.original._count?.members ?? 0} on team
@@ -69,3 +62,13 @@ export const projectsColumns: ColumnDef<IProject>[] = [
     ),
   },
 ]
+
+const projectsColumnsWithoutMoney = projectsColumns.filter((column) => column.id !== CONTRACT_VALUE)
+
+/**
+ * The columns for the rows the API sent. It leaves the contract value out for
+ * operations, so the table leaves the column out too, rather than showing
+ * a column of blanks or "$0" that reads as a deal worth nothing.
+ */
+export const projectsColumnsFor = (projects: IProject[]): ColumnDef<IProject>[] =>
+  projects.some((project) => project.contract_value_usd !== undefined) ? projectsColumns : projectsColumnsWithoutMoney

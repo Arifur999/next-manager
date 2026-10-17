@@ -118,7 +118,7 @@ const ClientDetail = ({
                         <Badge variant="outline" className="capitalize">
                           {project.status.name}
                         </Badge>
-                        {canSeeMoney && (
+                        {canSeeMoney && project.contract_value_usd !== undefined && (
                           <span className="text-sm tabular-nums">
                             {formatUsd(project.contract_value_usd)}
                           </span>

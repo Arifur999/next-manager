@@ -19,7 +19,8 @@ export interface IProject {
     status: IStatusRef;
     start_date: string | null;
     end_date: string | null;
-    contract_value_usd: number;
+    /** Left out for operations, who deliver the work but are not told what the deal is worth. */
+    contract_value_usd?: number;
     notes: string;
     client?: Pick<IClient, "id" | "name" | "company">;
     _count?: { tasks: number; members: number };
