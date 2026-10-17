@@ -51,8 +51,8 @@ const ChatBoard = ({ meId }: { meId: string | null }) => {
   const conversationsList = useQuery(conversationsListQuery(query))
   const conversations = conversationsList.data?.data ?? []
 
-  const { data: messageData, isLoading: loadingMessages } = useQuery({ ...messagesQuery(activeId as string), enabled: Boolean(activeId) })
-  const messages = messageData?.data ?? []
+  const messagesList = useQuery({ ...messagesQuery(activeId ?? ""), enabled: Boolean(activeId) })
+  const messages = messagesList.data?.data ?? []
 
   const active = conversations.find((conversation) => conversation.id === activeId) ?? null
 
@@ -145,8 +145,8 @@ const ChatBoard = ({ meId }: { meId: string | null }) => {
 
             <MessageThread
               messages={messages}
+              query={messagesList}
               meId={meId}
-              isLoading={loadingMessages}
               isSending={sending}
               onSend={sendChatMessage}
             />
