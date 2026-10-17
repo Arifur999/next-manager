@@ -31,6 +31,7 @@ import { useState } from "react"
  */
 
 type Draft = Record<string, { gross: string; deductions: string }>
+type PayrollItem = IPayrollRun["items"][number]
 
 const PayrollRunCard = ({
   run,
@@ -53,12 +54,13 @@ const PayrollRunCard = ({
   const valueOf = (itemId: string, field: "gross" | "deductions", stored: number) =>
     draft[itemId]?.[field] ?? (stored ? String(stored) : "")
 
-  const change = (itemId: string, field: "gross" | "deductions", value: string) =>
+  const change = (item: PayrollItem, field: "gross" | "deductions", value: string) =>
     setDraft({
       ...draft,
-      [itemId]: {
-        gross: draft[itemId]?.gross ?? "",
-        deductions: draft[itemId]?.deductions ?? "",
+      [item.id]: {
+        // The box not being edited keeps its saved figure; "" would save it as zero.
+        gross: valueOf(item.id, "gross", Number(item.gross_bdt)),
+        deductions: valueOf(item.id, "deductions", Number(item.deductions_bdt)),
         [field]: value,
       },
     })
@@ -125,7 +127,7 @@ const PayrollRunCard = ({
                       min={0}
                       step="1"
                       value={valueOf(item.id, "gross", Number(item.gross_bdt))}
-                      onChange={(event) => change(item.id, "gross", event.target.value)}
+                      onChange={(event) => change(item, "gross", event.target.value)}
                       className="w-32"
                       aria-label={`Gross for ${item.user.full_name}`}
                     />
@@ -141,7 +143,7 @@ const PayrollRunCard = ({
                       min={0}
                       step="1"
                       value={valueOf(item.id, "deductions", Number(item.deductions_bdt))}
-                      onChange={(event) => change(item.id, "deductions", event.target.value)}
+                      onChange={(event) => change(item, "deductions", event.target.value)}
                       className="w-32"
                       aria-label={`Deductions for ${item.user.full_name}`}
                     />
