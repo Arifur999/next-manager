@@ -7,12 +7,11 @@ import { CLIENTS_TABLE } from "@/components/modules/Admin/Clients/clientsTable.c
 import DataTable from "@/components/shared/table/DataTable"
 import { useRowActionModalState } from "@/hooks/useRowActionModalState"
 import { useServerDataTable } from "@/hooks/useServerDataTable"
-import { pickAllowed } from "@/lib/queryString"
 import { toTableQueryProps } from "@/lib/table/queryProps"
 import { clientsListQuery } from "@/queries/crm.queries"
-import { CLIENT_STATUSES, type IClient } from "@/types/crm.types"
+import type { IClient } from "@/types/crm.types"
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 
 /**
  * The client list. Paging, search and the status filter live in the URL, so
@@ -25,7 +24,6 @@ import { useRouter, useSearchParams } from "next/navigation"
  */
 const ClientsTable = ({ canManage = true, canOpen = true }: { canManage?: boolean; canOpen?: boolean }) => {
   const router = useRouter()
-  const status = pickAllowed(useSearchParams().get("status"), CLIENT_STATUSES)
   const queryClient = useQueryClient()
   const { queryString, filterQueryString, dataTableProps } = useServerDataTable<IClient>(CLIENTS_TABLE)
   const clientsQuery = useQuery({ ...clientsListQuery(queryString), placeholderData: keepPreviousData })
@@ -50,8 +48,8 @@ const ClientsTable = ({ canManage = true, canOpen = true }: { canManage?: boolea
         exportRows={async () => (await queryClient.fetchQuery(clientsListQuery(filterQueryString))).data}
         {...dataTableProps}
         {...toTableQueryProps(clientsQuery)}
-        // Names the filtered list: "No clients yet" on the archived view would be untrue.
-        emptyMessage={status ? `No ${status} clients.` : "No clients yet."}
+        // Shown only when nothing narrows the list; a filtered view says so itself.
+        emptyMessage="No clients yet."
         toolbarAction={canManage ? <ClientFormModal /> : undefined}
         actions={{
           ...(canManage ? tableActions : {}),

@@ -75,7 +75,8 @@ const TransactionsBoard = () => {
           exportRows={async () => (await queryClient.fetchQuery(transactionsListQuery(filterQueryString))).data}
           {...dataTableProps}
           {...toTableQueryProps(transactionsQuery)}
-          emptyMessage={kind ? `Nothing under ${HEADING[kind].title.toLowerCase()} yet.` : "Nothing recorded yet."}
+          // Shown only when nothing narrows the ledger; a filtered view says so itself.
+          emptyMessage="Nothing recorded yet."
         />
       </div>
     </Card>
