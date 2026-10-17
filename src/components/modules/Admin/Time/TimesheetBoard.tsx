@@ -1,6 +1,7 @@
 "use client"
 
 import LogTimeModal from "@/components/modules/Admin/Time/LogTimeModal"
+import { isoDay, weekLabel, weekStart } from "@/components/modules/Admin/Time/week"
 import StatTile from "@/components/shared/StatTile"
 import EmptyState from "@/components/shared/state/EmptyState"
 import PanelState from "@/components/shared/state/PanelState"
@@ -8,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { useQuery } from "@tanstack/react-query"
-import { addDays, format, startOfWeek } from "date-fns"
+import { addDays, format } from "date-fns"
 import { ChevronLeft, ChevronRight, Clock, Lock, TrendingUp } from "lucide-react"
 import { useState } from "react"
 import { timeEntriesListQuery, timeSummaryQuery } from "@/queries/work.queries"
@@ -26,19 +27,12 @@ import { timeEntriesListQuery, timeSummaryQuery } from "@/queries/work.queries"
  * they could not check.
  */
 
-const iso = (date: Date) => format(date, "yyyy-MM-dd")
-
-// Weeks start Monday: a timesheet that starts Sunday puts the weekend at both
-// ends and nobody reads it that way.
-const weekStart = (offset: number) =>
-  startOfWeek(addDays(new Date(), offset * 7), { weekStartsOn: 1 })
-
 const TimesheetBoard = ({ userId }: { userId: string }) => {
   const [offset, setOffset] = useState(0)
 
   const start = weekStart(offset)
   const end = addDays(start, 6)
-  const range = `from=${iso(start)}&to=${iso(end)}&user_id=${userId}`
+  const range = `from=${isoDay(start)}&to=${isoDay(end)}&user_id=${userId}`
 
   const entriesQuery = useQuery(timeEntriesListQuery(range))
   const summaryQuery = useQuery(timeSummaryQuery(range))
@@ -54,7 +48,7 @@ const TimesheetBoard = ({ userId }: { userId: string }) => {
 
   const hoursOn = (day: Date) =>
     entries
-      .filter((entry) => entry.date === iso(day))
+      .filter((entry) => entry.date === isoDay(day))
       .reduce((running, entry) => running + entry.hours, 0)
 
   const billableShare =
@@ -90,7 +84,7 @@ const TimesheetBoard = ({ userId }: { userId: string }) => {
               {format(start, "MMM dd")} – {format(end, "MMM dd, yyyy")}
             </CardTitle>
             <p className="text-sm text-muted-foreground">
-              {offset === 0 ? "This week" : offset === -1 ? "Last week" : format(start, "'Week of' MMM dd")}
+              {weekLabel(offset, start)}
             </p>
           </div>
 
@@ -120,7 +114,7 @@ const TimesheetBoard = ({ userId }: { userId: string }) => {
               <span className="sr-only">Next week</span>
             </Button>
 
-            <LogTimeModal defaultDate={iso(offset === 0 ? new Date() : start)} />
+            <LogTimeModal defaultDate={isoDay(offset === 0 ? new Date() : start)} />
           </div>
         </CardHeader>
 
@@ -129,11 +123,11 @@ const TimesheetBoard = ({ userId }: { userId: string }) => {
           <div className="grid grid-cols-7 border-b">
             {days.map((day) => {
               const hours = hoursOn(day)
-              const isToday = iso(day) === iso(new Date())
+              const isToday = isoDay(day) === isoDay(new Date())
 
               return (
                 <div
-                  key={iso(day)}
+                  key={isoDay(day)}
                   className={`border-r px-2 py-3 text-center last:border-r-0 ${
                     isToday ? "bg-muted/50" : ""
                   }`}

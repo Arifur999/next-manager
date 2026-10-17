@@ -5,6 +5,7 @@ import {
   unapproveTimeAction,
 } from "@/app/(dashboardLayout)/dashboard/timesheet/_action"
 import { groupByPerson } from "@/components/modules/Admin/Time/groupByPerson"
+import { isoDay, weekLabel, weekStart } from "@/components/modules/Admin/Time/week"
 import StatTile from "@/components/shared/StatTile"
 import EmptyState from "@/components/shared/state/EmptyState"
 import PanelState from "@/components/shared/state/PanelState"
@@ -14,7 +15,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { useQuery } from "@tanstack/react-query"
-import { addDays, format, startOfWeek } from "date-fns"
+import { addDays, format } from "date-fns"
 import { ChevronLeft, ChevronRight, Clock, Undo2, UserCheck } from "lucide-react"
 import { useState } from "react"
 import { timeEntriesListQuery } from "@/queries/work.queries"
@@ -33,18 +34,13 @@ import { queryKeys } from "@/lib/queryKeys"
  * reassemble each person's week themselves.
  */
 
-const iso = (date: Date) => format(date, "yyyy-MM-dd")
-
-const weekStart = (offset: number) =>
-  startOfWeek(addDays(new Date(), offset * 7), { weekStartsOn: 1 })
-
 const ApprovalQueue = ({ viewerId }: { viewerId: string }) => {
   const [offset, setOffset] = useState(0)
   const [tab, setTab] = useState<"pending" | "approved">("pending")
 
   const start = weekStart(offset)
   const end = addDays(start, 6)
-  const query = `from=${iso(start)}&to=${iso(end)}&approved=${tab === "approved"}`
+  const query = `from=${isoDay(start)}&to=${isoDay(end)}&approved=${tab === "approved"}`
 
   const entriesQuery = useQuery(timeEntriesListQuery(query))
 
@@ -101,7 +97,7 @@ const ApprovalQueue = ({ viewerId }: { viewerId: string }) => {
               {format(start, "MMM dd")} – {format(end, "MMM dd, yyyy")}
             </CardTitle>
             <p className="text-sm text-muted-foreground">
-              {offset === 0 ? "This week" : offset === -1 ? "Last week" : format(start, "'Week of' MMM dd")}
+              {weekLabel(offset, start)}
             </p>
           </div>
 
