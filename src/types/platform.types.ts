@@ -274,6 +274,10 @@ export interface IPlatformTrend {
     revenue_by_plan: Array<{ name: string; companies: number; mrr_usd: number }>;
 }
 
+export const ANNOUNCEMENT_AUDIENCES = ["all", "trialing", "active"] as const;
+
+export type AnnouncementAudience = (typeof ANNOUNCEMENT_AUDIENCES)[number];
+
 /**
  * A notice from the platform to its customers.
  *
@@ -285,7 +289,7 @@ export interface IAnnouncement {
     id: string;
     title: string;
     body: string;
-    audience: "all" | "trialing" | "active";
+    audience: AnnouncementAudience;
     send_email: boolean;
     /** Null while it is a draft. */
     published_at: string | null;

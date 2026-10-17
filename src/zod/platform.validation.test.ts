@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
     agencyInviteServerZodSchema,
+    announcementServerZodSchema,
     createCompanyServerZodSchema,
     createPlanServerZodSchema,
     setSubscriptionServerZodSchema,
@@ -139,3 +140,33 @@ describe("agencyInviteServerZodSchema", () => {
         expect(agencyInviteServerZodSchema.safeParse({ ...valid, trial_days: "400" }).success).toBe(false)
     })
 })
+
+describe("announcementServerZodSchema", () => {
+    const valid = {
+        title: " Sunday maintenance ",
+        body: "We move servers.\n\nBack by noon. ",
+        audience: "all",
+        send_email: true,
+    }
+
+    it("trims the edges and keeps the paragraphs", () => {
+        expect(announcementServerZodSchema.parse(valid)).toEqual({
+            title: "Sunday maintenance",
+            body: "We move servers.\n\nBack by noon.",
+            audience: "all",
+            send_email: true,
+        })
+    })
+
+    it("refuses a blank title or body", () => {
+        const blankTitle = announcementServerZodSchema.safeParse({ ...valid, title: "  " })
+        expect(blankTitle.error?.issues[0]?.message).toBe("Give it a title")
+        const blankBody = announcementServerZodSchema.safeParse({ ...valid, body: "\n" })
+        expect(blankBody.error?.issues[0]?.message).toBe("Say something")
+    })
+
+    it("refuses an audience the API does not know", () => {
+        expect(announcementServerZodSchema.safeParse({ ...valid, audience: "everyone" }).success).toBe(false)
+    })
+})
+

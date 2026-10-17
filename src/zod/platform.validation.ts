@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { SUBSCRIPTION_STATUSES } from "@/types/platform.types"
+import { ANNOUNCEMENT_AUDIENCES, SUBSCRIPTION_STATUSES } from "@/types/platform.types"
 import { newPassword } from "./auth.validation"
 import { optionalNonNegative, toNumber } from "./formFields"
 
@@ -94,6 +94,15 @@ export const agencyInviteFormZodSchema = z.object({
 
 export type IAgencyInviteFormValues = z.infer<typeof agencyInviteFormZodSchema>
 
+export const announcementFormZodSchema = z.object({
+    title: z.string().trim().min(1, "Give it a title").max(120, "A title longer than this is a body"),
+    body: z.string().trim().min(1, "Say something"),
+    audience: z.enum(ANNOUNCEMENT_AUDIENCES, { message: "Pick who this is for" }),
+    send_email: z.boolean(),
+})
+
+export type IAnnouncementFormValues = z.infer<typeof announcementFormZodSchema>
+
 // Server schemas: the form values checked again on the server and turned into
 // the payloads platform.validation.ts on the API expects.
 
@@ -129,3 +138,6 @@ export const agencyInviteServerZodSchema = agencyInviteFormZodSchema.transform((
     // An emptied box is no trial, as it was when the field held a number.
     trial_days: toNumber(values.trial_days) ?? 0,
 }))
+
+// Saving a draft and editing one send the same fields.
+export const announcementServerZodSchema = announcementFormZodSchema

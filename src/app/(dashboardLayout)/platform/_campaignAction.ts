@@ -1,60 +1,26 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
+import { requireId, runAction, runValidatedAction } from "@/lib/runAction"
 import {
     createAnnouncement,
     deleteAnnouncement,
     publishAnnouncement,
     updateAnnouncement,
 } from "@/services/platform.services"
-import type { IAnnouncement, IPublishResult } from "@/types/platform.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+import { announcementServerZodSchema } from "@/zod/platform.validation"
 
-export const createAnnouncementAction = async (
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<IAnnouncement> | ApiErrorResponse> => {
-    try {
-        return await createAnnouncement(payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not save the draft") }
-    }
-}
+export const createAnnouncementAction = async (values: unknown) =>
+    runValidatedAction(announcementServerZodSchema, values, "Could not save the draft", createAnnouncement)
 
-export const updateAnnouncementAction = async (
-    id: string,
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<IAnnouncement> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid announcement id" }
+// "This one has already gone out, so it cannot be edited" arrives here and says what to do instead.
+export const updateAnnouncementAction = async (id: string, values: unknown) =>
+    requireId(id, "announcement") ??
+    runValidatedAction(announcementServerZodSchema, values, "Could not update the draft", (payload) =>
+        updateAnnouncement(id, payload),
+    )
 
-    try {
-        return await updateAnnouncement(id, payload)
-    } catch (error: unknown) {
-        // "This one has already gone out, so it cannot be edited" arrives here,
-        // and already says what to do instead.
-        return { success: false, message: getActionErrorMessage(error, "Could not update the draft") }
-    }
-}
+export const publishAnnouncementAction = async (id: string) =>
+    requireId(id, "announcement") ?? runAction("Could not publish", () => publishAnnouncement(id))
 
-export const publishAnnouncementAction = async (
-    id: string,
-): Promise<ApiResponse<IPublishResult> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid announcement id" }
-
-    try {
-        return await publishAnnouncement(id)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not publish") }
-    }
-}
-
-export const deleteAnnouncementAction = async (
-    id: string,
-): Promise<ApiResponse<{ id: string }> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid announcement id" }
-
-    try {
-        return await deleteAnnouncement(id)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not remove it") }
-    }
-}
+export const deleteAnnouncementAction = async (id: string) =>
+    requireId(id, "announcement") ?? runAction("Could not remove it", () => deleteAnnouncement(id))
