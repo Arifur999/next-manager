@@ -109,25 +109,25 @@ const CapacityRow = ({ row }: { row: ICapacityRow }) => {
 const CapacityPanel = () => {
   const capacityList = useQuery(capacitiesQuery())
 
-  const rows = capacityList.data?.data ?? []
-  const unrated = rows.filter((row) => row.standard_rate_usd <= 0).length
+  const capacities = capacityList.data?.data ?? []
+  const unrated = capacities.filter((capacity) => capacity.standard_rate_usd <= 0).length
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
       <CardHeader className="border-b px-5 py-4">
         <CardTitle className="text-base">Capacity and rates</CardTitle>
-        {rows.length > 0 && (
+        {capacities.length > 0 && (
           <p className="text-sm text-muted-foreground">
             {unrated === 0
               ? "Every person has a bill rate, so realization is computable across the agency."
-              : `${unrated} of ${rows.length} have no bill rate. Realization stays uncomputed for them — the software will not guess what an hour is worth.`}
+              : `${unrated} of ${capacities.length} have no bill rate. Realization stays uncomputed for them — the software will not guess what an hour is worth.`}
           </p>
         )}
       </CardHeader>
 
       {/* The error shows only when nothing loaded: each row holds figures
           being typed, and a failed refetch must not take them away. */}
-      {capacityList.isError && rows.length === 0 && (
+      {capacityList.isError && capacities.length === 0 && (
         <ErrorState
           message="Capacities did not load."
           onRetry={() => void capacityList.refetch()}
@@ -137,13 +137,13 @@ const CapacityPanel = () => {
 
       {capacityList.isLoading && <LoadingBlock height="h-32" />}
 
-      {capacityList.isSuccess && rows.length === 0 && (
+      {capacityList.isSuccess && capacities.length === 0 && (
         <EmptyState icon={UsersRound}>Nobody on the team yet.</EmptyState>
       )}
 
-      {rows.length > 0 && (
+      {capacities.length > 0 && (
         <ul className="divide-y">
-          {rows.map((row) => (
+          {capacities.map((row) => (
             // Keyed by user so a saved row keeps its own input state rather
             // than inheriting the next person's.
             <CapacityRow key={row.user.id} row={row} />

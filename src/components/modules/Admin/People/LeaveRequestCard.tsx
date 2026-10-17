@@ -33,8 +33,8 @@ const newLeaveRequest: ILeaveRequestFormValues = {
 
 // Asking to be away: the form half of the leave board.
 const LeaveRequestCard = () => {
-  const { data: typeData } = useQuery(leaveTypesQuery())
-  const types = ((typeData?.data ?? [])).filter((type) => type.is_active)
+  const typeList = useQuery(leaveTypesQuery())
+  const types = (typeList.data?.data ?? []).filter((type) => type.is_active)
 
   const { run: requestLeave, isPending } = useActionMutation({
     action: requestLeaveAction,

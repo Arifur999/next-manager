@@ -48,11 +48,11 @@ const PayrollBoard = () => {
   const [discarding, setDiscarding] = useState<IPayrollRun | null>(null)
 
   const runList = useQuery(payrollRunsQuery())
-  const { data: accountData } = useQuery(accountsQuery())
+  const accountList = useQuery(accountsQuery())
 
   const runs = runList.data?.data ?? []
   // Salaries are BDT, like every other team payout.
-  const accounts = ((accountData?.data ?? [])).filter(
+  const accounts = (accountList.data?.data ?? []).filter(
     (account) => account.currency === "BDT" && account.is_active
   )
 

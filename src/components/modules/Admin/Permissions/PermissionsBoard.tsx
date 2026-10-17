@@ -42,11 +42,11 @@ const PermissionsBoard = () => {
   // The same cached read as roleGrid, observed for the error and refetch the hook does not return.
   const gridRead = useQuery(permissionGridQuery())
 
-  const { data: userData } = useQuery(usersListQuery())
+  const userList = useQuery(usersListQuery())
 
   // An admin passes every check by design, so an override stored against one
   // would look like a restriction and enforce nothing.
-  const people = ((userData?.data ?? [])).filter((user) => user.role !== "admin")
+  const people = (userList.data?.data ?? []).filter((user) => user.role !== "admin")
 
   if (gridRead.isError && !roleGrid.grid) {
     return (

@@ -34,12 +34,12 @@ const DepartmentField = ({
   onChange: (value: string) => void
   disabled?: boolean
 }) => {
-  const { data } = useQuery(departmentsQuery())
-  const all = data?.data ?? []
+  const departmentList = useQuery(departmentsQuery())
+  const departments = departmentList.data?.data ?? []
 
   // Keep a retired department visible while it is the one selected, so opening
   // somebody's row does not silently move them out of it on save.
-  const options = all.filter((department) => department.is_active || department.id === value)
+  const options = departments.filter((department) => department.is_active || department.id === value)
 
   return (
     <div className="space-y-1.5">
@@ -58,7 +58,7 @@ const DepartmentField = ({
           ))}
         </SelectContent>
       </Select>
-      {all.length === 0 && (
+      {departments.length === 0 && (
         <p className="text-xs text-muted-foreground">
           No departments yet —{" "}
           <Link

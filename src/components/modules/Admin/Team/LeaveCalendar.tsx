@@ -29,7 +29,7 @@ type Day = { request: ILeaveRequest; date: Date }
 const LeaveCalendar = () => {
   const requestList = useQuery(leaveRequestsListQuery())
 
-  const requests = ((requestList.data?.data ?? [])).filter(
+  const requests = (requestList.data?.data ?? []).filter(
     (request) => request.status === "approved"
   )
 

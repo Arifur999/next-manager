@@ -27,8 +27,8 @@ const withPick = (quantities: Record<string, number>, serviceId: string, isPicke
 
 // Putting a new package together from the services still on sale.
 const TemplateFormCard = () => {
-  const { data: serviceData } = useQuery(servicesListQuery())
-  const services = ((serviceData?.data ?? [])).filter((service) => service.is_active)
+  const serviceList = useQuery(servicesListQuery())
+  const services = (serviceList.data?.data ?? []).filter((service) => service.is_active)
 
   const { run: createPackage, isPending } = useActionMutation({
     action: createTemplateAction,

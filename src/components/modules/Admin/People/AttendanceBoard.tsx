@@ -39,7 +39,7 @@ const hoursBetween = (from: string | null, to: string | null) => {
 const AttendanceBoard = ({ canRecord = false }: { canRecord?: boolean }) => {
   const attendanceList = useQuery(attendanceQuery())
 
-  const rows = attendanceList.data?.data ?? []
+  const days = attendanceList.data?.data ?? []
 
   // No successMessage: the server says which happened. Guessing here is how the
   // button ends up claiming the opposite of what was stored.
@@ -50,7 +50,7 @@ const AttendanceBoard = ({ canRecord = false }: { canRecord?: boolean }) => {
   })
 
   const today = format(new Date(), "yyyy-MM-dd")
-  const mineToday = rows.find((row) => format(parseISO(row.date), "yyyy-MM-dd") === today)
+  const mineToday = days.find((day) => format(parseISO(day.date), "yyyy-MM-dd") === today)
   const stillIn = Boolean(mineToday?.check_in && !mineToday?.check_out)
 
   const table = (
@@ -73,7 +73,7 @@ const AttendanceBoard = ({ canRecord = false }: { canRecord?: boolean }) => {
       <PanelState
         query={attendanceList}
         errorMessage="Attendance did not load."
-        isEmpty={rows.length === 0}
+        isEmpty={days.length === 0}
         empty={<EmptyState icon={CalendarCheck}>Nothing recorded yet.</EmptyState>}
       >
         <div className="overflow-x-auto">
@@ -88,7 +88,7 @@ const AttendanceBoard = ({ canRecord = false }: { canRecord?: boolean }) => {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {rows.map((row) => {
+              {days.map((row) => {
                 const hours = hoursBetween(row.check_in, row.check_out)
 
                 return (

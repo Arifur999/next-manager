@@ -29,18 +29,18 @@ const initialsOf = (name: string) =>
 const AssignmentOverview = () => {
   const assignmentList = useQuery(assignmentOverviewQuery())
 
-  const rows = assignmentList.data?.data ?? []
+  const people = assignmentList.data?.data ?? []
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
       <PanelState
         query={assignmentList}
         errorMessage="Assignments did not load."
-        isEmpty={rows.length === 0}
+        isEmpty={people.length === 0}
         empty={<EmptyState icon={UsersRound}>No team members yet.</EmptyState>}
       >
         <ul className="divide-y">
-          {rows.map((row) => (
+          {people.map((row) => (
             <li key={row.user.id} className="flex items-start gap-3 px-5 py-4">
               <Avatar className="size-9 shrink-0">
                 <AvatarFallback className="text-xs">{initialsOf(row.user.full_name)}</AvatarFallback>

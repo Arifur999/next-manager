@@ -33,10 +33,10 @@ const ServicesBoard = ({ canManage = true }: { canManage?: boolean }) => {
   const [removing, setRemoving] = useState<IService | null>(null)
 
   const serviceList = useQuery(servicesListQuery())
-  const { data: categoryData } = useQuery(serviceCategoriesQuery())
+  const categoryList = useQuery(serviceCategoriesQuery())
 
   const services = serviceList.data?.data ?? []
-  const categories = categoryData?.data ?? []
+  const categories = categoryList.data?.data ?? []
 
   // No toast: the row's "not sold" badge is the confirmation.
   const { run: toggleSold } = useActionMutation({

@@ -41,8 +41,8 @@ const newAttendanceDay = (): IAttendanceFormValues => ({
  * time yet is a real half-answer.
  */
 const RecordAttendanceCard = () => {
-  const { data } = useQuery(usersListQuery())
-  const members = ((data?.data ?? [])).filter((member) => member.status === "active")
+  const memberList = useQuery(usersListQuery())
+  const members = (memberList.data?.data ?? []).filter((member) => member.status === "active")
 
   // A refusal such as "Check-out has to be after check-in" keeps what was typed.
   const { run: recordDay, isPending } = useActionMutation({
