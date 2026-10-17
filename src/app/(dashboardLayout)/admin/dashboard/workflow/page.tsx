@@ -6,7 +6,7 @@ import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
-  title: "Task Settings",
+  title: "Task settings",
 };
 
 const TaskSettingsPage = async () => {
@@ -15,7 +15,7 @@ const TaskSettingsPage = async () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Task Settings">
+      <PageHeader title="Task settings">
         The columns on your task board. Call them what you like — what each one{" "}
         <em>means</em> is chosen separately, and that is what completion dates and the
         reports read.

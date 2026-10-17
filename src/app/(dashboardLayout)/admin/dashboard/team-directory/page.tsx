@@ -6,7 +6,7 @@ import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
-  title: "Team Directory",
+  title: "Team directory",
 };
 
 const TeamDirectoryPage = async () => {
@@ -15,7 +15,7 @@ const TeamDirectoryPage = async () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Team">
+      <PageHeader title="Team directory">
         Who works here and how to reach them. Adding, editing and deactivating people
         happens under Users, which is the admin&apos;s screen — this one only reads.
       </PageHeader>

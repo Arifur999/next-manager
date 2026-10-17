@@ -8,7 +8,7 @@ import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
-  title: "Business Information",
+  title: "Business information",
 };
 
 const BusinessInformationPage = async () => {
@@ -17,7 +17,7 @@ const BusinessInformationPage = async () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Business Information">
+      <PageHeader title="Business information">
         Who the agency is on paper, and what it is on {site.name}.
       </PageHeader>
 

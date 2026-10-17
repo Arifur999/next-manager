@@ -6,7 +6,7 @@ import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
-  title: "Leave Settings",
+  title: "Leave settings",
 };
 
 const LeaveSettingsPage = async () => {
@@ -15,7 +15,7 @@ const LeaveSettingsPage = async () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Leave Settings">
+      <PageHeader title="Leave settings">
         The kinds of leave your agency gives, and how many days each one is worth. Every
         agency starts with four; these are yours to rename, re-price or retire — nobody
         can ask to be away without a kind to ask against.

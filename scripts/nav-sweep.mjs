@@ -40,9 +40,10 @@ const sectionFor = (role) => {
   return src.slice(start, end);
 };
 
+// My profile and Change password live in the account menu, not the sidebar.
 const accountSection = (() => {
-  const start = src.indexOf("const ACCOUNT_SECTION");
-  const end = src.indexOf("\n};", start) + 3;
+  const start = src.indexOf("const ACCOUNT_LINKS");
+  const end = src.indexOf("\n];", start) + 3;
   return src.slice(start, end);
 })();
 

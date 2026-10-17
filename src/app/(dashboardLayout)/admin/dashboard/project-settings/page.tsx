@@ -6,7 +6,7 @@ import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
-  title: "Project Settings",
+  title: "Project settings",
 };
 
 const ProjectSettingsPage = async () => {
@@ -15,7 +15,7 @@ const ProjectSettingsPage = async () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Project Settings">
+      <PageHeader title="Project settings">
         The states a project moves through. Adding &quot;Review&quot; or
         &quot;Archived&quot; here puts them on the projects list straight away.
       </PageHeader>

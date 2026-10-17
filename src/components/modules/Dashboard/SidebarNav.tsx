@@ -1,121 +1,97 @@
 "use client";
 
-import { getIcon } from "@/lib/iconMapper";
-import { getNavSections } from "@/lib/navItem";
-import { cn } from "@/lib/utils";
 import type { UserRole } from "@/lib/authUtils";
-import { useQuery } from "@tanstack/react-query";
+import { NAV_ICONS } from "@/lib/iconMapper";
+import { describeBadge, getNavSections, type NavItem } from "@/lib/navItem";
+import { activeNavHref } from "@/lib/navMatch";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import { usersListQuery } from "@/queries/people.queries";
+import { usePathname } from "next/navigation";
+import { useNavBadges, type NavBadgeCounts } from "./useNavBadges";
 
-/**
- * Which entry is the one you are on.
- *
- * Two things make this harder than comparing strings.
- *
- * Several entries point at the same page with a different filter — All
- * Clients, Active, Inactive, Archived are one board and four links — so an
- * entry WITH a query matches only when every parameter in it does, and an
- * entry WITHOUT one is the unfiltered view and does not match while a
- * sibling's filter is set.
- *
- * And one entry's path can be a prefix of another's: /reports is the Business
- * report, /reports/clients is a different page. Matching by prefix alone
- * lights both. So every candidate is collected and the LONGEST matching path
- * wins — which still keeps All Clients lit on a client's detail page, because
- * nothing deeper is in the sidebar to beat it.
- */
-const matches = (href: string, pathname: string, params: URLSearchParams) => {
-  const [path, queryString] = href.split("?");
+const ROW = "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors";
 
-  if (path === "/") return pathname === "/";
-  if (!pathname.startsWith(path)) return false;
+const CountPill = ({ count }: { count: number }) => (
+  <span
+    aria-hidden="true"
+    className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-medium text-primary-foreground tabular-nums"
+  >
+    {count > 99 ? "99+" : count}
+  </span>
+);
 
-  if (!queryString) return params.size === 0;
-
-  const wanted = new URLSearchParams(queryString);
-  for (const [key, value] of wanted) {
-    if (params.get(key) !== value) return false;
-  }
-
-  return true;
+type EntryProps = {
+  item: NavItem;
+  isActive: boolean;
+  badges: NavBadgeCounts;
+  onNavigate?: () => void;
 };
 
-/** The href of the entry that wins, or null when none of them do. */
-const currentHref = (
-  hrefs: string[],
-  pathname: string,
-  params: URLSearchParams
-): string | null =>
-  hrefs
-    .filter((href) => matches(href, pathname, params))
-    .sort((a, b) => b.split("?")[0].length - a.split("?")[0].length)[0] ?? null;
+const NavEntry = ({ item, isActive, badges, onNavigate }: EntryProps) => {
+  const Icon = NAV_ICONS[item.icon];
+  const count = item.badge ? badges[item.badge] : 0;
+
+  return (
+    <li>
+      <Link
+        href={item.href}
+        onClick={onNavigate}
+        aria-current={isActive ? "page" : undefined}
+        className={cn(
+          ROW,
+          isActive
+            ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+            : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
+        )}
+      >
+        <Icon className="size-4 shrink-0" aria-hidden="true" />
+        {item.title}
+        {item.badge && count > 0 && (
+          <>
+            <CountPill count={count} />
+            <span className="sr-only">, {describeBadge(item.badge, count)}</span>
+          </>
+        )}
+      </Link>
+    </li>
+  );
+};
+
 // The nav list itself, shared by the desktop sidebar and the mobile sheet.
 // onNavigate lets the sheet close when a link is followed.
 const SidebarNav = ({ role, onNavigate }: { role: UserRole; onNavigate?: () => void }) => {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const badges = useNavBadges(role);
   const sections = getNavSections(role);
 
   // Decided once across every entry, not per entry: the winner depends on
   // what the others matched.
-  const active = currentHref(
-    sections.flatMap((section) => section.items.map((item) => item.href)),
+  const active = activeNavHref(
+    sections.flatMap((section) => section.items),
     pathname,
-    searchParams
   );
-
-  // Only admin can approve, so only admin is asked: somebody waiting to join
-  // cannot sign in to chase it. A minute is soon enough for somebody waiting on a human.
-  const { data: pendingData } = useQuery({
-    ...usersListQuery("status=pending"),
-    enabled: role === "admin",
-    staleTime: 60_000,
-  });
-
-  const pendingCount = pendingData?.data?.length ?? 0;
 
   return (
     <nav aria-label="Main" className="flex-1 space-y-6 overflow-y-auto p-4">
       {sections.map((section, index) => (
         <div key={section.title ?? `section-${index}`} className="space-y-1">
           {section.title && (
-            <p className="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <p className="px-3 pb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
               {section.title}
             </p>
           )}
 
-          {section.items.map((item) => {
-            const Icon = getIcon(item.icon);
-            const isActive = item.href === active;
-
-            return (
-              <Link
+          <ul className="space-y-0.5">
+            {section.items.map((item) => (
+              <NavEntry
                 key={item.href}
-                href={item.href}
-                onClick={onNavigate}
-                aria-current={isActive ? "page" : undefined}
-                className={cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                  isActive
-                    ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
-                )}
-              >
-                <Icon className="size-4 shrink-0" aria-hidden="true" />
-                {item.title}
-                {item.href === "/admin/dashboard/team-management" && pendingCount > 0 && (
-                  <span
-                    className="ml-auto flex size-5 items-center justify-center rounded-full bg-primary text-[11px] font-medium text-primary-foreground tabular-nums"
-                    aria-label={`${pendingCount} waiting to join`}
-                  >
-                    {pendingCount}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
+                item={item}
+                isActive={item.href === active}
+                badges={badges}
+                onNavigate={onNavigate}
+              />
+            ))}
+          </ul>
         </div>
       ))}
     </nav>

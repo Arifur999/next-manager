@@ -15,9 +15,11 @@ import {
 import MobileNav from "@/components/modules/Dashboard/MobileNav";
 import NotificationBell from "@/components/modules/Dashboard/NotificationBell";
 import type { UserRole } from "@/lib/authUtils";
+import { NAV_ICONS } from "@/lib/iconMapper";
+import { ACCOUNT_LINKS } from "@/lib/navItem";
 import { logout } from "@/services/logout"
 import { type IUser } from "@/types/user.types";
-import { LogOut, Monitor, Moon, Sun, User } from "lucide-react";
+import { LogOut, Monitor, Moon, Sun } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
 import Link from "next/link";
@@ -55,7 +57,7 @@ const DashboardNavbar = ({ user, role }: { user: IUser; role: UserRole }) => {
       <div className="flex items-center gap-2">
         {/* The platform operator has no company, so nothing is ever addressed
             to them here - they are the one sending. */}
-        {user.role !== "super_admin" && <NotificationBell />}
+        {role !== "super_admin" && <NotificationBell />}
 
         {/* Light, Dark or follow the system. A two-state toggle could not get
             back to System once someone had pressed it. */}
@@ -105,12 +107,18 @@ const DashboardNavbar = ({ user, role }: { user: IUser; role: UserRole }) => {
 
             <DropdownMenuSeparator />
 
-            <DropdownMenuItem asChild>
-              <Link href="/my-profile">
-                <User aria-hidden="true" className="size-4" />
-                My Profile
-              </Link>
-            </DropdownMenuItem>
+            {/* About you rather than the company, so here and not in the sidebar. */}
+            {ACCOUNT_LINKS.map((link) => {
+              const Icon = NAV_ICONS[link.icon];
+              return (
+                <DropdownMenuItem key={link.href} asChild>
+                  <Link href={link.href}>
+                    <Icon aria-hidden="true" className="size-4" />
+                    {link.title}
+                  </Link>
+                </DropdownMenuItem>
+              );
+            })}
 
             <DropdownMenuSeparator />
 

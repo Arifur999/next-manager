@@ -1,443 +1,284 @@
 import type { UserRole } from "./authUtils";
+import type { NavIcon } from "./iconMapper";
+import type { NavTarget } from "./navMatch";
+import { plural } from "./text";
 
-export type NavItem = {
+/** A live count a nav entry can carry; useNavBadges decides where each comes from. */
+export type NavBadge = "pendingMembers" | "chatUnread";
+
+/** What a screen reader hears after the entry's name, since the badge shows only a number. */
+export const describeBadge = (badge: NavBadge, count: number): string => {
+    if (badge === "pendingMembers") return `${plural(count, "person", "people")} waiting to join`;
+    return plural(count, "unread message");
+};
+
+export type NavItem = NavTarget & {
+    /** One noun, the same words as the heading of the page it opens. */
     title: string;
-    href: string;
-    // A string, not a component, so nav config stays serializable and can cross
-    // the server/client boundary. iconMapper turns it into a lucide icon.
-    icon: string;
+    // A name, not a component, so nav config stays serializable. iconMapper
+    // turns it into a lucide icon.
+    icon: NavIcon;
+    badge?: NavBadge;
 };
 
 export type NavSection = {
+    /** Untitled sections are always open; titled ones collapse. */
     title?: string;
     items: NavItem[];
 };
 
 /**
- * The sidebar, as data — one list per role.
+ * The sidebar, as data: one list per role, one entry per destination.
  *
- * Adding a page means adding an entry here, never editing the sidebar
- * component. What each role sees mirrors what `AREAS` in authUtils.ts actually
- * lets them open, so the nav never offers a link that bounces.
+ * The views of a page (Active clients, Overdue tasks, Unread chats) are tabs
+ * on that page (lib/pageViews.ts), not entries here, so the sidebar names
+ * places and each place lights exactly one entry.
  *
- * Hiding a link is a courtesy, not a security boundary: proxy.ts and the API's
- * own role checks are what actually gate a route.
+ * What each role sees mirrors what `AREAS` in authUtils.ts lets them open
+ * (navItem.test.ts checks it), so the nav never offers a link that bounces.
+ * Hiding a link is a courtesy, not a security boundary: proxy.ts and the
+ * API's own role checks are what gate a route.
  */
 
-const ACCOUNT_SECTION: NavSection = {
-    title: "Account",
-    items: [
-        { title: "My Profile", href: "/my-profile", icon: "User" },
-        { title: "Change Password", href: "/change-password", icon: "Lock" },
-    ],
-};
+/** In the account menu, not the sidebar: they are about you, not the company. */
+export const ACCOUNT_LINKS: NavItem[] = [
+    { title: "My profile", href: "/my-profile", icon: "Profile" },
+    { title: "Change password", href: "/change-password", icon: "Password" },
+];
 
 const ADMIN_SECTIONS: NavSection[] = [
     {
         items: [
-            { title: "Dashboard", href: "/admin/dashboard", icon: "LayoutDashboard" },
-            { title: "Sales", href: "/admin/dashboard/sales", icon: "Target" },
-            { title: "Delivery", href: "/admin/dashboard/delivery", icon: "FolderKanban" },
+            { title: "Dashboard", href: "/admin/dashboard", icon: "Dashboard", exact: true },
+            { title: "Sales", href: "/admin/dashboard/sales", icon: "Sales" },
+            { title: "Delivery", href: "/admin/dashboard/delivery", icon: "Delivery" },
+            { title: "Reports", href: "/admin/dashboard/reports", icon: "Reports" },
         ],
     },
     {
-        // Sub-entries are filters on one board, not separate pages. Four client
-        // pages would be four places to fix the same bug; the sidebar gets the
-        // four entries either way, and the board stays one file.
-        title: "Operations",
+        title: "Work",
         items: [
-            { title: "All Clients", href: "/admin/dashboard/clients", icon: "Users" },
-            { title: "Active", href: "/admin/dashboard/clients?status=active", icon: "UserCheck" },
-            { title: "Inactive", href: "/admin/dashboard/clients?status=inactive", icon: "Users" },
-            { title: "Archived", href: "/admin/dashboard/clients?status=archived", icon: "Archive" },
-            { title: "Leads", href: "/admin/dashboard/leads", icon: "Target" },
-            { title: "All Services", href: "/admin/dashboard/services", icon: "Package" },
-            { title: "Service Categories", href: "/admin/dashboard/services/categories", icon: "FolderTree" },
-            { title: "Service Packages", href: "/admin/dashboard/services/templates", icon: "Boxes" },
-            { title: "Projects", href: "/admin/dashboard/projects", icon: "FolderKanban" },
-            { title: "Tasks", href: "/admin/dashboard/tasks", icon: "ListChecks" },
+            { title: "Clients", href: "/admin/dashboard/clients", icon: "Clients" },
+            { title: "Leads", href: "/admin/dashboard/leads", icon: "Leads" },
+            { title: "Services", href: "/admin/dashboard/services", icon: "Services" },
+            { title: "Projects", href: "/admin/dashboard/projects", icon: "Projects" },
+            { title: "Tasks", href: "/admin/dashboard/tasks", icon: "Tasks" },
+            { title: "Chat", href: "/dashboard/chat", icon: "Chat", badge: "chatUnread" },
         ],
     },
     {
-        // The task views, kept as their own section under Operations rather
-        // than folded into the list above: nine entries in one group is a wall,
-        // and these six are readings of one board while those nine are
-        // different things.
-        title: "Task views",
+        title: "People",
         items: [
-            { title: "Board", href: "/admin/dashboard/tasks", icon: "ListChecks" },
-            { title: "List", href: "/admin/dashboard/tasks?view=list", icon: "FileText" },
-            { title: "Calendar", href: "/admin/dashboard/tasks?view=calendar", icon: "CalendarDays" },
-            // By status NAME, for the same reason the project views are: a
-            // sidebar href cannot carry an id that differs per agency.
-            { title: "Review", href: "/admin/dashboard/tasks?status=In review", icon: "UserCheck" },
-            { title: "Overdue", href: "/admin/dashboard/tasks?overdue=true", icon: "Clock" },
-            { title: "My Tasks", href: "/admin/dashboard/tasks?mine=true", icon: "User" },
+            { title: "Team", href: "/admin/dashboard/team-management", icon: "Team", badge: "pendingMembers" },
+            { title: "Team directory", href: "/admin/dashboard/team-directory", icon: "Directory" },
+            { title: "Departments", href: "/admin/dashboard/departments", icon: "Departments" },
+            { title: "Workload", href: "/admin/dashboard/workload", icon: "Workload" },
+            { title: "Availability", href: "/admin/dashboard/availability", icon: "Availability" },
+            { title: "Leave calendar", href: "/admin/dashboard/leave-calendar", icon: "LeaveCalendar" },
         ],
     },
     {
-        title: "Team",
+        // Attendance, Leave and Timesheet live under /dashboard because
+        // everybody has them; the admin uses the same pages to see everyone.
+        title: "Time",
         items: [
-            { title: "Users", href: "/admin/dashboard/team-management", icon: "UsersRound" },
-            { title: "Departments", href: "/admin/dashboard/departments", icon: "Network" },
-            { title: "Roles & Permissions", href: "/admin/dashboard/permissions", icon: "Lock" },
-            { title: "Timesheet", href: "/dashboard/timesheet", icon: "Clock" },
-            { title: "Time Approvals", href: "/admin/dashboard/time-approvals", icon: "UserCheck" },
-            // Attendance and Leave live under /dashboard because everybody
-            // has them — the same route the whole company uses, linked from
-            // here the way Timesheet already is.
-            //
-            // Payroll is NOT here. It was, and it should not have been: every
-            // colleague's salary on one screen is the most sensitive list in
-            // the product, and it sat beside the directory. It is under Admin
-            // now, with the other things only an admin has. The route rule has
-            // always been admin-only — this is the sidebar catching up with it.
-            { title: "Attendance", href: "/dashboard/attendance", icon: "CalendarCheck" },
-            { title: "Leave", href: "/dashboard/leave", icon: "CalendarOff" },
+            { title: "Timesheet", href: "/dashboard/timesheet", icon: "Timesheet" },
+            { title: "Time approvals", href: "/admin/dashboard/time-approvals", icon: "TimeApprovals" },
+            { title: "Attendance", href: "/dashboard/attendance", icon: "Attendance" },
+            { title: "Leave", href: "/dashboard/leave", icon: "Leave" },
         ],
     },
     {
-        // Five entries, one board. Built as separate pages this would be five
-        // copies of the same two queries and five places to fix one bug.
-        title: "Chat",
+        // Payroll sits with the money, never beside the team directory: every
+        // colleague's salary on one screen is the most sensitive list here.
+        title: "Money",
         items: [
-            { title: "All", href: "/dashboard/chat", icon: "MessagesSquare" },
-            { title: "Unread", href: "/dashboard/chat?unread=true", icon: "BellRing" },
-            { title: "Direct", href: "/dashboard/chat?type=direct", icon: "User" },
-            { title: "Groups", href: "/dashboard/chat?type=group", icon: "UsersRound" },
-            { title: "Archived", href: "/dashboard/chat?archived=true", icon: "Archive" },
+            { title: "Accounts", href: "/admin/dashboard/accounts", icon: "Accounts" },
+            { title: "Transactions", href: "/admin/dashboard/transactions", icon: "Transactions" },
+            { title: "Invoices", href: "/admin/dashboard/invoices", icon: "Invoices" },
+            { title: "Payments", href: "/admin/dashboard/payments", icon: "Payments" },
+            { title: "Expenses", href: "/admin/dashboard/expenses", icon: "Expenses" },
+            { title: "Currency exchange", href: "/admin/dashboard/exchange", icon: "Exchange" },
+            { title: "Team payouts", href: "/admin/dashboard/payouts", icon: "Payouts" },
+            { title: "Payroll", href: "/admin/dashboard/payroll", icon: "Payroll" },
+            { title: "Owner withdrawals", href: "/admin/dashboard/withdrawals", icon: "Withdrawals" },
+            // Informal lending between people; a bank loan with a schedule is Loans.
+            { title: "Due payments", href: "/admin/dashboard/due-payments", icon: "DuePayments" },
+            { title: "Loans", href: "/admin/dashboard/loans", icon: "Loans" },
+            { title: "Shareholders", href: "/admin/dashboard/shareholders", icon: "Shareholders" },
         ],
     },
     {
-        title: "Accounts",
+        // Everything an admin configures about their own agency.
+        title: "Company",
         items: [
-            { title: "Overview", href: "/admin/dashboard/accounts", icon: "Wallet" },
-            { title: "Transactions", href: "/admin/dashboard/transactions", icon: "Scale" },
-            { title: "Income", href: "/admin/dashboard/transactions?kind=income", icon: "ArrowDownLeft" },
-            { title: "Expenses", href: "/admin/dashboard/transactions?kind=expense", icon: "Receipt" },
-            { title: "Transfers", href: "/admin/dashboard/transactions?kind=transfer", icon: "ArrowLeftRight" },
-            { title: "Invoices", href: "/admin/dashboard/invoices", icon: "FileText" },
-            { title: "Record a payment", href: "/admin/dashboard/payments", icon: "ArrowDownLeft" },
-            { title: "Record an expense", href: "/admin/dashboard/expenses", icon: "Receipt" },
-            { title: "Record an exchange", href: "/admin/dashboard/exchange", icon: "ArrowLeftRight" },
-            { title: "Team Payouts", href: "/admin/dashboard/payouts", icon: "HandCoins" },
-            { title: "Withdrawals", href: "/admin/dashboard/withdrawals", icon: "PiggyBank" },
-            { title: "Due Payments", href: "/admin/dashboard/due-payments", icon: "Scale" },
-            // A bank loan is not Due Payments: that is informal lending between
-            // people, with no schedule, no interest and no term.
-            { title: "Loans", href: "/admin/dashboard/loans", icon: "Landmark" },
-            { title: "Shareholders", href: "/admin/dashboard/shareholders", icon: "PieChart" },
-        ],
-    },
-    {
-        // Five questions, five pages. One screen carrying all five answers is
-        // one nobody reads to the bottom of.
-        title: "Reports",
-        items: [
-            { title: "Business", href: "/admin/dashboard/reports", icon: "ChartLine" },
-            { title: "Clients", href: "/admin/dashboard/reports/clients", icon: "Users" },
-            { title: "Projects", href: "/admin/dashboard/reports/projects", icon: "FolderKanban" },
-            { title: "Tasks", href: "/admin/dashboard/reports/tasks", icon: "ListChecks" },
-            { title: "Team", href: "/admin/dashboard/reports/team", icon: "UsersRound" },
-            { title: "Finance", href: "/admin/dashboard/reports/finance", icon: "Scale" },
-        ],
-    },
-    {
-        // Everything an admin configures about their own agency, in the words
-        // an admin uses for them.
-        // Users and Departments live under Team, where the work with people
-        // happens. Listing them twice would light two entries at once and give
-        // the reader two doors to one room.
-        title: "Admin",
-        items: [
-            { title: "Payroll", href: "/admin/dashboard/payroll", icon: "HandCoins" },
-            { title: "Business Information", href: "/admin/dashboard/business", icon: "Building2" },
-            { title: "Notifications", href: "/admin/dashboard/notifications", icon: "BellRing" },
-            { title: "Security", href: "/admin/dashboard/security", icon: "ShieldCheck" },
-            { title: "Project Settings", href: "/admin/dashboard/project-settings", icon: "FolderKanban" },
-            { title: "Task Settings", href: "/admin/dashboard/workflow", icon: "ListChecks" },
-            // Not optional furniture: nobody can ask to be away without a kind
-            // to ask against, so this is the screen that keeps leave usable.
-            { title: "Leave Settings", href: "/admin/dashboard/leave-settings", icon: "CalendarOff" },
-            { title: "Finance Settings", href: "/admin/dashboard/finance-config", icon: "Settings" },
-            { title: "Targets", href: "/admin/dashboard/targets", icon: "Target" },
-            { title: "Vault", href: "/admin/dashboard/vault", icon: "KeyRound" },
-            { title: "Audit Log", href: "/admin/dashboard/activity", icon: "History" },
+            { title: "Business information", href: "/admin/dashboard/business", icon: "Business" },
+            { title: "Permissions", href: "/admin/dashboard/permissions", icon: "Permissions" },
+            { title: "Notifications", href: "/admin/dashboard/notifications", icon: "Notifications" },
+            { title: "Security", href: "/admin/dashboard/security", icon: "Security" },
+            { title: "Project settings", href: "/admin/dashboard/project-settings", icon: "ProjectSettings" },
+            { title: "Task settings", href: "/admin/dashboard/workflow", icon: "TaskSettings" },
+            // Nobody can ask to be away without a leave kind to ask against.
+            { title: "Leave settings", href: "/admin/dashboard/leave-settings", icon: "LeaveSettings" },
+            { title: "Finance configuration", href: "/admin/dashboard/finance-config", icon: "FinanceConfiguration" },
+            { title: "Targets", href: "/admin/dashboard/targets", icon: "Targets" },
+            { title: "Vault", href: "/admin/dashboard/vault", icon: "Vault" },
+            { title: "Activity", href: "/admin/dashboard/activity", icon: "Activity" },
         ],
     },
 ];
 
 const SALES_SECTIONS: NavSection[] = [
-    { items: [{ title: "Dashboard", href: "/admin/dashboard/sales", icon: "LayoutDashboard" }] },
     {
-        // The job, in the order it happens: a lead becomes a client, a client
-        // gets billed. The three client views are one board reading ?status=,
-        // which the ClientStatus enum already has exactly.
-        title: "Clients",
         items: [
-            { title: "Leads", href: "/admin/dashboard/leads", icon: "Target" },
-            { title: "All Clients", href: "/admin/dashboard/clients", icon: "Users" },
-            { title: "Active Clients", href: "/admin/dashboard/clients?status=active", icon: "UserCheck" },
-            { title: "Inactive Clients", href: "/admin/dashboard/clients?status=inactive", icon: "Users" },
-            { title: "Invoices", href: "/admin/dashboard/invoices", icon: "FileText" },
+            { title: "Dashboard", href: "/admin/dashboard/sales", icon: "Dashboard" },
+            // Lands on the first report they may open and stays lit on the other.
+            {
+                title: "Reports",
+                href: "/admin/dashboard/reports/clients",
+                activePath: "/admin/dashboard/reports",
+                icon: "Reports",
+            },
         ],
     },
     {
-        // Sales shapes the catalogue too - they are the ones who know what is
-        // being sold and for how much. A service's own page is reached by
-        // clicking its name, not by a sidebar entry with no id to point at.
-        title: "Services",
+        // The job in the order it happens: a lead becomes a client, a client
+        // gets billed. Projects and Tasks are read-only for sales at the API.
+        title: "Work",
         items: [
-            { title: "All Services", href: "/admin/dashboard/services", icon: "Package" },
-            { title: "Categories", href: "/admin/dashboard/services/categories", icon: "FolderTree" },
-            { title: "Packages", href: "/admin/dashboard/services/templates", icon: "Boxes" },
-        ],
-    },
-    {
-        // Watching, not running. Sales opens a project their client is behind
-        // and sees where it has got to; every write behind these is refused by
-        // the API, so they are read-only where it cannot be worked around.
-        title: "Delivery",
-        items: [
-            { title: "Projects", href: "/admin/dashboard/projects", icon: "FolderKanban" },
-            { title: "My Tasks", href: "/admin/dashboard/tasks?mine=true", icon: "User" },
-            // Not "tasks assigned to me" but "work inside what I brought in" -
-            // a different question, and the one a salesperson actually has.
-            { title: "Sales Tasks", href: "/admin/dashboard/tasks?client_owner=me", icon: "ListChecks" },
-        ],
-    },
-    {
-        title: "Chat",
-        items: [
-            { title: "All", href: "/dashboard/chat", icon: "MessagesSquare" },
-            { title: "Direct Messages", href: "/dashboard/chat?type=direct", icon: "User" },
-            { title: "Groups", href: "/dashboard/chat?type=group", icon: "UsersRound" },
-            { title: "Project Conversations", href: "/dashboard/chat?type=project", icon: "FolderKanban" },
-        ],
-    },
-    {
-        // Both scoped to the clients this person brought in - the server forces
-        // it rather than reading it from the query.
-        title: "Reports",
-        items: [
-            { title: "Client Reports", href: "/admin/dashboard/reports/clients", icon: "Users" },
-            { title: "Sales Reports", href: "/admin/dashboard/reports/sales", icon: "ChartLine" },
+            { title: "Leads", href: "/admin/dashboard/leads", icon: "Leads" },
+            { title: "Clients", href: "/admin/dashboard/clients", icon: "Clients" },
+            { title: "Invoices", href: "/admin/dashboard/invoices", icon: "Invoices" },
+            { title: "Services", href: "/admin/dashboard/services", icon: "Services" },
+            { title: "Projects", href: "/admin/dashboard/projects", icon: "Projects" },
+            // Work inside the clients they brought in: the task question a seller has.
+            { title: "Tasks", href: "/admin/dashboard/tasks?client_owner=me", icon: "Tasks" },
+            { title: "Chat", href: "/dashboard/chat", icon: "Chat", badge: "chatUnread" },
         ],
     },
     {
         title: "Workspace",
         items: [
-            { title: "Team", href: "/admin/dashboard/team-directory", icon: "UsersRound" },
-            { title: "Attendance", href: "/dashboard/attendance", icon: "CalendarCheck" },
-            { title: "Leave", href: "/dashboard/leave", icon: "CalendarOff" },
-            { title: "Vault", href: "/admin/dashboard/vault", icon: "KeyRound" },
+            { title: "Team directory", href: "/admin/dashboard/team-directory", icon: "Directory" },
+            { title: "Attendance", href: "/dashboard/attendance", icon: "Attendance" },
+            { title: "Leave", href: "/dashboard/leave", icon: "Leave" },
+            { title: "Vault", href: "/admin/dashboard/vault", icon: "Vault" },
         ],
     },
 ];
 
 const PROJECT_MANAGER_SECTIONS: NavSection[] = [
-    { items: [{ title: "Dashboard", href: "/admin/dashboard/delivery", icon: "LayoutDashboard" }] },
     {
-        title: "Clients",
         items: [
-            { title: "All Clients", href: "/admin/dashboard/clients", icon: "Users" },
-            { title: "Active Clients", href: "/admin/dashboard/clients?status=active", icon: "UserCheck" },
+            { title: "Dashboard", href: "/admin/dashboard/delivery", icon: "Dashboard" },
+            {
+                title: "Reports",
+                href: "/admin/dashboard/reports/projects",
+                activePath: "/admin/dashboard/reports",
+                icon: "Reports",
+            },
         ],
     },
     {
-        // Read, not shaped. A project manager picks what a project delivers;
-        // the seller decides what is on offer, and the API refuses them every
-        // write behind these pages - so the board hides the form rather than
-        // offering one that fails.
-        title: "Services",
+        // Services are read, not shaped: the seller decides what is on offer.
+        title: "Work",
         items: [
-            { title: "All Services", href: "/admin/dashboard/services", icon: "Package" },
-            { title: "Service Templates", href: "/admin/dashboard/services/templates", icon: "Boxes" },
+            { title: "Clients", href: "/admin/dashboard/clients", icon: "Clients" },
+            { title: "Services", href: "/admin/dashboard/services", icon: "Services" },
+            { title: "Projects", href: "/admin/dashboard/projects", icon: "Projects" },
+            { title: "Tasks", href: "/admin/dashboard/tasks", icon: "Tasks" },
+            { title: "Chat", href: "/dashboard/chat", icon: "Chat", badge: "chatUnread" },
         ],
     },
     {
-        // Six views, one board reading ?status= and ?mine= off the URL. By
-        // status NAME, because a sidebar href is a static string: an id differs
-        // per agency, and category cannot tell Active from Review - both are
-        // `active`.
-        title: "Projects",
+        title: "People",
         items: [
-            { title: "All Projects", href: "/admin/dashboard/projects", icon: "FolderKanban" },
-            { title: "My Projects", href: "/admin/dashboard/projects?mine=true", icon: "User" },
-            { title: "Planning", href: "/admin/dashboard/projects?status=Planning", icon: "Clock" },
-            { title: "Active", href: "/admin/dashboard/projects?status=Active", icon: "ChartLine" },
-            { title: "Review", href: "/admin/dashboard/projects?status=Review", icon: "UserCheck" },
-            { title: "On Hold", href: "/admin/dashboard/projects?status=On hold", icon: "Archive" },
-            { title: "Completed", href: "/admin/dashboard/projects?status=Completed", icon: "CheckCircle2" },
+            { title: "Team directory", href: "/admin/dashboard/team-directory", icon: "Directory" },
+            { title: "Workload", href: "/admin/dashboard/workload", icon: "Workload" },
+            // Workload read from the other end: one subtraction, one query.
+            { title: "Availability", href: "/admin/dashboard/availability", icon: "Availability" },
+            { title: "Leave calendar", href: "/admin/dashboard/leave-calendar", icon: "LeaveCalendar" },
         ],
     },
     {
-        title: "Tasks",
+        // A project manager approves hours and decides leave.
+        title: "Time",
         items: [
-            { title: "All Tasks", href: "/admin/dashboard/tasks", icon: "ListChecks" },
-            { title: "My Tasks", href: "/admin/dashboard/tasks?mine=true", icon: "User" },
-            { title: "List", href: "/admin/dashboard/tasks?view=list", icon: "FileText" },
-            { title: "Calendar", href: "/admin/dashboard/tasks?view=calendar", icon: "CalendarDays" },
-            { title: "Review", href: "/admin/dashboard/tasks?status=In review", icon: "UserCheck" },
-            { title: "Overdue", href: "/admin/dashboard/tasks?overdue=true", icon: "Clock" },
+            { title: "Timesheet", href: "/dashboard/timesheet", icon: "Timesheet" },
+            { title: "Time approvals", href: "/admin/dashboard/time-approvals", icon: "TimeApprovals" },
+            { title: "Attendance", href: "/dashboard/attendance", icon: "Attendance" },
+            { title: "Leave", href: "/dashboard/leave", icon: "Leave" },
         ],
     },
     {
-        title: "Team",
-        items: [
-            { title: "Team Members", href: "/admin/dashboard/team-directory", icon: "UsersRound" },
-            { title: "Workload", href: "/admin/dashboard/workload", icon: "ChartLine" },
-            // The same figures as Workload read from the other end. One
-            // subtraction shown twice, from one query, so they cannot disagree.
-            { title: "Availability", href: "/admin/dashboard/availability", icon: "UserCheck" },
-            { title: "Leave Calendar", href: "/admin/dashboard/leave-calendar", icon: "CalendarOff" },
-            // Not in the sidebar you drew, but existing working duties: a PM
-            // approves hours and decides leave, and dropping them because a
-            // sketch omitted them would take away something nobody asked to
-            // lose. They belong here, with the rest of the people work.
-            { title: "Timesheet", href: "/dashboard/timesheet", icon: "Clock" },
-            { title: "Time Approvals", href: "/admin/dashboard/time-approvals", icon: "UserCheck" },
-            { title: "Leave", href: "/dashboard/leave", icon: "CalendarOff" },
-            { title: "Attendance", href: "/dashboard/attendance", icon: "CalendarCheck" },
-        ],
-    },
-    {
-        title: "Chat",
-        items: [
-            { title: "All", href: "/dashboard/chat", icon: "MessagesSquare" },
-            { title: "Direct Messages", href: "/dashboard/chat?type=direct", icon: "User" },
-            { title: "Groups", href: "/dashboard/chat?type=group", icon: "UsersRound" },
-            { title: "Project Chats", href: "/dashboard/chat?type=project", icon: "FolderKanban" },
-            { title: "Archived", href: "/dashboard/chat?archived=true", icon: "Archive" },
-        ],
-    },
-    {
-        title: "Reports",
-        items: [
-            { title: "Project Reports", href: "/admin/dashboard/reports/projects", icon: "FolderKanban" },
-            { title: "Task Reports", href: "/admin/dashboard/reports/tasks", icon: "ListChecks" },
-            { title: "Team Workload", href: "/admin/dashboard/reports/team", icon: "UsersRound" },
-        ],
-    },
-    {
+        // Shaping the board is theirs; leave policy stays with the admin.
         title: "Workspace",
         items: [
-            // Shaping the board is theirs to control, so the settings that do it
-            // are too. Leave policy is not - that stays with the admin.
-            { title: "Task Settings", href: "/admin/dashboard/workflow", icon: "ListChecks" },
-            { title: "Project Settings", href: "/admin/dashboard/project-settings", icon: "FolderKanban" },
-            { title: "Vault", href: "/admin/dashboard/vault", icon: "KeyRound" },
+            { title: "Task settings", href: "/admin/dashboard/workflow", icon: "TaskSettings" },
+            { title: "Project settings", href: "/admin/dashboard/project-settings", icon: "ProjectSettings" },
+            { title: "Vault", href: "/admin/dashboard/vault", icon: "Vault" },
         ],
     },
 ];
 
 const OPERATIONS_SECTIONS: NavSection[] = [
-    { items: [{ title: "Dashboard", href: "/dashboard", icon: "LayoutDashboard" }] },
+    { items: [{ title: "Dashboard", href: "/dashboard", icon: "Dashboard", exact: true }] },
     {
-        // Five readings of one question: what do I need to do. All one board
-        // reading its filter off the URL - "upcoming" is a seven-day window,
-        // and "completed" is read by what a status MEANS, so renaming a column
-        // does not empty it.
-        title: "My Work",
+        // Their own tasks and the projects and clients they are on: the API
+        // narrows every one of these, ?mine=true only says so in the URL.
+        title: "Work",
         items: [
-            { title: "My Tasks", href: "/dashboard/tasks", icon: "ListChecks" },
-            { title: "Due Today", href: "/dashboard/tasks?due=today", icon: "CalendarCheck" },
-            { title: "Upcoming", href: "/dashboard/tasks?due=upcoming", icon: "CalendarDays" },
-            { title: "Overdue", href: "/dashboard/tasks?overdue=true", icon: "Clock" },
-            { title: "Completed", href: "/dashboard/tasks?completed=true", icon: "CheckCircle2" },
-            // Not in the sidebar you drew, but this role's existing duty and the
-            // thing every utilisation figure is built from. Dropping it because
-            // a sketch omitted it would take away something nobody asked to
-            // lose.
-            { title: "Timesheet", href: "/dashboard/timesheet", icon: "Clock" },
+            { title: "Tasks", href: "/dashboard/tasks", icon: "Tasks" },
+            { title: "Projects", href: "/admin/dashboard/projects?mine=true", icon: "Projects" },
+            { title: "Clients", href: "/admin/dashboard/clients", icon: "Clients" },
+            { title: "Team directory", href: "/admin/dashboard/team-directory", icon: "Directory" },
+            { title: "Chat", href: "/dashboard/chat", icon: "Chat", badge: "chatUnread" },
         ],
     },
     {
-        // The projects they are on, and nothing else - decided by the API,
-        // not by this entry. ?mine=true says so anyway: a page whose title
-        // reads "My" and whose query does not is how a scope quietly stops
-        // being one.
-        title: "Projects",
+        // The hours every utilisation figure is built from, and their own days.
+        title: "Time",
         items: [
-            { title: "My Projects", href: "/admin/dashboard/projects?mine=true", icon: "FolderKanban" },
-        ],
-    },
-    {
-        // Who they are working for. A list, not a doorway: the client page
-        // itself is somebody else's screen, so there is no row link.
-        title: "Clients",
-        items: [
-            { title: "Assigned Clients", href: "/admin/dashboard/clients", icon: "Users" },
-        ],
-    },
-    {
-        title: "Team",
-        items: [
-            { title: "Team Directory", href: "/admin/dashboard/team-directory", icon: "UsersRound" },
-        ],
-    },
-    {
-        title: "Chat",
-        items: [
-            { title: "All", href: "/dashboard/chat", icon: "MessagesSquare" },
-            { title: "Direct Messages", href: "/dashboard/chat?type=direct", icon: "User" },
-            { title: "Groups", href: "/dashboard/chat?type=group", icon: "UsersRound" },
-            { title: "Project Chats", href: "/dashboard/chat?type=project", icon: "FolderKanban" },
-        ],
-    },
-    {
-        title: "My Account",
-        items: [
-            { title: "Profile", href: "/my-profile", icon: "User" },
-            // The API narrows both of these to their own rows, so what an
-            // operations member opens here is their own day and nobody else's -
-            // the same page an admin uses to see everyone.
-            { title: "Attendance", href: "/dashboard/attendance", icon: "CalendarCheck" },
-            { title: "Leave", href: "/dashboard/leave", icon: "CalendarOff" },
+            { title: "Timesheet", href: "/dashboard/timesheet", icon: "Timesheet" },
+            { title: "Attendance", href: "/dashboard/attendance", icon: "Attendance" },
+            { title: "Leave", href: "/dashboard/leave", icon: "Leave" },
         ],
     },
 ];
 
-// The platform console is its own thing and shares nothing with a company.
-//
-// Every area is its own route rather than a tab, so this list can name them
-// and a link to one can be sent to a colleague.
+// The platform console shares nothing with a company. Every area is its own
+// route, so a link to one can be sent to a colleague.
 const SUPER_ADMIN_SECTIONS: NavSection[] = [
-    { items: [{ title: "Dashboard", href: "/platform", icon: "LayoutDashboard" }] },
+    { items: [{ title: "Overview", href: "/platform", icon: "Dashboard", exact: true }] },
     {
         title: "Customers",
         items: [
-            // First, because it is the console's actual job: bring agency
-            // owners on. Everything else here is about the ones already in.
-            { title: "Invite an agency", href: "/platform/invite-agency", icon: "MailPlus" },
-            { title: "All users", href: "/platform/customers", icon: "UsersRound" },
-            { title: "Active users", href: "/platform/active-users", icon: "UserCheck" },
-            { title: "Plans", href: "/platform/plans", icon: "Wallet" },
-            { title: "Campaigns", href: "/platform/campaigns", icon: "Megaphone" },
+            { title: "Companies", href: "/platform/customers", icon: "Business" },
+            { title: "Paying companies", href: "/platform/active-users", icon: "Subscriptions" },
+            { title: "Invite an agency", href: "/platform/invite-agency", icon: "Invite" },
         ],
     },
     {
-        title: "Money",
+        title: "Revenue",
         items: [
-            { title: "Financial report", href: "/platform/finance", icon: "ChartLine" },
+            { title: "Plans", href: "/platform/plans", icon: "Plans" },
+            { title: "Financial report", href: "/platform/finance", icon: "Reports" },
         ],
     },
     {
-        // "Your team", not "Team": everything under here is about the people
-        // who run AGENCIO with you, never about a customer's staff. The entry
-        // below used to read "Invite admin" and was reasonably taken to mean
-        // the admin of an agency - it hands out the run of the platform.
-        title: "Your team",
+        title: "Outreach",
+        items: [{ title: "Campaigns", href: "/platform/campaigns", icon: "Campaigns" }],
+    },
+    {
+        // The people who run the platform with you, never a customer's staff.
+        title: "Platform team",
         items: [
-            { title: "Invite operator", href: "/platform/invite-operator", icon: "User" },
-            { title: "Permissions", href: "/platform/permissions", icon: "KeyRound" },
-            { title: "Operator activity", href: "/platform/activity", icon: "History" },
+            { title: "Team and access", href: "/platform/permissions", icon: "Team" },
+            { title: "Invite an operator", href: "/platform/invite-operator", icon: "Invite" },
+            { title: "Activity log", href: "/platform/activity", icon: "Activity" },
         ],
     },
-    {
-        title: "Platform",
-        items: [{ title: "Settings", href: "/platform/settings", icon: "Settings" }],
-    },
+    { items: [{ title: "Settings", href: "/platform/settings", icon: "Settings" }] },
 ];
 
 const BY_ROLE: Record<UserRole, NavSection[]> = {
@@ -448,7 +289,4 @@ const BY_ROLE: Record<UserRole, NavSection[]> = {
     operations: OPERATIONS_SECTIONS,
 };
 
-export const getNavSections = (role: UserRole): NavSection[] => [
-    ...BY_ROLE[role],
-    ACCOUNT_SECTION,
-];
+export const getNavSections = (role: UserRole): NavSection[] => BY_ROLE[role];

@@ -6,7 +6,7 @@ import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
-  title: "Owner Withdrawals",
+  title: "Owner withdrawals",
 };
 
 const WithdrawalsPage = async () => {

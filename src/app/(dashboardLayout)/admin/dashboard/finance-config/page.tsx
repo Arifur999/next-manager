@@ -7,7 +7,7 @@ import { expenseCategoriesQuery } from "@/queries/spending.queries";
 import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
-  title: "Finance Configuration",
+  title: "Finance configuration",
 };
 
 const FinanceConfigurationPage = async () => {
@@ -19,7 +19,7 @@ const FinanceConfigurationPage = async () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Finance Configuration">
+      <PageHeader title="Finance configuration">
         How this agency counts money: what a dollar is worth in the reports, and what a
         cost gets counted as.
       </PageHeader>
