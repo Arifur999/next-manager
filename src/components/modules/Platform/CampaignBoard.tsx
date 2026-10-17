@@ -3,10 +3,10 @@
 import {
   createAnnouncementAction,
   deleteAnnouncementAction,
-  publishAnnouncementAction,
   updateAnnouncementAction,
 } from "@/app/(dashboardLayout)/platform/_campaignAction"
 import AnnouncementComposer from "@/components/modules/Platform/AnnouncementComposer"
+import PublishAnnouncementDialog from "@/components/modules/Platform/PublishAnnouncementDialog"
 import { AUDIENCE_LABEL } from "@/components/modules/Platform/announcementAudience"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { Badge } from "@/components/ui/badge"
@@ -19,7 +19,6 @@ import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { Eye, Mail, Send, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { announcementsQuery } from "@/queries/platform.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -78,25 +77,6 @@ const CampaignBoard = () => {
     refresh: false,
   })
 
-  const { run: publish, isPending: isPublishing } = useActionMutation({
-    action: publishAnnouncementAction,
-    // The server phrases its message against what actually happened to the
-    // email; a failed send gets the reason rather than a success tick.
-    successMessage: false,
-    invalidateKeys: [queryKeys.platformAnnouncements.all],
-    refresh: false,
-    onSuccess: (result) => {
-      if (!result.success) return
-
-      const email = result.data.email
-      if (email && email.delivered < email.attempted) {
-        toast.warning(result.message, { description: email.reason ?? undefined })
-      } else {
-        toast.success(result.message)
-      }
-    },
-  })
-
   const { run: removeAnnouncement, isPending: isRemoving } = useActionMutation({
     action: deleteAnnouncementAction,
     successMessage: "Removed — it leaves everyone's notifications too",
@@ -106,11 +86,6 @@ const CampaignBoard = () => {
 
   const handleSave = async () => {
     if (await saveDraft(draft)) reset()
-  }
-
-  // The dialog stays open until the send settles, so a refusal is read in place.
-  const handlePublish = async () => {
-    if (confirming && (await publish(confirming.id))) setConfirming(null)
   }
 
   const handleRemove = async () => {
@@ -254,24 +229,7 @@ const CampaignBoard = () => {
         </Card>
       </div>
 
-      <ConfirmDialog
-        open={Boolean(confirming)}
-        onOpenChange={(open) => {
-          if (!open) setConfirming(null)
-        }}
-        title={`Send this to ${AUDIENCE_LABEL[confirming?.audience ?? "all"].toLowerCase()}?`}
-        description={
-          <>
-            It appears in their notifications straight away
-            {confirming?.send_email ? ", and is emailed to each customer's admin" : ""}. This
-            cannot be undone, and the text can no longer be edited afterwards.
-          </>
-        }
-        confirmLabel="Publish"
-        pendingLabel="Publishing..."
-        isPending={isPublishing}
-        onConfirm={() => void handlePublish()}
-      />
+      <PublishAnnouncementDialog announcement={confirming} onClose={() => setConfirming(null)} />
 
       <ConfirmDialog
         open={Boolean(removing)}
