@@ -34,6 +34,7 @@ const PayoutsTable = () => {
         columns={payoutsColumns}
         tableId="payouts"
         exportFileName="payouts"
+        search={{ placeholder: "Search member, type or account..." }}
         {...toTableQueryProps(payoutsQuery)}
         emptyMessage="No payouts recorded yet."
         toolbarAction={<RecordPayoutModal />}

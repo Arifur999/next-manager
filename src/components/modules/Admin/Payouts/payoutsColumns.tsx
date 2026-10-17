@@ -13,8 +13,8 @@ export const payoutsColumns: ColumnDef<ITeamPayout>[] = [
   },
   {
     id: "member",
+    accessorFn: (payout) => payout.user?.full_name ?? "",
     header: "Member",
-    meta: { exportValue: (payout) => payout.user?.full_name },
     enableSorting: false,
     cell: ({ row }) => (
       <div className="min-w-0">
@@ -46,8 +46,8 @@ export const payoutsColumns: ColumnDef<ITeamPayout>[] = [
   },
   {
     id: "account",
+    accessorFn: (payout) => payout.account?.name ?? "",
     header: "Paid from",
-    meta: { exportValue: (payout) => payout.account?.name },
     enableSorting: false,
     cell: ({ row }) => (
       <span className="text-sm text-muted-foreground">{row.original.account?.name ?? "N/A"}</span>
