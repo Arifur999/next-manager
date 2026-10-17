@@ -70,13 +70,13 @@ const ChatBoard = ({ meId }: { meId: string | null }) => {
     }
   })
 
-  // Opening a conversation is reading it.
+  // Opening a conversation is reading it, and so is a new message arriving while it is open.
   useEffect(() => {
     if (!activeId) return
-    void markConversationReadAction(activeId).then(refreshLists)
-    // refreshLists is stable enough for this: it only closes over queryClient.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeId, messages.length])
+    void markConversationReadAction(activeId).then(() =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.conversations.all }),
+    )
+  }, [activeId, messages.length, queryClient])
 
   const { run: sendChatMessage, isPending: sending } = useActionMutation({
     action: (body: string) => sendMessageAction(activeId ?? "", { body }),
