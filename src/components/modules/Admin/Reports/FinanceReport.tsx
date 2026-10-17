@@ -32,13 +32,14 @@ const SOURCE_LABEL: Record<string, string> = {
   adjustment: "Adjustments",
 }
 
-const FinanceReport = () => {
-  const cashQuery = useQuery(cashFlowQuery())
+// `period` is the page's from/to; both cards cover the same days.
+const FinanceReport = ({ period }: { period: string }) => {
+  const cashQuery = useQuery(cashFlowQuery(period))
 
   // The category breakdown endpoint exists, but the expense list already
   // carries category on each row and this page loads it anyway — grouping here
   // saves a round-trip rather than duplicating a query.
-  const expensesQuery = useQuery(expensesListQuery())
+  const expensesQuery = useQuery(expensesListQuery(period))
 
   const cash = cashQuery.data?.data
   const expenses = expensesQuery.data?.data ?? []

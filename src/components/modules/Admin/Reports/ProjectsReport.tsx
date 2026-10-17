@@ -15,8 +15,9 @@ import { projectProfitabilityQuery } from "@/queries/insights.queries"
  * paid at the top.
  */
 
-const ProjectsReport = () => {
-  const profitabilityQuery = useQuery(projectProfitabilityQuery())
+// `period` is the page's from/to: money in and out on those days.
+const ProjectsReport = ({ period }: { period: string }) => {
+  const profitabilityQuery = useQuery(projectProfitabilityQuery(period))
 
   const projects = profitabilityQuery.data?.data ?? []
 

@@ -6,17 +6,21 @@ import { clientRevenueQuery } from "@/queries/insights.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import PageHeader from "@/components/shared/PageHeader";
 import ReportViewTabs from "@/components/modules/Admin/Reports/ReportViewTabs";
+import ReportPeriodPicker from "@/components/modules/Admin/Reports/ReportPeriodPicker";
+import { periodQueryString } from "@/lib/reportPeriod";
 
 export const metadata: Metadata = {
   title: "Clients · Reports",
 };
 
-const ClientsReportPage = async () => {
+const ClientsReportPage = async ({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) => {
+  // The same from/to the period picker writes, so the prefetch lands on the key the cards ask for.
+  const period = periodQueryString(await searchParams);
 
   const user = await getUserInfo();
 
   const prefetch = (queryClient: QueryClient) => Promise.all([
-    queryClient.prefetchQuery(clientRevenueQuery()),
+    queryClient.prefetchQuery(clientRevenueQuery(period)),
   ]);
 
   // Only the wording changes here. The narrowing is done by the server,
@@ -32,9 +36,10 @@ const ClientsReportPage = async () => {
           : "Who actually pays. Money received, not money invoiced — an unpaid invoice is a hope, and ranking clients by what they were billed would put your worst payer at the top."}
       </PageHeader>
       <ReportViewTabs />
+      <ReportPeriodPicker />
 
       <QueryPrefetch prefetch={prefetch}>
-        <ClientsReport />
+        <ClientsReport period={period} />
       </QueryPrefetch>
     </div>
   );

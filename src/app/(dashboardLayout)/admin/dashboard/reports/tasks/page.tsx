@@ -5,14 +5,18 @@ import { taskReportQuery } from "@/queries/work.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import PageHeader from "@/components/shared/PageHeader";
 import ReportViewTabs from "@/components/modules/Admin/Reports/ReportViewTabs";
+import ReportPeriodPicker from "@/components/modules/Admin/Reports/ReportPeriodPicker";
+import { periodQueryString } from "@/lib/reportPeriod";
 
 export const metadata: Metadata = {
   title: "Tasks · Reports",
 };
 
-const TasksReportPage = async () => {
+const TasksReportPage = async ({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) => {
+  // The same from/to the period picker writes, so the prefetch lands on the key the cards ask for.
+  const period = periodQueryString(await searchParams);
 
-  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(taskReportQuery());
+  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(taskReportQuery(period));
 
   return (
     <div className="space-y-6">
@@ -23,9 +27,10 @@ const TasksReportPage = async () => {
         count.
       </PageHeader>
       <ReportViewTabs />
+      <ReportPeriodPicker />
 
       <QueryPrefetch prefetch={prefetch}>
-        <TasksReport />
+        <TasksReport period={period} />
       </QueryPrefetch>
     </div>
   );

@@ -5,6 +5,7 @@ import ReportEmpty from "@/components/modules/Admin/Reports/ReportEmpty"
 import PanelState from "@/components/shared/state/PanelState"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt, formatUsd } from "@/lib/currency"
+import { plural } from "@/lib/text"
 import { useQuery } from "@tanstack/react-query"
 import { clientRevenueQuery } from "@/queries/insights.queries"
 
@@ -16,8 +17,9 @@ import { clientRevenueQuery } from "@/queries/insights.queries"
  * worst payer at the top of the list.
  */
 
-const ClientsReport = () => {
-  const revenueQuery = useQuery(clientRevenueQuery())
+// `period` is the page's from/to, so the ranking covers the days it names.
+const ClientsReport = ({ period }: { period: string }) => {
+  const revenueQuery = useQuery(clientRevenueQuery(period))
 
   const clients = revenueQuery.data?.data ?? []
   const top = clients[0]?.revenue_usd ?? 1
@@ -43,7 +45,7 @@ const ClientsReport = () => {
             <ShareRow
               key={row.client?.id ?? "unknown"}
               label={row.client?.name ?? "Unknown client"}
-              sub={`${row.payment_count} payment${row.payment_count === 1 ? "" : "s"} · ${formatBdt(row.revenue_bdt_reporting)} at recorded rates`}
+              sub={`${plural(row.payment_count, "payment")} · ${formatBdt(row.revenue_bdt_reporting)} at recorded rates`}
               value={formatUsd(row.revenue_usd)}
               share={(row.revenue_usd / top) * 100}
             />

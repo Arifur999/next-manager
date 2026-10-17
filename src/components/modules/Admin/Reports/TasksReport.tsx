@@ -22,8 +22,9 @@ import { taskReportQuery } from "@/queries/work.queries"
  * Unassigned work gets its own row rather than being dropped, because "nobody
  * is doing eleven of these" is the most useful line on the page.
  */
-const TasksReport = () => {
-  const reportQuery = useQuery(taskReportQuery())
+// `period` is the page's from/to: the tasks created on those days.
+const TasksReport = ({ period }: { period: string }) => {
+  const reportQuery = useQuery(taskReportQuery(period))
   const report = reportQuery.data?.data
 
   if (reportQuery.isError) {
