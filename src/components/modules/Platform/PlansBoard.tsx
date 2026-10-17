@@ -1,14 +1,19 @@
 "use client"
 
 import { createPlanAction, updatePlanAction } from "@/app/(dashboardLayout)/platform/_action"
+import AppField from "@/components/shared/form/AppField"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IPlan } from "@/types/platform.types"
-import type { IPlanLimitsFormValues } from "@/zod/platform.validation"
+import {
+  planFormZodSchema,
+  type IPlanFormValues,
+  type IPlanLimitsFormValues,
+} from "@/zod/platform.validation"
+import { useForm } from "@tanstack/react-form"
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { plansQuery } from "@/queries/platform.queries"
@@ -27,6 +32,8 @@ import { queryKeys } from "@/lib/queryKeys"
  */
 
 const limitLabel = (value: number | null) => (value === null ? "unlimited" : String(value))
+
+const newPlanDefaults: IPlanFormValues = { code: "", name: "", price_usd: "" }
 
 const PlanRow = ({ plan }: { plan: IPlan }) => {
   const [price, setPrice] = useState(String(plan.price_usd))
@@ -124,10 +131,6 @@ const PlanRow = ({ plan }: { plan: IPlan }) => {
 }
 
 const PlansBoard = () => {
-  const [code, setCode] = useState("")
-  const [name, setName] = useState("")
-  const [price, setPrice] = useState("")
-
   const { data, isLoading } = useQuery(plansQuery())
 
   const plans = data?.data ?? []
@@ -139,13 +142,12 @@ const PlansBoard = () => {
     refresh: false,
   })
 
-  const handleCreate = async () => {
-    if (await createPlan({ code, name, price_usd: price })) {
-      setCode("")
-      setName("")
-      setPrice("")
-    }
-  }
+  const form = useForm({
+    defaultValues: newPlanDefaults,
+    onSubmit: async ({ value, formApi }) => {
+      if (await createPlan(value)) formApi.reset()
+    },
+  })
 
   return (
     <div className="space-y-6">
@@ -160,53 +162,59 @@ const PlansBoard = () => {
 
         <form
           className="flex flex-wrap items-end gap-3 p-5"
+          noValidate
           onSubmit={(event) => {
             event.preventDefault()
-            if (!code.trim() || !name.trim()) return
-            void handleCreate()
+            event.stopPropagation()
+            void form.handleSubmit()
           }}
         >
-          <div className="space-y-1.5">
-            <Label htmlFor="plan-code">Code</Label>
-            <Input
-              id="plan-code"
-              value={code}
-              onChange={(event) => setCode(event.target.value)}
-              placeholder="agency_pro"
-              className="w-40 font-mono"
-              disabled={isPending}
-            />
-          </div>
+          <form.Field name="code" validators={{ onChange: planFormZodSchema.shape.code }}>
+            {(field) => (
+              <AppField
+                field={field}
+                label="Code"
+                placeholder="agency_pro"
+                className="w-40 font-mono"
+                disabled={isPending}
+              />
+            )}
+          </form.Field>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="plan-name">Name</Label>
-            <Input
-              id="plan-name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Agency Pro"
-              className="w-44"
-              disabled={isPending}
-            />
-          </div>
+          <form.Field name="name" validators={{ onChange: planFormZodSchema.shape.name }}>
+            {(field) => (
+              <AppField
+                field={field}
+                label="Name"
+                placeholder="Agency Pro"
+                className="w-44"
+                disabled={isPending}
+              />
+            )}
+          </form.Field>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="plan-price">$ / month</Label>
-            <Input
-              id="plan-price"
-              type="number"
-              step="any"
-              value={price}
-              onChange={(event) => setPrice(event.target.value)}
-              placeholder="0"
-              className="w-28 tabular-nums"
-              disabled={isPending}
-            />
-          </div>
+          <form.Field name="price_usd" validators={{ onChange: planFormZodSchema.shape.price_usd }}>
+            {(field) => (
+              <AppField
+                field={field}
+                label="$ / month"
+                type="number"
+                placeholder="0"
+                className="w-28 tabular-nums"
+                disabled={isPending}
+              />
+            )}
+          </form.Field>
 
-          <Button type="submit" disabled={isPending || !code.trim() || !name.trim()}>
-            Create plan
-          </Button>
+          <form.Subscribe
+            selector={(state) => state.values.code.trim() !== "" && state.values.name.trim() !== ""}
+          >
+            {(isFilledIn) => (
+              <Button type="submit" disabled={isPending || !isFilledIn}>
+                Create plan
+              </Button>
+            )}
+          </form.Subscribe>
         </form>
       </Card>
 
