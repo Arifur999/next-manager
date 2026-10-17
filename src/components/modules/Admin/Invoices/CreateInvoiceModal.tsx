@@ -19,13 +19,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatUsd } from "@/lib/currency"
+import { invoiceFormZodSchema, type IInvoiceFormValues } from "@/zod/billing.validation"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus, Trash2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
-import { z } from "zod"
 import { clientsListQuery } from "@/queries/crm.queries"
 import { projectsListQuery } from "@/queries/project.queries"
 import { queryKeys } from "@/lib/queryKeys"
@@ -39,30 +39,11 @@ import { queryKeys } from "@/lib/queryKeys"
  * send a wrong one straight into receivables.
  */
 
-const itemSchema = z.object({
-  description: z.string().min(1, "Describe the line"),
-  quantity: z.string().min(1, "Qty"),
-  unit_price: z.string().min(1, "Price"),
-})
-
-const invoiceFormSchema = z.object({
-  client_id: z.string().min(1, "Choose a client"),
-  project_id: z.string().optional(),
-  issue_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date"),
-  due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date"),
-  discount: z.string().optional(),
-  tax: z.string().optional(),
-  notes: z.string().optional(),
-  items: z.array(itemSchema).min(1, "Add at least one line"),
-})
-
-type InvoiceFormValues = z.infer<typeof invoiceFormSchema>
-
 const today = () => new Date().toISOString().slice(0, 10)
 const inDays = (days: number) =>
   new Date(Date.now() + days * 86400000).toISOString().slice(0, 10)
 
-const defaultValues: InvoiceFormValues = {
+const defaultValues: IInvoiceFormValues = {
   client_id: "",
   project_id: "",
   issue_date: today(),
@@ -85,7 +66,7 @@ const CreateInvoiceModal = () => {
   const projects = projectsData?.data ?? []
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: InvoiceFormValues) =>
+    mutationFn: (values: IInvoiceFormValues) =>
       createInvoiceAction({
         ...values,
         project_id: values.project_id || null,
@@ -165,7 +146,7 @@ const CreateInvoiceModal = () => {
             >
               <form.Field
                 name="client_id"
-                validators={{ onChange: invoiceFormSchema.shape.client_id }}
+                validators={{ onChange: invoiceFormZodSchema.shape.client_id }}
               >
                 {(field) => (
                   <EntitySelect

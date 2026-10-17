@@ -1,6 +1,27 @@
 import { z } from "zod"
 import { isoDate, optionalNonNegative, positiveAmount } from "./formFields"
 
+const invoiceItemFormZodSchema = z.object({
+    description: z.string().min(1, "Describe the line"),
+    quantity: z.string().min(1, "Qty"),
+    unit_price: z.string().min(1, "Price"),
+})
+
+// No total field: the server works it out from the lines, and its figure is
+// the one that lands in receivables.
+export const invoiceFormZodSchema = z.object({
+    client_id: z.string().min(1, "Choose a client"),
+    project_id: z.string().optional(),
+    issue_date: isoDate,
+    due_date: isoDate,
+    discount: z.string().optional(),
+    tax: z.string().optional(),
+    notes: z.string().optional(),
+    items: z.array(invoiceItemFormZodSchema).min(1, "Add at least one line"),
+})
+
+export type IInvoiceFormValues = z.infer<typeof invoiceFormZodSchema>
+
 export const paymentFormZodSchema = z.object({
     client_id: z.string().min(1, "Choose a client"),
     project_id: z.string().optional(),
