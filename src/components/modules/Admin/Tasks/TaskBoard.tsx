@@ -34,7 +34,12 @@ const emptyMessageFor = ({ mine, overdue, clientOwner, due, completed }: TaskFil
 }
 
 /**
- * The task board.
+ * The task board, and every other view of tasks over the same query.
+ *
+ * Board, List, Overdue and My Tasks are sidebar entries pointing at this one
+ * component with a different URL: four pages would be four places to fix the
+ * same bug. Overdue is filtered on the SERVER, not here: filtering whatever
+ * page arrived would hide late work rather than find it.
  *
  * `canManage` decides whether this is a board somebody works from or one they
  * only read. Sales gets the second: they open it to see where a client they

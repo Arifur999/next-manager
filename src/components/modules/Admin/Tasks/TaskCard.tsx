@@ -105,15 +105,4 @@ const TaskCard = ({ task, statuses }: { task: ITask; statuses: IWorkflowStatus[]
   )
 }
 
-/**
- * Tasks, in four views over one query.
- *
- * Board, List, Overdue and My Tasks are sidebar entries pointing at this same
- * component with a different URL. Four pages would be four places to fix the
- * same bug, and the sidebar looks identical either way.
- *
- * Overdue is filtered on the SERVER, not here: the list is paginated, so
- * filtering whatever page arrived would hide late work rather than find it.
- */
-
 export default TaskCard
