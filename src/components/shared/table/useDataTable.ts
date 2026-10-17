@@ -73,6 +73,9 @@ export const useDataTable = <TData,>({
     getFacetedUniqueValues: getFacetedUniqueValues(),
     getPaginationRowModel: getPaginationRowModel(),
     defaultColumn,
+    // Sorting one page of a server-paged list would only mislead, so such a
+    // table sorts only when the server sorts for it.
+    enableSorting: !pagination || Boolean(sorting),
     manualSorting: Boolean(sorting),
     manualFiltering: Boolean(filters?.onFilterChange),
     manualPagination: Boolean(pagination),
