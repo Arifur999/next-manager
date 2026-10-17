@@ -1,5 +1,6 @@
 "use client"
 
+import PageHeader from "@/components/shared/PageHeader"
 import { useSearchParams } from "next/navigation"
 
 // Reads the view from the URL rather than from the page: the table filters in
@@ -15,12 +16,7 @@ const ProjectsHeading = () => {
     return "Work for clients. Payments, expenses and payouts can all be tied to one."
   }
 
-  return (
-    <div>
-      <h1 className="text-2xl font-semibold tracking-tight">{isMine ? "My projects" : (status ?? "Projects")}</h1>
-      <p className="text-sm text-muted-foreground">{describe()}</p>
-    </div>
-  )
+  return <PageHeader title={isMine ? "My projects" : (status ?? "Projects")}>{describe()}</PageHeader>
 }
 
 export default ProjectsHeading
