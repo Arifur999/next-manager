@@ -1,20 +1,13 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
+import AppField from "@/components/shared/form/AppField"
+import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
+import EntitySelect from "@/components/shared/form/EntitySelect"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import type { IAccount, IShareholder } from "@/types/finance.types"
-import type { IDistributionFormValues } from "@/zod/finance.validation"
+import { distributionFormZodSchema, type IDistributionFormValues } from "@/zod/finance.validation"
+import { useForm } from "@tanstack/react-form"
 import { format } from "date-fns"
-import { useState } from "react"
 
 const DistributionFormCard = ({
   shareholders,
@@ -28,20 +21,26 @@ const DistributionFormCard = ({
   onSubmit: (values: IDistributionFormValues) => Promise<boolean>
   isPending: boolean
 }) => {
-  const [shareholderId, setShareholderId] = useState("")
-  const [amount, setAmount] = useState("")
-  const [accountId, setAccountId] = useState("")
-  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"))
-
-  const handlePayOut = async () => {
-    const isPaid = await onSubmit({
-      shareholder_id: shareholderId,
-      date,
-      amount_bdt: amount,
-      account_id: accountId,
-    })
-    if (isPaid) setAmount("")
+  const defaultValues: IDistributionFormValues = {
+    shareholder_id: "",
+    date: format(new Date(), "yyyy-MM-dd"),
+    amount_bdt: "",
+    account_id: "",
   }
+
+  const form = useForm({
+    defaultValues,
+    validators: { onSubmit: distributionFormZodSchema },
+    onSubmit: async ({ value, formApi }) => {
+      // Only the amount clears: the next payment is often to the same person,
+      // from the same account, on the same day.
+      if (await onSubmit(value)) {
+        formApi.reset({ ...value, amount_bdt: "" }, { keepDefaultValues: true })
+      }
+    },
+  })
+
+  const activeShareholders = shareholders.filter((shareholder) => shareholder.is_active)
 
   return (
     <Card className="h-fit">
@@ -50,82 +49,69 @@ const DistributionFormCard = ({
       </CardHeader>
 
       <form
+        method="POST"
+        action="#"
+        noValidate
         className="space-y-4 px-6 pb-6"
         onSubmit={(event) => {
           event.preventDefault()
-          if (!shareholderId || !accountId || !Number(amount)) return
-          void handlePayOut()
+          event.stopPropagation()
+          form.handleSubmit()
         }}
       >
-        <div className="space-y-1.5">
-          <Label htmlFor="distribution-who">Who</Label>
-          <Select
-            value={shareholderId}
-            onValueChange={setShareholderId}
-            disabled={isPending}
-          >
-            <SelectTrigger id="distribution-who" className="w-full">
-              <SelectValue placeholder="Choose" />
-            </SelectTrigger>
-            <SelectContent>
-              {shareholders
-                .filter((shareholder) => shareholder.is_active)
-                .map((shareholder) => (
-                  <SelectItem key={shareholder.id} value={shareholder.id}>
-                    {shareholder.name} ({shareholder.share_pct}%)
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <form.Field name="shareholder_id">
+          {(field) => (
+            <EntitySelect
+              id={field.name}
+              label="Who"
+              value={field.state.value}
+              onChange={field.handleChange}
+              disabled={isPending}
+              placeholder="Choose"
+              emptyMessage="Add a shareholder first"
+              options={activeShareholders.map((shareholder) => ({
+                value: shareholder.id,
+                label: `${shareholder.name} (${shareholder.share_pct}%)`,
+              }))}
+            />
+          )}
+        </form.Field>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="distribution-amount">Amount</Label>
-          <Input
-            id="distribution-amount"
-            type="number"
-            min={1}
-            step="1"
-            value={amount}
-            onChange={(event) => setAmount(event.target.value)}
-            disabled={isPending}
-          />
-        </div>
+        <form.Field name="amount_bdt">
+          {(field) => <AppField field={field} label="Amount" type="number" disabled={isPending} />}
+        </form.Field>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="distribution-date">Date</Label>
-          <Input
-            id="distribution-date"
-            type="date"
-            value={date}
-            onChange={(event) => setDate(event.target.value)}
-            disabled={isPending}
-          />
-        </div>
+        <form.Field name="date">
+          {(field) => <AppField field={field} label="Date" type="date" disabled={isPending} />}
+        </form.Field>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="distribution-account">Paid from</Label>
-          <Select value={accountId} onValueChange={setAccountId} disabled={isPending}>
-            <SelectTrigger id="distribution-account" className="w-full">
-              <SelectValue placeholder="Choose" />
-            </SelectTrigger>
-            <SelectContent>
-              {accounts.map((account) => (
-                <SelectItem key={account.id} value={account.id}>
-                  {account.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <form.Field name="account_id">
+          {(field) => (
+            <EntitySelect
+              id={field.name}
+              label="Paid from"
+              value={field.state.value}
+              onChange={field.handleChange}
+              disabled={isPending}
+              placeholder="Choose"
+              emptyMessage="Add a BDT account first"
+              options={accounts.map((account) => ({ value: account.id, label: account.name }))}
+            />
+          )}
+        </form.Field>
 
-        <Button
-          type="submit"
-          disabled={isPending || !shareholderId || !accountId || !Number(amount)}
-          className="w-full"
+        {/* Pressable once who, how much and from where are all filled in, as before. */}
+        <form.Subscribe
+          selector={(state) =>
+            !state.values.shareholder_id || !state.values.account_id || !Number(state.values.amount_bdt)
+          }
         >
-          Pay it
-        </Button>
+          {(isIncomplete) => (
+            <AppSubmitButton isPending={isPending} pendingLabel="Paying..." disabled={isIncomplete}>
+              Pay it
+            </AppSubmitButton>
+          )}
+        </form.Subscribe>
 
         <p className="text-xs text-muted-foreground">
           This moves money out of that account, but it is not a cost — your profit for
