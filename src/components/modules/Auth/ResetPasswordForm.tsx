@@ -14,14 +14,13 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { resetPasswordFormZodSchema, type IResetPasswordFormValues } from "@/zod/auth.validation"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation } from "@tanstack/react-query"
 import { Eye, EyeOff, LinkIcon } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { focusFirstInvalid } from "@/lib/focusFirstInvalid"
 import { useRef, useState } from "react"
-import { toast } from "sonner"
 
 /**
  * Setting a new password from an emailed link.
@@ -43,25 +42,18 @@ const ResetPasswordForm = () => {
   const [confirm, setConfirm] = useState("")
   const formRef = useRef<HTMLFormElement>(null)
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IResetPasswordFormValues) => resetPasswordAction(values),
+  // A dead link gets one message for expired, spent and unknown, from the server.
+  const { run: resetPassword, isPending } = useActionMutation({
+    action: resetPasswordAction,
+    successMessage: "Password reset. Sign in with the new one.",
+    refresh: false,
   })
 
   const form = useForm({
-    defaultValues: { token, new_password: "" } as IResetPasswordFormValues,
+    defaultValues: { token, new_password: "" } satisfies IResetPasswordFormValues,
     onSubmitInvalid: () => focusFirstInvalid(formRef.current),
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        // "That reset link is no longer valid. Ask for a new one." — one
-        // message for expired, spent and unknown, and it comes from the server.
-        toast.error(result.message || "Could not reset your password")
-        return
-      }
-
-      toast.success("Password reset. Sign in with the new one.")
-      router.replace("/login")
+      if (await resetPassword(value)) router.replace("/login")
     },
   })
 
