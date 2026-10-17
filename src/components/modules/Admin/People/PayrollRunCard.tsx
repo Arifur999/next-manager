@@ -14,6 +14,7 @@ import {
 import { formatBdt } from "@/lib/currency"
 import type { IPayrollRun } from "@/types/people.types"
 import type { IAccount } from "@/types/finance.types"
+import type { IPayrollItemFormValues } from "@/zod/people.validation"
 import { format, parseISO } from "date-fns"
 import { Trash2 } from "lucide-react"
 import { useState } from "react"
@@ -42,7 +43,7 @@ const PayrollRunCard = ({
 }: {
   run: IPayrollRun
   accounts: IAccount[]
-  onSave: (items: unknown[]) => void
+  onSave: (items: IPayrollItemFormValues[]) => void
   onPay: (accountId: string) => void
   onDiscard: () => void
 }) => {
@@ -176,8 +177,8 @@ const PayrollRunCard = ({
               onSave(
                 Object.entries(draft).map(([id, values]) => ({
                   id,
-                  gross_bdt: Number(values.gross || 0),
-                  deductions_bdt: Number(values.deductions || 0),
+                  gross_bdt: values.gross,
+                  deductions_bdt: values.deductions,
                 }))
               )
             }

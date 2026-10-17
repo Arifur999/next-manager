@@ -14,13 +14,14 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { endOfMonth, format, parseISO } from "date-fns"
+import { format } from "date-fns"
 import { Wallet } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 import { accountsQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
 import { payrollRunsQuery } from "@/queries/people.queries"
+import type { IPayrollItemFormValues } from "@/zod/people.validation"
 
 /**
  * A month's salaries.
@@ -53,14 +54,7 @@ const PayrollBoard = () => {
   }
 
   const { mutate: open, isPending } = useMutation({
-    mutationFn: () => {
-      // Local midnight on the 1st: UTC midnight is still last month west of UTC.
-      const start = parseISO(`${month}-01`)
-      return createPayrollRunAction({
-        period_start: format(start, "yyyy-MM-dd"),
-        period_end: format(endOfMonth(start), "yyyy-MM-dd"),
-      })
-    },
+    mutationFn: () => createPayrollRunAction({ month }),
     onSuccess: (result) => {
       if (!result.success) {
         toast.error(result.message || "Could not open it")
@@ -72,7 +66,7 @@ const PayrollBoard = () => {
   })
 
   const { mutate: save } = useMutation({
-    mutationFn: ({ id, items }: { id: string; items: unknown[] }) =>
+    mutationFn: ({ id, items }: { id: string; items: IPayrollItemFormValues[] }) =>
       setPayrollItemsAction(id, { items }),
     onSuccess: (result) => {
       if (!result.success) {

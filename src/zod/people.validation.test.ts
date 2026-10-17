@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest"
 import {
     activeStateServerZodSchema,
+    completePayrollServerZodSchema,
+    createPayrollRunServerZodSchema,
     departmentServerZodSchema,
     leaveTypeServerZodSchema,
+    setPayrollItemsServerZodSchema,
 } from "./people.validation"
 
 describe("departmentServerZodSchema", () => {
@@ -54,5 +57,56 @@ describe("leaveTypeServerZodSchema", () => {
 
     it("rejects a blank name", () => {
         expect(leaveTypeServerZodSchema.safeParse({ ...valid, name: " " }).success).toBe(false)
+    })
+})
+
+describe("createPayrollRunServerZodSchema", () => {
+    it("turns the month picked into its first and last day", () => {
+        expect(createPayrollRunServerZodSchema.parse({ month: "2026-10" })).toEqual({
+            period_start: "2026-10-01",
+            period_end: "2026-10-31",
+        })
+    })
+
+    it("ends February on the 29th in a leap year", () => {
+        expect(createPayrollRunServerZodSchema.parse({ month: "2028-02" }).period_end).toBe("2028-02-29")
+    })
+
+    it.each(["", "2026-13", "2026-1"])("rejects %j as a month", (month) => {
+        expect(createPayrollRunServerZodSchema.safeParse({ month }).error?.issues[0]?.message).toBe("Pick a month")
+    })
+})
+
+describe("setPayrollItemsServerZodSchema", () => {
+    it("sends each line's figures as numbers", () => {
+        expect(
+            setPayrollItemsServerZodSchema.parse({ items: [{ id: "i1", gross_bdt: "30000", deductions_bdt: "500" }] }),
+        ).toEqual({ items: [{ id: "i1", gross_bdt: 30000, deductions_bdt: 500 }] })
+    })
+
+    it("sends a blank box as zero", () => {
+        expect(setPayrollItemsServerZodSchema.parse({ items: [{ id: "i1", gross_bdt: "", deductions_bdt: "" }] })).toEqual({
+            items: [{ id: "i1", gross_bdt: 0, deductions_bdt: 0 }],
+        })
+    })
+
+    it("rejects a negative wage", () => {
+        const result = setPayrollItemsServerZodSchema.safeParse({ items: [{ id: "i1", gross_bdt: "-1", deductions_bdt: "" }] })
+        expect(result.success).toBe(false)
+    })
+
+    it("rejects a save with no lines", () => {
+        expect(setPayrollItemsServerZodSchema.safeParse({ items: [] }).error?.issues[0]?.message).toBe("Nothing to save")
+    })
+})
+
+describe("completePayrollServerZodSchema", () => {
+    it("sends the account the salaries are paid from", () => {
+        expect(completePayrollServerZodSchema.parse({ account_id: "a1" })).toEqual({ account_id: "a1" })
+    })
+
+    it("refuses to pay without an account", () => {
+        const result = completePayrollServerZodSchema.safeParse({ account_id: "" })
+        expect(result.error?.issues[0]?.message).toBe("Choose the account the salaries are paid from")
     })
 })

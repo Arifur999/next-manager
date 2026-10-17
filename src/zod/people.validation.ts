@@ -1,5 +1,6 @@
+import { endOfMonth, format, parseISO } from "date-fns"
 import { z } from "zod"
-import { toNumber } from "./formFields"
+import { optionalNonNegative, toNumber } from "./formFields"
 
 // Turning a department or a kind of leave off or on again. Neither is deleted
 // once in use, so this is how one is retired.
@@ -37,3 +38,43 @@ export const leaveTypeServerZodSchema = leaveTypeFormZodSchema.transform((values
     days_per_year: toNumber(values.days_per_year) ?? 0,
     is_paid: values.is_paid,
 }))
+
+export const payrollMonthFormZodSchema = z.object({
+    month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Pick a month"),
+})
+
+export const createPayrollRunServerZodSchema = payrollMonthFormZodSchema.transform(({ month }) => {
+    // Local midnight on the 1st, so the period is the month picked in any time zone.
+    const firstDay = parseISO(`${month}-01`)
+    return {
+        period_start: format(firstDay, "yyyy-MM-dd"),
+        period_end: format(endOfMonth(firstDay), "yyyy-MM-dd"),
+    }
+})
+
+export const payrollItemsFormZodSchema = z.object({
+    items: z
+        .array(
+            z.object({
+                id: z.string().min(1, "Invalid payroll line"),
+                gross_bdt: optionalNonNegative("Gross"),
+                deductions_bdt: optionalNonNegative("Deductions"),
+            }),
+        )
+        .min(1, "Nothing to save"),
+})
+
+export type IPayrollItemFormValues = z.infer<typeof payrollItemsFormZodSchema>["items"][number]
+
+export const setPayrollItemsServerZodSchema = payrollItemsFormZodSchema.transform(({ items }) => ({
+    // A blank box is zero, the same figure a new line starts at.
+    items: items.map((item) => ({
+        id: item.id,
+        gross_bdt: toNumber(item.gross_bdt) ?? 0,
+        deductions_bdt: toNumber(item.deductions_bdt) ?? 0,
+    })),
+}))
+
+export const completePayrollServerZodSchema = z.object({
+    account_id: z.string().min(1, "Choose the account the salaries are paid from"),
+})
