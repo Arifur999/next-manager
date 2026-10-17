@@ -2,6 +2,7 @@
 
 import ChartCard from "@/components/modules/Platform/ChartCard"
 import ErrorState from "@/components/shared/state/ErrorState"
+import { formatUsd } from "@/lib/currency"
 import { useQuery } from "@tanstack/react-query"
 import { format, parse, parseISO } from "date-fns"
 import {
@@ -29,10 +30,7 @@ import { platformTrendQuery } from "@/queries/platform.queries"
  * colourblind separation or contrast against this surface.
  */
 
-const usd = (value: number) => `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
-
-const compact = (value: number) =>
-  new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(value)
+const compactUsd = (value: number) => formatUsd(value, { compact: true })
 
 type TooltipProps = {
   active?: boolean
@@ -137,7 +135,7 @@ const PlatformCharts = () => {
         columns={["Plan", "Companies", "Monthly"]}
         rows={trend.revenue_by_plan.map((row) => ({
           key: row.name,
-          cells: [row.name, String(row.companies), usd(row.mrr_usd)],
+          cells: [row.name, String(row.companies), formatUsd(row.mrr_usd)],
         }))}
       >
         <ResponsiveContainer width="100%" height="100%">
@@ -149,7 +147,7 @@ const PlatformCharts = () => {
             <CartesianGrid strokeDasharray="3 3" className="stroke-border" horizontal={false} />
             <XAxis
               type="number"
-              tickFormatter={compact}
+              tickFormatter={compactUsd}
               tickLine={false}
               axisLine={false}
               className="fill-muted-foreground text-xs"
@@ -162,7 +160,7 @@ const PlatformCharts = () => {
               axisLine={false}
               className="fill-muted-foreground text-xs"
             />
-            <Tooltip cursor={{ className: "fill-muted/40" }} content={<ChartTooltip format={usd} />} />
+            <Tooltip cursor={{ className: "fill-muted/40" }} content={<ChartTooltip format={formatUsd} />} />
             <Bar dataKey="mrr_usd" name="Monthly" fill="var(--chart-3)" radius={[0, 4, 4, 0]} />
           </BarChart>
         </ResponsiveContainer>
@@ -182,7 +180,7 @@ const PlatformCharts = () => {
           columns={["Date", "Monthly revenue", "Paying"]}
           rows={mrr.map((row) => ({
             key: row.date,
-            cells: [row.label, usd(row.mrr_usd), String(row.companies_active)],
+            cells: [row.label, formatUsd(row.mrr_usd), String(row.companies_active)],
           }))}
         >
           <ResponsiveContainer width="100%" height="100%">
@@ -199,12 +197,12 @@ const PlatformCharts = () => {
                   makes every comparison on it meaningless. It is in the table
                   view instead. */}
               <YAxis
-                tickFormatter={compact}
+                tickFormatter={compactUsd}
                 tickLine={false}
                 axisLine={false}
                 className="fill-muted-foreground text-xs"
               />
-              <Tooltip content={<ChartTooltip format={usd} />} />
+              <Tooltip content={<ChartTooltip format={formatUsd} />} />
               <Line
                 type="monotone"
                 dataKey="mrr_usd"
