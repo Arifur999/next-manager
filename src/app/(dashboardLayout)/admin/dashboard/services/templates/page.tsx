@@ -6,12 +6,16 @@ import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import PageHeader from "@/components/shared/PageHeader";
 import ViewTabs from "@/components/shared/ViewTabs";
 import { SERVICE_VIEWS } from "@/lib/pageViews";
+import { getUserInfo } from "@/services/auth.services";
 
 export const metadata: Metadata = {
   title: "Packages · Services",
 };
 
 const TemplatesBoardPage = async () => {
+  const user = await getUserInfo();
+  // The API lets admin and sales shape packages, and only the admin delete one.
+  const canManage = user?.role === "admin" || user?.role === "sales";
 
   const prefetch = (queryClient: QueryClient) => Promise.all([
     queryClient.prefetchQuery(serviceTemplatesQuery()),
@@ -26,7 +30,7 @@ const TemplatesBoardPage = async () => {
       <ViewTabs label="Catalogue" tabs={SERVICE_VIEWS} />
 
       <QueryPrefetch prefetch={prefetch}>
-        <TemplatesBoard />
+        <TemplatesBoard canManage={canManage} canDelete={user?.role === "admin"} />
       </QueryPrefetch>
     </div>
   );

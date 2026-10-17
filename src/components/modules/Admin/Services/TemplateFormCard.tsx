@@ -1,6 +1,9 @@
 "use client"
 
-import { createTemplateAction } from "@/app/(dashboardLayout)/admin/dashboard/services/_action"
+import {
+  createTemplateAction,
+  updateTemplateAction,
+} from "@/app/(dashboardLayout)/admin/dashboard/services/_action"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -8,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { formatUsd } from "@/lib/currency"
 import { useActionMutation } from "@/hooks/useActionMutation"
+import type { IServiceTemplate } from "@/types/catalog.types"
 import { serviceTemplateFormZodSchema, type IServiceTemplateFormValues } from "@/zod/catalog.validation"
 import { useForm, useStore } from "@tanstack/react-form"
 import { useQuery } from "@tanstack/react-query"
@@ -25,23 +29,42 @@ const withPick = (quantities: Record<string, number>, serviceId: string, isPicke
   return next
 }
 
-// Putting a new package together from the services still on sale.
-const TemplateFormCard = () => {
-  const serviceList = useQuery(servicesListQuery())
-  const services = (serviceList.data?.data ?? []).filter((service) => service.is_active)
+const toFormValues = (template: IServiceTemplate): IServiceTemplateFormValues => ({
+  name: template.name,
+  quantities: Object.fromEntries(template.items.map((item) => [item.service.id, item.quantity])),
+})
 
-  const { run: createPackage, isPending } = useActionMutation({
-    action: createTemplateAction,
-    successMessage: "Package created",
+type TemplateFormCardProps = {
+  /** Present to edit that package; absent to put a new one together. */
+  template?: IServiceTemplate | null
+  /** Leaves edit mode, after a save or a cancel. */
+  onDone?: () => void
+}
+
+// Putting a package together from the services still on sale, or changing one.
+const TemplateFormCard = ({ template, onDone }: TemplateFormCardProps) => {
+  const serviceList = useQuery(servicesListQuery())
+  // A service taken off sale stays offered on a package that already holds it,
+  // so editing the name does not quietly drop a line.
+  const services = (serviceList.data?.data ?? []).filter(
+    (service) => service.is_active || template?.items.some((item) => item.service.id === service.id),
+  )
+
+  const { run: savePackage, isPending } = useActionMutation({
+    action: (values: IServiceTemplateFormValues) =>
+      template ? updateTemplateAction(template.id, values) : createTemplateAction(values),
+    successMessage: template ? "Package updated" : "Package created",
     invalidateKeys: [queryKeys.serviceTemplates.all],
     refresh: false,
   })
 
   const form = useForm({
-    defaultValues: newPackage,
+    defaultValues: template ? toFormValues(template) : newPackage,
     validators: { onSubmit: serviceTemplateFormZodSchema },
     onSubmit: async ({ value, formApi }) => {
-      if (await createPackage(value)) formApi.reset()
+      if (!(await savePackage(value))) return
+      formApi.reset()
+      onDone?.()
     },
   })
 
@@ -53,7 +76,7 @@ const TemplateFormCard = () => {
   return (
     <Card className="h-fit">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">New package</CardTitle>
+        <CardTitle className="text-base">{template ? `Edit ${template.name}` : "New package"}</CardTitle>
       </CardHeader>
 
       <form
@@ -146,9 +169,16 @@ const TemplateFormCard = () => {
           )}
         </div>
 
-        <Button type="submit" disabled={isPending || isIncomplete} className="w-full">
-          Create
-        </Button>
+        <div className="flex gap-2">
+          {template && (
+            <Button type="button" variant="outline" disabled={isPending} onClick={onDone} className="flex-1">
+              Cancel
+            </Button>
+          )}
+          <Button type="submit" disabled={isPending || isIncomplete} className="flex-1">
+            {template ? "Save changes" : "Create"}
+          </Button>
+        </div>
 
         <p className="text-xs text-muted-foreground">
           A package has no price of its own. What it costs is whatever its lines are sold

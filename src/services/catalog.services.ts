@@ -46,5 +46,8 @@ export const getServiceTemplates = async () =>
 export const createServiceTemplate = async (payload: Record<string, unknown>) =>
     httpClient.post<IServiceTemplate>("/services/templates", payload)
 
+export const updateServiceTemplate = async (id: string, payload: Record<string, unknown>) =>
+    httpClient.patch<IServiceTemplate>(`/services/templates/${id}`, payload)
+
 export const deleteServiceTemplate = async (id: string) =>
     httpClient.delete<{ message: string }>(`/services/templates/${id}`)

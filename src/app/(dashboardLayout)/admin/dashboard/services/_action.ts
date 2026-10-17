@@ -10,6 +10,7 @@ import {
     deleteServiceTemplate,
     updateService,
     updateServiceCategory,
+    updateServiceTemplate,
 } from "@/services/catalog.services"
 import { activeStateServerZodSchema } from "@/zod/formFields"
 import {
@@ -52,6 +53,13 @@ export const deleteCategoryAction = async (id: string) =>
 
 export const createTemplateAction = async (values: unknown) =>
     runValidatedAction(serviceTemplateServerZodSchema, values, "Could not create it", createServiceTemplate)
+
+// The lines are replaced wholesale, which is what the form holds.
+export const updateTemplateAction = async (id: string, values: unknown) =>
+    requireId(id, "package") ??
+    runValidatedAction(serviceTemplateServerZodSchema, values, "Could not change it", (payload) =>
+        updateServiceTemplate(id, payload),
+    )
 
 export const deleteTemplateAction = async (id: string) =>
     requireId(id, "package") ?? runAction("Could not remove it", () => deleteServiceTemplate(id))
