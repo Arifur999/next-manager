@@ -1,3 +1,5 @@
+import { ApiRequestError } from "@/lib/apiFailure"
+
 // Turns whatever an action caught into a message worth showing. The backend's
 // own message wins; raw Error text never reaches the browser, because it can
 // carry internal addresses ("connect ECONNREFUSED 172.18.0.3:5000").
@@ -8,6 +10,7 @@ const asRecord = (value: unknown): Record<string, unknown> | undefined =>
     value !== null && typeof value === "object" ? (value as Record<string, unknown>) : undefined
 
 const readApiMessage = (error: unknown): string | undefined => {
+    if (error instanceof ApiRequestError) return error.failure.apiMessage || undefined
     const response = asRecord(asRecord(error)?.response)
     const message = asRecord(response?.data)?.message
     if (typeof message === "string" && message) return message
@@ -17,6 +20,7 @@ const readApiMessage = (error: unknown): string | undefined => {
 
 // An axios error that never got a response, or a fetch that failed before one.
 const isNetworkFailure = (error: unknown): boolean => {
+    if (error instanceof ApiRequestError) return error.failure.status === undefined
     const record = asRecord(error)
     if (!record) return false
     if (record.isAxiosError === true) return record.response === undefined

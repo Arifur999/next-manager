@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { describeApiFailure, logApiFailure } from "./apiFailure";
+import { inspect } from "node:util";
+import { ApiRequestError, describeApiFailure, logApiFailure, reportApiFailure } from "./apiFailure";
 
 const axiosError = (overrides: Record<string, unknown> = {}) => ({
   name: "AxiosError",
@@ -73,5 +74,31 @@ describe("logApiFailure", () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
     logApiFailure("GET /clients", axiosError({ response: { status: 502, data: "<html>" } }));
     expect(error).toHaveBeenCalledOnce();
+  });
+});
+
+describe("reportApiFailure", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("logs once and returns an error that carries no cookies, bodies or query string", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const error = reportApiFailure("GET /clients", axiosError());
+
+    expect(warn).toHaveBeenCalledOnce();
+    expect(error).toBeInstanceOf(ApiRequestError);
+    expect(error.failure.status).toBe(404);
+    expect(error.failure.apiMessage).toBe("Client not found");
+    // What Next prints for an error that escapes a server action.
+    expect(inspect(error, { depth: 10 })).not.toMatch(/SECRET|secret-search/);
+  });
+
+  it("names the status in the message, or just the failure without one", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(reportApiFailure("GET /clients", axiosError({ response: { status: 502, data: "" } })).message).toBe(
+      "GET /clients failed with 502",
+    );
+    expect(reportApiFailure("GET /clients", axiosError({ code: "ECONNRESET", response: undefined })).message).toBe(
+      "GET /clients failed",
+    );
   });
 });

@@ -47,11 +47,32 @@ export const describeApiFailure = (error: unknown): ApiFailure => {
   };
 };
 
-export const logApiFailure = (context: string, error: unknown) => {
-  const failure = describeApiFailure(error);
+const logFailure = (context: string, failure: ApiFailure) => {
   const fields: LogFields = { ...failure };
   const isClientError = failure.status !== undefined && failure.status < 500;
 
   if (isClientError) logger.warn(`${context} failed`, fields);
   else logger.error(`${context} failed`, fields);
+};
+
+export const logApiFailure = (context: string, error: unknown) => logFailure(context, describeApiFailure(error));
+
+// Thrown past httpClient instead of the axios error, which carries the request's
+// Cookie header. Next logs whatever escapes a server action or component in
+// full, so only the allowlisted description may travel on.
+export class ApiRequestError extends Error {
+  readonly failure: ApiFailure;
+
+  constructor(context: string, failure: ApiFailure) {
+    super(failure.status === undefined ? `${context} failed` : `${context} failed with ${failure.status}`);
+    this.name = "ApiRequestError";
+    this.failure = failure;
+  }
+}
+
+// Logs a failed call and returns the error that is safe to throw.
+export const reportApiFailure = (context: string, error: unknown): ApiRequestError => {
+  const failure = describeApiFailure(error);
+  logFailure(context, failure);
+  return new ApiRequestError(context, failure);
 };

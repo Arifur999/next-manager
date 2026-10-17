@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { getActionErrorMessage, UNREACHABLE_MESSAGE } from "./actionError"
+import { ApiRequestError } from "./apiFailure"
 
 const FALLBACK = "Failed to save"
 
@@ -33,6 +34,23 @@ describe("getActionErrorMessage", () => {
 
     it("falls back when the API response has no message", () => {
         const error = { isAxiosError: true, response: { status: 502, data: "<html>" } }
+        expect(getActionErrorMessage(error, FALLBACK)).toBe(FALLBACK)
+    })
+})
+
+describe("getActionErrorMessage with the error httpClient throws", () => {
+    it("prefers the API's message", () => {
+        const error = new ApiRequestError("POST /clients", { status: 409, apiMessage: "Name already taken" })
+        expect(getActionErrorMessage(error, FALLBACK)).toBe("Name already taken")
+    })
+
+    it("reports an unreachable server when there was no response", () => {
+        const error = new ApiRequestError("GET /clients", { code: "ECONNRESET" })
+        expect(getActionErrorMessage(error, FALLBACK)).toBe(UNREACHABLE_MESSAGE)
+    })
+
+    it("falls back when the API sent no message", () => {
+        const error = new ApiRequestError("GET /clients", { status: 502 })
         expect(getActionErrorMessage(error, FALLBACK)).toBe(FALLBACK)
     })
 })

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { logApiFailure } from "@/lib/apiFailure";
+import { reportApiFailure } from "@/lib/apiFailure";
 import { AUTH_COOKIE_NAMES } from "@/lib/authCookies";
 import { getApiBaseUrl } from "@/env"
 import { getNewTokensWithRefreshToken } from "@/lib/refreshSession";
@@ -67,8 +67,7 @@ const send = async <TData>(
         });
         return response.data;
     } catch (error) {
-        logApiFailure(`${method} ${withoutQuery(endpoint)}`, error);
-        throw error;
+        throw reportApiFailure(`${method} ${withoutQuery(endpoint)}`, error);
     }
 };
 
