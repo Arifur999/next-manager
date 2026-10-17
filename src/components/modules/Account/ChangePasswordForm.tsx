@@ -2,11 +2,12 @@
 
 import { changePasswordAction } from "@/app/(dashboardLayout)/change-password/_action"
 import { Button } from "@/components/ui/button"
-import { Card, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { changePasswordFormZodSchema, type IChangePasswordFormValues } from "@/zod/auth.validation"
+import { NEW_PASSWORD_RULES } from "@/zod/formFields"
 import { useForm } from "@tanstack/react-form"
 import { useRouter } from "next/navigation"
 
@@ -20,8 +21,6 @@ import { useRouter } from "next/navigation"
  * the person to sign in again. Staying on the page would leave them clicking
  * around a UI whose every request is about to 401.
  */
-
-const RULES = "At least 8 characters, with a letter and a number."
 
 // The confirmation is the form's own check, so it is not part of the schema.
 type ChangePasswordValues = IChangePasswordFormValues & { confirm_password: string }
@@ -56,14 +55,6 @@ const ChangePasswordForm = () => {
 
   return (
     <Card className="gap-0 p-0">
-      <CardHeader className="border-b px-5 py-4">
-        <CardTitle className="text-base">Change password</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Changing it signs you out everywhere, including any session left open on
-          another device.
-        </p>
-      </CardHeader>
-
       <form
         className="max-w-md space-y-5 p-5"
         noValidate
@@ -118,7 +109,7 @@ const ChangePasswordForm = () => {
                   id="new-password-rules"
                   className={`text-xs ${breaksRules ? "text-destructive" : "text-muted-foreground"}`}
                 >
-                  {RULES}
+                  {NEW_PASSWORD_RULES}
                 </p>
               </div>
             )

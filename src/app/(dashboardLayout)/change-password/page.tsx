@@ -10,7 +10,8 @@ const ChangePasswordPage = () => {
   return (
     <div className="max-w-3xl space-y-6">
       <PageHeader title="Change password">
-        You will be signed out and asked to sign in again with the new one.
+        Changing it signs you out everywhere, including any session left open on another
+        device, and you sign in again with the new one.
       </PageHeader>
 
       <ChangePasswordForm />
