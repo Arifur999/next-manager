@@ -6,8 +6,8 @@ import type { ITask } from "@/types/work.types"
 import type { ReactNode } from "react"
 
 const Fact = ({ label, children }: { label: string; children: ReactNode }) => (
-  <div className="grid grid-cols-[6rem_1fr] items-center gap-3">
-    <dt className="text-muted-foreground">{label}</dt>
+  <div className="flex items-center gap-3">
+    <dt className="w-24 shrink-0 text-muted-foreground">{label}</dt>
     <dd className="min-w-0">{children}</dd>
   </div>
 )

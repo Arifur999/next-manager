@@ -78,7 +78,8 @@ const TaskCard = ({ task, statuses, canEdit }: TaskCardProps) => {
         <div className="min-w-0 flex-1">
           <TaskLink
             taskId={task.id}
-            className={cn("text-sm", isDone ? "text-muted-foreground line-through" : "font-medium")}
+            // A finished title keeps its strike on hover rather than trading it for an underline.
+            className={cn("text-sm", isDone ? "text-muted-foreground line-through hover:line-through" : "font-medium")}
           >
             {task.title}
           </TaskLink>
