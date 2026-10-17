@@ -116,11 +116,13 @@ const CapacityPanel = () => {
     <Card className="gap-0 overflow-hidden p-0">
       <CardHeader className="border-b px-5 py-4">
         <CardTitle className="text-base">Capacity and rates</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          {unrated === 0
-            ? "Every person has a bill rate, so realization is computable across the agency."
-            : `${unrated} of ${rows.length} have no bill rate. Realization stays uncomputed for them — the software will not guess what an hour is worth.`}
-        </p>
+        {rows.length > 0 && (
+          <p className="text-sm text-muted-foreground">
+            {unrated === 0
+              ? "Every person has a bill rate, so realization is computable across the agency."
+              : `${unrated} of ${rows.length} have no bill rate. Realization stays uncomputed for them — the software will not guess what an hour is worth.`}
+          </p>
+        )}
       </CardHeader>
 
       {/* The error shows only when nothing loaded: each row holds figures
