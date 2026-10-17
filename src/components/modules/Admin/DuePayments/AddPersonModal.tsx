@@ -19,8 +19,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { UserPlus } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
-import { z } from "zod"
 import { queryKeys } from "@/lib/queryKeys"
+import { duePersonFormZodSchema, type IDuePersonFormValues } from "@/zod/spending.validation"
 
 /**
  * Informal lending, in and out.
@@ -36,7 +36,7 @@ const AddPersonModal = () => {
   const queryClient = useQueryClient()
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: { name: string; phone?: string }) => createDuePersonAction(values),
+    mutationFn: (values: IDuePersonFormValues) => createDuePersonAction(values),
   })
 
   const form = useForm({
@@ -91,7 +91,7 @@ const AddPersonModal = () => {
           }}
           className="space-y-5"
         >
-          <form.Field name="name" validators={{ onChange: z.string().min(1, "Name is required") }}>
+          <form.Field name="name" validators={{ onChange: duePersonFormZodSchema.shape.name }}>
             {(field) => <AppField field={field} label="Name" disabled={isPending} />}
           </form.Field>
 

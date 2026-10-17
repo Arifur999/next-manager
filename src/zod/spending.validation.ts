@@ -43,6 +43,24 @@ export const ownerWithdrawalFormZodSchema = z.object({
 
 export type IOwnerWithdrawalFormValues = z.infer<typeof ownerWithdrawalFormZodSchema>
 
+export const duePersonFormZodSchema = z.object({
+    name: z.string().min(1, "Name is required"),
+    phone: z.string().optional(),
+})
+
+export type IDuePersonFormValues = z.infer<typeof duePersonFormZodSchema>
+
+export const dueTransactionFormZodSchema = z.object({
+    due_person_id: z.string().min(1, "Choose a person"),
+    date: isoDate,
+    direction: z.enum(["received", "payment"]),
+    amount_bdt: positiveAmount("Amount"),
+    account_id: z.string().min(1, "Choose a BDT account"),
+    notes: z.string().optional(),
+})
+
+export type IDueTransactionFormValues = z.infer<typeof dueTransactionFormZodSchema>
+
 // Server schemas: the form's string values, checked again on the server and
 // turned into the payload the API's request schema expects.
 export const createExpenseServerZodSchema = expenseFormZodSchema.transform((values) => ({

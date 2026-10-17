@@ -18,12 +18,12 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt } from "@/lib/currency"
 import type { IDuePerson } from "@/types/spending.types"
+import { dueTransactionFormZodSchema, type IDueTransactionFormValues } from "@/zod/spending.validation"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
-import { z } from "zod"
 import { accountsQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -35,21 +35,6 @@ import { queryKeys } from "@/lib/queryKeys"
  * the agency owes THEM. Showing a bare signed number would leave every reader
  * working that out from scratch, so each row says which way it points.
  */
-
-const transactionSchema = z.object({
-  due_person_id: z.string().min(1, "Choose a person"),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date"),
-  direction: z.enum(["received", "payment"]),
-  amount_bdt: z
-    .string()
-    .min(1, "Amount is required")
-    .refine((value) => Number.isFinite(Number(value)), "Amount must be a number")
-    .refine((value) => Number(value) > 0, "Amount must be greater than zero"),
-  account_id: z.string().min(1, "Choose a BDT account"),
-  notes: z.string().optional(),
-})
-
-type TransactionValues = z.infer<typeof transactionSchema>
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -64,13 +49,13 @@ const RecordTransactionModal = ({ people }: { people: IDuePerson[] }) => {
   )
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: TransactionValues) =>
+    mutationFn: (values: IDueTransactionFormValues) =>
       createDueTransactionAction({ ...values, amount_bdt: Number(values.amount_bdt) }),
   })
 
   // Annotated rather than `satisfies`: the latter narrows `direction` to the
   // literal "received", so the form field could never be switched to "payment".
-  const defaultValues: TransactionValues = {
+  const defaultValues: IDueTransactionFormValues = {
     due_person_id: "",
     date: today(),
     direction: "received",
@@ -143,7 +128,7 @@ const RecordTransactionModal = ({ people }: { people: IDuePerson[] }) => {
             >
               <form.Field
                 name="due_person_id"
-                validators={{ onChange: transactionSchema.shape.due_person_id }}
+                validators={{ onChange: dueTransactionFormZodSchema.shape.due_person_id }}
               >
                 {(field) => (
                   <EntitySelect
@@ -174,7 +159,7 @@ const RecordTransactionModal = ({ people }: { people: IDuePerson[] }) => {
                     label="Direction"
                     value={field.state.value}
                     onChange={(value) =>
-                      field.handleChange(value as TransactionValues["direction"])
+                      field.handleChange(value as IDueTransactionFormValues["direction"])
                     }
                     disabled={isPending}
                     options={[
@@ -192,7 +177,7 @@ const RecordTransactionModal = ({ people }: { people: IDuePerson[] }) => {
 
                 <form.Field
                   name="amount_bdt"
-                  validators={{ onChange: transactionSchema.shape.amount_bdt }}
+                  validators={{ onChange: dueTransactionFormZodSchema.shape.amount_bdt }}
                 >
                   {(field) => (
                     <AppField
@@ -208,7 +193,7 @@ const RecordTransactionModal = ({ people }: { people: IDuePerson[] }) => {
 
               <form.Field
                 name="account_id"
-                validators={{ onChange: transactionSchema.shape.account_id }}
+                validators={{ onChange: dueTransactionFormZodSchema.shape.account_id }}
               >
                 {(field) => (
                   <EntitySelect
