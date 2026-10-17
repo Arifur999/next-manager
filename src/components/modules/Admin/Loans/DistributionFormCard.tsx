@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import type { IAccount, IShareholder } from "@/types/finance.types"
 import { distributionFormZodSchema, type IDistributionFormValues } from "@/zod/finance.validation"
 import { useForm } from "@tanstack/react-form"
-import { format } from "date-fns"
+import { todayIsoDate } from "@/lib/dates"
 
 const DistributionFormCard = ({
   shareholders,
@@ -23,7 +23,7 @@ const DistributionFormCard = ({
 }) => {
   const defaultValues: IDistributionFormValues = {
     shareholder_id: "",
-    date: format(new Date(), "yyyy-MM-dd"),
+    date: todayIsoDate(),
     amount_bdt: "",
     account_id: "",
   }

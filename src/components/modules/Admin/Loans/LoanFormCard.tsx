@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import type { IAccount } from "@/types/finance.types"
 import { loanFormZodSchema, type ILoanFormValues } from "@/zod/finance.validation"
 import { useForm } from "@tanstack/react-form"
-import { format } from "date-fns"
+import { todayIsoDate } from "@/lib/dates"
 
 // Recording a loan. The server drafts a schedule from the term with interest at
 // zero, since a guessed figure would flow straight into profit and loss; the
@@ -26,7 +26,7 @@ const LoanFormCard = ({
     lender: "",
     principal_bdt: "",
     interest_rate: "",
-    started_on: format(new Date(), "yyyy-MM-dd"),
+    started_on: todayIsoDate(),
     term_months: "12",
     account_id: "",
   }
