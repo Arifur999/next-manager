@@ -14,7 +14,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { endOfMonth, format, startOfMonth } from "date-fns"
+import { endOfMonth, format, parseISO } from "date-fns"
 import { Wallet } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
@@ -54,7 +54,8 @@ const PayrollBoard = () => {
 
   const { mutate: open, isPending } = useMutation({
     mutationFn: () => {
-      const start = startOfMonth(new Date(`${month}-01T00:00:00Z`))
+      // Local midnight on the 1st: UTC midnight is still last month west of UTC.
+      const start = parseISO(`${month}-01`)
       return createPayrollRunAction({
         period_start: format(start, "yyyy-MM-dd"),
         period_end: format(endOfMonth(start), "yyyy-MM-dd"),
