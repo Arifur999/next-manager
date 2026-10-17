@@ -41,6 +41,9 @@ export const getTeamPayouts = async (queryString?: string) =>
 export const createTeamPayout = async (payload: Record<string, unknown>) =>
     httpClient.post<ITeamPayout>("/team-payouts", payload)
 
+export const updateTeamPayout = async (id: string, payload: Record<string, unknown>) =>
+    httpClient.patch<ITeamPayout>(`/team-payouts/${id}`, payload)
+
 export const deleteTeamPayout = async (id: string) =>
     httpClient.delete<{ message: string }>(`/team-payouts/${id}`)
 
@@ -50,6 +53,9 @@ export const getOwnerWithdrawals = async (queryString?: string) =>
 export const createOwnerWithdrawal = async (payload: Record<string, unknown>) =>
     httpClient.post<IOwnerWithdrawal>("/owner-withdrawals", payload)
 
+export const updateOwnerWithdrawal = async (id: string, payload: Record<string, unknown>) =>
+    httpClient.patch<IOwnerWithdrawal>(`/owner-withdrawals/${id}`, payload)
+
 export const deleteOwnerWithdrawal = async (id: string) =>
     httpClient.delete<{ message: string }>(`/owner-withdrawals/${id}`)
 
@@ -58,6 +64,12 @@ export const getDuePeople = async (queryString?: string) =>
 
 export const createDuePerson = async (payload: Record<string, unknown>) =>
     httpClient.post<IDuePerson>("/due-payments", payload)
+
+export const updateDuePerson = async (id: string, payload: Record<string, unknown>) =>
+    httpClient.patch<IDuePerson>(`/due-payments/${id}`, payload)
+
+export const deleteDuePerson = async (id: string) =>
+    httpClient.delete<{ message: string }>(`/due-payments/${id}`)
 
 export const getDueTransactions = async (queryString?: string) =>
     httpClient.get<IDueTransaction[]>("/due-payments/transactions", { params: toParams(queryString) })
