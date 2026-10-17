@@ -18,7 +18,8 @@ import {
   type IPlatformInvite,
   type PlatformPermission,
 } from "@/types/platform.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { useQuery } from "@tanstack/react-query"
 import { format, isPast, parseISO } from "date-fns"
 import { Check, Copy, MailPlus, Trash2, TriangleAlert } from "lucide-react"
 import { useState } from "react"
@@ -45,7 +46,6 @@ const statusOf = (invite: IPlatformInvite) => {
 }
 
 const PlatformInvites = () => {
-  const queryClient = useQueryClient()
   const [email, setEmail] = useState("")
   const [permissions, setPermissions] = useState<string[]>([])
   const [freshLink, setFreshLink] = useState<string | null>(null)
@@ -56,41 +56,38 @@ const PlatformInvites = () => {
 
   const invites = data?.data ?? []
 
-  const { mutate: invite, isPending } = useMutation({
-    mutationFn: () =>
-      invitePlatformAdminAction({ email, permissions }),
+  const { run: sendInvite, isPending } = useActionMutation({
+    action: invitePlatformAdminAction,
+    // The server phrases its message against what happened to the email.
+    successMessage: false,
+    invalidateKeys: [queryKeys.platformInvites.all],
+    refresh: false,
     onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not create the invite")
-        return
-      }
+      if (!result.success) return
 
-      const url = "data" in result ? result.data?.join_url : undefined
-      const mail = "data" in result ? result.data?.email : undefined
-      setFreshLink(url ?? null)
-      setMailed(mail ?? null)
+      const mail = result.data.email
+      setFreshLink(result.data.join_url)
+      setMailed(mail)
 
-      // The server phrases this against what actually happened to the mail.
-      if (mail?.delivered) toast.success(result.message)
-      else toast.warning(result.message, { description: mail?.reason ?? undefined })
+      if (mail.delivered) toast.success(result.message)
+      else toast.warning(result.message, { description: mail.reason ?? undefined })
       setCopied(false)
-      setEmail("")
-      setPermissions([])
-      void queryClient.invalidateQueries({ queryKey: queryKeys.platformInvites.all })
     },
   })
 
-  const { mutate: revoke, isPending: isRevoking } = useMutation({
-    mutationFn: (id: string) => revokePlatformInviteAction(id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not revoke")
-        return
-      }
-      toast.success("Invite revoked — the link stops working immediately")
-      void queryClient.invalidateQueries({ queryKey: queryKeys.platformInvites.all })
-    },
+  const { run: revokeInvite, isPending: isRevoking } = useActionMutation({
+    action: revokePlatformInviteAction,
+    successMessage: "Invite revoked — the link stops working immediately",
+    invalidateKeys: [queryKeys.platformInvites.all],
+    refresh: false,
   })
+
+  const handleInvite = async () => {
+    if (!(await sendInvite({ email, permissions }))) return
+
+    setEmail("")
+    setPermissions([])
+  }
 
   const copy = async () => {
     if (!freshLink) return
@@ -129,7 +126,7 @@ const PlatformInvites = () => {
           onSubmit={(event) => {
             event.preventDefault()
             if (!email.trim() || permissions.length === 0) return
-            invite()
+            void handleInvite()
           }}
         >
           <div className="max-w-md space-y-1.5">
@@ -272,7 +269,7 @@ const PlatformInvites = () => {
                         variant="outline"
                         size="sm"
                         disabled={isRevoking}
-                        onClick={() => revoke(invite.id)}
+                        onClick={() => void revokeInvite(invite.id)}
                       >
                         <Trash2 className="size-3.5" />
                         <span className="sr-only">Revoke</span>
