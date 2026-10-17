@@ -72,7 +72,11 @@ export interface DataTableProps<TData> {
   onRetry?: () => void;
   // Presence of these two switches the table into server-driven mode.
   sorting?: { state: SortingState; onSortingChange: (state: SortingState) => void };
-  pagination?: { state: PaginationState; onPaginationChange: (state: PaginationState) => void };
+  // `replace` corrects the page without adding a history entry.
+  pagination?: {
+    state: PaginationState;
+    onPaginationChange: (state: PaginationState, options?: { replace?: boolean }) => void;
+  };
   search?: DataTableSearchConfig;
   filters?: DataTableFiltersConfig;
   meta?: PaginationMeta;

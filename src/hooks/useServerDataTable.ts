@@ -36,12 +36,14 @@ export const useServerDataTable = <TData,>(config: ServerDataTableConfig) => {
   // It starts from the live URL, not this render's searchParams, which Next
   // updates later in a transition: two quick updates must compose, not undo each other.
   const updateParams = useCallback(
-    (update: (params: URLSearchParams) => void, { resetPage = false } = {}) => {
+    (update: (params: URLSearchParams) => void, { resetPage = false, replace = false } = {}) => {
       const params = new URLSearchParams(window.location.search)
       update(params)
       if (resetPage) params.delete("page")
       const query = params.toString()
-      window.history.pushState(null, "", query ? `${pathname}?${query}` : pathname)
+      const url = query ? `${pathname}?${query}` : pathname
+      if (replace) window.history.replaceState(null, "", url)
+      else window.history.pushState(null, "", url)
     },
     [pathname],
   )
@@ -49,13 +51,16 @@ export const useServerDataTable = <TData,>(config: ServerDataTableConfig) => {
   const { page, limit } = readPaging(searchParams, defaultLimit)
   const paginationState = useMemo<PaginationState>(() => ({ pageIndex: page - 1, pageSize: limit }), [page, limit])
 
-  const onPaginationChange = (next: PaginationState) =>
-    updateParams((params) => {
-      if (next.pageIndex > 0) params.set("page", String(next.pageIndex + 1))
-      else params.delete("page")
-      if (next.pageSize !== defaultLimit) params.set("limit", String(next.pageSize))
-      else params.delete("limit")
-    })
+  const onPaginationChange = (next: PaginationState, { replace = false } = {}) =>
+    updateParams(
+      (params) => {
+        if (next.pageIndex > 0) params.set("page", String(next.pageIndex + 1))
+        else params.delete("page")
+        if (next.pageSize !== defaultLimit) params.set("limit", String(next.pageSize))
+        else params.delete("limit")
+      },
+      { replace },
+    )
 
   const searchKey = search?.queryKey ?? "search"
   const searchTerm = searchParams.get(searchKey) ?? ""
