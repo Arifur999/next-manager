@@ -17,8 +17,9 @@ import { queryKeys } from "@/lib/queryKeys"
 /**
  * Who the agency is, on paper.
  *
- * Everything here ends up on an invoice, so a change is not cosmetic: rename
- * the agency and every invoice raised from now on carries the new name.
+ * Everything here ends up on an invoice, so a change is not cosmetic: the
+ * invoice letterhead reads these details when it is opened, so every invoice,
+ * old ones included, shows them as they are now.
  */
 
 const OrganizationForm = ({ organization }: { organization: IOrganization }) => {
@@ -127,8 +128,9 @@ const BusinessProfile = () => {
       <CardHeader className="border-b px-5 py-4">
         <CardTitle className="text-base">Details</CardTitle>
         <p className="text-sm text-muted-foreground">
-          What appears on invoices. Change the name here and it changes everywhere it is
-          used from now on — invoices already sent keep the name they were sent under.
+          What appears on invoices. An invoice shows these details as they are when it is
+          opened or printed, so a change here shows on every invoice, including ones already
+          sent. Save an invoice as a PDF first if you need it with the old details.
         </p>
       </CardHeader>
 
