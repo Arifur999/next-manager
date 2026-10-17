@@ -1,27 +1,31 @@
 "use client"
 
+import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { formatUsd } from "@/lib/currency"
 import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
+import { FileText } from "lucide-react"
 import Link from "next/link"
 import { invoicesListQuery } from "@/queries/billing.queries"
 
 // The invoices endpoint filters by search text rather than client id, so the
 // list is narrowed here.
 const ClientInvoicesPanel = ({ clientId }: { clientId: string }) => {
-  const { data: invoicesData } = useQuery(invoicesListQuery())
+  const invoicesQuery = useQuery(invoicesListQuery())
 
-  const invoices = (invoicesData?.data ?? []).filter((invoice) => invoice.client_id === clientId)
+  const invoices = (invoicesQuery.data?.data ?? []).filter((invoice) => invoice.client_id === clientId)
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
-      {invoices.length === 0 ? (
-        <p className="px-5 py-12 text-center text-sm text-muted-foreground">
-          No invoices raised for this client yet.
-        </p>
-      ) : (
+      <PanelState
+        query={invoicesQuery}
+        errorMessage="The invoices did not load."
+        isEmpty={invoices.length === 0}
+        empty={<EmptyState icon={FileText}>No invoices raised for this client yet.</EmptyState>}
+      >
         <ul className="divide-y">
           {invoices.map((invoice) => (
             <li key={invoice.id}>
@@ -48,7 +52,7 @@ const ClientInvoicesPanel = ({ clientId }: { clientId: string }) => {
             </li>
           ))}
         </ul>
-      )}
+      </PanelState>
     </Card>
   )
 }
