@@ -10,10 +10,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useForm } from "@tanstack/react-form"
 import { useQuery } from "@tanstack/react-query"
-import { useState } from "react"
 import { usersListQuery } from "@/queries/people.queries"
 import type { IConversationFormValues } from "@/zod/workspace.validation"
+
+const conversationDefaults: IConversationFormValues = { type: "direct", name: "", member_ids: [] }
 
 /**
  * Starting a conversation.
@@ -32,100 +34,130 @@ const NewConversationCard = ({
   onCreate: (values: IConversationFormValues) => Promise<boolean>
   isPending: boolean
 }) => {
-  const [type, setType] = useState<"direct" | "group">("direct")
-  const [name, setName] = useState("")
-  const [selected, setSelected] = useState<string[]>([])
-
   const { data } = useQuery(usersListQuery())
   const people = ((data?.data ?? [])).filter(
     (person) => person.status === "active" && person.id !== meId
   )
 
-  const toggle = (id: string) =>
-    setSelected((current) =>
-      current.includes(id) ? current.filter((value) => value !== id) : [...current, id]
-    )
+  const form = useForm({
+    defaultValues: conversationDefaults,
+    onSubmit: async ({ value, formApi }) => {
+      // Cleared only once the conversation exists, so a refusal keeps the picks.
+      if (!(await onCreate(value))) return
 
-  // Cleared only once the conversation exists, so a refusal keeps the picks.
-  const submit = async () => {
-    if (!(await onCreate({ type, name, member_ids: selected }))) return
-
-    setName("")
-    setSelected([])
-  }
-
-  const ready = selected.length > 0 && (type === "direct" ? selected.length === 1 : name.trim())
+      formApi.reset({ ...conversationDefaults, type: value.type }, { keepDefaultValues: true })
+    },
+  })
 
   return (
     <form
       className="space-y-3 border-b p-4"
+      noValidate
       onSubmit={(event) => {
         event.preventDefault()
-        if (!ready) return
-        void submit()
+        event.stopPropagation()
+        void form.handleSubmit()
       }}
     >
-      <div className="space-y-1.5">
-        <Label htmlFor="chat-type">Start something</Label>
-        <Select
-          value={type}
-          onValueChange={(value) => {
-            setType(value as "direct" | "group")
-            // A direct thread holds one other person; keeping a longer
-            // selection would send a request the server has to refuse.
-            setSelected([])
-          }}
-          disabled={isPending}
-        >
-          <SelectTrigger id="chat-type" className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="direct">Direct message</SelectItem>
-            <SelectItem value="group">Group</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {type === "group" && (
-        <div className="space-y-1.5">
-          <Label htmlFor="chat-name">Name</Label>
-          <Input
-            id="chat-name"
-            value={name}
-            maxLength={120}
-            onChange={(event) => setName(event.target.value)}
-            placeholder="Studio"
-            disabled={isPending}
-          />
-        </div>
-      )}
-
-      <div className="space-y-1.5">
-        <Label>{type === "direct" ? "Who" : "Who is in it"}</Label>
-        <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border p-1">
-          {people.map((person) => (
-            <button
-              key={person.id}
-              type="button"
-              onClick={() => (type === "direct" ? setSelected([person.id]) : toggle(person.id))}
-              aria-pressed={selected.includes(person.id)}
-              className={`w-full rounded px-2 py-1.5 text-left text-sm transition-colors ${
-                selected.includes(person.id) ? "bg-primary/10 font-medium" : "hover:bg-muted"
-              }`}
+      <form.Field name="type">
+        {(field) => (
+          <div className="space-y-1.5">
+            <Label htmlFor="chat-type">Start something</Label>
+            <Select
+              value={field.state.value}
+              onValueChange={(value) => {
+                field.handleChange(value === "group" ? "group" : "direct")
+                // A direct thread holds one other person; keeping a longer
+                // selection would send a request the server has to refuse.
+                form.setFieldValue("member_ids", [])
+              }}
+              disabled={isPending}
             >
-              {person.full_name}
-              <span className="ml-2 text-xs capitalize text-muted-foreground">
-                {person.role.replace(/_/g, " ")}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
+              <SelectTrigger id="chat-type" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="direct">Direct message</SelectItem>
+                <SelectItem value="group">Group</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </form.Field>
 
-      <Button type="submit" disabled={isPending || !ready} className="w-full" size="sm">
-        Start
-      </Button>
+      <form.Subscribe selector={({ values }) => values.type}>
+        {(type) => (
+          <>
+            {type === "group" && (
+              <form.Field name="name">
+                {(field) => (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="chat-name">Name</Label>
+                    <Input
+                      id="chat-name"
+                      value={field.state.value}
+                      maxLength={120}
+                      onChange={(event) => field.handleChange(event.target.value)}
+                      onBlur={field.handleBlur}
+                      placeholder="Studio"
+                      disabled={isPending}
+                    />
+                  </div>
+                )}
+              </form.Field>
+            )}
+
+            <form.Field name="member_ids">
+              {(field) => {
+                const selected = field.state.value
+                const pick = (id: string) => {
+                  if (type === "direct") return field.handleChange([id])
+                  field.handleChange(
+                    selected.includes(id) ? selected.filter((value) => value !== id) : [...selected, id],
+                  )
+                }
+
+                return (
+                  <div className="space-y-1.5">
+                    <Label>{type === "direct" ? "Who" : "Who is in it"}</Label>
+                    <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border p-1">
+                      {people.map((person) => (
+                        <button
+                          key={person.id}
+                          type="button"
+                          onClick={() => pick(person.id)}
+                          aria-pressed={selected.includes(person.id)}
+                          className={`w-full rounded px-2 py-1.5 text-left text-sm transition-colors ${
+                            selected.includes(person.id) ? "bg-primary/10 font-medium" : "hover:bg-muted"
+                          }`}
+                        >
+                          {person.full_name}
+                          <span className="ml-2 text-xs capitalize text-muted-foreground">
+                            {person.role.replace(/_/g, " ")}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )
+              }}
+            </form.Field>
+          </>
+        )}
+      </form.Subscribe>
+
+      <form.Subscribe
+        selector={({ values }) =>
+          values.member_ids.length > 0 &&
+          (values.type === "direct" ? values.member_ids.length === 1 : values.name.trim() !== "")
+        }
+      >
+        {(isReady) => (
+          <Button type="submit" disabled={isPending || !isReady} className="w-full" size="sm">
+            Start
+          </Button>
+        )}
+      </form.Subscribe>
     </form>
   )
 }
