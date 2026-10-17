@@ -1,47 +1,11 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
-import { getApiBaseUrl } from "@/env"
+import { requireId, runValidatedAction } from "@/lib/runAction"
+import { acceptInvite } from "@/services/auth.services"
+import { joinServerZodSchema } from "@/zod/auth.validation"
 
-
-/**
- * Accept an invite.
- *
- * Plain fetch, like login and register: whoever is here has no account yet, so
- * there are no cookies to forward — and unlike login this sets none either.
- * The account is created pending, so a session would be a session that cannot
- * do anything.
- *
- * The email is deliberately not in the payload. It comes from the invite
- * server-side; sending one from here would be offering a field the server
- * ignores, which is worse than not offering it.
- */
-export const acceptInviteAction = async (
-    token: string,
-    payload: { full_name: string; password: string },
-): Promise<ApiResponse<unknown> | ApiErrorResponse> => {
-    if (!token) return { success: false, message: "This invite link is incomplete" }
-
-    try {
-        const res = await fetch(`${getApiBaseUrl()}/join/${encodeURIComponent(token)}/accept`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-            cache: "no-store",
-        })
-
-        const body = await res.json()
-
-        if (!res.ok || !body?.success) {
-            return {
-                success: false,
-                message: body?.message ?? "That invite link is no longer valid.",
-            }
-        }
-
-        return body as ApiResponse<unknown>
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not complete your request") }
-    }
-}
+export const acceptInviteAction = async (token: string, values: unknown) =>
+    requireId(token, "invite") ??
+    runValidatedAction(joinServerZodSchema, values, "Could not complete your request", (payload) =>
+        acceptInvite(token, payload),
+    )

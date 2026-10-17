@@ -13,6 +13,7 @@ import type { ApiResponse } from "@/types/api.types"
 import { type IUser } from "@/types/user.types"
 import type {
     IForgotPasswordFormValues,
+    IJoinFormValues,
     IRegisterPayload,
     IResetPasswordFormValues,
 } from "@/zod/auth.validation"
@@ -98,3 +99,7 @@ export const forgotPassword = async (payload: IForgotPasswordFormValues) =>
 /** One answer for an expired, spent or unknown token: the server does not tell them apart. */
 export const resetPassword = async (payload: IResetPasswordFormValues) =>
     postPublic<{ message: string }>("/auth/reset-password", payload)
+
+/** The account is created pending, so no session is set: an admin approves it first. */
+export const acceptInvite = async (token: string, payload: IJoinFormValues) =>
+    postPublic(`/join/${encodeURIComponent(token)}/accept`, payload)

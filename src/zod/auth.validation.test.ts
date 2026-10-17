@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   changePasswordServerZodSchema,
   forgotPasswordServerZodSchema,
+  joinServerZodSchema,
   newPassword,
   registerServerZodSchema,
   requiredEmail,
@@ -116,5 +117,19 @@ describe("resetPasswordServerZodSchema", () => {
     const noToken = resetPasswordServerZodSchema.safeParse({ token: "", new_password: "newpass12" })
     expect(noToken.error?.issues[0]?.message).toBe("This reset link is incomplete")
     expect(resetPasswordServerZodSchema.safeParse({ token: "t1", new_password: "short" }).success).toBe(false)
+  })
+})
+
+describe("joinServerZodSchema", () => {
+  it("sends a name and a password, never an email", () => {
+    expect(joinServerZodSchema.parse({ full_name: "Alex", password: "welcome12", email: "x@evil.example" })).toEqual({
+      full_name: "Alex",
+      password: "welcome12",
+    })
+  })
+
+  it("refuses a missing name and a weak password", () => {
+    expect(joinServerZodSchema.safeParse({ full_name: "", password: "welcome12" }).success).toBe(false)
+    expect(joinServerZodSchema.safeParse({ full_name: "Alex", password: "12345678" }).success).toBe(false)
   })
 })

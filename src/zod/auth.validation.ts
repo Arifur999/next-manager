@@ -105,3 +105,6 @@ export const forgotPasswordServerZodSchema = forgotPasswordFormZodSchema
 
 // The token from the link and the new password, nothing else.
 export const resetPasswordServerZodSchema = resetPasswordFormZodSchema
+
+// A name and a password; the email and the company come from the invite.
+export const joinServerZodSchema = joinFormZodSchema
