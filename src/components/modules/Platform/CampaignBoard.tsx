@@ -6,27 +6,18 @@ import {
   publishAnnouncementAction,
   updateAnnouncementAction,
 } from "@/app/(dashboardLayout)/platform/_campaignAction"
+import AnnouncementComposer from "@/components/modules/Platform/AnnouncementComposer"
+import { AUDIENCE_LABEL } from "@/components/modules/Platform/announcementAudience"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
+import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IAnnouncement } from "@/types/platform.types"
 import type { IAnnouncementFormValues } from "@/zod/platform.validation"
 import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
-import { Eye, Mail, Megaphone, Send, Trash2, X } from "lucide-react"
+import { Eye, Mail, Send, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 import { announcementsQuery } from "@/queries/platform.queries"
@@ -47,22 +38,7 @@ import { queryKeys } from "@/lib/queryKeys"
  * later finds nobody got it has been misled by their own tool.
  */
 
-type Audience = IAnnouncement["audience"]
-
-const AUDIENCE_LABEL: Record<Audience, string> = {
-  all: "Every customer",
-  trialing: "Customers on a trial",
-  active: "Paying customers",
-}
-
-/** What each audience is useful for, in the words somebody picking would use. */
-const AUDIENCE_HINT: Record<Audience, string> = {
-  all: "Maintenance, new features, anything everyone needs to know.",
-  trialing: "Nudges and onboarding — people who have not decided yet.",
-  active: "Billing, price changes, plan news. Includes anyone in their grace window.",
-}
-
-const emptyDraft = { title: "", body: "", audience: "all" as Audience, send_email: false }
+const emptyDraft: IAnnouncementFormValues = { title: "", body: "", audience: "all", send_email: false }
 
 const RemovalNote = ({ announcement }: { announcement: IAnnouncement }) => {
   const title = <span className="font-medium text-foreground">{announcement.title}</span>
@@ -146,111 +122,16 @@ const CampaignBoard = () => {
 
   const isWithdrawal = Boolean(removing?.published_at)
 
-  const canSave = draft.title.trim().length > 0 && draft.body.trim().length > 0
-
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-      {/* ---------------------------------------------------------- composer */}
-      <Card className="h-fit">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Megaphone className="size-4" aria-hidden="true" />
-            {editingId ? "Edit draft" : "New announcement"}
-          </CardTitle>
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="announcement-title">Title</Label>
-            <Input
-              id="announcement-title"
-              value={draft.title}
-              maxLength={120}
-              onChange={(event) => setDraft({ ...draft, title: event.target.value })}
-              placeholder="Maintenance on Sunday"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="announcement-body">Message</Label>
-            <Textarea
-              id="announcement-body"
-              value={draft.body}
-              rows={7}
-              onChange={(event) => setDraft({ ...draft, body: event.target.value })}
-              placeholder={"What is happening, and what they need to do.\n\nLeave a blank line between paragraphs."}
-            />
-            <p className="text-xs text-muted-foreground">
-              Blank lines become paragraphs. Nothing else is formatted.
-            </p>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="announcement-audience">Who sees it</Label>
-            <Select
-              value={draft.audience}
-              onValueChange={(value) => setDraft({ ...draft, audience: value as Audience })}
-            >
-              <SelectTrigger id="announcement-audience" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {(Object.keys(AUDIENCE_LABEL) as Audience[]).map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {AUDIENCE_LABEL[value]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">{AUDIENCE_HINT[draft.audience]}</p>
-          </div>
-
-          <div className="space-y-2 rounded-md border p-3">
-            <div className="flex items-start gap-2.5">
-              <Checkbox
-                id="announcement-email"
-                checked={draft.send_email}
-                onCheckedChange={(checked) =>
-                  setDraft({ ...draft, send_email: checked === true })
-                }
-              />
-              <div className="space-y-1">
-                <Label htmlFor="announcement-email" className="font-normal">
-                  Email it as well
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  Goes to one address per customer — the admin you sold to — not to
-                  everybody who works there.
-                </p>
-              </div>
-            </div>
-
-            {draft.send_email && (
-              // Said before publishing, not discovered after: an unverified
-              // sending domain silently reaches nobody but your own address.
-              <p className="rounded bg-muted/60 px-2.5 py-2 text-xs text-muted-foreground">
-                Until your sending domain is verified with your mail provider, this only
-                reaches your own address. The result below will say how many it actually got to.
-              </p>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button onClick={() => void handleSave()} disabled={!canSave || isSaving} className="flex-1">
-              {editingId ? "Save changes" : "Save as draft"}
-            </Button>
-            {editingId && (
-              <Button variant="ghost" size="icon" onClick={reset} aria-label="Stop editing">
-                <X className="size-4" />
-              </Button>
-            )}
-          </div>
-
-          <p className="text-xs text-muted-foreground">
-            Saving does not send anything. Publishing is a separate step, and cannot be undone.
-          </p>
-        </CardContent>
-      </Card>
+      <AnnouncementComposer
+        draft={draft}
+        onChange={setDraft}
+        isEditing={Boolean(editingId)}
+        isSaving={isSaving}
+        onSave={() => void handleSave()}
+        onStopEditing={reset}
+      />
 
       {/* -------------------------------------------------------------- list */}
       <div className="space-y-4">
