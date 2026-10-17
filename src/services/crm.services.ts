@@ -4,6 +4,7 @@ import { httpClient } from "@/lib/axios/httpClient"
 import { toParams } from "@/lib/queryString"
 import type {
     IClient,
+    IClientDetail,
     IClientFinancials,
     IClientLink,
     ILeadPipeline,
@@ -15,7 +16,7 @@ export const getClients = async (queryString?: string) =>
     httpClient.get<IClient[]>("/clients", { params: toParams(queryString) })
 
 export const getClient = async (id: string) =>
-    httpClient.get<IClient>(`/clients/${id}`)
+    httpClient.get<IClientDetail>(`/clients/${id}`)
 
 export const getClientFinancials = async (id: string) =>
     httpClient.get<IClientFinancials>(`/clients/${id}/financials`)

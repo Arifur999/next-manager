@@ -12,8 +12,6 @@ import { Card } from "@/components/ui/card"
 import ClientLinksPanel from "@/components/modules/Admin/Clients/ClientLinksPanel"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { formatUsd } from "@/lib/currency"
-import type { IProject } from "@/types/project.types"
-import type { IClient } from "@/types/crm.types"
 import { useQuery } from "@tanstack/react-query"
 import { KeyRound } from "lucide-react"
 import Link from "next/link"
@@ -43,7 +41,7 @@ const ClientDetail = ({
 
   const credentialsQuery = useQuery(credentialsListQuery(`client_id=${clientId}`))
 
-  const client = clientQuery.data?.data as (IClient & { projects?: IProject[] }) | undefined
+  const client = clientQuery.data?.data
   const finance = financeData?.data
 
   const credentials = credentialsQuery.data?.data ?? []
@@ -102,13 +100,13 @@ const ClientDetail = ({
 
         <TabsContent value="projects" className="mt-4">
           <Card className="gap-0 overflow-hidden p-0">
-            {(client.projects ?? []).length === 0 ? (
+            {client.projects.length === 0 ? (
               <p className="px-5 py-12 text-center text-sm text-muted-foreground">
                 No projects for this client yet.
               </p>
             ) : (
               <ul className="divide-y">
-                {(client.projects ?? []).map((project) => (
+                {client.projects.map((project) => (
                   <li key={project.id}>
                     <Link
                       href={`/admin/dashboard/projects/${project.id}`}
