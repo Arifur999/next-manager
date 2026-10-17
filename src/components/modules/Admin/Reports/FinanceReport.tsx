@@ -2,9 +2,9 @@
 
 import ShareRow from "@/components/modules/Admin/Reports/ShareRow"
 import ReportEmpty from "@/components/modules/Admin/Reports/ReportEmpty"
+import PanelState from "@/components/shared/state/PanelState"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { formatBdt, formatUsd } from "@/lib/currency"
-import type { Currency } from "@/types/common.types"
+import { formatBdt, formatMoney } from "@/lib/currency"
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 import { expensesListQuery } from "@/queries/spending.queries"
@@ -31,15 +31,15 @@ const SOURCE_LABEL: Record<string, string> = {
 }
 
 const FinanceReport = () => {
-  const { data: cashData } = useQuery(cashFlowQuery())
+  const cashQuery = useQuery(cashFlowQuery())
 
   // The category breakdown endpoint exists, but the expense list already
   // carries category on each row and this page loads it anyway — grouping here
   // saves a round-trip rather than duplicating a query.
-  const { data: expenseData } = useQuery(expensesListQuery())
+  const expensesQuery = useQuery(expensesListQuery())
 
-  const cash = cashData?.data
-  const expenses = expenseData?.data ?? []
+  const cash = cashQuery.data?.data
+  const expenses = expensesQuery.data?.data ?? []
 
   const byCategory = Object.values(
     expenses.reduce<Record<string, { name: string; type: string; total: number; count: number }>>(
@@ -85,46 +85,42 @@ const FinanceReport = () => {
           </p>
         </CardHeader>
 
-        {flows.length === 0 ? (
-          <ReportEmpty>Nothing has moved yet.</ReportEmpty>
-        ) : (
-          <>
-            <div className="grid gap-4 border-b px-5 py-4 sm:grid-cols-2">
-              {(["USD", "BDT"] as const).map((currency) => {
-                const totals = cash?.totals[currency]
-                if (!totals) return null
-                const format = currency === "USD" ? formatUsd : formatBdt
+        <PanelState
+          query={cashQuery}
+          errorMessage="Cash flow did not load."
+          isEmpty={flows.length === 0}
+          empty={<ReportEmpty>Nothing has moved yet.</ReportEmpty>}
+        >
+          <div className="grid gap-4 border-b px-5 py-4 sm:grid-cols-2">
+            {(["USD", "BDT"] as const).map((currency) => {
+              const totals = cash?.totals[currency]
+              if (!totals) return null
 
-                return (
-                  <div key={currency}>
-                    <p className="text-xs text-muted-foreground">{currency}</p>
-                    <p className="mt-1 text-lg font-semibold tabular-nums">{format(totals.net)}</p>
-                    <p className="text-xs text-muted-foreground tabular-nums">
-                      {format(totals.in)} in · {format(totals.out)} out
-                    </p>
-                  </div>
-                )
-              })}
-            </div>
+              return (
+                <div key={currency}>
+                  <p className="text-xs text-muted-foreground">{currency}</p>
+                  <p className="mt-1 text-lg font-semibold tabular-nums">{formatMoney(totals.net, currency)}</p>
+                  <p className="text-xs text-muted-foreground tabular-nums">
+                    {formatMoney(totals.in, currency)} in · {formatMoney(totals.out, currency)} out
+                  </p>
+                </div>
+              )
+            })}
+          </div>
 
-            <ul className="divide-y">
-              {flows.map((flow) => (
-                <ShareRow
-                  key={`${flow.source}-${flow.currency}`}
-                  label={SOURCE_LABEL[flow.source] ?? flow.source}
-                  sub={`${flow.currency}${isTransfer(flow.source) ? " · transfer, not income or spending" : ""}`}
-                  value={
-                    flow.currency === "USD"
-                      ? formatUsd(Math.abs(flow.amount))
-                      : formatBdt(Math.abs(flow.amount))
-                  }
-                  share={(Math.abs(flow.amount) / biggest) * 100}
-                  negative={flow.amount < 0}
-                />
-              ))}
-            </ul>
-          </>
-        )}
+          <ul className="divide-y">
+            {flows.map((flow) => (
+              <ShareRow
+                key={`${flow.source}-${flow.currency}`}
+                label={SOURCE_LABEL[flow.source] ?? flow.source}
+                sub={`${flow.currency}${isTransfer(flow.source) ? " · transfer, not income or spending" : ""}`}
+                value={formatMoney(Math.abs(flow.amount), flow.currency)}
+                share={(Math.abs(flow.amount) / biggest) * 100}
+                negative={flow.amount < 0}
+              />
+            ))}
+          </ul>
+        </PanelState>
       </Card>
 
       <Card className="gap-0 overflow-hidden p-0">
@@ -136,9 +132,12 @@ const FinanceReport = () => {
           </p>
         </CardHeader>
 
-        {byCategory.length === 0 ? (
-          <ReportEmpty>No expenses recorded yet.</ReportEmpty>
-        ) : (
+        <PanelState
+          query={expensesQuery}
+          errorMessage="Expenses by category did not load."
+          isEmpty={byCategory.length === 0}
+          empty={<ReportEmpty>No expenses recorded yet.</ReportEmpty>}
+        >
           <ul className="divide-y">
             {byCategory.map((group) => (
               <ShareRow
@@ -150,7 +149,7 @@ const FinanceReport = () => {
               />
             ))}
           </ul>
-        )}
+        </PanelState>
       </Card>
     </div>
   )
