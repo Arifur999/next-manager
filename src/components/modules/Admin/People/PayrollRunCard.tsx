@@ -133,7 +133,7 @@ const PayrollRunCard = ({
               <tr key={item.id}>
                 <td className="px-5 py-2.5">
                   <p>{item.user.full_name}</p>
-                  <p className="text-xs capitalize text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     {roleTitle(item.user.role)}
                   </p>
                 </td>

@@ -62,7 +62,7 @@ const WorkloadBoard = ({ mode }: { mode: "load" | "free" }) => {
                         </Badge>
                       )}
                     </p>
-                    <p className="text-xs capitalize text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       {roleTitle(row.user.role)}
                       {row.user.department?.name ? ` · ${row.user.department.name}` : ""}
                     </p>
