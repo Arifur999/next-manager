@@ -194,6 +194,7 @@ const ApprovalQueue = ({ viewerId }: { viewerId: string }) => {
                             // is off rather than failing after the click.
                             disabled={isBusy || group.userId === viewerId}
                             onClick={() => void approve(entry.id)}
+                            aria-label={`Approve ${group.name}'s ${entry.hours.toFixed(2)} h on ${format(new Date(entry.date), "EEE dd MMM")}`}
                           >
                             Approve
                           </Button>
@@ -204,6 +205,7 @@ const ApprovalQueue = ({ viewerId }: { viewerId: string }) => {
                             variant="outline"
                             disabled={isBusy}
                             onClick={() => void unapprove(entry.id)}
+                            aria-label={`Reopen ${group.name}'s ${entry.hours.toFixed(2)} h on ${format(new Date(entry.date), "EEE dd MMM")}`}
                           >
                             <Undo2 className="size-3.5" />
                             Reopen
