@@ -16,7 +16,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { useActionMutation } from "@/hooks/useActionMutation"
-import { LEAD_STAGES, type LeadStage } from "@/types/crm.types"
+import { LEAD_STAGES } from "@/types/crm.types"
 import { leadFormZodSchema, type ILeadFormValues } from "@/zod/crm.validation"
 import { useForm } from "@tanstack/react-form"
 import { useQuery } from "@tanstack/react-query"
@@ -144,7 +144,7 @@ const CreateLeadModal = () => {
                   id={field.name}
                   label="Stage"
                   value={field.state.value}
-                  onChange={(value) => field.handleChange(value as LeadStage)}
+                  onChange={field.handleChange}
                   disabled={isPending}
                   options={LEAD_STAGES.map((stage) => ({
                     value: stage,

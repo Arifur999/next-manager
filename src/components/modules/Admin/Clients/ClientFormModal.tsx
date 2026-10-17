@@ -6,6 +6,7 @@ import {
 } from "@/app/(dashboardLayout)/admin/dashboard/clients/_action"
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
+import EntitySelect from "@/components/shared/form/EntitySelect"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -19,13 +20,6 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IClient } from "@/types/crm.types"
@@ -128,23 +122,18 @@ const ClientForm = ({ client, onDone }: { client?: IClient | null; onDone: () =>
 
       <form.Field name="status">
         {(field) => (
-          <div className="space-y-1.5">
-            <Label htmlFor={field.name}>Status</Label>
-            <Select
-              value={field.state.value}
-              onValueChange={(value) => field.handleChange(value as IClientFormValues["status"])}
-              disabled={isPending}
-            >
-              <SelectTrigger id={field.name} className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="archived">Archived</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <EntitySelect
+            id={field.name}
+            label="Status"
+            value={field.state.value ?? ""}
+            onChange={field.handleChange}
+            disabled={isPending}
+            options={[
+              { value: "active", label: "Active" },
+              { value: "inactive", label: "Inactive" },
+              { value: "archived", label: "Archived" },
+            ]}
+          />
         )}
       </form.Field>
 

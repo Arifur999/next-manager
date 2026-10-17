@@ -23,6 +23,10 @@ import { SCOPE_INFO, SCOPE_VALUES, type PermissionScope } from "@/types/permissi
 
 export const INHERIT = "__inherit__"
 
+// Radix hands back a string; anything that is not a scope is the Inherit item.
+const pickedScope = (next: string): PermissionScope | typeof INHERIT =>
+  SCOPE_VALUES.find((scope) => scope === next) ?? INHERIT
+
 interface ScopeSelectProps {
   value: PermissionScope | typeof INHERIT
   onChange: (value: PermissionScope | typeof INHERIT) => void
@@ -41,7 +45,7 @@ const ScopeSelect = ({
 }: ScopeSelectProps) => (
   <Select
     value={value}
-    onValueChange={(next) => onChange(next as PermissionScope | typeof INHERIT)}
+    onValueChange={(next) => onChange(pickedScope(next))}
     disabled={disabled}
   >
     <SelectTrigger size="sm" className="w-full min-w-28" aria-label={label}>

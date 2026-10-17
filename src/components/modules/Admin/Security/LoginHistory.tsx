@@ -1,14 +1,14 @@
 "use client"
 
-import RelativeTime from "@/components/shared/RelativeTime"
-import EmptyState from "@/components/shared/state/EmptyState"
-import PanelState from "@/components/shared/state/PanelState"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { loginHistoryColumns } from "@/components/modules/Admin/Security/loginHistoryColumns"
+import DataTable from "@/components/shared/table/DataTable"
+import type { DataTableFilterConfig } from "@/components/shared/table/dataTable.types"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
+import { buildQueryString } from "@/lib/queryString"
+import { toTableQueryProps } from "@/lib/table/queryProps"
+import type { ILoginEvent } from "@/types/workspace.types"
 import { useQuery } from "@tanstack/react-query"
-import { format, parseISO } from "date-fns"
-import { ShieldAlert, ShieldCheck } from "lucide-react"
+import { ShieldAlert } from "lucide-react"
 import { useState } from "react"
 import { loginEventsListQuery } from "@/queries/workspace.queries"
 
@@ -19,18 +19,29 @@ import { loginEventsListQuery } from "@/queries/workspace.queries"
  * belongs to no company and is not here — which is a property of how the row is
  * written rather than something this screen filters out.
  *
- * The failure count is deliberately not affected by the filter chips. It is the
+ * The failure count is deliberately not affected by the filters. It is the
  * number somebody opens this page to notice, and narrowing the list must not be
  * able to hide it.
  */
 
-const ALL = "__all__"
+// Sent to the API as success=, not applied to the rows already here: the API
+// returns the latest 100 attempts, so filtering those would miss older failures.
+const RESULT_FILTER: DataTableFilterConfig = {
+  id: "success",
+  type: "single-select",
+  label: "Result",
+  options: [
+    { label: "Refused", value: "false" },
+    { label: "Signed in", value: "true" },
+  ],
+}
 
-const FILTERS = [
-  { value: ALL, label: "Everything" },
-  { value: "false", label: "Failed only" },
-  { value: "true", label: "Successful only" },
-]
+// Searched here, over the attempts already loaded: the API has no search for
+// sign-ins, and with the result filter on the server the table filters no rows itself.
+const matchesSearchTerm = (event: ILoginEvent, term: string) => {
+  const needle = term.toLowerCase()
+  return [event.user?.full_name, event.email, event.ip].some((value) => value?.toLowerCase().includes(needle))
+}
 
 const FailedAttemptsNote = ({ count }: { count: number | undefined }) => {
   // Unknown until the list arrives, and "nothing failed" must never stand in for that.
@@ -50,108 +61,54 @@ const FailedAttemptsNote = ({ count }: { count: number | undefined }) => {
 }
 
 const LoginHistory = () => {
-  const [filter, setFilter] = useState(ALL)
+  const [success, setSuccess] = useState<string>()
+  const [searchTerm, setSearchTerm] = useState("")
 
-  const query = filter === ALL ? "" : `success=${filter}`
-
-  const loginEvents = useQuery(loginEventsListQuery(query))
+  const loginEvents = useQuery(loginEventsListQuery(buildQueryString({ success })))
   const data = loginEvents.data
 
   const events = data?.data ?? []
+  const matchingEvents = events.filter((event) => matchesSearchTerm(event, searchTerm))
   const failedLately = data?.meta?.failed_last_24h
   const retention = data?.meta?.retention_days ?? 90
 
   return (
     <div className="space-y-4">
       <Card className="gap-0 overflow-hidden p-0">
-        <CardHeader className="space-y-3 border-b px-5 py-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <CardTitle className="text-base">Sign-in attempts</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                <FailedAttemptsNote count={failedLately} />
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              {FILTERS.map((option) => (
-                <Button
-                  key={option.value}
-                  type="button"
-                  size="sm"
-                  variant={option.value === filter ? "default" : "outline"}
-                  onClick={() => setFilter(option.value)}
-                  aria-pressed={option.value === filter}
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </div>
+        <CardHeader className="border-b px-5 py-4">
+          <div>
+            <CardTitle className="text-base">Sign-in attempts</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              <FailedAttemptsNote count={failedLately} />
+            </p>
           </div>
         </CardHeader>
 
-        <PanelState
-          query={loginEvents}
-          errorMessage="The sign-in history did not load."
-          isEmpty={events.length === 0}
-          empty={
-            <EmptyState icon={ShieldCheck}>
-              {filter === ALL ? "Nothing recorded yet." : "Nothing matches that."}
-            </EmptyState>
-          }
-        >
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[46rem] text-sm">
-              <thead>
-                <tr className="border-b text-left text-xs text-muted-foreground">
-                  <th className="px-5 py-2.5 font-medium">When</th>
-                  <th className="px-5 py-2.5 font-medium">Who</th>
-                  <th className="px-5 py-2.5 font-medium">From</th>
-                  <th className="px-5 py-2.5 font-medium">Result</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {events.map((event) => (
-                  <tr key={event.id}>
-                    <td className="whitespace-nowrap px-5 py-3">
-                      <p>
-                        <RelativeTime value={event.created_at} />
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(parseISO(event.created_at), "d MMM, HH:mm")}
-                      </p>
-                    </td>
-
-                    <td className="px-5 py-3">
-                      {/* The name when we know it, the address always. A failure
-                          on an account that was since removed still has to say
-                          which address was tried. */}
-                      <p>{event.user?.full_name ?? event.email}</p>
-                      {event.user && (
-                        <p className="text-xs text-muted-foreground">{event.email}</p>
-                      )}
-                    </td>
-
-                    <td className="px-5 py-3">
-                      <p className="font-mono text-xs">{event.ip || "unknown"}</p>
-                      {event.user_agent && (
-                        <p className="max-w-64 truncate text-xs text-muted-foreground">
-                          {event.user_agent}
-                        </p>
-                      )}
-                    </td>
-
-                    <td className="px-5 py-3">
-                      <Badge variant={event.success ? "secondary" : "destructive"}>
-                        {event.success ? "signed in" : "refused"}
-                      </Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </PanelState>
+        <div className="p-4">
+          <DataTable
+            data={matchingEvents}
+            columns={loginHistoryColumns}
+            tableId="sign-ins"
+            exportFileName="sign-ins"
+            search={{
+              value: searchTerm,
+              placeholder: "Search name, email or IP address...",
+              onDebouncedChange: setSearchTerm,
+            }}
+            filters={{
+              configs: [RESULT_FILTER],
+              values: { success },
+              onFilterChange: (_filterId, value) => setSuccess(typeof value === "string" ? value : undefined),
+              onClearAll: () => {
+                setSuccess(undefined)
+                setSearchTerm("")
+              },
+            }}
+            {...toTableQueryProps(loginEvents)}
+            // Shown only when nothing narrows the list; a filtered view says so itself.
+            emptyMessage="Nothing recorded yet."
+          />
+        </div>
 
         <div className="border-t px-5 py-3 text-xs text-muted-foreground">
           {/* Said plainly rather than buried: this page stores addresses. */}

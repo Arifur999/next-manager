@@ -5,7 +5,6 @@ import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
 import EntitySelect from "@/components/shared/form/EntitySelect"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import type { KpiMetric, KpiPeriod } from "@/types/insights.types"
 import type { IUser } from "@/types/user.types"
 import { AGENCY_WIDE_TARGET, kpiTargetFormZodSchema, type IKpiTargetFormValues } from "@/zod/insights.validation"
 import { useForm, useStore } from "@tanstack/react-form"
@@ -70,7 +69,7 @@ const TargetForm = ({
               id={field.name}
               label="Metric"
               value={field.state.value}
-              onChange={(value) => field.handleChange(value as KpiMetric)}
+              onChange={field.handleChange}
               options={METRICS.map((entry) => ({ value: entry.metric, label: entry.label }))}
             />
           )}
@@ -82,7 +81,7 @@ const TargetForm = ({
               id={field.name}
               label="Period"
               value={field.state.value}
-              onChange={(value) => field.handleChange(value as KpiPeriod)}
+              onChange={field.handleChange}
               options={PERIODS}
             />
           )}

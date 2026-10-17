@@ -182,9 +182,7 @@ const CreateTaskModal = () => {
                       id={field.name}
                       label="Priority"
                       value={field.state.value}
-                      onChange={(value) =>
-                        field.handleChange(value as ITaskFormValues["priority"])
-                      }
+                      onChange={field.handleChange}
                       disabled={isPending}
                       options={[
                         { value: "low", label: "Low" },

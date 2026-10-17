@@ -9,19 +9,19 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-export type SelectOption = {
-  value: string
+export type SelectOption<TValue extends string = string> = {
+  value: TValue
   label: string
   /** A second line under the label — an account's currency, a project's code. */
   hint?: string
 }
 
-type EntitySelectProps = {
+type EntitySelectProps<TValue extends string> = {
   id: string
   label: string
   value: string
-  onChange: (value: string) => void
-  options: SelectOption[]
+  onChange: (value: TValue) => void
+  options: readonly SelectOption<TValue>[]
   placeholder?: string
   disabled?: boolean
   /** Shown under the field — used to explain a currency restriction. */
@@ -36,7 +36,7 @@ type EntitySelectProps = {
  * Renders the empty case as disabled text rather than an empty dropdown: "no
  * USD accounts yet" tells the user what to do, an empty list does not.
  */
-const EntitySelect = ({
+const EntitySelect = <TValue extends string = string>({
   id,
   label,
   value,
@@ -47,8 +47,15 @@ const EntitySelect = ({
   description,
   emptyMessage = "Nothing to choose from yet",
   error,
-}: EntitySelectProps) => {
+}: EntitySelectProps<TValue>) => {
   const isEmpty = options.length === 0
+
+  // Radix hands back a plain string. Passing on the option it names keeps the
+  // value typed (a LeadStage, a KpiMetric) without a cast at every call site.
+  const choose = (next: string) => {
+    const chosen = options.find((option) => option.value === next)
+    if (chosen) onChange(chosen.value)
+  }
 
   return (
     <div className="space-y-1.5">
@@ -56,7 +63,7 @@ const EntitySelect = ({
         {label}
       </Label>
 
-      <Select value={value} onValueChange={onChange} disabled={disabled || isEmpty}>
+      <Select value={value} onValueChange={choose} disabled={disabled || isEmpty}>
         <SelectTrigger
           id={id}
           className="w-full"

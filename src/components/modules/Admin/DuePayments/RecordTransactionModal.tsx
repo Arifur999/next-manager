@@ -140,9 +140,7 @@ const RecordTransactionModal = ({ people }: { people: IDuePerson[] }) => {
                     id={field.name}
                     label="Direction"
                     value={field.state.value}
-                    onChange={(value) =>
-                      field.handleChange(value as IDueTransactionFormValues["direction"])
-                    }
+                    onChange={field.handleChange}
                     disabled={isPending}
                     options={[
                       { value: "received", label: "Received", hint: "Money came in" },
