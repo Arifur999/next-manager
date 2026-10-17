@@ -11,7 +11,7 @@ import { toTableQueryProps } from "@/lib/table/queryProps"
 import { projectsListQuery } from "@/queries/project.queries"
 import { workflowStatusesListQuery } from "@/queries/work.queries"
 import type { IProject } from "@/types/project.types"
-import { keepPreviousData, useQuery } from "@tanstack/react-query"
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { useMemo } from "react"
 
@@ -39,7 +39,8 @@ const ProjectsTable = ({ canManage = true }: { canManage?: boolean }) => {
     return { ...PROJECTS_TABLE, filters: [statusFilter] }
   }, [statusData])
 
-  const { queryString, dataTableProps } = useServerDataTable<IProject>(tableConfig)
+  const queryClient = useQueryClient()
+  const { queryString, filterQueryString, dataTableProps } = useServerDataTable<IProject>(tableConfig)
   const projectsQuery = useQuery({ ...projectsListQuery(queryString), placeholderData: keepPreviousData })
 
   const { editingItem, isEditModalOpen, onEditOpenChange, tableActions } = useRowActionModalState<IProject>({
@@ -54,6 +55,7 @@ const ProjectsTable = ({ canManage = true }: { canManage?: boolean }) => {
         columns={projectsColumns}
         tableId="projects"
         exportFileName="projects"
+        exportRows={async () => (await queryClient.fetchQuery(projectsListQuery(filterQueryString))).data}
         {...dataTableProps}
         {...toTableQueryProps(projectsQuery)}
         emptyMessage="No projects yet."
