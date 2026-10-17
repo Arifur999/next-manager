@@ -3,6 +3,8 @@
 import RolePermissionGrid from "@/components/modules/Admin/Permissions/RolePermissionGrid"
 import UserPermissionGrid from "@/components/modules/Admin/Permissions/UserPermissionGrid"
 import { usePermissionGrid } from "@/components/shared/permission/usePermissionGrid"
+import ErrorState from "@/components/shared/state/ErrorState"
+import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Select,
@@ -16,6 +18,7 @@ import { ROLE_LABEL, titleise } from "@/types/permission.types"
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { usersListQuery } from "@/queries/people.queries"
+import { permissionGridQuery } from "@/queries/workspace.queries"
 
 /**
  * Who may do what, as a grid rather than a list of capabilities.
@@ -36,6 +39,8 @@ const PermissionsBoard = () => {
 
   const roleGrid = usePermissionGrid()
   const personGrid = usePermissionGrid(personId || undefined)
+  // The same cached read as roleGrid, observed for the error and refetch the hook does not return.
+  const gridRead = useQuery(permissionGridQuery())
 
   const { data: userData } = useQuery(usersListQuery())
 
@@ -43,11 +48,19 @@ const PermissionsBoard = () => {
   // would look like a restriction and enforce nothing.
   const people = ((userData?.data ?? [])).filter((user) => user.role !== "admin")
 
-  if (roleGrid.isLoading && !roleGrid.grid) {
-    return <div className="h-96 animate-pulse rounded-xl bg-muted/40" />
+  if (gridRead.isError && !roleGrid.grid) {
+    return (
+      <Card>
+        <ErrorState
+          message="The permission grid did not load."
+          onRetry={() => void gridRead.refetch()}
+          isRetrying={gridRead.isFetching}
+        />
+      </Card>
+    )
   }
 
-  if (!roleGrid.grid) return null
+  if (!roleGrid.grid) return <LoadingBlock height="h-96" rounded />
 
   const roles = roleGrid.grid.roles
 
