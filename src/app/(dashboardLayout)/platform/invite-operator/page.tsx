@@ -1,30 +1,32 @@
-import { site } from "@/data/site"
 import PlatformInvites from "@/components/modules/Platform/PlatformInvites";
-import type { Metadata } from "next";
 import PageHeader from "@/components/shared/PageHeader";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import { platformInvitesQuery } from "@/queries/platform.queries";
+import type { QueryClient } from "@tanstack/react-query";
+import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Invite operator",
+  title: "Invite an operator",
 };
 
-/**
- * Deliberately NOT called "invite admin".
- *
- * This page adds somebody to the team that runs AGENCIO itself — they see every
- * customer and can suspend any of them. The admin of a customer's agency is a
- * different person entirely, and is created with the company on the customers
- * screen. The old name for this page was read as the second thing, which is the
- * reasonable reading, and it handed out the run of the platform.
- */
+const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(platformInvitesQuery());
+
+// Not "invite admin": an operator runs the platform and can suspend any customer,
+// which is a different person from the admin of a customer's agency.
 const InviteOperatorPage = () => (
   <div className="space-y-6">
     <PageHeader title="Invite an operator">
-      Somebody who helps you run {site.name}: they see every customer and can suspend any
-      of them. They choose their own password and you approve them; a link alone does
-      not create an operator.
+      Add someone to the team that runs the platform; agency owners come in through{" "}
+      <Link href="/platform/invite-agency" className="text-primary underline-offset-4 hover:underline">
+        Invite an agency
+      </Link>
+      .
     </PageHeader>
 
-    <PlatformInvites />
+    <QueryPrefetch prefetch={prefetch}>
+      <PlatformInvites />
+    </QueryPrefetch>
   </div>
 );
 

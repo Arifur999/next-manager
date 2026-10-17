@@ -1,6 +1,5 @@
 "use client"
 
-import { site } from "@/data/site"
 import {
   invitePlatformAdminAction,
   revokePlatformInviteAction,
@@ -15,7 +14,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import Link from "next/link"
 import {
   PLATFORM_PERMISSIONS,
   PLATFORM_PERMISSION_INFO,
@@ -26,7 +24,7 @@ import { platformInviteFormZodSchema, type IPlatformInviteFormValues } from "@/z
 import { useForm } from "@tanstack/react-form"
 import { useQuery } from "@tanstack/react-query"
 import { format, isPast, parseISO } from "date-fns"
-import { MailPlus, Trash2 } from "lucide-react"
+import { Ban, MailPlus } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 import { platformInvitesQuery } from "@/queries/platform.queries"
@@ -34,14 +32,9 @@ import { queryKeys } from "@/lib/queryKeys"
 import type { IInviteMail } from "@/types/common.types"
 
 /**
- * Inviting somebody onto the platform team.
- *
- * The access they start with is chosen here rather than granted afterwards.
- * An operator who arrives with everything and is narrowed later has, for
- * however long that takes, been able to suspend any customer you have.
- *
- * They still land pending and need approving. The link alone does not create
- * an operator — which matters more here than anywhere else in the product.
+ * Inviting somebody onto the platform team, with their access chosen up front:
+ * an operator who arrives with everything can suspend any customer until they
+ * are narrowed. They still land pending, and a link alone creates nobody.
  */
 
 const statusOf = (invite: IPlatformInvite) => {
@@ -52,6 +45,10 @@ const statusOf = (invite: IPlatformInvite) => {
 }
 
 const inviteDefaults: IPlatformInviteFormValues = { email: "", permissions: [] }
+
+// TanStack Form hands back a zod issue or a string, depending on the validator.
+const permissionsError = (error: unknown) =>
+  typeof error === "object" && error !== null && "message" in error ? String(error.message) : String(error)
 
 const PlatformInvites = () => {
   const [freshLink, setFreshLink] = useState<string | null>(null)
@@ -82,7 +79,7 @@ const PlatformInvites = () => {
 
   const { run: revokeInvite, isPending: isRevoking } = useActionMutation({
     action: revokePlatformInviteAction,
-    successMessage: "Invite revoked — the link stops working immediately",
+    successMessage: "Invite revoked. The link no longer works.",
     invalidateKeys: [queryKeys.platformInvites.all],
     refresh: false,
   })
@@ -101,19 +98,6 @@ const PlatformInvites = () => {
   return (
     <div className="space-y-6">
       <Card className="gap-0 p-0">
-        <CardHeader className="border-b px-5 py-4">
-          <CardTitle className="text-base">Invite an operator</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Somebody who runs {site.name} with you, not the admin of a customer’s agency,
-            who is created together with their company on the{" "}
-            <Link href="/platform/customers" className="text-primary underline-offset-4 hover:underline">
-              customers screen
-            </Link>
-            . They choose their own password and land waiting for approval; the link is
-            emailed to them, works once, and expires in seven days.
-          </p>
-        </CardHeader>
-
         <form
           className="space-y-5 p-5"
           noValidate
@@ -129,23 +113,23 @@ const PlatformInvites = () => {
                 field={field}
                 label="Their email"
                 type="email"
-                placeholder="colleague@example.com"
+                autoComplete="off"
+                placeholder="e.g. colleague@example.com"
+                description="The link is emailed to them, works once and expires in seven days."
                 className="max-w-md"
                 disabled={isPending}
               />
             )}
           </form.Field>
 
-          <div className="space-y-2">
-            <Label>What they may do</Label>
-            <p className="text-xs text-muted-foreground">
-              {/* An empty list means full access, so an untouched form must not be sendable. */}
-              Pick at least one. Choosing now is better than narrowing later — until you
-              do, an operator can suspend any customer you have.
-            </p>
-
-            <form.Field name="permissions">
-              {(field) => (
+          {/* An empty list means full access, so the form refuses to send one. */}
+          <form.Field name="permissions" validators={{ onChange: platformInviteFormZodSchema.shape.permissions }}>
+            {(field) => (
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium">What they may do</legend>
+                <p className="text-xs text-muted-foreground">
+                  Pick at least one area. An operator with nothing picked would get full access.
+                </p>
                 <div className="grid gap-2 pt-1 sm:grid-cols-2">
                   {PLATFORM_PERMISSIONS.map((permission) => {
                     const info = PLATFORM_PERMISSION_INFO[permission]
@@ -174,20 +158,19 @@ const PlatformInvites = () => {
                     )
                   })}
                 </div>
-              )}
-            </form.Field>
-          </div>
-
-          <form.Subscribe
-            selector={({ values }) => values.email.trim() !== "" && values.permissions.length > 0}
-          >
-            {(isReady) => (
-              <Button type="submit" disabled={isPending || !isReady}>
-                <MailPlus className="size-4" />
-                {isPending ? "Sending..." : "Send invite"}
-              </Button>
+                {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
+                  <p role="alert" className="text-sm text-destructive">
+                    {permissionsError(field.state.meta.errors[0])}
+                  </p>
+                )}
+              </fieldset>
             )}
-          </form.Subscribe>
+          </form.Field>
+
+          <Button type="submit" disabled={isPending}>
+            <MailPlus className="size-4" aria-hidden="true" />
+            {isPending ? "Sending..." : "Send invite"}
+          </Button>
         </form>
 
         {freshLink && (
@@ -205,7 +188,7 @@ const PlatformInvites = () => {
 
       <Card className="gap-0 overflow-hidden p-0">
         <CardHeader className="border-b px-5 py-4">
-          <CardTitle className="text-base">Invites</CardTitle>
+          <CardTitle className="text-base">Sent invites</CardTitle>
         </CardHeader>
 
         <PanelState
@@ -246,8 +229,8 @@ const PlatformInvites = () => {
                         disabled={isRevoking}
                         onClick={() => setRevoking(invite)}
                       >
-                        <Trash2 className="size-3.5" />
-                        <span className="sr-only">Revoke</span>
+                        <Ban className="size-3.5" aria-hidden="true" />
+                        Revoke
                       </Button>
                     )}
                   </div>
@@ -268,7 +251,7 @@ const PlatformInvites = () => {
           revoking && (
             <>
               The link sent to <span className="font-medium text-foreground">{revoking.email}</span>{" "}
-              stops working immediately. Nothing was created from it, so nothing else changes.
+              stops working now. Nothing was created from it, so nothing else changes.
             </>
           )
         }
