@@ -26,3 +26,14 @@ export const shareholdersQuery = () =>
 
 export const transactionsListQuery = (queryString = "") =>
   queryOptions({ queryKey: queryKeys.transactions.list(queryString), queryFn: () => getTransactions(queryString) })
+
+// What any money record changes besides its own list: the balances, the ledger
+// and the figures built on them. Every write to a money record invalidates these.
+export const ledgerQueryKeys = [
+  queryKeys.accounts.all,
+  queryKeys.transactions.all,
+  queryKeys.dashboard.all,
+  queryKeys.reportCashFlow.all,
+  queryKeys.reportPl.all,
+  queryKeys.reportMonthly.all,
+]
