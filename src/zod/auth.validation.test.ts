@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   changePasswordServerZodSchema,
+  forgotPasswordServerZodSchema,
   newPassword,
   registerServerZodSchema,
   requiredEmail,
@@ -87,5 +88,17 @@ describe("registerServerZodSchema", () => {
   it("refuses a missing company name and a weak password", () => {
     expect(registerServerZodSchema.safeParse({ ...valid, organization_name: "" }).success).toBe(false)
     expect(registerServerZodSchema.safeParse({ ...valid, password: "welcome" }).success).toBe(false)
+  })
+})
+
+describe("forgotPasswordServerZodSchema", () => {
+  it("sends only the email", () => {
+    expect(forgotPasswordServerZodSchema.parse({ email: "rina@northwind.com", extra: 1 })).toEqual({
+      email: "rina@northwind.com",
+    })
+  })
+
+  it("refuses something that is not an email", () => {
+    expect(forgotPasswordServerZodSchema.safeParse({ email: "rina" }).success).toBe(false)
   })
 })

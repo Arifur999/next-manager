@@ -99,3 +99,6 @@ export const registerServerZodSchema = registerFormZodSchema.transform((values) 
 }))
 
 export type IRegisterPayload = z.output<typeof registerServerZodSchema>
+
+// The form already holds the API's payload.
+export const forgotPasswordServerZodSchema = forgotPasswordFormZodSchema

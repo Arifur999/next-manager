@@ -11,7 +11,7 @@ import { logger } from "@/lib/logger"
 import { classifyMeResponse } from "@/lib/session"
 import type { ApiResponse } from "@/types/api.types"
 import { type IUser } from "@/types/user.types"
-import type { IRegisterPayload } from "@/zod/auth.validation"
+import type { IForgotPasswordFormValues, IRegisterPayload } from "@/zod/auth.validation"
 import { cookies } from "next/headers"
 import { cache } from "react"
 import { getApiBaseUrl } from "@/env"
@@ -86,3 +86,7 @@ const postPublic = async <TData>(path: string, payload: unknown) => {
 
 /** Creates a company and its first admin. Returns the user, not tokens: they sign in next. */
 export const register = async (payload: IRegisterPayload) => postPublic<IUser>("/auth/register", payload)
+
+/** Answers the same whether or not the address has an account. */
+export const forgotPassword = async (payload: IForgotPasswordFormValues) =>
+    postPublic<{ message: string }>("/auth/forgot-password", payload)
