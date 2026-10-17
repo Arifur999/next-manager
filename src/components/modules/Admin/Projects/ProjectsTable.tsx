@@ -62,6 +62,7 @@ const ProjectsTable = ({ canManage = true }: { canManage?: boolean }) => {
         data={projects}
         columns={projectsColumns}
         tableId="projects"
+        exportFileName="projects"
         {...toTableQueryProps(projectsQuery)}
         emptyMessage="No projects yet."
         toolbarAction={canManage ? <ProjectFormModal /> : undefined}
