@@ -5,6 +5,8 @@ import ProjectFinanceTiles from "@/components/modules/Admin/Projects/ProjectFina
 import ProjectMilestonePanel from "@/components/modules/Admin/Projects/ProjectMilestonePanel"
 import ProjectTasksPanel from "@/components/modules/Admin/Projects/ProjectTasksPanel"
 import ProjectTeamPanel from "@/components/modules/Admin/Projects/ProjectTeamPanel"
+import ErrorState from "@/components/shared/state/ErrorState"
+import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -38,21 +40,37 @@ const ProjectDetail = ({
   /** Whether the panels that CHANGE a project appear. Admin and PM only. */
   canManage?: boolean
 }) => {
-  const { data: projectData, isLoading } = useQuery(projectDetailQuery(projectId))
+  const projectQuery = useQuery(projectDetailQuery(projectId))
 
   const { data: financeData } = useQuery({ ...projectFinancialsQuery(projectId), enabled: canSeeMoney })
 
   const { data: credentialsData } = useQuery(credentialsListQuery(`project_id=${projectId}`))
 
-  const project = projectData?.data as (IProject & { tasks?: ITask[] }) | undefined
+  const project = projectQuery.data?.data as (IProject & { tasks?: ITask[] }) | undefined
   const finance = financeData?.data
   const credentials = credentialsData?.data ?? []
 
-  if (isLoading && !project) {
-    return <Card className="h-64 animate-pulse bg-muted/40" />
+  // A failed refresh keeps the project it already has on screen; only a page
+  // with nothing to show says it did not load.
+  if (!project && projectQuery.isError) {
+    return (
+      <Card>
+        <ErrorState
+          message="This project did not load."
+          onRetry={() => void projectQuery.refetch()}
+          isRetrying={projectQuery.isFetching}
+        />
+      </Card>
+    )
   }
 
-  if (!project) return null
+  if (!project) {
+    return (
+      <Card className="overflow-hidden p-0">
+        <LoadingBlock height="h-64" />
+      </Card>
+    )
+  }
 
   return (
     <div className="space-y-6">
