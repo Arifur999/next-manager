@@ -2,6 +2,8 @@
 
 import { createPlanAction, updatePlanAction } from "@/app/(dashboardLayout)/platform/_action"
 import AppField from "@/components/shared/form/AppField"
+import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,6 +17,7 @@ import {
 } from "@/zod/platform.validation"
 import { useForm } from "@tanstack/react-form"
 import { useQuery } from "@tanstack/react-query"
+import { Layers } from "lucide-react"
 import { useState } from "react"
 import { plansQuery } from "@/queries/platform.queries"
 import { queryKeys } from "@/lib/queryKeys"
@@ -131,9 +134,9 @@ const PlanRow = ({ plan }: { plan: IPlan }) => {
 }
 
 const PlansBoard = () => {
-  const { data, isLoading } = useQuery(plansQuery())
+  const plansList = useQuery(plansQuery())
 
-  const plans = data?.data ?? []
+  const plans = plansList.data?.data ?? []
 
   const { run: createPlan, isPending } = useActionMutation({
     action: createPlanAction,
@@ -227,15 +230,22 @@ const PlansBoard = () => {
           </p>
         </CardHeader>
 
-        {isLoading && plans.length === 0 ? (
-          <div className="h-32 animate-pulse bg-muted/40" />
-        ) : (
+        <PanelState
+          query={plansList}
+          errorMessage="The plans did not load."
+          isEmpty={plans.length === 0}
+          empty={
+            <EmptyState icon={Layers} hint="Create the first one above, then put companies on it.">
+              No plans yet.
+            </EmptyState>
+          }
+        >
           <ul className="divide-y">
             {plans.map((plan) => (
               <PlanRow key={plan.id} plan={plan} />
             ))}
           </ul>
-        )}
+        </PanelState>
       </Card>
     </div>
   )
