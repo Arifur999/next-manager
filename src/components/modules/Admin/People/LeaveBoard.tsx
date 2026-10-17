@@ -6,28 +6,21 @@ import {
 } from "@/app/(dashboardLayout)/dashboard/leave/_action"
 import LeaveBalanceCard from "@/components/modules/Admin/People/LeaveBalanceCard"
 import LeaveRequestCard from "@/components/modules/Admin/People/LeaveRequestCard"
+import LeaveRequestRow from "@/components/modules/Admin/People/LeaveRequestRow"
+import TurnDownLeaveDialog from "@/components/modules/Admin/People/TurnDownLeaveDialog"
 import EmptyState from "@/components/shared/state/EmptyState"
 import PanelState from "@/components/shared/state/PanelState"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { useActionMutation } from "@/hooks/useActionMutation"
-import type { LeaveStatus } from "@/types/people.types"
+import type { ILeaveRequest } from "@/types/people.types"
 import { useQuery } from "@tanstack/react-query"
-import { format, parseISO } from "date-fns"
 import { CalendarOff } from "lucide-react"
+import { useState } from "react"
 import { leaveRequestsListQuery } from "@/queries/people.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
 // Asking to be away, and deciding. The decide buttons follow `canDecide` from the
 // page, because the API refuses everybody but an approver with a 403.
-
-const STATUS_TONE: Record<LeaveStatus, "secondary" | "outline" | "destructive"> = {
-  pending: "outline",
-  approved: "secondary",
-  rejected: "destructive",
-  cancelled: "outline",
-}
 
 // Every change to a request moves the requester's balance too.
 const LEAVE_KEYS = [queryKeys.leaveRequests.all, queryKeys.leaveBalance.all]
@@ -36,10 +29,12 @@ const LeaveBoard = ({ canDecide }: { canDecide: boolean }) => {
   const requestList = useQuery(leaveRequestsListQuery())
 
   const requests = requestList.data?.data ?? []
+  const [turningDown, setTurningDown] = useState<ILeaveRequest | null>(null)
 
   // No successMessage: the server says "Leave approved" or "Leave turned down".
   const { run: decide, isPending: isDeciding } = useActionMutation({
-    action: ({ id, approve }: { id: string; approve: boolean }) => decideLeaveAction(id, { approve }),
+    action: ({ id, approve, note }: { id: string; approve: boolean; note?: string }) =>
+      decideLeaveAction(id, { approve, note }),
     invalidateKeys: LEAVE_KEYS,
     refresh: false,
   })
@@ -79,60 +74,30 @@ const LeaveBoard = ({ canDecide }: { canDecide: boolean }) => {
         >
           <ul className="divide-y">
             {requests.map((request) => (
-              <li
+              <LeaveRequestRow
                 key={request.id}
-                className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5"
-              >
-                <div className="min-w-48 flex-1">
-                  <p className="flex items-center gap-2 font-medium">
-                    {request.user.full_name}
-                    <Badge variant={STATUS_TONE[request.status]}>{request.status}</Badge>
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {request.leave_type.name} · {request.days} day
-                    {Number(request.days) === 1 ? "" : "s"} ·{" "}
-                    {format(parseISO(request.from_date), "d MMM")} –{" "}
-                    {format(parseISO(request.to_date), "d MMM yyyy")}
-                    {request.reason ? ` · ${request.reason}` : ""}
-                  </p>
-                </div>
-
-                {request.status === "pending" && (
-                  <div className="flex items-center gap-2">
-                    {canDecide && (
-                      <>
-                        <Button
-                          size="sm"
-                          disabled={isBusy}
-                          onClick={() => void decide({ id: request.id, approve: true })}
-                        >
-                          Approve
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={isBusy}
-                          onClick={() => void decide({ id: request.id, approve: false })}
-                        >
-                          Turn down
-                        </Button>
-                      </>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      disabled={isBusy}
-                      onClick={() => void withdraw(request.id)}
-                    >
-                      Withdraw
-                    </Button>
-                  </div>
-                )}
-              </li>
+                request={request}
+                canDecide={canDecide}
+                isBusy={isBusy}
+                onApprove={() => void decide({ id: request.id, approve: true })}
+                onTurnDown={() => setTurningDown(request)}
+                onWithdraw={() => void withdraw(request.id)}
+              />
             ))}
           </ul>
         </PanelState>
       </Card>
+
+      <TurnDownLeaveDialog
+        request={turningDown}
+        onOpenChange={(open) => {
+          if (!open) setTurningDown(null)
+        }}
+        isPending={isDeciding}
+        onConfirm={(note) =>
+          turningDown ? decide({ id: turningDown.id, approve: false, note }) : Promise.resolve(false)
+        }
+      />
     </div>
   )
 }

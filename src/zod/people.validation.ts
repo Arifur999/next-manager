@@ -146,6 +146,12 @@ export const requestLeaveServerZodSchema = leaveRequestFormZodSchema.transform((
     reason: values.reason,
 }))
 
-export const leaveDecisionServerZodSchema = z.object({
-    approve: z.boolean("Say whether it is approved"),
-})
+// Why a request was turned down, shown to the person who asked. Optional.
+export const leaveDecisionNoteZodSchema = z.string().trim().max(300, "Keep the reason under 300 characters")
+
+export const leaveDecisionServerZodSchema = z
+    .object({
+        approve: z.boolean("Say whether it is approved"),
+        note: leaveDecisionNoteZodSchema.optional(),
+    })
+    .transform((values) => ({ approve: values.approve, note: values.note || undefined }))

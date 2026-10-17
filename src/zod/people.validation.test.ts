@@ -221,4 +221,17 @@ describe("leaveDecisionServerZodSchema", () => {
     it("refuses an answer that is not a boolean", () => {
         expect(leaveDecisionServerZodSchema.safeParse({ approve: "yes" }).success).toBe(false)
     })
+
+    it("sends a trimmed reason with a turn-down, and none when it is blank", () => {
+        expect(leaveDecisionServerZodSchema.parse({ approve: false, note: "  Launch week " })).toEqual({
+            approve: false,
+            note: "Launch week",
+        })
+        expect(leaveDecisionServerZodSchema.parse({ approve: false, note: "   " }).note).toBeUndefined()
+    })
+
+    it("refuses a reason longer than the API keeps", () => {
+        const result = leaveDecisionServerZodSchema.safeParse({ approve: false, note: "x".repeat(301) })
+        expect(result.error?.issues[0]?.message).toBe("Keep the reason under 300 characters")
+    })
 })
