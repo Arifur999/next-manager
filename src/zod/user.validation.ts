@@ -14,6 +14,14 @@ export const ROLE_LABELS: Record<(typeof ASSIGNABLE_ROLES)[number], string> = {
 
 const assignableRoles = ASSIGNABLE_ROLES
 
+// The Select's value for "no department": it cannot hold "", and null is a real
+// answer here, for somebody who works across all of them.
+export const NO_DEPARTMENT = "__none__"
+
+/** The API wants null for "no department", never the sentinel. */
+export const toDepartmentId = (value: string | undefined) =>
+  !value || value === NO_DEPARTMENT ? null : value
+
 export const createUserFormZodSchema = z.object({
   full_name: z.string().min(1, "Full name is required"),
   email: z.string().min(1, "Email is required").email("Enter a valid email address"),
@@ -31,6 +39,13 @@ export const createUserFormZodSchema = z.object({
 
 export type ICreateUserFormValues = z.infer<typeof createUserFormZodSchema>
 
+export const createUserServerZodSchema = createUserFormZodSchema.transform((values) => ({
+  ...values,
+  department_id: toDepartmentId(values.department_id),
+}))
+
+export type ICreateUserPayload = z.output<typeof createUserServerZodSchema>
+
 // Email and password are not editable from the team screen - changing either is
 // its own flow, with its own confirmation.
 export const editUserFormZodSchema = z.object({
@@ -46,3 +61,10 @@ export const editUserFormZodSchema = z.object({
 })
 
 export type IEditUserFormValues = z.infer<typeof editUserFormZodSchema>
+
+export const updateUserServerZodSchema = editUserFormZodSchema.transform((values) => ({
+  ...values,
+  department_id: toDepartmentId(values.department_id),
+}))
+
+export type IUpdateUserPayload = z.output<typeof updateUserServerZodSchema>

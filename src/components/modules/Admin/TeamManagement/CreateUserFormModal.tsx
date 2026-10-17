@@ -1,10 +1,7 @@
 "use client"
 
 import { createUserAction } from "@/app/(dashboardLayout)/admin/dashboard/team-management/_action"
-import DepartmentField, {
-  NO_DEPARTMENT,
-  toDepartmentId,
-} from "@/components/modules/Admin/TeamManagement/DepartmentField"
+import DepartmentField from "@/components/modules/Admin/TeamManagement/DepartmentField"
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
 import { Button } from "@/components/ui/button"
@@ -29,6 +26,7 @@ import {
 } from "@/components/ui/select"
 import {
   ASSIGNABLE_ROLES,
+  NO_DEPARTMENT,
   ROLE_LABELS,
   createUserFormZodSchema,
   type ICreateUserFormValues,
@@ -58,8 +56,7 @@ const CreateUserFormModal = () => {
   const router = useRouter()
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: ICreateUserFormValues) =>
-      createUserAction({ ...values, department_id: toDepartmentId(values.department_id) }),
+    mutationFn: (values: ICreateUserFormValues) => createUserAction(values),
   })
 
   const form = useForm({

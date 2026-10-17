@@ -1,10 +1,7 @@
 "use client"
 
 import { updateUserAction } from "@/app/(dashboardLayout)/admin/dashboard/team-management/_action"
-import DepartmentField, {
-  NO_DEPARTMENT,
-  toDepartmentId,
-} from "@/components/modules/Admin/TeamManagement/DepartmentField"
+import DepartmentField from "@/components/modules/Admin/TeamManagement/DepartmentField"
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
 import { Button } from "@/components/ui/button"
@@ -30,6 +27,7 @@ import {
 import { type IUser } from "@/types/user.types"
 import {
   ASSIGNABLE_ROLES,
+  NO_DEPARTMENT,
   ROLE_LABELS,
   editUserFormZodSchema,
   type IEditUserFormValues,
@@ -56,12 +54,7 @@ const EditUserForm = ({ user, onOpenChange }: { user: IUser; onOpenChange: (open
   const router = useRouter()
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IEditUserFormValues) =>
-      updateUserAction(user.id, {
-        ...values,
-        // The sentinel never leaves the form: the API wants null.
-        department_id: toDepartmentId(values.department_id),
-      }),
+    mutationFn: (values: IEditUserFormValues) => updateUserAction(user.id, values),
   })
 
   const form = useForm({

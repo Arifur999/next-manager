@@ -1,57 +1,19 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
+import { requireId, runAction, runValidatedAction } from "@/lib/runAction"
 import { createUser, deleteUser, updateUser } from "@/services/user.services"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
-import { type IUser } from "@/types/user.types"
+import { createUserServerZodSchema, updateUserServerZodSchema } from "@/zod/user.validation"
 
-export const createUserAction = async (payload: {
-  full_name: string
-  email: string
-  password: string
-  phone?: string
-  role: string
-  /** Null is "no department", and a real answer. */
-  department_id?: string | null
-}): Promise<ApiResponse<IUser> | ApiErrorResponse> => {
-  try {
-    return await createUser(payload)
-  } catch (error: unknown) {
-    return { success: false, message: getActionErrorMessage(error, "Failed to create team member") }
-  }
-}
+// "An account with this email already exists" and the last-admin guard are
+// the server's words, and are shown as they are.
+export const createUserAction = async (values: unknown) =>
+  runValidatedAction(createUserServerZodSchema, values, "Failed to create team member", createUser)
 
-export const updateUserAction = async (
-  id: string,
-  payload: {
-    full_name?: string
-    phone?: string
-    role?: string
-    status?: string
-    department_id?: string | null
-  },
-): Promise<ApiResponse<IUser> | ApiErrorResponse> => {
-  if (!id) {
-    return { success: false, message: "Invalid user id" }
-  }
+export const updateUserAction = async (id: string, values: unknown) =>
+  requireId(id, "user") ??
+  runValidatedAction(updateUserServerZodSchema, values, "Failed to update team member", (payload) =>
+    updateUser(id, payload),
+  )
 
-  try {
-    return await updateUser(id, payload)
-  } catch (error: unknown) {
-    return { success: false, message: getActionErrorMessage(error, "Failed to update team member") }
-  }
-}
-
-export const deleteUserAction = async (
-  id: string,
-): Promise<ApiResponse<{ message: string }> | ApiErrorResponse> => {
-  if (!id) {
-    return { success: false, message: "Invalid user id" }
-  }
-
-  try {
-    return await deleteUser(id)
-  } catch (error: unknown) {
-    return { success: false, message: getActionErrorMessage(error, "Failed to delete team member") }
-  }
-}
+export const deleteUserAction = async (id: string) =>
+  requireId(id, "user") ?? runAction("Failed to delete team member", () => deleteUser(id))

@@ -11,6 +11,7 @@ import {
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 import { departmentsQuery } from "@/queries/people.queries"
+import { NO_DEPARTMENT } from "@/zod/user.validation"
 
 /**
  * The department picker, shared by the create and edit forms.
@@ -23,12 +24,6 @@ import { departmentsQuery } from "@/queries/people.queries"
  * are already in it — that is the point of retiring rather than deleting — but
  * nobody new should be put into a team the agency has stopped using.
  */
-
-export const NO_DEPARTMENT = "__none__"
-
-/** Turns the form's sentinel into what the API wants: null, not a string. */
-export const toDepartmentId = (value: string | undefined) =>
-  !value || value === NO_DEPARTMENT ? null : value
 
 const DepartmentField = ({
   value,
