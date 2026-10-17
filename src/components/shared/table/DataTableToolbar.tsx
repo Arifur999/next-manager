@@ -11,6 +11,7 @@ import DataTableFilters from "./filters/DataTableFilters";
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;
+  searchInputRef: React.RefObject<HTMLInputElement | null>;
   search?: DataTableSearchConfig;
   filters?: DataTableFiltersConfig;
   toolbarAction?: React.ReactNode;
@@ -22,6 +23,7 @@ interface DataTableToolbarProps<TData> {
 
 const DataTableToolbar = <TData,>({
   table,
+  searchInputRef,
   search,
   filters,
   toolbarAction,
@@ -35,6 +37,7 @@ const DataTableToolbar = <TData,>({
       <div className="flex flex-1 flex-wrap items-center gap-2">
         {search && (
           <DataTableSearch
+            inputRef={searchInputRef}
             value={search.initialValue ?? ""}
             placeholder={search.placeholder}
             debounceMs={search.debounceMs}

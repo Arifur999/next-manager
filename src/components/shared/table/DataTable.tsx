@@ -1,7 +1,7 @@
 "use client";
 
 import { pageCountOf } from "@/types/api.types";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import DataTableContent from "./DataTableContent";
 import DataTablePagination from "./DataTablePagination";
 import DataTableToolbar from "./DataTableToolbar";
@@ -55,15 +55,23 @@ const DataTable = <TData,>(props: DataTableProps<TData>) => {
     },
   };
   const { canReset, reset } = useDataTableReset(table, activeSearch, filters);
+  // Reset and Clear filters vanish once used, so focus moves to the search box
+  // instead of falling back to the page.
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const resetAndFocusSearch = () => {
+    reset();
+    searchInputRef.current?.focus();
+  };
 
   return (
     <div>
       <DataTableToolbar
         table={table}
+        searchInputRef={searchInputRef}
         search={activeSearch}
         filters={filters}
         canReset={canReset}
-        onReset={reset}
+        onReset={resetAndFocusSearch}
         toolbarAction={toolbarAction}
         exportFileName={exportFileName}
         exportRows={exportRows}
@@ -83,7 +91,7 @@ const DataTable = <TData,>(props: DataTableProps<TData>) => {
           isRetrying={isFetching}
           onRetry={onRetry}
           canReset={canReset}
-          onReset={reset}
+          onReset={resetAndFocusSearch}
         />
 
         {showPagination && (

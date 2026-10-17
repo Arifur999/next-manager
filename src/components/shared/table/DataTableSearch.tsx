@@ -6,13 +6,20 @@ import { Search, X } from "lucide-react";
 import { useState } from "react";
 
 type DataTableSearchProps = {
+  inputRef: React.RefObject<HTMLInputElement | null>;
   value: string;
   onDebouncedChange: (value: string) => void;
   placeholder?: string;
   debounceMs?: number;
 };
 
-const DataTableSearch = ({ value, onDebouncedChange, placeholder = "Search...", debounceMs = 400 }: DataTableSearchProps) => {
+const DataTableSearch = ({
+  inputRef,
+  value,
+  onDebouncedChange,
+  placeholder = "Search...",
+  debounceMs = 400,
+}: DataTableSearchProps) => {
   const [inputValue, setInputValue] = useState(value);
   const [syncedValue, setSyncedValue] = useState(value);
   // The term this box last sent, until the URL echoes it back.
@@ -34,11 +41,13 @@ const DataTableSearch = ({ value, onDebouncedChange, placeholder = "Search...", 
   }
 
   // Applied at once, and the pending debounce dropped, so clearing fires one query.
+  // Focus goes back to the box: the clear button it was on has just gone.
   const clear = () => {
     debounced.cancel();
     setInputValue("");
     setSentValue("");
     onDebouncedChange("");
+    inputRef.current?.focus();
   };
 
   return (
@@ -47,6 +56,7 @@ const DataTableSearch = ({ value, onDebouncedChange, placeholder = "Search...", 
         <Search aria-hidden="true" />
       </InputGroupAddon>
       <InputGroupInput
+        ref={inputRef}
         type="search"
         value={inputValue}
         onChange={(event) => {
