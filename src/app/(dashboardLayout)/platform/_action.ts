@@ -1,64 +1,30 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
+import { requireId, runValidatedAction } from "@/lib/runAction"
+import { createCompany, createPlan, setSubscription, updatePlan } from "@/services/platform.services"
 import {
-    createCompany,
-    createPlan,
-    setSubscription,
-    updatePlan,
-} from "@/services/platform.services"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
-import type { IPlan, ISubscription } from "@/types/platform.types"
+    createCompanyServerZodSchema,
+    createPlanServerZodSchema,
+    setSubscriptionServerZodSchema,
+    updatePlanServerZodSchema,
+} from "@/zod/platform.validation"
 
-export const setSubscriptionAction = async (
-    organizationId: string,
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<ISubscription> | ApiErrorResponse> => {
-    if (!organizationId) return { success: false, message: "Invalid company id" }
+export const setSubscriptionAction = async (organizationId: string, values: unknown) =>
+    requireId(organizationId, "company") ??
+    runValidatedAction(setSubscriptionServerZodSchema, values, "Could not update the subscription", (payload) =>
+        setSubscription(organizationId, payload),
+    )
 
-    try {
-        return await setSubscription(organizationId, payload)
-    } catch (error: unknown) {
-        return {
-            success: false,
-            message: getActionErrorMessage(error, "Could not update the subscription"),
-        }
-    }
-}
+// A duplicate code is refused by name, and the message says what to do instead.
+export const createPlanAction = async (values: unknown) =>
+    runValidatedAction(createPlanServerZodSchema, values, "Could not create the plan", createPlan)
 
-export const createPlanAction = async (
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<IPlan> | ApiErrorResponse> => {
-    try {
-        return await createPlan(payload)
-    } catch (error: unknown) {
-        // A duplicate code and a zero-seat plan are both refused by name, and
-        // both messages say what to do instead.
-        return { success: false, message: getActionErrorMessage(error, "Could not create the plan") }
-    }
-}
+export const updatePlanAction = async (id: string, values: unknown) =>
+    requireId(id, "plan") ??
+    runValidatedAction(updatePlanServerZodSchema, values, "Could not update the plan", (payload) =>
+        updatePlan(id, payload),
+    )
 
-export const updatePlanAction = async (
-    id: string,
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<IPlan> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid plan id" }
-
-    try {
-        return await updatePlan(id, payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not update the plan") }
-    }
-}
-
-export const createCompanyAction = async (
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<unknown> | ApiErrorResponse> => {
-    try {
-        return await createCompany(payload)
-    } catch (error: unknown) {
-        // "That email already has an account. One address cannot admin two
-        // companies." is the server's wording and says what to change.
-        return { success: false, message: getActionErrorMessage(error, "Could not create the company") }
-    }
-}
+// "One address cannot admin two companies" is the server's wording and says what to change.
+export const createCompanyAction = async (values: unknown) =>
+    runValidatedAction(createCompanyServerZodSchema, values, "Could not create the company", createCompany)

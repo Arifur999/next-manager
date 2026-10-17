@@ -61,14 +61,12 @@ const CreateCompanyModal = () => {
   const { mutate: create, isPending } = useMutation({
     mutationFn: () =>
       createCompanyAction({
-        name: name.trim(),
-        admin_name: adminName.trim(),
-        admin_email: adminEmail.trim(),
+        name,
+        admin_name: adminName,
+        admin_email: adminEmail,
         admin_password: password,
-        ...(planId === DEFAULT_PLAN ? {} : { plan_id: planId }),
-        // Blank means no trial, which is the usual case for a company
-        // provisioned by hand - it has already agreed to pay.
-        ...(trialDays.trim() === "" ? {} : { trial_days: Number(trialDays) }),
+        plan_id: planId === DEFAULT_PLAN ? "" : planId,
+        trial_days: trialDays,
       }),
     onSuccess: (result) => {
       if (!result.success) {

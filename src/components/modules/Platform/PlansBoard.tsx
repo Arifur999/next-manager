@@ -37,13 +37,7 @@ const PlanRow = ({ plan }: { plan: IPlan }) => {
 
   const { mutate: save, isPending } = useMutation({
     mutationFn: () =>
-      updatePlanAction(plan.id, {
-        price_usd: Number(price),
-        // An empty box is unlimited, which the API expects as null. Sending 0
-        // would create a plan nobody could use, and it refuses that anyway.
-        max_seats: seats.trim() === "" ? null : Number(seats),
-        max_projects: projects.trim() === "" ? null : Number(projects),
-      }),
+      updatePlanAction(plan.id, { price_usd: price, max_seats: seats, max_projects: projects }),
     onSuccess: (result) => {
       if (!result.success) {
         toast.error(result.message || "Could not update the plan")
@@ -142,12 +136,7 @@ const PlansBoard = () => {
   const plans = data?.data ?? []
 
   const { mutate: create, isPending } = useMutation({
-    mutationFn: () =>
-      createPlanAction({
-        code: code.trim().toLowerCase(),
-        name: name.trim(),
-        price_usd: price.trim() === "" ? 0 : Number(price),
-      }),
+    mutationFn: () => createPlanAction({ code, name, price_usd: price }),
     onSuccess: (result) => {
       if (!result.success) {
         toast.error(result.message || "Could not create the plan")

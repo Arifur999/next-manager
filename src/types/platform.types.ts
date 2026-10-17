@@ -16,6 +16,14 @@ export type SubscriptionStatus =
     /** No writing, by the company's. */
     | "cancelled";
 
+export const SUBSCRIPTION_STATUSES = [
+    "trialing",
+    "active",
+    "past_due",
+    "suspended",
+    "cancelled",
+] as const satisfies readonly SubscriptionStatus[];
+
 export interface IPlan {
     id: string;
     code: string;
