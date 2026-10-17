@@ -27,7 +27,7 @@ const AgencyKpiBand = () => {
 
   const { data, isLoading, isError, isFetching, refetch } = useQuery(kpiQuery<AgencyKpi>("agency", query))
 
-  const kpi = data?.data as AgencyKpi | undefined
+  const kpi = data?.data
 
   if (isLoading && !kpi) {
     return <KpiSkeleton />

@@ -25,7 +25,7 @@ import { kpiQuery } from "@/queries/insights.queries"
 const MyDashboard = ({ range }: { range: string }) => {
   const { data, isLoading, isError, isFetching, refetch } = useQuery(kpiQuery<MeKpi>("me", range))
 
-  const kpi = data?.data as MeKpi | undefined
+  const kpi = data?.data
 
   if (isLoading && !kpi) {
     return <KpiSkeleton />

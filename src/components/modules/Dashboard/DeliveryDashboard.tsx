@@ -61,7 +61,7 @@ const MetricCell = ({
 const DeliveryDashboard = ({ range }: { range: string }) => {
   const { data, isLoading, isError, isFetching, refetch } = useQuery(kpiQuery<DeliveryKpi>("delivery", range))
 
-  const kpi = data?.data as DeliveryKpi | undefined
+  const kpi = data?.data
 
   if (isLoading && !kpi) {
     return <KpiSkeleton />
