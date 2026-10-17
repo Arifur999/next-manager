@@ -19,14 +19,8 @@ import { toast } from "sonner"
 import { rateSettingsQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
-/**
- * The USD -> BDT rate used for REPORTING.
- *
- * This is not the rate an exchange uses — that one is typed in per exchange
- * because it is what the processor actually paid. This figure only decides how
- * a USD payment is reported in BDT, and it is frozen onto each payment when it
- * is saved, so changing it here never restates history.
- */
+// The USD -> BDT rate for REPORTING only; an exchange records what the processor
+// actually paid. It is frozen onto each payment, so changing it never restates history.
 const ExchangeRateSettings = () => {
   const [draft, setDraft] = useState("")
 

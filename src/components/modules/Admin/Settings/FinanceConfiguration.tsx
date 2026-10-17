@@ -4,13 +4,8 @@ import ExchangeRateSettings from "@/components/modules/Admin/Settings/ExchangeRa
 import ExpenseCategorySettings from "@/components/modules/Admin/Settings/ExpenseCategorySettings"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 
-/**
- * The two settings that change what every money figure means.
- *
- * They were separate tabs, which hid the fact that they answer the same
- * question — how this agency counts money. The rate decides what a dollar is
- * worth in the reports; the categories decide what a cost is counted as.
- */
+// One page for the two settings that answer how this agency counts money: the
+// rate decides what a dollar is worth in reports, the categories what a cost is.
 const FinanceConfiguration = () => (
   <div className="space-y-6">
     <ExchangeRateSettings />
