@@ -8,8 +8,11 @@ export const newPassword = z
   .regex(/[A-Za-z]/, "Password must contain a letter")
   .regex(/[0-9]/, "Password must contain a number")
 
+// "Email is required" when empty, then "Enter a valid email address".
+export const requiredEmail = z.string().min(1, "Email is required").pipe(z.email("Enter a valid email address"))
+
 export const loginFormZodSchema = z.object({
-  email: z.string().min(1, "Email is required").email("Enter a valid email address"),
+  email: requiredEmail,
   password: z.string().min(1, "Password is required"),
 })
 
@@ -26,7 +29,7 @@ export type ILoginFormValues = z.infer<typeof loginFormZodSchema>
 export const registerFormZodSchema = z.object({
   organization_name: z.string().min(1, "Company name is required"),
   full_name: z.string().min(1, "Full name is required"),
-  email: z.string().min(1, "Email is required").email("Enter a valid email address"),
+  email: requiredEmail,
   phone: z.string().optional(),
   password: newPassword,
 })
@@ -50,7 +53,7 @@ export const changePasswordFormZodSchema = z.object({
 export type IChangePasswordFormValues = z.infer<typeof changePasswordFormZodSchema>
 
 export const forgotPasswordFormZodSchema = z.object({
-  email: z.string().min(1, "Email is required").email("Enter a valid email address"),
+  email: requiredEmail,
 })
 
 export type IForgotPasswordFormValues = z.infer<typeof forgotPasswordFormZodSchema>
