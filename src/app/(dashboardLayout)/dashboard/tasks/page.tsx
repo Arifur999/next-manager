@@ -1,11 +1,12 @@
 import TaskBoard from "@/components/modules/Admin/Tasks/TaskBoard";
 import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
-import { tasksListQuery } from "@/queries/work.queries";
+import { tasksListQuery, workflowStatusesListQuery } from "@/queries/work.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import PageHeader from "@/components/shared/PageHeader";
 import ViewTabs from "@/components/shared/ViewTabs";
 import { MY_TASK_VIEWS } from "@/lib/pageViews";
+import { readTaskView, taskQueryString } from "@/components/modules/Admin/Tasks/taskView";
 
 export const metadata: Metadata = {
   title: "Tasks",
@@ -44,18 +45,15 @@ const MyTasksPage = async ({
 }) => {
   const params = await searchParams;
 
-  // Built the same way the board builds it, so the first paint is the view that
+  // Read the same way the board reads it, so the first paint is the view that
   // was asked for rather than every task followed by a correction.
-  const query = [
-    "mine=true",
-    params.overdue === "true" ? "overdue=true" : "",
-    params.due === "today" || params.due === "upcoming" ? `due=${params.due}` : "",
-    params.completed === "true" ? "completed=true" : "",
-  ]
-    .filter(Boolean)
-    .join("&");
+  const query = taskQueryString(readTaskView(params, { mineOnly: true }));
 
-  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(tasksListQuery(query));
+  // The board draws its columns from the statuses, so both paint together.
+  const prefetch = (queryClient: QueryClient) => Promise.all([
+    queryClient.prefetchQuery(tasksListQuery(query)),
+    queryClient.prefetchQuery(workflowStatusesListQuery("kind=task")),
+  ]);
 
   return (
     <div className="space-y-6">

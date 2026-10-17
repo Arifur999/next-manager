@@ -7,23 +7,20 @@ import { tasksListQuery, workflowStatusesListQuery } from "@/queries/work.querie
 import PageHeader from "@/components/shared/PageHeader";
 import ViewTabs from "@/components/shared/ViewTabs";
 import { taskViewsFor } from "@/lib/pageViews";
+import type { SearchParamsRecord } from "@/lib/table/urlState";
+import { sentenceCase } from "@/lib/text";
 import { toUserRole } from "@/types/user.types";
+import { readTaskView, taskQueryString, taskViewTitle, type TaskView } from "@/components/modules/Admin/Tasks/taskView";
 
 export const metadata: Metadata = {
   title: "Tasks",
 };
 
-type TasksSearchParams = {
-  mine?: string;
-  overdue?: string;
-  view?: string;
-  client_owner?: string;
-};
-
-// The title stays "Tasks", the sidebar's word; the tab says which view, and
-// this line says what the view is for.
+// The title stays "Tasks", the sidebar's word, unless the view is one status;
+// the tab says which view, and this line says what the view is for.
 const BLURBS = {
   overdue: "Past their date and still unfinished. Finishing one takes it off this list.",
+  unassigned: "Nobody holds these yet. Give each one an owner, or it waits.",
   sales:
     "Everything happening inside the clients you brought in — whoever is doing it. Watching, not running: the work belongs to whoever the project manager gave it to.",
   mine: "Assigned to you.",
@@ -31,35 +28,29 @@ const BLURBS = {
 };
 
 // Old links can combine filters; the first match describes the page.
-const blurbFor = (params: TasksSearchParams) => {
-  if (params.overdue === "true") return BLURBS.overdue;
-  if (params.client_owner === "me") return BLURBS.sales;
-  if (params.mine === "true") return BLURBS.mine;
+const blurbFor = (view: TaskView) => {
+  if (view.overdue) return BLURBS.overdue;
+  if (view.unassigned) return BLURBS.unassigned;
+  if (view.status) return `Every task in the ${sentenceCase(view.status)} column, on every project.`;
+  if (view.clientOwner) return BLURBS.sales;
+  if (view.mine) return BLURBS.mine;
   return BLURBS.all;
 };
 
 const TasksPage = async ({
   searchParams,
 }: {
-  searchParams: Promise<TasksSearchParams>;
+  searchParams: Promise<SearchParamsRecord>;
 }) => {
-  const params = await searchParams;
-
-  // Built the same way the board builds it, so the first paint is the view
-  // that was asked for rather than every task followed by a correction.
-  const query = [
-    params.mine === "true" ? "mine=true" : "",
-    params.overdue === "true" ? "overdue=true" : "",
-    params.client_owner === "me" ? "client_owner=me" : "",
-  ]
-    .filter(Boolean)
-    .join("&");
+  // Read the same way the board reads it, so the first paint is the view that
+  // was asked for rather than every task followed by a correction.
+  const view = readTaskView(await searchParams);
 
   const user = await getUserInfo();
   const role = toUserRole(user?.role);
 
   const prefetch = (queryClient: QueryClient) => Promise.all([
-    queryClient.prefetchQuery(tasksListQuery(query)),
+    queryClient.prefetchQuery(tasksListQuery(taskQueryString(view))),
     // The board draws its COLUMNS from these, so without them the server
     // renders a board with no columns and therefore no tasks — everything
     // appearing only once the browser has hydrated and fetched them. The list
@@ -74,7 +65,7 @@ const TasksPage = async ({
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Tasks">{blurbFor(params)}</PageHeader>
+      <PageHeader title={taskViewTitle(view.status)}>{blurbFor(view)}</PageHeader>
       {role && <ViewTabs label="Task views" tabs={taskViewsFor(role)} />}
 
       <QueryPrefetch prefetch={prefetch}>
