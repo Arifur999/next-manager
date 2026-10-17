@@ -29,6 +29,23 @@ const FILTERS = [
   { value: "true", label: "Successful only" },
 ]
 
+const FailedAttemptsNote = ({ count }: { count: number | undefined }) => {
+  // Unknown until the list arrives, and "nothing failed" must never stand in for that.
+  if (count === undefined) return null
+  if (count === 0) return <>Nothing failed in the last day.</>
+
+  return (
+    <>
+      {/* Icon and words, never colour alone. */}
+      <ShieldAlert className="mr-1 inline size-4" aria-hidden="true" />
+      <span className="text-foreground">
+        {count} failed attempt{count === 1 ? "" : "s"} in the last day
+      </span>
+      {" — counted across everything, not just what is filtered below."}
+    </>
+  )
+}
+
 const LoginHistory = () => {
   const [filter, setFilter] = useState(ALL)
 
@@ -37,7 +54,7 @@ const LoginHistory = () => {
   const { data, isLoading } = useQuery(loginEventsListQuery(query))
 
   const events = data?.data ?? []
-  const failedLately = data?.meta?.failed_last_24h ?? 0
+  const failedLately = data?.meta?.failed_last_24h
   const retention = data?.meta?.retention_days ?? 90
 
   return (
@@ -48,19 +65,7 @@ const LoginHistory = () => {
             <div>
               <CardTitle className="text-base">Sign-in attempts</CardTitle>
               <p className="text-sm text-muted-foreground">
-                {failedLately === 0 ? (
-                  "Nothing failed in the last day."
-                ) : (
-                  <>
-                    {/* Icon and words, never colour alone. */}
-                    <ShieldAlert className="mr-1 inline size-4" aria-hidden="true" />
-                    <span className="text-foreground">
-                      {failedLately} failed attempt{failedLately === 1 ? "" : "s"} in the last
-                      day
-                    </span>
-                    {" — counted across everything, not just what is filtered below."}
-                  </>
-                )}
+                <FailedAttemptsNote count={failedLately} />
               </p>
             </div>
 
