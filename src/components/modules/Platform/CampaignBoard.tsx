@@ -5,6 +5,7 @@ import {
   updateAnnouncementAction,
 } from "@/app/(dashboardLayout)/platform/_campaignAction"
 import AnnouncementComposer from "@/components/modules/Platform/AnnouncementComposer"
+import AnnouncementDrafts from "@/components/modules/Platform/AnnouncementDrafts"
 import PublishAnnouncementDialog from "@/components/modules/Platform/PublishAnnouncementDialog"
 import RemoveAnnouncementDialog from "@/components/modules/Platform/RemoveAnnouncementDialog"
 import { AUDIENCE_LABEL } from "@/components/modules/Platform/announcementAudience"
@@ -16,7 +17,7 @@ import type { IAnnouncement } from "@/types/platform.types"
 import type { IAnnouncementFormValues } from "@/zod/platform.validation"
 import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
-import { Eye, Mail, Send, Trash2 } from "lucide-react"
+import { Eye, Mail, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { announcementsQuery } from "@/queries/platform.queries"
 import { queryKeys } from "@/lib/queryKeys"
@@ -67,6 +68,11 @@ const CampaignBoard = () => {
     if (await saveDraft(draft)) reset()
   }
 
+  const handleEdit = (row: IAnnouncement) => {
+    setEditingId(row.id)
+    setDraft({ title: row.title, body: row.body, audience: row.audience, send_email: row.send_email })
+  }
+
   const handleRemoved = (id: string) => {
     if (id === editingId) reset()
   }
@@ -84,66 +90,12 @@ const CampaignBoard = () => {
 
       {/* -------------------------------------------------------------- list */}
       <div className="space-y-4">
-        <Card className="gap-0 overflow-hidden p-0">
-          <CardHeader className="border-b px-5 py-4">
-            <CardTitle className="text-base">Drafts</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              {drafts.length === 0
-                ? "Nothing waiting."
-                : `${drafts.length} not yet sent to anybody.`}
-            </p>
-          </CardHeader>
-
-          {drafts.length > 0 && (
-            <ul className="divide-y">
-              {drafts.map((row) => (
-                <li key={row.id} className="flex flex-wrap items-start gap-3 px-5 py-3">
-                  <div className="min-w-48 flex-1">
-                    <p className="font-medium">{row.title}</p>
-                    <p className="line-clamp-2 text-sm text-muted-foreground">{row.body}</p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">{AUDIENCE_LABEL[row.audience]}</Badge>
-                    {row.send_email && (
-                      <Badge variant="outline" className="gap-1">
-                        <Mail className="size-3" aria-hidden="true" />
-                        email
-                      </Badge>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setEditingId(row.id)
-                        setDraft({
-                          title: row.title,
-                          body: row.body,
-                          audience: row.audience,
-                          send_email: row.send_email,
-                        })
-                      }}
-                    >
-                      Edit
-                    </Button>
-                    <Button size="sm" onClick={() => setConfirming(row)}>
-                      <Send className="size-3.5" aria-hidden="true" />
-                      Publish
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => setRemoving(row)}
-                      aria-label={`Delete draft ${row.title}`}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
+        <AnnouncementDrafts
+          drafts={drafts}
+          onEdit={handleEdit}
+          onPublish={setConfirming}
+          onRemove={setRemoving}
+        />
 
         <Card className="gap-0 overflow-hidden p-0">
           <CardHeader className="border-b px-5 py-4">
