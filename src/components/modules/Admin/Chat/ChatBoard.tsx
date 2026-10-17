@@ -11,12 +11,12 @@ import MessageThread from "@/components/modules/Admin/Chat/MessageThread"
 import NewConversationCard from "@/components/modules/Admin/Chat/NewConversationCard"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { useChatSocket } from "@/hooks/useChatSocket"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Archive } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
-import { toast } from "sonner"
 import { conversationsListQuery, messagesQuery } from "@/queries/workspace.queries"
 import { queryKeys } from "@/lib/queryKeys"
 import type { IConversationFormValues } from "@/zod/workspace.validation"
@@ -78,54 +78,43 @@ const ChatBoard = ({ meId }: { meId: string | null }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId, messages.length])
 
-  const { mutate: send, isPending: sending } = useMutation({
-    mutationFn: (body: string) => sendMessageAction(activeId as string, { body }),
+  const { run: sendChatMessage, isPending: sending } = useActionMutation({
+    action: (body: string) => sendMessageAction(activeId ?? "", { body }),
+    // The message appearing in the thread is the confirmation.
+    successMessage: false,
+    invalidateKeys: [queryKeys.messages.all, queryKeys.conversations.all],
+    refresh: false,
+  })
+
+  const { run: startConversation, isPending: starting } = useActionMutation({
+    action: (values: IConversationFormValues) => createConversationAction(values),
+    successMessage: false,
+    invalidateKeys: [queryKeys.conversations.all],
+    refresh: false,
+    // Asking to talk to somebody you already have a thread with returns that
+    // thread, so this opens the right one either way.
     onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not send it")
-        return
-      }
-      void queryClient.invalidateQueries({ queryKey: queryKeys.messages.all })
-      refreshLists()
+      if (result.success) setActiveId(result.data.id)
     },
   })
 
-  const { mutate: start, isPending: starting } = useMutation({
-    mutationFn: (values: IConversationFormValues) => createConversationAction(values),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not start it")
-        return
-      }
-      // Asking to talk to somebody you already have a thread with returns that
-      // thread, so this opens the right one either way.
-      //
-      // `success` is a plain boolean rather than a discriminant on these types,
-      // so the narrowing is done with `in` — the same way the rest of the
-      // codebase does it.
-      if ("data" in result) setActiveId(result.data.id)
-      refreshLists()
-    },
-  })
-
-  const { mutate: archive } = useMutation({
-    mutationFn: ({ id, value }: { id: string; value: boolean }) =>
-      setConversationArchivedAction(id, value),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not archive it")
-        return
-      }
-      toast.success(result.message)
-      setActiveId(null)
-      refreshLists()
-    },
+  const { run: archiveConversation } = useActionMutation({
+    action: ({ id, archived }: { id: string; archived: boolean }) =>
+      setConversationArchivedAction(id, archived),
+    // No successMessage: the API's own "Archived" or "Restored" is the toast.
+    invalidateKeys: [queryKeys.conversations.all],
+    refresh: false,
+    onSuccess: () => setActiveId(null),
   })
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
       <Card className="gap-0 overflow-hidden p-0">
-        <NewConversationCard meId={meId} onCreate={start} isPending={starting} />
+        <NewConversationCard
+          meId={meId}
+          onCreate={(values) => void startConversation(values)}
+          isPending={starting}
+        />
         <ConversationList
           conversations={conversations}
           activeId={activeId}
@@ -149,7 +138,9 @@ const ChatBoard = ({ meId }: { meId: string | null }) => {
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => archive({ id: active.id, value: !active.archived_at })}
+                onClick={() =>
+                  void archiveConversation({ id: active.id, archived: !active.archived_at })
+                }
               >
                 <Archive className="size-4" />
                 {active.archived_at ? "Restore" : "Archive"}
@@ -161,7 +152,7 @@ const ChatBoard = ({ meId }: { meId: string | null }) => {
               meId={meId}
               isLoading={loadingMessages}
               isSending={sending}
-              onSend={(body) => send(body)}
+              onSend={(body) => void sendChatMessage(body)}
             />
           </>
         ) : (
