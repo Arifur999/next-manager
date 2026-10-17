@@ -15,13 +15,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { LEAD_STAGES, type LeadStage } from "@/types/crm.types"
 import { leadFormZodSchema, type ILeadFormValues } from "@/zod/crm.validation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useCallback, useState } from "react"
-import { toast } from "sonner"
 import { leadSourcesQuery } from "@/queries/crm.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -29,7 +29,6 @@ import { queryKeys } from "@/lib/queryKeys"
 // sits, and giving them columns would make the board grow forever.
 const CreateLeadModal = () => {
   const [open, setOpen] = useState(false)
-  const queryClient = useQueryClient()
 
   const { data: sourcesData } = useQuery({ ...leadSourcesQuery(), enabled: open })
 
@@ -39,8 +38,11 @@ const CreateLeadModal = () => {
     (source) => source.is_active,
   )
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: ILeadFormValues) => createLeadAction(values),
+  const { run: addLead, isPending } = useActionMutation({
+    action: createLeadAction,
+    successMessage: "Lead added",
+    invalidateKeys: [queryKeys.leads.all],
+    refresh: false,
   })
 
   const defaultValues: ILeadFormValues = {
@@ -56,17 +58,10 @@ const CreateLeadModal = () => {
   const form = useForm({
     defaultValues,
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        toast.error(result.message || "Failed to create lead")
-        return
+      if (await addLead(value)) {
+        setOpen(false)
+        form.reset()
       }
-
-      toast.success("Lead added")
-      setOpen(false)
-      form.reset()
-      void queryClient.invalidateQueries({ queryKey: queryKeys.leads.all })
     },
   })
 
