@@ -10,6 +10,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { formatRate } from "@/lib/currency"
+import type { IDefaultRateFormValues } from "@/zod/finance.validation"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
@@ -49,7 +50,9 @@ const ExchangeRateSettings = () => {
   })
 
   const handleSave = async () => {
-    if (await saveRate({ default_usd_rate: draft })) setDraft("")
+    // Typed here because the action takes unknown: a misspelled key fails to compile.
+    const values: IDefaultRateFormValues = { default_usd_rate: draft }
+    if (await saveRate(values)) setDraft("")
   }
 
   return (
