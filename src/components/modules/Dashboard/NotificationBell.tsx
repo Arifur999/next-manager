@@ -41,11 +41,9 @@ const BELL_KEYS = [queryKeys.notifications.all, queryKeys.notificationsUnread.al
 const NotificationBell = () => {
   const [open, setOpen] = useState(false)
 
-  const { data: countData } = useQuery({ ...unreadCountQuery(), // Company notifications move faster than platform notices, but not by
-    // much: a task assignment can wait a minute. A tighter loop would be one
-    // request per user per interval, forever, for a number that changes a
-    // handful of times a day.
-    refetchInterval: 60 * 1000 })
+  // A task assignment can wait a minute; a tighter poll is a request per user,
+  // forever, for a number that changes a few times a day.
+  const { data: countData } = useQuery({ ...unreadCountQuery(), refetchInterval: 60 * 1000 })
 
   const notificationsList = useQuery({ ...notificationsQuery(), enabled: open })
 
