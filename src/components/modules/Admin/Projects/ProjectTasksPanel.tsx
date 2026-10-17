@@ -1,16 +1,26 @@
 "use client"
 
+import TaskLink from "@/components/modules/Admin/Tasks/TaskLink"
+import TaskSheet from "@/components/modules/Admin/Tasks/TaskSheet"
+import { isTaskOverdue } from "@/components/modules/Admin/Tasks/taskDue"
 import EmptyState from "@/components/shared/state/EmptyState"
 import PanelState from "@/components/shared/state/PanelState"
-import { STATUS_TONE } from "@/components/shared/status/statusTone"
+import StatusBadge from "@/components/shared/status/StatusBadge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { useQuery } from "@tanstack/react-query"
-import { format } from "date-fns"
-import { ListChecks } from "lucide-react"
+import { formatDayShort } from "@/lib/dates"
+import { cn } from "@/lib/utils"
 import { tasksListQuery } from "@/queries/work.queries"
+import { useQuery } from "@tanstack/react-query"
+import { ListChecks } from "lucide-react"
 
-const ProjectTasksPanel = ({ projectId }: { projectId: string }) => {
+/**
+ * The project's tasks, each opening in the same sheet as on the board.
+ *
+ * `canManage` (admin and the project manager) lets the sheet change and delete
+ * them; everyone else reads them here and moves their own from Tasks.
+ */
+const ProjectTasksPanel = ({ projectId, canManage = false }: { projectId: string; canManage?: boolean }) => {
   const tasksQuery = useQuery(tasksListQuery(`project_id=${projectId}`))
 
   const tasks = tasksQuery.data?.data ?? []
@@ -36,26 +46,33 @@ const ProjectTasksPanel = ({ projectId }: { projectId: string }) => {
         empty={<EmptyState icon={ListChecks}>No tasks on this project yet.</EmptyState>}
       >
         <ul className="divide-y">
-          {tasks.map((task) => (
-            <li key={task.id} className="flex items-center justify-between gap-3 px-5 py-3">
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium">{task.title}</p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {task.assignee?.full_name ?? "Unassigned"}
-                  {task.due_date && ` · due ${format(new Date(task.due_date), "MMM dd")}`}
-                </p>
-              </div>
-              <span
-                className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-medium capitalize ${
-                  STATUS_TONE[task.status.category]
-                }`}
-              >
-                {task.status.name}
-              </span>
-            </li>
-          ))}
+          {tasks.map((task) => {
+            const overdue = isTaskOverdue(task)
+
+            return (
+              <li key={task.id} className="flex items-center justify-between gap-3 px-5 py-3">
+                <div className="min-w-0">
+                  <TaskLink taskId={task.id} className="block truncate text-sm font-medium">
+                    {task.title}
+                  </TaskLink>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {task.assignee?.full_name ?? "Unassigned"}
+                    {task.due_date && (
+                      <span className={cn(overdue && "font-medium text-destructive")}>
+                        {overdue ? " · overdue " : " · due "}
+                        {formatDayShort(task.due_date)}
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <StatusBadge category={task.status.category} label={task.status.name} className="shrink-0" />
+              </li>
+            )
+          })}
         </ul>
       </PanelState>
+
+      <TaskSheet tasks={tasks} access={canManage ? "manage" : "read"} userId={null} />
     </Card>
   )
 }

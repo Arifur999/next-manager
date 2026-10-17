@@ -114,7 +114,7 @@ const ProjectDetail = ({
         </TabsList>
 
         <TabsContent value="tasks" className="mt-4">
-          <ProjectTasksPanel projectId={projectId} />
+          <ProjectTasksPanel projectId={projectId} canManage={canManage} />
         </TabsContent>
 
         <TabsContent value="milestones" className="mt-4 space-y-4">
