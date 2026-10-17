@@ -19,14 +19,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IProject } from "@/types/project.types"
 import { projectFormZodSchema, type IProjectFormValues } from "@/zod/project.validation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
-import { toast } from "sonner"
 import { clientsListQuery } from "@/queries/crm.queries"
 import { queryKeys } from "@/lib/queryKeys"
 import { workflowStatusesListQuery } from "@/queries/work.queries"
@@ -44,8 +43,6 @@ const emptyValues: IProjectFormValues = {
 }
 
 const ProjectForm = ({ project, onDone }: { project?: IProject | null; onDone: () => void }) => {
-  const queryClient = useQueryClient()
-  const router = useRouter()
   const isEdit = Boolean(project)
 
   const { data: clientsData } = useQuery(clientsListQuery())
@@ -55,9 +52,11 @@ const ProjectForm = ({ project, onDone }: { project?: IProject | null; onDone: (
   const { data: statusData } = useQuery(workflowStatusesListQuery("kind=project"))
   const statuses = statusData?.data ?? []
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IProjectFormValues) =>
+  const { run: saveProject, isPending } = useActionMutation({
+    action: (values: IProjectFormValues) =>
       project ? updateProjectAction(project.id, values) : createProjectAction(values),
+    successMessage: isEdit ? "Project updated successfully" : "Project created successfully",
+    invalidateKeys: [queryKeys.projects.all, queryKeys.dashboard.all],
   })
 
   const form = useForm({
@@ -75,19 +74,7 @@ const ProjectForm = ({ project, onDone }: { project?: IProject | null; onDone: (
         }
       : emptyValues,
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        toast.error(result.message || `Failed to ${isEdit ? "update" : "create"} project`)
-        return
-      }
-
-      toast.success(result.message || `Project ${isEdit ? "updated" : "created"} successfully`)
-      onDone()
-
-      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
-      router.refresh()
+      if (await saveProject(value)) onDone()
     },
   })
 
