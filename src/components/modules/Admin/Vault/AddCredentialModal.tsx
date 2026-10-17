@@ -48,12 +48,7 @@ const AddCredentialModal = () => {
   const projects = projectsData?.data ?? []
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: ICredentialFormValues) =>
-      createCredentialAction({
-        ...values,
-        client_id: values.client_id || null,
-        project_id: values.project_id || null,
-      }),
+    mutationFn: (values: ICredentialFormValues) => createCredentialAction(values),
   })
 
   const form = useForm({

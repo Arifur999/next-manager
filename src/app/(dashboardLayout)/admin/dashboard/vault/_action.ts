@@ -1,55 +1,16 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
-import {
-    createCredential,
-    getCredentialAccessLog,
-    revealCredential,
-} from "@/services/workspace.services"
-import type {
-    ICredential,
-    ICredentialAccessEntry,
-    IRevealedCredential,
-} from "@/types/workspace.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+import { requireId, runAction, runValidatedAction } from "@/lib/runAction"
+import { createCredential, getCredentialAccessLog, revealCredential } from "@/services/workspace.services"
+import { createCredentialServerZodSchema } from "@/zod/workspace.validation"
 
-export const createCredentialAction = async (
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<ICredential> | ApiErrorResponse> => {
-    try {
-        return await createCredential(payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to save credential") }
-    }
-}
+export const createCredentialAction = async (values: unknown) =>
+    runValidatedAction(createCredentialServerZodSchema, values, "Failed to save credential", createCredential)
 
-/**
- * The only path that returns a real password.
- *
- * Deliberately its own action rather than part of the list: the server logs
- * every call, so this must only ever run when somebody actually asked to see
- * the secret — never as part of loading a page.
- */
-export const revealCredentialAction = async (
-    id: string,
-): Promise<ApiResponse<IRevealedCredential> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid credential id" }
+// The only path that returns a real password, and the server logs every call:
+// it runs when somebody asks to see the secret, never as part of loading a page.
+export const revealCredentialAction = async (id: string) =>
+    requireId(id, "credential") ?? runAction("Failed to reveal credential", () => revealCredential(id))
 
-    try {
-        return await revealCredential(id)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to reveal credential") }
-    }
-}
-
-export const getAccessLogAction = async (
-    id: string,
-): Promise<ApiResponse<ICredentialAccessEntry[]> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid credential id" }
-
-    try {
-        return await getCredentialAccessLog(id)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to load access log") }
-    }
-}
+export const getAccessLogAction = async (id: string) =>
+    requireId(id, "credential") ?? runAction("Failed to load access log", () => getCredentialAccessLog(id))
