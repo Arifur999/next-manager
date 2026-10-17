@@ -32,16 +32,19 @@ const flatten = (fg: Rgb, bg: Rgb): Rgb => {
   return { mode: "rgb", r: fg.r * a + bg.r * (1 - a), g: fg.g * a + bg.g * (1 - a), b: fg.b * a + bg.b * (1 - a) };
 };
 
-const color = (vars: Record<string, string>, name: string): Rgb => {
+// An alpha tint is composited over the surface it sits on: --background
+// unless a pair names another (a chip on a card).
+const color = (vars: Record<string, string>, name: string, surface = "--background"): Rgb => {
   const parsed = toRgb(parse(resolve(vars, name)));
   if (!parsed) throw new Error(`Cannot parse ${name}`);
-  const page = toRgb(parse(resolve(vars, "--background")));
-  if (!page) throw new Error("Cannot parse --background");
-  return flatten(parsed, page);
+  const under = toRgb(parse(resolve(vars, surface)));
+  if (!under) throw new Error(`Cannot parse ${surface}`);
+  return flatten(parsed, under);
 };
 
-// [foreground, background, minimum ratio]. Add a pair for every new semantic color.
-const PAIRS: Array<[string, string, number]> = [
+// [foreground, background, minimum ratio, surface under an alpha background].
+// Add a pair for every new semantic color.
+const PAIRS: Array<[string, string, number, string?]> = [
   ["--foreground", "--background", 4.5],
   ["--muted-foreground", "--background", 4.5],
   ["--muted-foreground", "--muted", 4.5],
@@ -77,16 +80,22 @@ const PAIRS: Array<[string, string, number]> = [
   ["--chart-3", "--card", 3],
   ["--chart-4", "--card", 3],
   ["--chart-5", "--card", 3],
+  // Task priority chips (11px text) on a task card: urgent, high, medium, low.
+  ["--destructive-subtle-foreground", "--destructive-subtle", 4.5, "--card"],
+  ["--warning-subtle-foreground", "--warning-subtle", 4.5, "--card"],
+  ["--info-subtle-foreground", "--info-subtle", 4.5, "--card"],
+  ["--muted-foreground", "--muted", 4.5, "--card"],
 ];
 
 let failures = 0;
 for (const [theme, vars] of [["light", light], ["dark", dark]] as const) {
   console.log(`\n${theme}`);
-  for (const [fg, bg, min] of PAIRS) {
-    const ratio = wcagContrast(color(vars, fg), color(vars, bg));
+  for (const [fg, bg, min, surface = "--background"] of PAIRS) {
+    const ratio = wcagContrast(color(vars, fg, surface), color(vars, bg, surface));
     const ok = ratio >= min;
     if (!ok) failures++;
-    console.log(`${ok ? "ok  " : "FAIL"} ${ratio.toFixed(2).padStart(5)}  ${fg} on ${bg} (min ${min})`);
+    const where = surface === "--background" ? "" : ` over ${surface}`;
+    console.log(`${ok ? "ok  " : "FAIL"} ${ratio.toFixed(2).padStart(5)}  ${fg} on ${bg}${where} (min ${min})`);
   }
 }
 process.exit(failures ? 1 : 0);

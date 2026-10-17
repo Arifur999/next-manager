@@ -3,17 +3,11 @@
 import { moveTaskAction } from "@/app/(dashboardLayout)/admin/dashboard/tasks/_action"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useActionMutation } from "@/hooks/useActionMutation"
-import type { ITask, IWorkflowStatus, TaskPriority } from "@/types/work.types"
+import TaskPriorityBadge from "@/components/modules/Admin/Tasks/TaskPriorityBadge"
+import type { ITask, IWorkflowStatus } from "@/types/work.types"
 import { format, isBefore, startOfToday } from "date-fns"
 import { toast } from "sonner"
 import { queryKeys } from "@/lib/queryKeys"
-
-const PRIORITY_TONE: Record<TaskPriority, string> = {
-  urgent: "bg-destructive/12 text-destructive",
-  high: "bg-chart-2/15 text-chart-2",
-  medium: "bg-chart-3/15 text-chart-3",
-  low: "bg-muted text-muted-foreground",
-}
 
 const TaskCard = ({ task, statuses }: { task: ITask; statuses: IWorkflowStatus[] }) => {
   // The ticked box and the card's new column are the confirmation.
@@ -64,7 +58,9 @@ const TaskCard = ({ task, statuses }: { task: ITask; statuses: IWorkflowStatus[]
           onCheckedChange={toggleDone}
           disabled={isPending}
           aria-label={isDone ? `Reopen ${task.title}` : `Mark ${task.title} done`}
-          className="mt-0.5"
+          // 24px to see and hit; below md the pseudo-element stretches the
+          // target to 44px for a thumb without moving the layout.
+          className="size-6 after:-inset-2.5 md:after:-inset-1"
         />
 
         <div className="min-w-0 flex-1">
@@ -81,13 +77,7 @@ const TaskCard = ({ task, statuses }: { task: ITask; statuses: IWorkflowStatus[]
           </p>
 
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            <span
-              className={`rounded px-1.5 py-0.5 text-[11px] font-medium capitalize ${
-                PRIORITY_TONE[task.priority]
-              }`}
-            >
-              {task.priority}
-            </span>
+            <TaskPriorityBadge priority={task.priority} />
             {task.due_date && (
               <span
                 className={`text-[11px] ${
