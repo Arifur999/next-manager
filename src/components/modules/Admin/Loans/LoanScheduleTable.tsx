@@ -74,42 +74,42 @@ const LoanScheduleTable = ({
             </tr>
           </thead>
           <tbody className="divide-y">
-            {instalments.map((item) => {
-              const due = parseISO(item.due_date)
-              const overdue = !item.paid_at && isBefore(due, today)
+            {instalments.map((instalment) => {
+              const dueDate = parseISO(instalment.due_date)
+              const isOverdue = !instalment.paid_at && isBefore(dueDate, today)
 
               return (
-                <tr key={item.id}>
-                  <td className="px-5 py-2.5 text-muted-foreground">{item.seq}</td>
+                <tr key={instalment.id}>
+                  <td className="px-5 py-2.5 text-muted-foreground">{instalment.seq}</td>
                   <td className="whitespace-nowrap px-5 py-2.5">
-                    {format(due, "d MMM yyyy")}
-                    {overdue && (
+                    {format(dueDate, "d MMM yyyy")}
+                    {isOverdue && (
                       <Badge variant="destructive" className="ml-2 text-[10px]">
                         overdue
                       </Badge>
                     )}
                   </td>
                   <td className="px-5 py-2.5 text-right tabular-nums">
-                    {formatBdt(item.principal_bdt)}
+                    {formatBdt(instalment.principal_bdt)}
                   </td>
                   <td className="px-5 py-2.5 text-right tabular-nums">
-                    {formatBdt(item.interest_bdt)}
+                    {formatBdt(instalment.interest_bdt)}
                   </td>
                   <td className="px-5 py-2.5 text-right tabular-nums">
-                    {formatBdt(item.principal_bdt + item.interest_bdt)}
+                    {formatBdt(instalment.principal_bdt + instalment.interest_bdt)}
                   </td>
                   <td className="px-5 py-2.5 text-right">
-                    {item.paid_at ? (
+                    {instalment.paid_at ? (
                       <span className="inline-flex items-center gap-2">
                         <span className="text-xs text-muted-foreground">
-                          paid {format(parseISO(item.paid_at), "d MMM")}
-                          {item.paid_from_account ? ` · ${item.paid_from_account.name}` : ""}
+                          paid {format(parseISO(instalment.paid_at), "d MMM")}
+                          {instalment.paid_from_account ? ` · ${instalment.paid_from_account.name}` : ""}
                         </span>
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={() => onReverse(item)}
-                          aria-label={`Reverse instalment ${item.seq}`}
+                          onClick={() => onReverse(instalment)}
+                          aria-label={`Reverse instalment ${instalment.seq}`}
                           title="Reverse"
                         >
                           <Undo2 className="size-4" />
@@ -120,7 +120,7 @@ const LoanScheduleTable = ({
                         size="sm"
                         variant="outline"
                         disabled={!accountId}
-                        onClick={() => onPay(item.id, accountId)}
+                        onClick={() => onPay(instalment.id, accountId)}
                       >
                         Pay
                       </Button>
