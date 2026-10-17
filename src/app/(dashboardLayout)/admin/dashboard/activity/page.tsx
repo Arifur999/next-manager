@@ -1,5 +1,6 @@
 import ActivityFeed from "@/components/modules/Admin/Activity/ActivityFeed";
 import type { Metadata } from "next";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Activity",
@@ -10,13 +11,10 @@ export const metadata: Metadata = {
 const ActivityPage = () => {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Activity</h1>
-        <p className="text-sm text-muted-foreground">
-          Who did what, in the words recorded at the time. Deletions are here too —
-          that is mostly what this is for.
-        </p>
-      </div>
+      <PageHeader title="Activity">
+        Who did what, in the words recorded at the time. Deletions are here too —
+        that is mostly what this is for.
+      </PageHeader>
 
       <ActivityFeed />
     </div>

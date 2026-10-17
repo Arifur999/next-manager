@@ -5,6 +5,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { organizationQuery } from "@/queries/workspace.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Business Information",
@@ -16,12 +17,9 @@ const BusinessInformationPage = async () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Business Information</h1>
-        <p className="text-sm text-muted-foreground">
-          Who the agency is on paper, and what it is on {site.name}.
-        </p>
-      </div>
+      <PageHeader title="Business Information">
+        Who the agency is on paper, and what it is on {site.name}.
+      </PageHeader>
 
       {/* Above the details: when a limit refuses something, this is the panel
           the message is pointing at. */}

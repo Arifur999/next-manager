@@ -3,6 +3,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { credentialsListQuery } from "@/queries/workspace.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Vault",
@@ -16,12 +17,9 @@ const VaultPage = async () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Vault</h1>
-        <p className="text-sm text-muted-foreground">
-          Client logins, encrypted at rest. Revealing one is recorded against your name.
-        </p>
-      </div>
+      <PageHeader title="Vault">
+        Client logins, encrypted at rest. Revealing one is recorded against your name.
+      </PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
         <VaultBoard />
