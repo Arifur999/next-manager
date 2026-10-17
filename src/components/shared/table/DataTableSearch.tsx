@@ -1,41 +1,47 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
+import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 import { Search } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type DataTableSearchProps = {
-  initialValue?: string;
+  value: string;
+  onDebouncedChange: (value: string) => void;
   placeholder?: string;
   debounceMs?: number;
-  onDebouncedChange: (value: string) => void;
-  isLoading?: boolean;
 };
 
-const DataTableSearch = ({
-  initialValue = "",
-  placeholder = "Search...",
-  debounceMs = 400,
-  onDebouncedChange,
-}: DataTableSearchProps) => {
-  const [value, setValue] = useState(initialValue);
+const DataTableSearch = ({ value, onDebouncedChange, placeholder = "Search...", debounceMs = 400 }: DataTableSearchProps) => {
+  const [inputValue, setInputValue] = useState(value);
+  const [syncedValue, setSyncedValue] = useState(value);
+  const [sentValue, setSentValue] = useState(value);
 
-  useEffect(() => {
-    // Skip the first run: firing on mount would re-request the list the page
-    // has already loaded, and reset paging on every navigation.
-    if (value === initialValue) return;
+  const debounced = useDebouncedCallback((next: string) => {
+    const term = next.trim();
+    setSentValue(term);
+    onDebouncedChange(term);
+  }, debounceMs);
 
-    const timer = setTimeout(() => onDebouncedChange(value), debounceMs);
-    return () => clearTimeout(timer);
-  }, [value, initialValue, debounceMs, onDebouncedChange]);
+  // Follow a change made elsewhere (a reset, a link) without remounting the
+  // input, which would drop focus mid-typing. Our own debounced value coming
+  // back is not such a change and must not overwrite newer keystrokes.
+  if (value !== syncedValue) {
+    setSyncedValue(value);
+    if (value !== sentValue) setInputValue(value);
+  }
 
   return (
     <div className="relative w-full max-w-sm">
       <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
       <Input
-        value={value}
-        onChange={(event) => setValue(event.target.value)}
+        value={inputValue}
+        onChange={(event) => {
+          setInputValue(event.target.value);
+          debounced.run(event.target.value);
+        }}
         placeholder={placeholder}
+        aria-label={placeholder}
         className="pl-9"
       />
     </div>

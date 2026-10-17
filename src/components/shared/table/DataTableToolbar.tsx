@@ -11,20 +11,17 @@ interface DataTableToolbarProps<TData> {
   search?: DataTableSearchConfig;
   toolbarAction?: React.ReactNode;
   exportFileName?: string;
-  isLoading?: boolean;
 }
 
-const DataTableToolbar = <TData,>({ table, search, toolbarAction, exportFileName, isLoading }: DataTableToolbarProps<TData>) => {
+const DataTableToolbar = <TData,>({ table, search, toolbarAction, exportFileName }: DataTableToolbarProps<TData>) => {
   return (
     <div className="mb-4 flex flex-wrap items-start gap-3">
       {search && (
         <DataTableSearch
-          key={search.initialValue ?? ""}
-          initialValue={search.initialValue}
+          value={search.initialValue ?? ""}
           placeholder={search.placeholder}
           debounceMs={search.debounceMs}
           onDebouncedChange={search.onDebouncedChange}
-          isLoading={isLoading}
         />
       )}
 

@@ -42,7 +42,6 @@ const DataTable = <TData,>(props: DataTableProps<TData>) => {
         search={searchFromFirstPage}
         toolbarAction={toolbarAction}
         exportFileName={exportFileName}
-        isLoading={isLoading}
       />
 
       <div className="font-condensed relative overflow-hidden rounded-lg border">
