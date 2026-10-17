@@ -10,7 +10,7 @@ const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf
 describe("landing page invariants", () => {
   it("has one primary CTA label, from getPrimaryCta, in the header, hero, pricing, closing band and footer", () => {
     const sources = {
-      header: read("../../components/modules/Home/Shell/MarketingHeader.tsx"),
+      header: read("../../components/modules/Home/Shell/MarketingAccountLinks.tsx"),
       hero: read("../../components/modules/Home/Hero/Hero.tsx"),
       pricing: read("../../components/modules/Home/Pricing/PricingTeaser.tsx"),
       closing: read("../../components/modules/Home/FinalCta/FinalCta.tsx"),
