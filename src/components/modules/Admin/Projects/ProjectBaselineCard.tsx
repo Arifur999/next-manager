@@ -68,8 +68,8 @@ const ProjectBaselineCard = ({ projectId }: { projectId: string }) => {
         <div>
           <CardTitle className="text-base">Baseline</CardTitle>
           <p className="text-sm text-muted-foreground">
-            {isBaselined
-              ? `Frozen ${format(parseISO(project.baseline_set_at as string), "dd MMM yyyy")} — plan-vs-actual and scope drift are measured from here.`
+            {project.baseline_set_at
+              ? `Frozen ${format(parseISO(project.baseline_set_at), "dd MMM yyyy")} — plan-vs-actual and scope drift are measured from here.`
               : "Freeze what was sold, so overrun and scope drift have an original to be measured from."}
           </p>
         </div>
