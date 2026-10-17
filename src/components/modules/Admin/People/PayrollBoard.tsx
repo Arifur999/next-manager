@@ -148,7 +148,7 @@ const PayrollBoard = () => {
           key={run.id}
           run={run}
           accounts={accounts}
-          onSave={(items) => void savePayrollItems({ id: run.id, items })}
+          onSave={(items) => savePayrollItems({ id: run.id, items })}
           onPay={(accountId) => void payPayroll({ id: run.id, accountId })}
           isBusy={isSaving || isPaying}
           onDiscard={() => setDiscarding(run)}

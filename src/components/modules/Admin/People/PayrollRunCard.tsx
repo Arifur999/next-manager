@@ -21,7 +21,8 @@ import { Trash2 } from "lucide-react"
 import { useState } from "react"
 
 // One month of payroll: a draft has inputs, a paid run shows its payouts. Paying
-// waits for an account to be chosen, since money then leaves it with no undo here.
+// waits for an account and for the typed figures to be saved, since money then
+// leaves with no undo here.
 
 type Draft = Record<string, { gross: string; deductions: string }>
 type PayrollItem = IPayrollRun["items"][number]
@@ -36,7 +37,7 @@ const PayrollRunCard = ({
 }: {
   run: IPayrollRun
   accounts: IAccount[]
-  onSave: (items: IPayrollItemFormValues[]) => void
+  onSave: (items: IPayrollItemFormValues[]) => Promise<boolean>
   onPay: (accountId: string) => void
   onDiscard: () => void
   /** A save or payment is in flight, so neither can be sent twice. */
@@ -46,6 +47,8 @@ const PayrollRunCard = ({
   const [accountId, setAccountId] = useState("")
 
   const isDraft = run.status === "draft"
+  // Pay sends the figures the server holds, not the ones in the boxes.
+  const hasUnsavedFigures = Object.keys(draft).length > 0
 
   const valueOf = (itemId: string, field: "gross" | "deductions", stored: number) =>
     draft[itemId]?.[field] ?? (stored ? String(stored) : "")
@@ -60,6 +63,15 @@ const PayrollRunCard = ({
         [field]: value,
       },
     })
+
+  const saveFigures = async () => {
+    const items = Object.entries(draft).map(([id, values]) => ({
+      id,
+      gross_bdt: values.gross,
+      deductions_bdt: values.deductions,
+    }))
+    if (await onSave(items)) setDraft({})
+  }
 
   const total = run.items.reduce((sum, item) => sum + Number(item.net_bdt), 0)
   const paidCount = run.items.filter((item) => item.payout_id).length
@@ -166,19 +178,7 @@ const PayrollRunCard = ({
 
       {isDraft && (
         <div className="flex flex-wrap items-center gap-3 border-t px-5 py-4">
-          <Button
-            variant="outline"
-            onClick={() =>
-              onSave(
-                Object.entries(draft).map(([id, values]) => ({
-                  id,
-                  gross_bdt: values.gross,
-                  deductions_bdt: values.deductions,
-                }))
-              )
-            }
-            disabled={isBusy || Object.keys(draft).length === 0}
-          >
+          <Button variant="outline" onClick={() => void saveFigures()} disabled={isBusy || !hasUnsavedFigures}>
             Save numbers
           </Button>
 
@@ -195,14 +195,17 @@ const PayrollRunCard = ({
             </SelectContent>
           </Select>
 
-          <Button disabled={isBusy || !accountId || total <= 0} onClick={() => onPay(accountId)}>
+          <Button
+            disabled={isBusy || hasUnsavedFigures || !accountId || total <= 0}
+            onClick={() => onPay(accountId)}
+          >
             Pay {formatBdt(total)}
           </Button>
 
           <p className="w-full text-xs text-muted-foreground">
-            Paying writes one team payout per person and moves the money out of that
-            account. It cannot be undone here — a mistake is corrected by reversing the
-            payouts where they live.
+            {hasUnsavedFigures
+              ? "Save the numbers first: paying sends the saved figures, not the ones being typed."
+              : "Paying writes one team payout per person and moves the money out of that account. It cannot be undone here — a mistake is corrected by reversing the payouts where they live."}
           </p>
         </div>
       )}
