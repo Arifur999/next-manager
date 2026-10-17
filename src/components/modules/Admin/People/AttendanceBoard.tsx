@@ -2,27 +2,21 @@
 
 import { clockAction } from "@/app/(dashboardLayout)/dashboard/attendance/_action"
 import RecordAttendanceCard from "@/components/modules/Admin/People/RecordAttendanceCard"
-import EmptyState from "@/components/shared/state/EmptyState"
-import PanelState from "@/components/shared/state/PanelState"
-import { Badge } from "@/components/ui/badge"
+import { attendanceColumns } from "@/components/modules/Admin/People/attendanceColumns"
+import DataTable from "@/components/shared/table/DataTable"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { useActionMutation } from "@/hooks/useActionMutation"
+import { toTableQueryProps } from "@/lib/table/queryProps"
 import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
-import { CalendarCheck, LogIn, LogOut } from "lucide-react"
+import { LogIn, LogOut } from "lucide-react"
 import { attendanceQuery } from "@/queries/people.queries"
 import { queryKeys } from "@/lib/queryKeys"
 import { todayIsoDate } from "@/lib/dates"
 
 // Who was here, which is not the hours logged against a task: that is the
 // timesheet. `canRecord` comes from the page, as `canDecide` does on the leave board.
-
-const hoursBetween = (from: string | null, to: string | null) => {
-  if (!from || !to) return null
-  const minutes = (parseISO(to).getTime() - parseISO(from).getTime()) / 60000
-  return minutes > 0 ? (minutes / 60).toFixed(1) : null
-}
 
 const AttendanceBoard = ({ canRecord = false }: { canRecord?: boolean }) => {
   const attendanceList = useQuery(attendanceQuery())
@@ -58,64 +52,17 @@ const AttendanceBoard = ({ canRecord = false }: { canRecord?: boolean }) => {
         </Button>
       </CardHeader>
 
-      <PanelState
-        query={attendanceList}
-        errorMessage="Attendance did not load."
-        isEmpty={days.length === 0}
-        empty={<EmptyState icon={CalendarCheck}>Nothing recorded yet.</EmptyState>}
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[42rem] text-sm">
-            <thead>
-              <tr className="border-b text-left text-xs text-muted-foreground">
-                <th className="px-5 py-2.5 font-medium">Date</th>
-                <th className="px-5 py-2.5 font-medium">Who</th>
-                <th className="px-5 py-2.5 font-medium">In</th>
-                <th className="px-5 py-2.5 font-medium">Out</th>
-                <th className="px-5 py-2.5 text-right font-medium">Hours</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {days.map((row) => {
-                const hours = hoursBetween(row.check_in, row.check_out)
-
-                return (
-                  <tr key={row.id}>
-                    <td className="whitespace-nowrap px-5 py-3">
-                      {format(parseISO(row.date), "d MMM yyyy")}
-                    </td>
-                    <td className="px-5 py-3">
-                      {row.user.full_name}
-                      {/* "They clocked in" and "somebody wrote it down" are
-                          different claims, so the second one is labelled. */}
-                      {row.source === "admin" && (
-                        <Badge variant="outline" className="ml-2 text-[10px]">
-                          recorded for them
-                        </Badge>
-                      )}
-                    </td>
-                    <td className="px-5 py-3 tabular-nums">
-                      {row.check_in ? format(parseISO(row.check_in), "HH:mm") : "—"}
-                    </td>
-                    <td className="px-5 py-3">
-                      {row.check_out ? (
-                        <span className="tabular-nums">
-                          {format(parseISO(row.check_out), "HH:mm")}
-                        </span>
-                      ) : row.check_in ? (
-                        <span className="text-muted-foreground">still in</span>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="px-5 py-3 text-right tabular-nums">{hours ?? "—"}</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      </PanelState>
+      <div className="p-4">
+        <DataTable
+          data={days}
+          columns={attendanceColumns}
+          tableId="attendance"
+          exportFileName="attendance"
+          search={{ placeholder: "Search by name..." }}
+          {...toTableQueryProps(attendanceList)}
+          emptyMessage="Nothing recorded yet."
+        />
+      </div>
     </Card>
   )
 
