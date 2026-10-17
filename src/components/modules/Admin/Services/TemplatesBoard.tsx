@@ -13,12 +13,12 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { formatUsd } from "@/lib/currency"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IService } from "@/types/catalog.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { Boxes, Trash2 } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
-import { toast } from "sonner"
 import { serviceTemplatesQuery, servicesListQuery } from "@/queries/catalog.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -31,7 +31,6 @@ import { queryKeys } from "@/lib/queryKeys"
  * two answers to what the client owes.
  */
 const TemplatesBoard = () => {
-  const queryClient = useQueryClient()
   const [name, setName] = useState("")
   const [picked, setPicked] = useState<Record<string, number>>({})
 
@@ -41,33 +40,26 @@ const TemplatesBoard = () => {
   const templates = data?.data ?? []
   const services = ((serviceData?.data ?? [])).filter((service) => service.is_active)
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: queryKeys.serviceTemplates.all })
+  const { run: createPackage, isPending } = useActionMutation({
+    action: createTemplateAction,
+    successMessage: "Package created",
+    invalidateKeys: [queryKeys.serviceTemplates.all],
+    refresh: false,
+  })
 
-  const { mutate: create, isPending } = useMutation({
-    mutationFn: () => createTemplateAction({ name, quantities: picked }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not create it")
-        return
-      }
-      toast.success("Package created")
+  const { run: removePackage } = useActionMutation({
+    action: deleteTemplateAction,
+    successMessage: "Package removed",
+    invalidateKeys: [queryKeys.serviceTemplates.all],
+    refresh: false,
+  })
+
+  const handleCreate = async () => {
+    if (await createPackage({ name, quantities: picked })) {
       setName("")
       setPicked({})
-      void refresh()
-    },
-  })
-
-  const { mutate: remove } = useMutation({
-    mutationFn: (id: string) => deleteTemplateAction(id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not remove it")
-        return
-      }
-      toast.success("Package removed")
-      void refresh()
-    },
-  })
+    }
+  }
 
   const toggle = (service: IService, on: boolean) => {
     const next = { ...picked }
@@ -90,7 +82,7 @@ const TemplatesBoard = () => {
           onSubmit={(event) => {
             event.preventDefault()
             if (!name.trim() || chosen === 0) return
-            create()
+            void handleCreate()
           }}
         >
           <div className="space-y-1.5">
@@ -211,7 +203,7 @@ const TemplatesBoard = () => {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => remove(template.id)}
+                      onClick={() => void removePackage(template.id)}
                       aria-label={`Delete ${template.name}`}
                     >
                       <Trash2 className="size-4" />
