@@ -4,6 +4,7 @@ import {
   inviteAgencyAction,
   revokeAgencyInviteAction,
 } from "@/app/(dashboardLayout)/platform/_agencyAction"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -56,6 +57,7 @@ const AgencyInvites = () => {
   const [freshLink, setFreshLink] = useState<string | null>(null)
   const [mailed, setMailed] = useState<{ delivered: boolean; reason: string | null } | null>(null)
   const [copied, setCopied] = useState(false)
+  const [revoking, setRevoking] = useState<IAgencyInvite | null>(null)
 
   const { data, isLoading } = useQuery(agencyInvitesQuery())
 
@@ -83,12 +85,16 @@ const AgencyInvites = () => {
     },
   })
 
-  const { run: revokeInvite } = useActionMutation({
+  const { run: revokeInvite, isPending: isRevoking } = useActionMutation({
     action: revokeAgencyInviteAction,
     successMessage: "Invite revoked — the link stops working immediately",
     invalidateKeys: [queryKeys.agencyInvites.all],
     refresh: false,
   })
+
+  const handleRevoke = async () => {
+    if (revoking && (await revokeInvite(revoking.id))) setRevoking(null)
+  }
 
   const handleInvite = async () => {
     const sent = await sendInvite({
@@ -320,7 +326,7 @@ const AgencyInvites = () => {
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => void revokeInvite(invite.id)}
+                        onClick={() => setRevoking(invite)}
                         aria-label={`Revoke the invite to ${invite.email}`}
                       >
                         <Trash2 className="size-4" />
@@ -333,6 +339,27 @@ const AgencyInvites = () => {
           </ul>
         )}
       </Card>
+
+      <ConfirmDialog
+        open={Boolean(revoking)}
+        onOpenChange={(open) => {
+          if (!open) setRevoking(null)
+        }}
+        title="Revoke this invite?"
+        description={
+          revoking && (
+            <>
+              The link sent to <span className="font-medium text-foreground">{revoking.email}</span>{" "}
+              stops working immediately. Nothing was created from it, so nothing else changes.
+            </>
+          )
+        }
+        variant="destructive"
+        confirmLabel="Revoke"
+        pendingLabel="Revoking..."
+        isPending={isRevoking}
+        onConfirm={() => void handleRevoke()}
+      />
     </div>
   )
 }
