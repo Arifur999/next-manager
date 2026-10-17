@@ -1,13 +1,12 @@
 "use server"
 
 import { httpClient } from "@/lib/axios/httpClient"
+import { toParams } from "@/lib/queryString"
 import { type IUser } from "@/types/user.types"
 import type { ICreateUserPayload, IUpdateUserPayload } from "@/zod/user.validation"
 
-export const getAllUsers = async (queryString?: string) => {
-  const params = queryString ? Object.fromEntries(new URLSearchParams(queryString)) : undefined
-  return httpClient.get<IUser[]>("/users", { params })
-}
+export const getAllUsers = async (queryString?: string) =>
+  httpClient.get<IUser[]>("/users", { params: toParams(queryString) })
 
 export const getSingleUser = async (id: string) => httpClient.get<IUser>(`/users/${id}`)
 
