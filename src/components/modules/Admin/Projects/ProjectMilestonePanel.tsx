@@ -197,6 +197,8 @@ const ProjectMilestonePanel = ({
                     {state.label}
                   </Badge>
 
+                  {/* Offered to everybody: delivering is the operations role's
+                      job, and the API lets anyone on the project submit. */}
                   {!milestone.submitted_at && (
                     <Button
                       type="button"
@@ -208,7 +210,7 @@ const ProjectMilestonePanel = ({
                     </Button>
                   )}
 
-                  {milestone.submitted_at && !milestone.accepted_at && (
+                  {canManage && milestone.submitted_at && !milestone.accepted_at && (
                     <Button
                       type="button"
                       size="sm"
@@ -219,7 +221,7 @@ const ProjectMilestonePanel = ({
                     </Button>
                   )}
 
-                  {milestone.submitted_at && (
+                  {canManage && milestone.submitted_at && (
                     <Button
                       type="button"
                       size="sm"
