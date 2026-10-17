@@ -43,6 +43,12 @@ import { queryKeys } from "@/lib/queryKeys"
 /** The sentinel for "leave new sign-ups unprovisioned" — Select cannot hold "". */
 const NO_PLAN = "__none__"
 
+const trialHint = (provisions: boolean, trialDays: string) => {
+  if (!provisions) return "Nothing to time until there is a starting plan."
+  if (Number(trialDays) === 0) return "No trial — they start as a paying customer straight away."
+  return `They can use everything for ${trialDays} days before the plan has to be paid for.`
+}
+
 const PlatformSettings = () => {
   const { data, isLoading, isFetching, refetch } = useQuery(platformSettingsQuery())
 
@@ -252,11 +258,7 @@ const SettingsForm = ({ settings }: { settings: IPlatformSettings }) => {
               <span className="text-sm text-muted-foreground">days</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              {!provisions
-                ? "Nothing to time until there is a starting plan."
-                : Number(form.default_trial_days) === 0
-                  ? "No trial — they start as a paying customer straight away."
-                  : `They can use everything for ${form.default_trial_days} days before the plan has to be paid for.`}
+              {trialHint(provisions, form.default_trial_days)}
             </p>
           </div>
         </CardContent>
