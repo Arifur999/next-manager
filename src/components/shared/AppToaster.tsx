@@ -14,5 +14,7 @@ const NO_TOASTS = new Set(["/"])
 export default function AppToaster() {
   const pathname = usePathname()
   if (NO_TOASTS.has(pathname)) return null
-  return <Toaster position="top-right" richColors />
+  // Bottom right, clear of the bell and the account menu a toast used to cover
+  // in the top bar. Below sonner's mobile breakpoint it spans the bottom edge.
+  return <Toaster position="bottom-right" richColors />
 }
