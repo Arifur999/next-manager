@@ -2,7 +2,8 @@
 
 import { requireId, runValidatedAction } from "@/lib/runAction"
 import { createLeaveType, updateLeaveType } from "@/services/people.services"
-import { activeStateServerZodSchema, leaveTypeServerZodSchema } from "@/zod/people.validation"
+import { activeStateServerZodSchema } from "@/zod/formFields"
+import { leaveTypeServerZodSchema } from "@/zod/people.validation"
 
 // Names are unique case-insensitively, so "annual leave" is refused while
 // "Annual leave" exists, and the server's message says so.

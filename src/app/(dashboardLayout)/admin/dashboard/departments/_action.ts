@@ -2,7 +2,8 @@
 
 import { requireId, runAction, runValidatedAction } from "@/lib/runAction"
 import { createDepartment, deleteDepartment, updateDepartment } from "@/services/people.services"
-import { activeStateServerZodSchema, departmentServerZodSchema } from "@/zod/people.validation"
+import { activeStateServerZodSchema } from "@/zod/formFields"
+import { departmentServerZodSchema } from "@/zod/people.validation"
 
 // Names are unique case-insensitively, so "design" is refused while "Design"
 // exists, and the server's message says so.

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest"
 import {
-    activeStateServerZodSchema,
     capacityServerZodSchema,
     completePayrollServerZodSchema,
     createInviteServerZodSchema,
@@ -33,16 +32,6 @@ describe("departmentServerZodSchema", () => {
 
     it("rejects a name longer than a team name", () => {
         expect(departmentServerZodSchema.safeParse({ name: "x".repeat(61), description: "" }).success).toBe(false)
-    })
-})
-
-describe("activeStateServerZodSchema", () => {
-    it("accepts a boolean", () => {
-        expect(activeStateServerZodSchema.parse({ is_active: false })).toEqual({ is_active: false })
-    })
-
-    it("rejects a string that only looks like one", () => {
-        expect(activeStateServerZodSchema.safeParse({ is_active: "false" }).success).toBe(false)
     })
 })
 

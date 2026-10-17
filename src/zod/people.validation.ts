@@ -2,12 +2,6 @@ import { differenceInCalendarDays, endOfMonth, format, parseISO } from "date-fns
 import { z } from "zod"
 import { isoDate, optionalNonNegative, positiveAmount, toNumber } from "./formFields"
 
-// Turning a department or a kind of leave off or on again. Neither is deleted
-// once in use, so this is how one is retired.
-export const activeStateServerZodSchema = z.object({
-    is_active: z.boolean("is_active must be true or false"),
-})
-
 export const departmentFormZodSchema = z.object({
     name: z.string().trim().min(1, "Name is required").max(60, "That is longer than a team name"),
     description: z.string().trim().max(200, "Keep it under 200 characters"),
