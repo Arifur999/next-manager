@@ -30,6 +30,13 @@ describe("currency formatting", () => {
   it("keeps a negative amount negative", () => {
     // A DP balance can legitimately be negative - it must not be shown as
     // though the agency were owed money it owes.
-    expect(formatBdt(-500)).toMatch(/-|\(/);
+    expect(formatBdt(-500)).toMatch(/^\u2212BDT/);
+    expect(formatUsd(-5)).toBe("\u2212$5.00");
+  });
+
+  // Regression: "-BDT 352,750.00" wrapped after the hyphen in a stat tile.
+  it("writes the sign as a minus a line cannot be broken after", () => {
+    expect(formatBdt(-352750)).not.toContain("-");
+    expect(formatMoney(-1, "USD").startsWith("\u2212")).toBe(true);
   });
 });
