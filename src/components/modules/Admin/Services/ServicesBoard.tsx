@@ -32,10 +32,10 @@ const ServicesBoard = ({ canManage = true }: { canManage?: boolean }) => {
   const [editing, setEditing] = useState<IService | null>(null)
   const [removing, setRemoving] = useState<IService | null>(null)
 
-  const { data, isLoading } = useQuery(servicesListQuery())
+  const serviceList = useQuery(servicesListQuery())
   const { data: categoryData } = useQuery(serviceCategoriesQuery())
 
-  const services = data?.data ?? []
+  const services = serviceList.data?.data ?? []
   const categories = categoryData?.data ?? []
 
   // No toast: the row's "not sold" badge is the confirmation.
@@ -84,7 +84,7 @@ const ServicesBoard = ({ canManage = true }: { canManage?: boolean }) => {
 
       <ServiceList
         services={services}
-        isLoading={isLoading}
+        query={serviceList}
         onEdit={setEditing}
         onEditable={canManage}
         onToggle={(service) => void toggleSold(service)}
