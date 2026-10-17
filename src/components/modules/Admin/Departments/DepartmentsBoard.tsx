@@ -6,6 +6,7 @@ import {
   setDepartmentActiveAction,
   updateDepartmentAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/departments/_action"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -39,6 +40,7 @@ const emptyDepartment: IDepartmentFormValues = { name: "", description: "" }
 
 const DepartmentsBoard = () => {
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<IDepartment | null>(null)
 
   const { data, isLoading } = useQuery(departmentsQuery())
 
@@ -61,7 +63,7 @@ const DepartmentsBoard = () => {
     refresh: false,
   })
 
-  const { run: removeDepartment } = useActionMutation({
+  const { run: removeDepartment, isPending: isDeleting } = useActionMutation({
     action: deleteDepartmentAction,
     successMessage: "Department deleted",
     invalidateKeys: [queryKeys.departments.all],
@@ -86,9 +88,15 @@ const DepartmentsBoard = () => {
     setEditingId(null)
   }
 
-  // Only the department being edited takes the form with it.
-  const handleDelete = async (id: string) => {
-    if ((await removeDepartment(id)) && editingId === id) stopEditing()
+  // The dialog stays open on a refusal, so "move them first" is read in place.
+  const confirmDelete = async () => {
+    if (!deleting) return
+    const isDeleted = await removeDepartment(deleting.id)
+    if (!isDeleted) return
+
+    // Only the department being edited takes the form with it.
+    if (editingId === deleting.id) stopEditing()
+    setDeleting(null)
   }
 
   return (
@@ -234,7 +242,7 @@ const DepartmentsBoard = () => {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => void handleDelete(department.id)}
+                      onClick={() => setDeleting(department)}
                       aria-label={`Delete ${department.name}`}
                     >
                       <Trash2 className="size-4" />
@@ -246,6 +254,25 @@ const DepartmentsBoard = () => {
           </ul>
         )}
       </Card>
+
+      <ConfirmDialog
+        open={deleting !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleting(null)
+        }}
+        title="Delete this department?"
+        description={
+          <>
+            This removes <span className="font-medium text-foreground">{deleting?.name}</span>. A
+            department with people in it cannot be deleted: move them first, or turn it off instead.
+          </>
+        }
+        variant="destructive"
+        confirmLabel="Delete"
+        pendingLabel="Deleting..."
+        isPending={isDeleting}
+        onConfirm={() => void confirmDelete()}
+      />
     </div>
   )
 }
