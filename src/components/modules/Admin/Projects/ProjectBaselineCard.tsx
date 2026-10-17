@@ -39,9 +39,9 @@ const ProjectBaselineCard = ({ projectId }: { projectId: string }) => {
   const { mutate: save, isPending } = useMutation({
     mutationFn: () =>
       setBaselineAction(projectId, {
-        baseline_hours: Number(hours),
-        ...(value.trim() === "" ? {} : { baseline_value_usd: Number(value) }),
-        ...(isBaselined ? { replace_existing: true } : {}),
+        baseline_hours: hours,
+        baseline_value_usd: value,
+        replace_existing: isBaselined,
       }),
     onSuccess: (result) => {
       if (!result.success) {

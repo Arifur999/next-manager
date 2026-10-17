@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest"
 import {
     assignProjectMemberServerZodSchema,
+    createMilestoneServerZodSchema,
     createProjectLinkServerZodSchema,
     createProjectServerZodSchema,
+    setBaselineServerZodSchema,
     updateProjectServerZodSchema,
 } from "./project.validation"
 
@@ -94,5 +96,55 @@ describe("createProjectLinkServerZodSchema", () => {
 
     it("requires the project it belongs to", () => {
         expect(createProjectLinkServerZodSchema.safeParse({ ...validLink, project_id: "" }).success).toBe(false)
+    })
+})
+
+describe("createMilestoneServerZodSchema", () => {
+    const validMilestone = { project_id: "p1", title: "Design handover", due_date: "2026-11-02" }
+
+    it("trims the title into the API payload", () => {
+        expect(createMilestoneServerZodSchema.parse({ ...validMilestone, title: " Design handover " })).toEqual(
+            validMilestone,
+        )
+    })
+
+    it("rejects a blank title and a missing due date", () => {
+        expect(createMilestoneServerZodSchema.safeParse({ ...validMilestone, title: " " }).error?.issues[0]?.message).toBe(
+            "Title is required",
+        )
+        expect(createMilestoneServerZodSchema.safeParse({ ...validMilestone, due_date: "" }).error?.issues[0]?.message).toBe(
+            "Pick a date",
+        )
+    })
+
+    it("requires the project it belongs to", () => {
+        expect(createMilestoneServerZodSchema.safeParse({ ...validMilestone, project_id: "" }).success).toBe(false)
+    })
+})
+
+describe("setBaselineServerZodSchema", () => {
+    const validBaseline = { baseline_hours: "120", baseline_value_usd: "9600", replace_existing: false }
+
+    it("turns the hours and value into numbers", () => {
+        expect(setBaselineServerZodSchema.parse(validBaseline)).toEqual({
+            baseline_hours: 120,
+            baseline_value_usd: 9600,
+            replace_existing: false,
+        })
+    })
+
+    it("leaves a blank value out so the server takes the contract value", () => {
+        expect(setBaselineServerZodSchema.parse({ ...validBaseline, baseline_value_usd: "" }).baseline_value_usd).toBeUndefined()
+    })
+
+    it("rejects zero hours and a negative value", () => {
+        expect(setBaselineServerZodSchema.safeParse({ ...validBaseline, baseline_hours: "0" }).error?.issues[0]?.message).toBe(
+            "Baseline hours must be greater than zero",
+        )
+        expect(setBaselineServerZodSchema.safeParse({ ...validBaseline, baseline_value_usd: "-1" }).success).toBe(false)
+    })
+
+    it("passes on a request to replace the existing baseline", () => {
+        expect(setBaselineServerZodSchema.parse({ ...validBaseline, replace_existing: true }).replace_existing).toBe(true)
     })
 })

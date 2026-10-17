@@ -94,7 +94,7 @@ const ProjectMilestonePanel = ({
 
   const { mutate: create, isPending: isCreating } = useMutation({
     mutationFn: () =>
-      createMilestoneAction({ project_id: projectId, title: title.trim(), due_date: dueDate }),
+      createMilestoneAction({ project_id: projectId, title, due_date: dueDate }),
     onSuccess: (result) => {
       if (!result.success) {
         toast.error(result.message || "Failed to add the milestone")

@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { optionalNonNegative, toNumber } from "./formFields"
+import { isoDate, optionalNonNegative, positiveAmount, toNumber } from "./formFields"
 
 export const projectFormZodSchema = z.object({
     client_id: z.string().min(1, "Choose a client"),
@@ -72,4 +72,38 @@ export const createProjectLinkServerZodSchema = projectLinkFormZodSchema
         project_id: values.project_id,
         label: values.label,
         url: values.url,
+    }))
+
+export const milestoneFormZodSchema = z.object({
+    title: z.string().trim().min(1, "Title is required"),
+    due_date: isoDate,
+})
+
+export type IMilestoneFormValues = z.infer<typeof milestoneFormZodSchema>
+
+export const createMilestoneServerZodSchema = milestoneFormZodSchema
+    .extend({ project_id: z.string().min(1, "Invalid project id") })
+    .transform((values) => ({
+        project_id: values.project_id,
+        title: values.title,
+        due_date: values.due_date,
+    }))
+
+// A blank value lets the server take the contract value as it stands, which at
+// kickoff is what was sold.
+export const baselineFormZodSchema = z.object({
+    baseline_hours: positiveAmount("Baseline hours"),
+    baseline_value_usd: optionalNonNegative("Baseline value"),
+})
+
+export type IBaselineFormValues = z.infer<typeof baselineFormZodSchema>
+
+// replace_existing is always stated, never implied: re-baselining erases the
+// original every overrun is measured against.
+export const setBaselineServerZodSchema = baselineFormZodSchema
+    .extend({ replace_existing: z.boolean() })
+    .transform((values) => ({
+        baseline_hours: Number(values.baseline_hours),
+        baseline_value_usd: toNumber(values.baseline_value_usd),
+        replace_existing: values.replace_existing,
     }))
