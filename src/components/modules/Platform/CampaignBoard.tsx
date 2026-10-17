@@ -128,7 +128,7 @@ const CampaignBoard = () => {
   }
 
   const handleRemove = async (id: string) => {
-    if ((await removeAnnouncement(id)) && editingId) reset()
+    if ((await removeAnnouncement(id)) && id === editingId) reset()
   }
 
   const canSave = draft.title.trim().length > 0 && draft.body.trim().length > 0
