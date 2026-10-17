@@ -269,6 +269,21 @@ const WithdrawalsBoard = () => {
         columns={withdrawalsColumns}
         tableId="withdrawals"
         exportFileName="withdrawals"
+        search={{ placeholder: "Search type, account or notes..." }}
+        filters={{
+          configs: [
+            {
+              id: "type",
+              type: "multi-select",
+              label: "Type",
+              options: [
+                { label: "Personal", value: "personal" },
+                { label: "Reinvestment", value: "reinvestment" },
+              ],
+            },
+            { id: "date", type: "date-range", label: "Date" },
+          ],
+        }}
         isLoading={isPending}
         isFetching={isFetching}
         emptyMessage="No withdrawals recorded yet."
