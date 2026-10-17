@@ -1,6 +1,7 @@
 "use client"
 
 import MonthlyChart from "@/components/modules/Admin/Reports/MonthlyChart"
+import ServiceRevenueCard from "@/components/modules/Admin/Reports/ServiceRevenueCard"
 import StatTile from "@/components/shared/StatTile"
 import ErrorState from "@/components/shared/state/ErrorState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
@@ -80,6 +81,7 @@ const BusinessReport = ({ period }: { period: string }) => {
     <div className="space-y-6">
       {renderTiles()}
       <MonthlyChart query={monthlyQuery} />
+      <ServiceRevenueCard hasPeriod={period !== ""} />
     </div>
   )
 }

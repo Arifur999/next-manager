@@ -7,6 +7,7 @@ import PageHeader from "@/components/shared/PageHeader";
 import ReportViewTabs from "@/components/modules/Admin/Reports/ReportViewTabs";
 import ReportPeriodPicker from "@/components/modules/Admin/Reports/ReportPeriodPicker";
 import { periodQueryString } from "@/lib/reportPeriod";
+import { serviceRevenueQuery } from "@/queries/catalog.queries";
 
 export const metadata: Metadata = {
   title: "Business · Reports",
@@ -19,6 +20,7 @@ const BusinessReportPage = async ({ searchParams }: { searchParams: Promise<Reco
   const prefetch = (queryClient: QueryClient) => Promise.all([
     queryClient.prefetchQuery(profitAndLossListQuery(period)),
     queryClient.prefetchQuery(monthlySeriesQuery(12)),
+    queryClient.prefetchQuery(serviceRevenueQuery()),
   ]);
 
   return (
