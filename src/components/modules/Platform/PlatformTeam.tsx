@@ -5,6 +5,7 @@ import {
   removePlatformAdminAction,
   setPermissionsAction,
 } from "@/app/(dashboardLayout)/platform/_teamAction"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -50,6 +51,7 @@ const TEAM_KEYS = [queryKeys.platformAdmins.all, queryKeys.platformActivity.all]
 const AdminRow = ({ admin, canRemove }: { admin: IPlatformAdmin; canRemove: boolean }) => {
   const [draft, setDraft] = useState<string[]>(admin.permissions)
   const [editing, setEditing] = useState(false)
+  const [isConfirmingRemoval, setIsConfirmingRemoval] = useState(false)
 
   const { run: saveAccess, isPending } = useActionMutation({
     action: (permissions: string[]) => setPermissionsAction(admin.id, permissions),
@@ -71,6 +73,10 @@ const AdminRow = ({ admin, canRemove }: { admin: IPlatformAdmin; canRemove: bool
     invalidateKeys: TEAM_KEYS,
     refresh: false,
   })
+
+  const handleRemove = async () => {
+    if (await removeOperator(admin.id)) setIsConfirmingRemoval(false)
+  }
 
   const handleSave = async () => {
     if (await saveAccess(draft)) setEditing(false)
@@ -144,7 +150,7 @@ const AdminRow = ({ admin, canRemove }: { admin: IPlatformAdmin; canRemove: bool
               variant="outline"
               size="sm"
               disabled={busy}
-              onClick={() => void removeOperator(admin.id)}
+              onClick={() => setIsConfirmingRemoval(true)}
             >
               Remove
             </Button>
@@ -203,6 +209,18 @@ const AdminRow = ({ admin, canRemove }: { admin: IPlatformAdmin; canRemove: bool
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={isConfirmingRemoval}
+        onOpenChange={setIsConfirmingRemoval}
+        title={`Remove ${admin.full_name} from the platform team?`}
+        description="They lose access to this console straight away. What they did stays in admin activity."
+        variant="destructive"
+        confirmLabel="Remove"
+        pendingLabel="Removing..."
+        isPending={isRemoving}
+        onConfirm={() => void handleRemove()}
+      />
     </li>
   )
 }
