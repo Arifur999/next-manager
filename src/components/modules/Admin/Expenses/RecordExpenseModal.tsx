@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt } from "@/lib/currency"
 import { useActionMutation } from "@/hooks/useActionMutation"
+import { todayIsoDate } from "@/lib/dates"
 import { expenseFormZodSchema, type IExpenseFormValues } from "@/zod/spending.validation"
 import { useForm } from "@tanstack/react-form"
 import { useQuery } from "@tanstack/react-query"
@@ -32,17 +33,15 @@ import { accountsQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
 import { expenseCategoriesQuery } from "@/queries/spending.queries"
 
-const today = () => new Date().toISOString().slice(0, 10)
-
-const defaultValues: IExpenseFormValues = {
-  date: today(),
+const getDefaultValues = (): IExpenseFormValues => ({
+  date: todayIsoDate(),
   category_id: "",
   amount_bdt: "",
   account_id: "",
   project_id: "",
   vendor: "",
   notes: "",
-}
+})
 
 const RecordExpenseModal = () => {
   const [open, setOpen] = useState(false)
@@ -84,7 +83,7 @@ const RecordExpenseModal = () => {
   })
 
   const form = useForm({
-    defaultValues,
+    defaultValues: getDefaultValues(),
     onSubmit: async ({ value }) => {
       // A failure keeps the dialog open with what was typed.
       if (await recordExpense(value)) {
@@ -104,10 +103,13 @@ const RecordExpenseModal = () => {
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
       setOpen(nextOpen)
-      if (!nextOpen) {
-        form.reset()
-        setNewCategory("")
+      // Today is read as the dialog opens, so a page left open overnight still offers today.
+      if (nextOpen) {
+        form.reset(getDefaultValues())
+        return
       }
+      form.reset()
+      setNewCategory("")
     },
     [form],
   )
