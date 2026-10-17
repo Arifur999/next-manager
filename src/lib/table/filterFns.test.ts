@@ -1,5 +1,5 @@
 import type { Row } from "@tanstack/react-table"
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it } from "vitest"
 import { createSmartColumnFilterFn } from "./filterFns"
 
 const smartColumnFilterFn = createSmartColumnFilterFn<unknown>()
@@ -27,6 +27,21 @@ describe("createSmartColumnFilterFn", () => {
   it("does a case-insensitive contains for text", () => {
     expect(matches("Office rent", "RENT")).toBe(true)
     expect(matches(null, "rent")).toBe(false)
+  })
+
+  // Regression: cells were parsed as UTC midnight, so in New York a row shown
+  // as 1 Sep was dropped by a range starting 1 Sep.
+  describe("west of Greenwich", () => {
+    const originalTimeZone = process.env.TZ
+    afterEach(() => {
+      process.env.TZ = originalTimeZone
+    })
+
+    it("keeps a calendar day inside a range that starts on it", () => {
+      process.env.TZ = "America/New_York"
+      expect(matches("2026-09-01", { from: "2026-09-01" })).toBe(true)
+      expect(matches("2026-09-01", { to: "2026-08-31" })).toBe(false)
+    })
   })
 
   it("keeps dates inside an inclusive day range", () => {
