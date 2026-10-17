@@ -88,6 +88,11 @@ describe("createLeadServerZodSchema", () => {
         )
     })
 
+    it("accepts a blank email and rejects a malformed one", () => {
+        expect(createLeadServerZodSchema.safeParse({ ...validLead, email: "" }).success).toBe(true)
+        expect(createLeadServerZodSchema.safeParse({ ...validLead, email: "jane@" }).success).toBe(false)
+    })
+
     it("rejects a blank name and a stage the pipeline does not have", () => {
         expect(createLeadServerZodSchema.safeParse({ ...validLead, name: "" }).success).toBe(false)
         expect(createLeadServerZodSchema.safeParse({ ...validLead, stage: "archived" }).success).toBe(false)

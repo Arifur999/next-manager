@@ -26,7 +26,7 @@ export type IClientLinkFormValues = z.infer<typeof clientLinkFormZodSchema>
 export const leadFormZodSchema = z.object({
     name: z.string().min(1, "Name is required"),
     company: z.string().optional(),
-    email: z.string().email("Enter a valid email address").optional().or(z.literal("")),
+    email: z.email("Enter a valid email address").optional().or(z.literal("")),
     phone: z.string().optional(),
     // An id, not typed text: see LeadSource on the server. Blank means nobody
     // said where it came from, which is a real answer.
