@@ -11,7 +11,11 @@ import { logger } from "@/lib/logger"
 import { classifyMeResponse } from "@/lib/session"
 import type { ApiResponse } from "@/types/api.types"
 import { type IUser } from "@/types/user.types"
-import type { IForgotPasswordFormValues, IRegisterPayload } from "@/zod/auth.validation"
+import type {
+    IForgotPasswordFormValues,
+    IRegisterPayload,
+    IResetPasswordFormValues,
+} from "@/zod/auth.validation"
 import { cookies } from "next/headers"
 import { cache } from "react"
 import { getApiBaseUrl } from "@/env"
@@ -90,3 +94,7 @@ export const register = async (payload: IRegisterPayload) => postPublic<IUser>("
 /** Answers the same whether or not the address has an account. */
 export const forgotPassword = async (payload: IForgotPasswordFormValues) =>
     postPublic<{ message: string }>("/auth/forgot-password", payload)
+
+/** One answer for an expired, spent or unknown token: the server does not tell them apart. */
+export const resetPassword = async (payload: IResetPasswordFormValues) =>
+    postPublic<{ message: string }>("/auth/reset-password", payload)

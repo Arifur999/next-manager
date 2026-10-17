@@ -102,3 +102,6 @@ export type IRegisterPayload = z.output<typeof registerServerZodSchema>
 
 // The form already holds the API's payload.
 export const forgotPasswordServerZodSchema = forgotPasswordFormZodSchema
+
+// The token from the link and the new password, nothing else.
+export const resetPasswordServerZodSchema = resetPasswordFormZodSchema

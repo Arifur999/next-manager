@@ -5,6 +5,7 @@ import {
   newPassword,
   registerServerZodSchema,
   requiredEmail,
+  resetPasswordServerZodSchema,
   updateProfileServerZodSchema,
 } from "./auth.validation"
 
@@ -100,5 +101,20 @@ describe("forgotPasswordServerZodSchema", () => {
 
   it("refuses something that is not an email", () => {
     expect(forgotPasswordServerZodSchema.safeParse({ email: "rina" }).success).toBe(false)
+  })
+})
+
+describe("resetPasswordServerZodSchema", () => {
+  it("sends the token and the new password", () => {
+    expect(resetPasswordServerZodSchema.parse({ token: "t1", new_password: "newpass12" })).toEqual({
+      token: "t1",
+      new_password: "newpass12",
+    })
+  })
+
+  it("refuses a link with no token and a weak password", () => {
+    const noToken = resetPasswordServerZodSchema.safeParse({ token: "", new_password: "newpass12" })
+    expect(noToken.error?.issues[0]?.message).toBe("This reset link is incomplete")
+    expect(resetPasswordServerZodSchema.safeParse({ token: "t1", new_password: "short" }).success).toBe(false)
   })
 })
