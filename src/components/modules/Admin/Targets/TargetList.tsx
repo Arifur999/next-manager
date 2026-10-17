@@ -15,7 +15,7 @@ const TargetList = ({
 }: {
   targets: IKpiTarget[]
   isLoading: boolean
-  onDelete: (id: string) => void
+  onDelete: (target: IKpiTarget) => void
   isRemoving: boolean
 }) => {
   const formatValue = (target: IKpiTarget) => {
@@ -70,7 +70,7 @@ const TargetList = ({
                   size="sm"
                   variant="outline"
                   disabled={isRemoving}
-                  onClick={() => onDelete(target.id)}
+                  onClick={() => onDelete(target)}
                 >
                   <Trash2 className="size-3.5" />
                   <span className="sr-only">Delete target</span>

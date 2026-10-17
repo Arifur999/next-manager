@@ -6,9 +6,12 @@ import {
 } from "@/app/(dashboardLayout)/admin/dashboard/targets/_action"
 import TargetForm from "@/components/modules/Admin/Targets/TargetForm"
 import TargetList from "@/components/modules/Admin/Targets/TargetList"
-import { periodStart } from "@/components/modules/Admin/Targets/targetMetrics"
+import { periodStart, specOf } from "@/components/modules/Admin/Targets/targetMetrics"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { useActionMutation } from "@/hooks/useActionMutation"
+import type { IKpiTarget } from "@/types/insights.types"
 import { useQuery } from "@tanstack/react-query"
+import { useState } from "react"
 import { usersListQuery } from "@/queries/people.queries"
 import { kpiTargetsListQuery } from "@/queries/insights.queries"
 import { queryKeys } from "@/lib/queryKeys"
@@ -30,6 +33,8 @@ const TARGET_KEYS = [queryKeys.kpiTargets.all, queryKeys.kpi.all]
  * letting one be typed.
  */
 const TargetsBoard = () => {
+  const [targetToDelete, setTargetToDelete] = useState<IKpiTarget | null>(null)
+
   const { data: targetsData, isLoading } = useQuery(kpiTargetsListQuery())
   const { data: usersData } = useQuery(usersListQuery())
 
@@ -51,6 +56,10 @@ const TargetsBoard = () => {
     refresh: false,
   })
 
+  const handleConfirmDelete = async () => {
+    if (targetToDelete && (await deleteTarget(targetToDelete.id))) setTargetToDelete(null)
+  }
+
   // The period start is worked out here, in the browser, whose calendar
   // decides which quarter "this" one is.
   const handleSave = (values: IKpiTargetFormValues) =>
@@ -63,8 +72,30 @@ const TargetsBoard = () => {
       <TargetList
         targets={targets}
         isLoading={isLoading}
-        onDelete={(id) => void deleteTarget(id)}
+        onDelete={setTargetToDelete}
         isRemoving={isRemoving}
+      />
+
+      <ConfirmDialog
+        open={targetToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setTargetToDelete(null)
+        }}
+        title="Delete this target?"
+        description={
+          <>
+            Dashboards stop scoring{" "}
+            <span className="font-medium text-foreground">
+              {targetToDelete ? specOf(targetToDelete.metric).label : ""}
+            </span>{" "}
+            for {targetToDelete?.user?.full_name ?? "the whole agency"} against it.
+          </>
+        }
+        variant="destructive"
+        confirmLabel="Delete"
+        pendingLabel="Deleting..."
+        isPending={isRemoving}
+        onConfirm={() => void handleConfirmDelete()}
       />
     </div>
   )
