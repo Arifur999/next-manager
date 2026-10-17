@@ -136,16 +136,11 @@ const CreateAccountModal = () => {
                           <Select
                             value={field.state.value}
                             onValueChange={(value) => {
-                              field.handleChange(value as IAccountFormValues["currency"])
-                              // The type list depends on the currency, so a
-                              // leftover USD type on a BDT wallet would be
-                              // rejected by the server. Reset to the first
-                              // valid option instead.
-                              form.setFieldValue(
-                                "type",
-                                TYPES_BY_CURRENCY[value as "USD" | "BDT"][0]
-                                  .value as IAccountFormValues["type"],
-                              )
+                              const currency = value === "BDT" ? "BDT" : "USD"
+                              field.handleChange(currency)
+                              // A USD type left on a BDT wallet would be refused,
+                              // so the type resets to the currency's first option.
+                              form.setFieldValue("type", TYPES_BY_CURRENCY[currency][0].value)
                             }}
                             disabled={isPending}
                           >
