@@ -79,6 +79,12 @@ export const PERIODS: { value: KpiPeriod; label: string }[] = [
   { value: "year", label: "This year" },
 ]
 
+const START_OF: Record<KpiPeriod, (date: Date) => Date> = {
+  month: startOfMonth,
+  quarter: startOfQuarter,
+  year: startOfYear,
+}
+
 /**
  * Where the period starts, computed rather than typed.
  *
@@ -86,14 +92,4 @@ export const PERIODS: { value: KpiPeriod; label: string }[] = [
  * beginning on different days cannot be told apart. Deriving it here means
  * that refusal is never reached by accident.
  */
-export const periodStart = (period: KpiPeriod): string => {
-  const today = new Date()
-  const start =
-    period === "month"
-      ? startOfMonth(today)
-      : period === "quarter"
-        ? startOfQuarter(today)
-        : startOfYear(today)
-
-  return format(start, "yyyy-MM-dd")
-}
+export const periodStart = (period: KpiPeriod): string => format(START_OF[period](new Date()), "yyyy-MM-dd")

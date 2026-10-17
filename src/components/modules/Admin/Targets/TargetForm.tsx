@@ -1,6 +1,6 @@
 "use client"
 
-import { METRICS, PERIODS, specOf } from "@/components/modules/Admin/Targets/targetMetrics"
+import { METRICS, PERIODS, specOf, type MetricSpec } from "@/components/modules/Admin/Targets/targetMetrics"
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
 import EntitySelect from "@/components/shared/form/EntitySelect"
@@ -9,6 +9,9 @@ import type { KpiMetric, KpiPeriod } from "@/types/insights.types"
 import type { IUser } from "@/types/user.types"
 import { AGENCY_WIDE_TARGET, kpiTargetFormZodSchema, type IKpiTargetFormValues } from "@/zod/insights.validation"
 import { useForm, useStore } from "@tanstack/react-form"
+
+// A typical target for the unit, so the box hints at the scale it expects.
+const PLACEHOLDER_BY_UNIT: Partial<Record<MetricSpec["unit"], string>> = { "%": "70", "×": "3" }
 
 const defaultValues: IKpiTargetFormValues = {
   metric: "utilization_pct",
@@ -108,7 +111,7 @@ const TargetForm = ({
               field={field}
               label={spec.unit ? `Target (${spec.unit})` : "Target"}
               type="number"
-              placeholder={spec.unit === "%" ? "70" : spec.unit === "×" ? "3" : "0"}
+              placeholder={PLACEHOLDER_BY_UNIT[spec.unit] ?? "0"}
               disabled={isPending}
             />
           )}
