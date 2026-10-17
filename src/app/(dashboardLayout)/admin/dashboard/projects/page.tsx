@@ -1,4 +1,7 @@
+import ProjectsHeading from "@/components/modules/Admin/Projects/ProjectsHeading";
 import ProjectsTable from "@/components/modules/Admin/Projects/ProjectsTable";
+import { PROJECTS_TABLE } from "@/components/modules/Admin/Projects/projectsTable.config";
+import { buildTableQueryString, type SearchParamsRecord } from "@/lib/table/urlState";
 import { getUserInfo } from "@/services/auth.services";
 import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
@@ -10,44 +13,23 @@ export const metadata: Metadata = {
   title: "Projects",
 };
 
-const ProjectsPage = async ({
-  searchParams,
-}: {
-  searchParams: Promise<{ status?: string; mine?: string }>;
-}) => {
-  const params = await searchParams;
-  const user = await getUserInfo();
+const ProjectsPage = async ({ searchParams }: { searchParams: Promise<SearchParamsRecord> }) => {
+  const [params, user] = await Promise.all([searchParams, getUserInfo()]);
 
   // The same two the API lets create and edit a project. Operations opens this
   // to see the work they are on - the server returns only those - and every
   // write behind it is refused, so the forms come off rather than failing.
   const canManage = user?.role === "admin" || user?.role === "project_manager";
 
-  // Built the same way the table builds it, so the first paint is the view that
-  // was asked for rather than every project followed by a correction.
-  const query = [
-    params.status ? `status=${encodeURIComponent(params.status)}` : "",
-    params.mine === "true" ? "mine=true" : "",
-  ]
-    .filter(Boolean)
-    .join("&");
+  // Built from the table's own config, so the prefetched page is exactly the
+  // view in the URL and the first paint never shows the wrong list.
+  const queryString = buildTableQueryString(params, PROJECTS_TABLE);
 
-  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(projectsListQuery(query));
+  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(projectsListQuery(queryString));
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {params.mine === "true" ? "My projects" : (params.status ?? "Projects")}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {params.mine === "true"
-            ? "Projects you are on the team for."
-            : params.status
-              ? `Projects sitting at ${params.status}.`
-              : "Work for clients. Payments, expenses and payouts can all be tied to one."}
-        </p>
-      </div>
+      <ProjectsHeading />
 
       <QueryPrefetch prefetch={prefetch}>
         {/* The table reads its filter from the URL, which needs a Suspense
