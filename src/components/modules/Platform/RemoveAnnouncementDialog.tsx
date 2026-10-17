@@ -29,7 +29,7 @@ const RemovalNote = ({ announcement }: { announcement: IAnnouncement }) => {
 const RemoveAnnouncementDialog = ({ announcement, onClose, onRemoved }: RemoveAnnouncementDialogProps) => {
   const { run: removeAnnouncement, isPending } = useActionMutation({
     action: deleteAnnouncementAction,
-    successMessage: "Removed — it leaves everyone's notifications too",
+    successMessage: "Removed from everyone's notifications",
     invalidateKeys: [queryKeys.platformAnnouncements.all],
     refresh: false,
   })

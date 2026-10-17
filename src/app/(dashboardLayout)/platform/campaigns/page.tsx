@@ -1,19 +1,25 @@
 import CampaignBoard from "@/components/modules/Platform/CampaignBoard";
-import type { Metadata } from "next";
 import PageHeader from "@/components/shared/PageHeader";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import { announcementsQuery } from "@/queries/platform.queries";
+import type { QueryClient } from "@tanstack/react-query";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Campaigns",
 };
 
+const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(announcementsQuery());
+
 const CampaignsPage = () => (
   <div className="space-y-6">
     <PageHeader title="Campaigns">
-      Notices to your customers. They appear in the bell inside the product, and can
-      be emailed as well — an Eid offer, a price change, Sunday maintenance.
+      Notices that appear in your customers&apos; notification bell, and can be emailed as well.
     </PageHeader>
 
-    <CampaignBoard />
+    <QueryPrefetch prefetch={prefetch}>
+      <CampaignBoard />
+    </QueryPrefetch>
   </div>
 );
 

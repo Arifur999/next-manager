@@ -10,6 +10,7 @@ import PublishAnnouncementDialog from "@/components/modules/Platform/PublishAnno
 import RemoveAnnouncementDialog from "@/components/modules/Platform/RemoveAnnouncementDialog"
 import SentAnnouncements from "@/components/modules/Platform/SentAnnouncements"
 import ErrorState from "@/components/shared/state/ErrorState"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IAnnouncement, ISentAnnouncement } from "@/types/platform.types"
 import type { IAnnouncementFormValues } from "@/zod/platform.validation"
@@ -19,19 +20,16 @@ import { announcementsQuery } from "@/queries/platform.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
 /**
- * Writing to customers.
- *
- * Two things this screen has to keep honest.
- *
- * **Publishing cannot be undone**, so it is a separate, confirmed action rather
- * than a checkbox on a form that saves as you type. The confirmation names the
- * audience, because "all customers" and "trials only" are one click apart and
- * the wrong one cannot be recalled.
- *
- * **It reports what happened to the email, not what was requested.** A send
- * that reached four of forty addresses says so. An operator told "sent" who
- * later finds nobody got it has been misled by their own tool.
+ * Writing to customers. Publishing cannot be undone, so it is its own confirmed
+ * step that says how many companies it reaches, and the sent list reports what
+ * happened to the email rather than what was asked for.
  */
+
+const VIEWS = { all: "Drafts and sent", drafts: "Drafts", sent: "Sent" } as const
+
+type CampaignView = keyof typeof VIEWS
+
+const isCampaignView = (value: string): value is CampaignView => value in VIEWS
 
 const isSent = (row: IAnnouncement): row is ISentAnnouncement => row.published_at !== null
 
@@ -42,6 +40,7 @@ const CampaignBoard = () => {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [confirming, setConfirming] = useState<IAnnouncement | null>(null)
   const [removing, setRemoving] = useState<IAnnouncement | null>(null)
+  const [view, setView] = useState<CampaignView>("all")
 
   const announcementsList = useQuery(announcementsQuery())
 
@@ -57,7 +56,7 @@ const CampaignBoard = () => {
   const { run: saveDraft, isPending: isSaving } = useActionMutation({
     action: (values: IAnnouncementFormValues) =>
       editingId ? updateAnnouncementAction(editingId, values) : createAnnouncementAction(values),
-    successMessage: editingId ? "Draft updated" : "Saved as a draft — nobody sees it yet",
+    successMessage: editingId ? "Draft updated" : "Saved as a draft. Nobody sees it yet.",
     invalidateKeys: [queryKeys.platformAnnouncements.all],
     refresh: false,
   })
@@ -78,6 +77,8 @@ const CampaignBoard = () => {
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
       <AnnouncementComposer
+        // A different draft starts with no errors from the last one.
+        key={editingId ?? "new"}
         draft={draft}
         onChange={setDraft}
         isEditing={Boolean(editingId)}
@@ -96,18 +97,36 @@ const CampaignBoard = () => {
         />
       ) : (
         <div className="space-y-4">
-          <AnnouncementDrafts
-            drafts={drafts}
-            onEdit={handleEdit}
-            onPublish={setConfirming}
-            onRemove={setRemoving}
-          />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="min-h-5 text-sm text-muted-foreground">
+              {announcementsList.data && `${drafts.length} ${drafts.length === 1 ? "draft" : "drafts"} · ${sent.length} sent`}
+            </p>
+            <Select
+              value={view}
+              onValueChange={(value) => {
+                if (isCampaignView(value)) setView(value)
+              }}
+            >
+              <SelectTrigger className="w-40" aria-label="Show">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(VIEWS).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          <SentAnnouncements
-            sent={sent}
-            isLoading={announcementsList.isLoading}
-            onRemove={setRemoving}
-          />
+          {view !== "sent" && (
+            <AnnouncementDrafts drafts={drafts} onEdit={handleEdit} onPublish={setConfirming} onRemove={setRemoving} />
+          )}
+
+          {view !== "drafts" && (
+            <SentAnnouncements sent={sent} isLoading={announcementsList.isLoading} onRemove={setRemoving} />
+          )}
         </div>
       )}
 

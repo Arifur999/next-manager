@@ -1,7 +1,9 @@
 "use client"
 
 import { AUDIENCE_LABEL } from "@/components/modules/Platform/announcementAudience"
-import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import ShowMoreButton from "@/components/modules/Platform/ShowMoreButton"
+import { useShowMore } from "@/components/modules/Platform/useShowMore"
+import ListSkeleton from "@/components/shared/state/ListSkeleton"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,46 +17,53 @@ type SentAnnouncementsProps = {
   onRemove: (announcement: IAnnouncement) => void
 }
 
+const PAGE_SIZE = 10
+
 const SentList = ({ sent, isLoading, onRemove }: SentAnnouncementsProps) => {
-  if (isLoading) return <LoadingBlock height="h-32" />
+  const { visible, remaining, showMore } = useShowMore(sent, PAGE_SIZE)
+
+  if (isLoading) return <ListSkeleton rows={4} />
 
   if (sent.length === 0) {
     return <p className="px-5 py-10 text-center text-sm text-muted-foreground">You have not sent anything yet.</p>
   }
 
   return (
-    <ul className="divide-y">
-      {sent.map((row) => (
-        <li key={row.id} className="flex flex-wrap items-start gap-3 px-5 py-3">
-          <div className="min-w-48 flex-1">
-            <p className="font-medium">{row.title}</p>
-            <p className="line-clamp-2 text-sm text-muted-foreground">{row.body}</p>
-            <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-              <span>{format(parseISO(row.published_at), "d MMM yyyy, HH:mm")}</span>
-              <span className="inline-flex items-center gap-1">
-                <Eye className="size-3" aria-hidden="true" />
-                read by {row._count?.reads ?? 0}
-              </span>
-              {row.send_email && (
+    <>
+      <ul className="divide-y">
+        {visible.map((row) => (
+          <li key={row.id} className="flex flex-wrap items-start gap-3 px-5 py-3">
+            <div className="min-w-48 flex-1">
+              <p className="font-medium">{row.title}</p>
+              <p className="line-clamp-2 text-sm text-muted-foreground">{row.body}</p>
+              <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                <span>{format(parseISO(row.published_at), "d MMM yyyy, HH:mm")}</span>
                 <span className="inline-flex items-center gap-1">
-                  <Mail className="size-3" aria-hidden="true" />
-                  {/* Null is not zero: it means the send never
-                      reported back, which is a different problem. */}
-                  {row.emailed_count === null ? "email result unknown" : `emailed ${row.emailed_count}`}
+                  <Eye className="size-3" aria-hidden="true" />
+                  read by {row._count?.reads ?? 0}
                 </span>
-              )}
-            </p>
-          </div>
+                {row.send_email && (
+                  <span className="inline-flex items-center gap-1">
+                    <Mail className="size-3" aria-hidden="true" />
+                    {/* Null is not zero: it means the send never
+                        reported back, which is a different problem. */}
+                    {row.emailed_count === null ? "email result unknown" : `emailed ${row.emailed_count}`}
+                  </span>
+                )}
+              </p>
+            </div>
 
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary">{AUDIENCE_LABEL[row.audience]}</Badge>
-            <Button size="icon" variant="ghost" onClick={() => onRemove(row)} aria-label={`Withdraw ${row.title}`}>
-              <Trash2 className="size-4" />
-            </Button>
-          </div>
-        </li>
-      ))}
-    </ul>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">{AUDIENCE_LABEL[row.audience]}</Badge>
+              <Button size="icon" variant="ghost" onClick={() => onRemove(row)} aria-label={`Withdraw ${row.title}`}>
+                <Trash2 className="size-4" />
+              </Button>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <ShowMoreButton remaining={remaining} onClick={showMore} />
+    </>
   )
 }
 

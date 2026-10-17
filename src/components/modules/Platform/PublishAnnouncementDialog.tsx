@@ -1,11 +1,13 @@
 "use client"
 
 import { publishAnnouncementAction } from "@/app/(dashboardLayout)/platform/_campaignAction"
-import { AUDIENCE_LABEL } from "@/components/modules/Platform/announcementAudience"
+import { AUDIENCE_LABEL, audienceReach } from "@/components/modules/Platform/announcementAudience"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { queryKeys } from "@/lib/queryKeys"
+import { platformOverviewQuery } from "@/queries/platform.queries"
 import type { IAnnouncement } from "@/types/platform.types"
+import { useQuery } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 type PublishAnnouncementDialogProps = {
@@ -13,8 +15,14 @@ type PublishAnnouncementDialogProps = {
   onClose: () => void
 }
 
-// The one step that cannot be undone, so it names the audience before it sends.
+const companiesText = (count: number) => `${count} ${count === 1 ? "company" : "companies"}`
+
+// The one step that cannot be undone, so it says how many companies it reaches before it sends.
 const PublishAnnouncementDialog = ({ announcement, onClose }: PublishAnnouncementDialogProps) => {
+  // The overview's counts, read only while the dialog is open. Without them the audience is named instead.
+  const overview = useQuery({ ...platformOverviewQuery(), enabled: announcement !== null })
+  const companies = overview.data?.data.companies
+
   const { run: publish, isPending } = useActionMutation({
     action: publishAnnouncementAction,
     // The server phrases its message against what actually happened to the
@@ -39,18 +47,23 @@ const PublishAnnouncementDialog = ({ announcement, onClose }: PublishAnnouncemen
     if (announcement && (await publish(announcement.id))) onClose()
   }
 
+  const audience = announcement?.audience ?? "all"
+  const reach = companies && audienceReach(audience, companies)
+  const title =
+    reach === undefined ? `Send this to ${AUDIENCE_LABEL[audience].toLowerCase()}?` : `Send this to ${companiesText(reach)}?`
+
   return (
     <ConfirmDialog
       open={Boolean(announcement)}
       onOpenChange={(open) => {
         if (!open) onClose()
       }}
-      title={`Send this to ${AUDIENCE_LABEL[announcement?.audience ?? "all"].toLowerCase()}?`}
+      title={title}
       description={
         <>
-          It appears in their notifications straight away
-          {announcement?.send_email ? ", and is emailed to each customer's admin" : ""}. This
-          cannot be undone, and the text can no longer be edited afterwards.
+          It appears in the notifications of {AUDIENCE_LABEL[audience].toLowerCase()} straight away
+          {announcement?.send_email ? ", and each company's admin gets it by email" : ""}. Publishing cannot be undone,
+          and the text cannot be edited afterwards.
         </>
       }
       confirmLabel="Publish"
