@@ -20,7 +20,7 @@ import { CircleCheck, Eye, EyeOff, LinkIcon } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 import { toast } from "sonner"
-import { z } from "zod"
+import { agencyJoinFormZodSchema, type IAgencyJoinFormValues } from "@/zod/auth.validation"
 
 /**
  * Opening your own agency from an invite.
@@ -33,18 +33,6 @@ import { z } from "zod"
  * The email is read-only and not a field, for the same reason as everywhere
  * else: the invite is bound to one address server-side.
  */
-
-const schema = z.object({
-  full_name: z.string().min(1, "Your name is required"),
-  company_name: z.string().min(1, "Your agency needs a name"),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/[A-Za-z]/, "Password must contain a letter")
-    .regex(/[0-9]/, "Password must contain a number"),
-})
-
-type JoinValues = z.infer<typeof schema>
 
 const AgencyJoinForm = ({
   token,
@@ -61,7 +49,7 @@ const AgencyJoinForm = ({
   const nameIsFixed = Boolean(invite?.company_name)
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: JoinValues) =>
+    mutationFn: (values: IAgencyJoinFormValues) =>
       acceptAgencyInviteAction(token, {
         full_name: values.full_name,
         password: values.password,
@@ -74,7 +62,7 @@ const AgencyJoinForm = ({
       full_name: "",
       company_name: invite?.company_name ?? "",
       password: "",
-    } as JoinValues,
+    } satisfies IAgencyJoinFormValues,
     onSubmit: async ({ value }) => {
       const result = await mutateAsync(value)
 
@@ -186,7 +174,7 @@ const AgencyJoinForm = ({
             ) : (
               <form.Field
                 name="company_name"
-                validators={{ onChange: schema.shape.company_name }}
+                validators={{ onChange: agencyJoinFormZodSchema.shape.company_name }}
               >
                 {(field) => (
                   <AppField
@@ -199,7 +187,7 @@ const AgencyJoinForm = ({
               </form.Field>
             )}
 
-            <form.Field name="full_name" validators={{ onChange: schema.shape.full_name }}>
+            <form.Field name="full_name" validators={{ onChange: agencyJoinFormZodSchema.shape.full_name }}>
               {(field) => (
                 <AppField
                   field={field}
@@ -210,7 +198,7 @@ const AgencyJoinForm = ({
               )}
             </form.Field>
 
-            <form.Field name="password" validators={{ onChange: schema.shape.password }}>
+            <form.Field name="password" validators={{ onChange: agencyJoinFormZodSchema.shape.password }}>
               {(field) => (
                 <div className="relative">
                   <AppField

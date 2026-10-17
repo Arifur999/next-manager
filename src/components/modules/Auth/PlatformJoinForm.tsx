@@ -19,7 +19,7 @@ import { Clock, Eye, EyeOff, LinkIcon } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 import { toast } from "sonner"
-import { z } from "zod"
+import { joinFormZodSchema, type IJoinFormValues } from "@/zod/auth.validation"
 
 /**
  * Joining the platform team from an invite link.
@@ -29,17 +29,6 @@ import { z } from "zod"
  * under somebody else's address could suspend every customer, which is why the
  * invite is bound to one.
  */
-
-const joinSchema = z.object({
-  full_name: z.string().min(1, "Your name is required"),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/[A-Za-z]/, "Password must contain a letter")
-    .regex(/[0-9]/, "Password must contain a number"),
-})
-
-type JoinValues = z.infer<typeof joinSchema>
 
 const PlatformJoinForm = ({
   token,
@@ -52,11 +41,11 @@ const PlatformJoinForm = ({
   const [submitted, setSubmitted] = useState(false)
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: JoinValues) => acceptPlatformInviteAction(token, values),
+    mutationFn: (values: IJoinFormValues) => acceptPlatformInviteAction(token, values),
   })
 
   const form = useForm({
-    defaultValues: { full_name: "", password: "" } as JoinValues,
+    defaultValues: { full_name: "", password: "" } satisfies IJoinFormValues,
     onSubmit: async ({ value }) => {
       const result = await mutateAsync(value)
 
@@ -155,7 +144,7 @@ const PlatformJoinForm = ({
               </p>
             </div>
 
-            <form.Field name="full_name" validators={{ onChange: joinSchema.shape.full_name }}>
+            <form.Field name="full_name" validators={{ onChange: joinFormZodSchema.shape.full_name }}>
               {(field) => (
                 <AppField
                   field={field}
@@ -166,7 +155,7 @@ const PlatformJoinForm = ({
               )}
             </form.Field>
 
-            <form.Field name="password" validators={{ onChange: joinSchema.shape.password }}>
+            <form.Field name="password" validators={{ onChange: joinFormZodSchema.shape.password }}>
               {(field) => (
                 <div className="relative">
                   <AppField

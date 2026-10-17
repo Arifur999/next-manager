@@ -67,6 +67,21 @@ export const resetPasswordFormZodSchema = z.object({
 
 export type IResetPasswordFormValues = z.infer<typeof resetPasswordFormZodSchema>
 
+// Accepting an invite. There is no email field: the address comes from the
+// invite server-side, so a leaked link cannot open an account under another one.
+export const joinFormZodSchema = z.object({
+  full_name: z.string().min(1, "Your name is required"),
+  password: newPassword,
+})
+
+export type IJoinFormValues = z.infer<typeof joinFormZodSchema>
+
+export const agencyJoinFormZodSchema = joinFormZodSchema.extend({
+  company_name: z.string().min(1, "Your agency needs a name"),
+})
+
+export type IAgencyJoinFormValues = z.infer<typeof agencyJoinFormZodSchema>
+
 // Server schemas: the form values checked again on the server. The API's
 // updateMe schema is strict, so a key outside it would be refused, not dropped.
 export const updateProfileServerZodSchema = profileFormZodSchema
