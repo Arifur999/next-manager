@@ -1,6 +1,7 @@
 "use client"
 
 import StatTile from "@/components/shared/StatTile"
+import ErrorState from "@/components/shared/state/ErrorState"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt, formatUsd } from "@/lib/currency"
@@ -22,7 +23,7 @@ const EmptyRow = ({ children }: { children: React.ReactNode }) => (
 )
 
 const DashboardOverview = () => {
-  const { data, isLoading } = useQuery(dashboardQuery())
+  const { data, isLoading, isError, isFetching, refetch } = useQuery(dashboardQuery())
 
   const dashboard = data?.data
 
@@ -36,7 +37,16 @@ const DashboardOverview = () => {
     )
   }
 
-  if (!dashboard) return null
+  if (isError || !dashboard) {
+    return (
+      <ErrorState
+        className="rounded-xl border border-dashed"
+        message="Balances, today's work and recent activity did not load."
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+      />
+    )
+  }
 
   const usdBalance = dashboard.balance_by_currency?.USD ?? 0
   const bdtBalance = dashboard.balance_by_currency?.BDT ?? 0
