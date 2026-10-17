@@ -23,7 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { accountFormZodSchema, toNumber, type IAccountFormValues } from "@/zod/agencio.validation"
+import { accountFormZodSchema, type IAccountFormValues } from "@/zod/finance.validation"
+import { toNumber } from "@/zod/formFields"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
