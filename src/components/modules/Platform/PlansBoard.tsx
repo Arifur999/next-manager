@@ -9,9 +9,8 @@ import { Label } from "@/components/ui/label"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IPlan } from "@/types/platform.types"
 import type { IPlanLimitsFormValues } from "@/zod/platform.validation"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
-import { toast } from "sonner"
 import { plansQuery } from "@/queries/platform.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -125,7 +124,6 @@ const PlanRow = ({ plan }: { plan: IPlan }) => {
 }
 
 const PlansBoard = () => {
-  const queryClient = useQueryClient()
   const [code, setCode] = useState("")
   const [name, setName] = useState("")
   const [price, setPrice] = useState("")
@@ -134,20 +132,20 @@ const PlansBoard = () => {
 
   const plans = data?.data ?? []
 
-  const { mutate: create, isPending } = useMutation({
-    mutationFn: () => createPlanAction({ code, name, price_usd: price }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not create the plan")
-        return
-      }
-      toast.success("Plan created")
+  const { run: createPlan, isPending } = useActionMutation({
+    action: createPlanAction,
+    successMessage: "Plan created",
+    invalidateKeys: [queryKeys.platformPlans.all],
+    refresh: false,
+  })
+
+  const handleCreate = async () => {
+    if (await createPlan({ code, name, price_usd: price })) {
       setCode("")
       setName("")
       setPrice("")
-      void queryClient.invalidateQueries({ queryKey: queryKeys.platformPlans.all })
-    },
-  })
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -165,7 +163,7 @@ const PlansBoard = () => {
           onSubmit={(event) => {
             event.preventDefault()
             if (!code.trim() || !name.trim()) return
-            create()
+            void handleCreate()
           }}
         >
           <div className="space-y-1.5">
