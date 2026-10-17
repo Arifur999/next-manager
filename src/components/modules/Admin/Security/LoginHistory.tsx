@@ -6,6 +6,7 @@ import type { DataTableFilterConfig } from "@/components/shared/table/dataTable.
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { buildQueryString } from "@/lib/queryString"
 import { toTableQueryProps } from "@/lib/table/queryProps"
+import type { ILoginEvent } from "@/types/workspace.types"
 import { useQuery } from "@tanstack/react-query"
 import { ShieldAlert } from "lucide-react"
 import { useState } from "react"
@@ -35,6 +36,13 @@ const RESULT_FILTER: DataTableFilterConfig = {
   ],
 }
 
+// Searched here, over the attempts already loaded: the API has no search for
+// sign-ins, and with the result filter on the server the table filters no rows itself.
+const matchesSearchTerm = (event: ILoginEvent, term: string) => {
+  const needle = term.toLowerCase()
+  return [event.user?.full_name, event.email, event.ip].some((value) => value?.toLowerCase().includes(needle))
+}
+
 const FailedAttemptsNote = ({ count }: { count: number | undefined }) => {
   // Unknown until the list arrives, and "nothing failed" must never stand in for that.
   if (count === undefined) return null
@@ -54,11 +62,13 @@ const FailedAttemptsNote = ({ count }: { count: number | undefined }) => {
 
 const LoginHistory = () => {
   const [success, setSuccess] = useState<string>()
+  const [searchTerm, setSearchTerm] = useState("")
 
   const loginEvents = useQuery(loginEventsListQuery(buildQueryString({ success })))
   const data = loginEvents.data
 
   const events = data?.data ?? []
+  const matchingEvents = events.filter((event) => matchesSearchTerm(event, searchTerm))
   const failedLately = data?.meta?.failed_last_24h
   const retention = data?.meta?.retention_days ?? 90
 
@@ -76,14 +86,22 @@ const LoginHistory = () => {
 
         <div className="p-4">
           <DataTable
-            data={events}
+            data={matchingEvents}
             columns={loginHistoryColumns}
             tableId="sign-ins"
+            search={{
+              value: searchTerm,
+              placeholder: "Search name, email or IP address...",
+              onDebouncedChange: setSearchTerm,
+            }}
             filters={{
               configs: [RESULT_FILTER],
               values: { success },
               onFilterChange: (_filterId, value) => setSuccess(typeof value === "string" ? value : undefined),
-              onClearAll: () => setSuccess(undefined),
+              onClearAll: () => {
+                setSuccess(undefined)
+                setSearchTerm("")
+              },
             }}
             {...toTableQueryProps(loginEvents)}
             // Shown only when nothing narrows the list; a filtered view says so itself.
