@@ -1,16 +1,8 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
+import { runValidatedAction } from "@/lib/runAction"
 import { updateOrganization } from "@/services/workspace.services"
-import type { IOrganization } from "@/types/workspace.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+import { updateOrganizationServerZodSchema } from "@/zod/workspace.validation"
 
-export const updateOrganizationAction = async (
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<IOrganization> | ApiErrorResponse> => {
-    try {
-        return await updateOrganization(payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to update the profile") }
-    }
-}
+export const updateOrganizationAction = async (values: unknown) =>
+    runValidatedAction(updateOrganizationServerZodSchema, values, "Failed to update the profile", updateOrganization)

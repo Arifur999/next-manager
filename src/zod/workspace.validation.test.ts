@@ -5,6 +5,7 @@ import {
     credentialFormZodSchema,
     notificationRuleServerZodSchema,
     sendMessageServerZodSchema,
+    updateOrganizationServerZodSchema,
 } from "./workspace.validation"
 
 describe("credentialFormZodSchema", () => {
@@ -112,5 +113,19 @@ describe("notificationRuleServerZodSchema", () => {
 
     it("refuses a switch that is not true or false", () => {
         expect(notificationRuleServerZodSchema.safeParse({ in_app: "yes" }).success).toBe(false)
+    })
+})
+
+describe("updateOrganizationServerZodSchema", () => {
+    const valid = { name: "Northwind Studio", legal_name: "", email: "", phone: "", website: "", address: "" }
+
+    it("accepts the details with an empty email", () => {
+        expect(updateOrganizationServerZodSchema.parse(valid)).toEqual(valid)
+    })
+
+    it("refuses an invalid email and a missing name", () => {
+        const badEmail = updateOrganizationServerZodSchema.safeParse({ ...valid, email: "billing" })
+        expect(badEmail.error?.issues[0]?.message).toBe("Enter a valid email address")
+        expect(updateOrganizationServerZodSchema.safeParse({ ...valid, name: "" }).success).toBe(false)
     })
 })

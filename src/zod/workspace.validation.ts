@@ -72,6 +72,9 @@ export const createCredentialServerZodSchema = credentialFormZodSchema.transform
     notes: values.notes,
 }))
 
+// The form already holds the API's payload.
+export const updateOrganizationServerZodSchema = organizationFormZodSchema
+
 // A direct thread is named after the other person, so only a group sends a name.
 export const createConversationServerZodSchema = conversationFormZodSchema.transform((values) => ({
     type: values.type,
