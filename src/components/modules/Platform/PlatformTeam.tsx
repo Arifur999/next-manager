@@ -16,11 +16,11 @@ import {
   type IPlatformAdmin,
   type PlatformPermission,
 } from "@/types/platform.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { ShieldCheck } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { platformAdminsQuery } from "@/queries/platform.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -44,53 +44,37 @@ const AREAS = [...new Set(PLATFORM_PERMISSIONS.map((permission) => PLATFORM_PERM
 const byArea = (area: string) =>
   PLATFORM_PERMISSIONS.filter((permission) => PLATFORM_PERMISSION_INFO[permission].area === area)
 
+// Every change to the team is written to the activity feed, so both refetch.
+const TEAM_KEYS = [queryKeys.platformAdmins.all, queryKeys.platformActivity.all]
+
 const AdminRow = ({ admin, canRemove }: { admin: IPlatformAdmin; canRemove: boolean }) => {
-  const queryClient = useQueryClient()
   const [draft, setDraft] = useState<string[]>(admin.permissions)
   const [editing, setEditing] = useState(false)
 
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.platformAdmins.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.platformActivity.all })
+  const { run: saveAccess, isPending } = useActionMutation({
+    action: (permissions: string[]) => setPermissionsAction(admin.id, permissions),
+    successMessage: `${admin.full_name}'s access updated`,
+    invalidateKeys: TEAM_KEYS,
+    refresh: false,
+  })
+
+  const { run: approveOperator, isPending: isApproving } = useActionMutation({
+    action: approvePlatformAdminAction,
+    successMessage: `${admin.full_name} can sign in now`,
+    invalidateKeys: TEAM_KEYS,
+    refresh: false,
+  })
+
+  const { run: removeOperator, isPending: isRemoving } = useActionMutation({
+    action: removePlatformAdminAction,
+    successMessage: `${admin.full_name} removed`,
+    invalidateKeys: TEAM_KEYS,
+    refresh: false,
+  })
+
+  const handleSave = async () => {
+    if (await saveAccess(draft)) setEditing(false)
   }
-
-  const { mutate: save, isPending } = useMutation({
-    mutationFn: () => setPermissionsAction(admin.id, draft),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not update access")
-        return
-      }
-      toast.success(`${admin.full_name}'s access updated`)
-      setEditing(false)
-      refresh()
-    },
-  })
-
-  const { mutate: approve, isPending: isApproving } = useMutation({
-    mutationFn: () => approvePlatformAdminAction(admin.id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not approve")
-        return
-      }
-      toast.success(`${admin.full_name} can sign in now`)
-      refresh()
-    },
-  })
-
-  const { mutate: remove, isPending: isRemoving } = useMutation({
-    mutationFn: () => removePlatformAdminAction(admin.id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        // "This is the last active platform operator" arrives here.
-        toast.error(result.message || "Could not remove")
-        return
-      }
-      toast.success(`${admin.full_name} removed`)
-      refresh()
-    },
-  })
 
   const toggle = (permission: PlatformPermission, on: boolean) =>
     setDraft((current) =>
@@ -133,7 +117,12 @@ const AdminRow = ({ admin, canRemove }: { admin: IPlatformAdmin; canRemove: bool
 
         <div className="flex shrink-0 items-center gap-2">
           {admin.status === "pending" && (
-            <Button type="button" size="sm" disabled={busy} onClick={() => approve()}>
+            <Button
+              type="button"
+              size="sm"
+              disabled={busy}
+              onClick={() => void approveOperator(admin.id)}
+            >
               Approve
             </Button>
           )}
@@ -155,7 +144,7 @@ const AdminRow = ({ admin, canRemove }: { admin: IPlatformAdmin; canRemove: bool
               variant="outline"
               size="sm"
               disabled={busy}
-              onClick={() => remove()}
+              onClick={() => void removeOperator(admin.id)}
             >
               Remove
             </Button>
@@ -203,7 +192,7 @@ const AdminRow = ({ admin, canRemove }: { admin: IPlatformAdmin; canRemove: bool
           ))}
 
           <div className="flex items-center gap-2 pt-1">
-            <Button type="button" size="sm" disabled={isPending} onClick={() => save()}>
+            <Button type="button" size="sm" disabled={isPending} onClick={() => void handleSave()}>
               {isPending ? "Saving..." : "Save access"}
             </Button>
             {draft.length === 0 && (
