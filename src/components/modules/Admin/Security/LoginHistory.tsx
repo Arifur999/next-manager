@@ -1,5 +1,7 @@
 "use client"
 
+import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -51,7 +53,8 @@ const LoginHistory = () => {
 
   const query = filter === ALL ? "" : `success=${filter}`
 
-  const { data, isLoading } = useQuery(loginEventsListQuery(query))
+  const loginEvents = useQuery(loginEventsListQuery(query))
+  const data = loginEvents.data
 
   const events = data?.data ?? []
   const failedLately = data?.meta?.failed_last_24h
@@ -86,14 +89,16 @@ const LoginHistory = () => {
           </div>
         </CardHeader>
 
-        {isLoading && events.length === 0 ? (
-          <div className="h-40 animate-pulse bg-muted/40" />
-        ) : events.length === 0 ? (
-          <p className="flex flex-col items-center gap-2 px-6 py-12 text-center text-sm text-muted-foreground">
-            <ShieldCheck className="size-7" aria-hidden="true" />
-            {filter === ALL ? "Nothing recorded yet." : "Nothing matches that."}
-          </p>
-        ) : (
+        <PanelState
+          query={loginEvents}
+          errorMessage="The sign-in history did not load."
+          isEmpty={events.length === 0}
+          empty={
+            <EmptyState icon={ShieldCheck}>
+              {filter === ALL ? "Nothing recorded yet." : "Nothing matches that."}
+            </EmptyState>
+          }
+        >
           <div className="overflow-x-auto">
             <table className="w-full min-w-[46rem] text-sm">
               <thead>
@@ -143,7 +148,7 @@ const LoginHistory = () => {
               </tbody>
             </table>
           </div>
-        )}
+        </PanelState>
 
         <div className="border-t px-5 py-3 text-xs text-muted-foreground">
           {/* Said plainly rather than buried: this page stores addresses. */}
