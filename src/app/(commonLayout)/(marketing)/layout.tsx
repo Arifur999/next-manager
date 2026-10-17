@@ -18,7 +18,7 @@ const MarketingLayout = async ({ children }: { children: ReactNode }) => {
       <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
         {children}
       </main>
-      <MarketingFooter links={links} />
+      <MarketingFooter links={links} cta={cta} />
       <ScrollTriggerAutoRefresh />
     </div>
   )

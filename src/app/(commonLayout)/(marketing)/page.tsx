@@ -10,7 +10,7 @@ import Roles from "@/components/modules/Home/Roles/Roles"
 import Workflow from "@/components/modules/Home/Workflow/Workflow"
 import StructuredData from "@/components/shared/StructuredData"
 import { FAQ_ITEMS } from "@/data/home/faq"
-import { PRICING } from "@/data/home/pricing"
+import { PRICING, pickTeaserPlans } from "@/data/home/pricing"
 import { homeJsonLd } from "@/data/schema"
 import { site } from "@/data/site"
 import { getSiteUrl } from "@/lib/siteUrl"
@@ -30,7 +30,7 @@ const HomePage = async () => {
   const allPlans = await getPublicPlans()
   const trialDays = signupTrialDays(allPlans)
   // The same plans feed the visible teaser and the JSON-LD offers.
-  const plans = allPlans.slice(0, PRICING.maxPlans)
+  const plans = pickTeaserPlans(allPlans, PRICING.maxPlans)
 
   return (
     <>
@@ -42,7 +42,7 @@ const HomePage = async () => {
       <Features />
       <Workflow />
       <Roles />
-      {plans.length > 0 && <PricingTeaser plans={plans} />}
+      {plans.length > 0 && <PricingTeaser plans={plans} trialDays={trialDays} />}
       <Faq />
       <FinalCta trialDays={trialDays} />
     </>

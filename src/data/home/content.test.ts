@@ -8,22 +8,28 @@ import { readFileSync } from "node:fs"
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8")
 
 describe("landing page invariants", () => {
-  it("has one primary CTA label, from getPrimaryCta, in the header, hero and closing band", () => {
+  it("has one primary CTA label, from getPrimaryCta, in the header, hero, pricing, closing band and footer", () => {
     const sources = {
       header: read("../../components/modules/Home/Shell/MarketingHeader.tsx"),
       hero: read("../../components/modules/Home/Hero/Hero.tsx"),
+      pricing: read("../../components/modules/Home/Pricing/PricingTeaser.tsx"),
       closing: read("../../components/modules/Home/FinalCta/FinalCta.tsx"),
+      footer: read("../../components/modules/Home/Shell/MarketingFooter.tsx"),
       layout: read("../../app/(commonLayout)/(marketing)/layout.tsx"),
     }
     // Each place renders the label it was handed, never its own words.
     expect(sources.hero).toContain("getPrimaryCta(trialDays)")
+    expect(sources.pricing).toContain("getPrimaryCta(trialDays)")
     expect(sources.closing).toContain("getPrimaryCta(trialDays)")
     expect(sources.layout).toContain("getPrimaryCta(")
-    for (const source of [sources.header, sources.hero, sources.closing]) {
+    expect(sources.layout).toContain("cta={cta}")
+    for (const source of [sources.header, sources.hero, sources.pricing, sources.closing]) {
       expect(source).toContain("{cta.label}")
     }
+    expect(sources.footer).toContain("label: cta.label")
     for (const source of Object.values(sources)) {
       expect(source).not.toMatch(/>\s*(Start your free trial|Create your workspace)\s*</)
+      expect(source).not.toMatch(/Create a workspace/)
     }
   })
 

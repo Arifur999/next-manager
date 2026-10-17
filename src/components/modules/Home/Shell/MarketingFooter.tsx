@@ -1,4 +1,4 @@
-import { REGISTER_HREF, SIGN_IN, site, type INavLink } from "@/data/site"
+import { SIGN_IN, site, type INavLink } from "@/data/site"
 import Link from "next/link"
 import Wordmark from "./Wordmark"
 
@@ -18,7 +18,14 @@ const FooterColumn = ({ title, links }: { title: string; links: INavLink[] }) =>
   </div>
 )
 
-const MarketingFooter = ({ links }: { links: INavLink[] }) => (
+interface IMarketingFooterProps {
+  links: INavLink[]
+  cta: { label: string; href: string }
+}
+
+// The page's own sections under "On this page": a "Product" heading over a
+// "Product" link read as a typo.
+const MarketingFooter = ({ links, cta }: IMarketingFooterProps) => (
   <footer className="border-t">
     <div className="mx-auto grid w-full max-w-content gap-10 px-4 py-12 sm:px-6 md:grid-cols-12 lg:px-8">
       <div className="md:col-span-6">
@@ -26,12 +33,12 @@ const MarketingFooter = ({ links }: { links: INavLink[] }) => (
         <p className="mt-4 max-w-sm text-sm text-muted-foreground">{site.tagline}</p>
       </div>
       <div className="grid grid-cols-2 gap-8 md:col-span-6">
-        <FooterColumn title="Product" links={links} />
+        <FooterColumn title="On this page" links={links} />
         <FooterColumn
           title="Account"
           links={[
             { label: SIGN_IN.label, href: SIGN_IN.href },
-            { label: "Create a workspace", href: REGISTER_HREF },
+            { label: cta.label, href: cta.href },
             { label: "Reset your password", href: "/forgot-password" },
           ]}
         />
