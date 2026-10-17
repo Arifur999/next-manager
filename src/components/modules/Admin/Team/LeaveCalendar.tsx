@@ -1,6 +1,9 @@
 "use client"
 
 import MonthGrid from "@/components/shared/calendar/MonthGrid"
+import ErrorState from "@/components/shared/state/ErrorState"
+import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import { Card } from "@/components/ui/card"
 import type { ILeaveRequest } from "@/types/people.types"
 import { useQuery } from "@tanstack/react-query"
 import { eachDayOfInterval, parseISO } from "date-fns"
@@ -24,9 +27,9 @@ import { leaveRequestsListQuery } from "@/queries/people.queries"
 type Day = { request: ILeaveRequest; date: Date }
 
 const LeaveCalendar = () => {
-  const { data } = useQuery(leaveRequestsListQuery())
+  const requestList = useQuery(leaveRequestsListQuery())
 
-  const requests = ((data?.data ?? [])).filter(
+  const requests = ((requestList.data?.data ?? [])).filter(
     (request) => request.status === "approved"
   )
 
@@ -36,6 +39,20 @@ const LeaveCalendar = () => {
       end: parseISO(request.to_date),
     }).map((date) => ({ request, date }))
   )
+
+  // Without this, a failed or unfinished load drew "Nobody is away this month."
+  if (requestList.isError && !requestList.data) {
+    return (
+      <Card>
+        <ErrorState
+          message="The leave calendar did not load."
+          onRetry={() => void requestList.refetch()}
+          isRetrying={requestList.isFetching}
+        />
+      </Card>
+    )
+  }
+  if (requestList.isLoading) return <LoadingBlock height="h-96" rounded />
 
   return (
     <MonthGrid
