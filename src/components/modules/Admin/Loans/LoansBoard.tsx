@@ -28,14 +28,9 @@ const LOAN_KEYS = [
   queryKeys.transactions.all,
 ]
 
-/**
- * What the agency owes, and to whom.
- *
- * The board holds only what the loans share; one loan is its own component, and
- * so is its schedule. Every figure on this page is derived by the server from
- * the instalments — nothing here adds anything up itself, so a number on the
- * summary strip cannot disagree with the card underneath it.
- */
+// What the agency owes, and to whom. Every figure is derived by the server from
+// the instalments and nothing here adds up, so the summary cannot disagree with
+// a card below it.
 const LoansBoard = () => {
   const [loanToDelete, setLoanToDelete] = useState<ILoan | null>(null)
   const [instalmentToReverse, setInstalmentToReverse] = useState<ILoanInstalment | null>(null)
@@ -47,7 +42,7 @@ const LoansBoard = () => {
   const loans = loansQuery.data?.data ?? []
   const summary = summaryData?.data
   // Borrowing is in BDT, like every other record that is not a client payment.
-  const accounts = ((accountData?.data ?? [])).filter(
+  const accounts = (accountData?.data ?? []).filter(
     (account) => account.currency === "BDT" && account.is_active
   )
 

@@ -10,17 +10,9 @@ import { format, parseISO } from "date-fns"
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react"
 import { useState } from "react"
 
-/**
- * One loan.
- *
- * The headline is what is still owed, because that is the only number anybody
- * opens this page for. It is computed from the instalments by the server and
- * never stored, so it cannot disagree with the schedule below it.
- *
- * Interest paid is shown beside it and labelled as the cost, since that is the
- * part that is genuinely spending — the principal repaid is money that was
- * already owed and never appears in profit.
- */
+// One loan, headlined by what is still owed: derived from the instalments, never
+// stored, so it matches the schedule. Interest paid sits beside it as the only
+// real cost; repaid principal was already owed and never reaches profit.
 
 const TONE: Record<ILoan["status"], "outline" | "secondary"> = {
   active: "outline",

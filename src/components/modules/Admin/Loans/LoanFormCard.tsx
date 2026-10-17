@@ -9,18 +9,9 @@ import { loanFormZodSchema, type ILoanFormValues } from "@/zod/finance.validatio
 import { useForm } from "@tanstack/react-form"
 import { format } from "date-fns"
 
-/**
- * Recording a loan.
- *
- * The account is optional, and that is deliberate: a loan already part repaid
- * when it is first entered never landed in an account here, and picking one
- * would invent money that never arrived.
- *
- * A schedule is generated from the term as a starting point, with interest left
- * at zero rather than guessed — a made-up interest figure would flow straight
- * into profit and loss. The agency then corrects the rows to match the paper it
- * actually signed.
- */
+// Recording a loan. The server drafts a schedule from the term with interest at
+// zero, since a guessed figure would flow straight into profit and loss; the
+// account is optional because a loan entered after the fact never landed in one.
 const LoanFormCard = ({
   accounts,
   onSubmit,

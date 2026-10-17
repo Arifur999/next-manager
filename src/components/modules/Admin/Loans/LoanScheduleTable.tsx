@@ -15,17 +15,9 @@ import { format, isBefore, parseISO, startOfToday } from "date-fns"
 import { Undo2 } from "lucide-react"
 import { useState } from "react"
 
-/**
- * One loan's repayment schedule.
- *
- * The two columns are the whole point of this table. Repaying principal settles
- * a liability and costs nothing; the interest is the actual cost of borrowing,
- * and it is the only part that reaches profit and loss. Showing them merged
- * would hide the one number an owner needs.
- *
- * An overdue row is marked from its due date rather than from a stored flag —
- * nothing has to run for a date to pass.
- */
+// One loan's repayment schedule. Principal and interest stay in separate columns
+// because only the interest is a cost. Overdue comes from the due date, not a
+// stored flag, so nothing has to run for a date to pass.
 const LoanScheduleTable = ({
   instalments,
   accounts,
