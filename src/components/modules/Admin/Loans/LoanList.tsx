@@ -2,14 +2,16 @@
 
 import LoanCard from "@/components/modules/Admin/Loans/LoanCard"
 import EmptyState from "@/components/shared/state/EmptyState"
+import ErrorState from "@/components/shared/state/ErrorState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Card } from "@/components/ui/card"
 import type { IAccount, ILoan, ILoanInstalment } from "@/types/finance.types"
+import type { UseQueryResult } from "@tanstack/react-query"
 import { Landmark } from "lucide-react"
 
 const LoanList = ({
   loans,
-  isLoading,
+  query,
   accounts,
   onPay,
   onReverse,
@@ -17,14 +19,27 @@ const LoanList = ({
   onDelete,
 }: {
   loans: ILoan[]
-  isLoading: boolean
+  query: Pick<UseQueryResult, "isError" | "isLoading" | "isFetching" | "refetch">
   accounts: IAccount[]
   onPay: (instalmentId: string, accountId: string) => void
   onReverse: (instalment: ILoanInstalment) => void
   onClose: (loan: ILoan) => void
   onDelete: (loan: ILoan) => void
 }) => {
-  if (isLoading && loans.length === 0) {
+  // "Nothing borrowed" must not stand in for "the loans did not arrive".
+  if (query.isError) {
+    return (
+      <Card>
+        <ErrorState
+          message="Loans did not load."
+          onRetry={() => void query.refetch()}
+          isRetrying={query.isFetching}
+        />
+      </Card>
+    )
+  }
+
+  if (query.isLoading && loans.length === 0) {
     return (
       <Card>
         <LoadingBlock rounded />

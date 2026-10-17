@@ -40,11 +40,11 @@ const LoansBoard = () => {
   const [loanToDelete, setLoanToDelete] = useState<ILoan | null>(null)
   const [instalmentToReverse, setInstalmentToReverse] = useState<ILoanInstalment | null>(null)
 
-  const { data, isLoading } = useQuery(loansListQuery())
+  const loansQuery = useQuery(loansListQuery())
   const { data: summaryData } = useQuery(loanSummaryQuery())
   const { data: accountData } = useQuery(accountsQuery())
 
-  const loans = data?.data ?? []
+  const loans = loansQuery.data?.data ?? []
   const summary = summaryData?.data
   // Borrowing is in BDT, like every other record that is not a client payment.
   const accounts = ((accountData?.data ?? [])).filter(
@@ -144,7 +144,7 @@ const LoansBoard = () => {
 
         <LoanList
           loans={loans}
-          isLoading={isLoading}
+          query={loansQuery}
           accounts={accounts}
           onPay={(instalmentId, accountId) => void payInstalment({ id: instalmentId, accountId })}
           onReverse={setInstalmentToReverse}
