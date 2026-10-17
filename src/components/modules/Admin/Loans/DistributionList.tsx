@@ -24,7 +24,7 @@ const DistributionList = ({
 }: {
   distributions: IShareholderDistribution[]
   isLoading: boolean
-  onDelete: (id: string) => void
+  onDelete: (distribution: IShareholderDistribution) => void
 }) => (
   <Card className="gap-0 overflow-hidden p-0">
     <CardHeader className="border-b px-5 py-4">
@@ -60,7 +60,7 @@ const DistributionList = ({
             <Button
               size="icon"
               variant="ghost"
-              onClick={() => onDelete(distribution.id)}
+              onClick={() => onDelete(distribution)}
               aria-label={`Reverse the distribution to ${distribution.shareholder?.name}`}
               title="Reverse"
             >

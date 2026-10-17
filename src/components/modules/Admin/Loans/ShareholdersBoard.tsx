@@ -12,8 +12,9 @@ import DistributionList from "@/components/modules/Admin/Loans/DistributionList"
 import ShareholderFormCard from "@/components/modules/Admin/Loans/ShareholderFormCard"
 import ShareholderList from "@/components/modules/Admin/Loans/ShareholderList"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
-import type { IShareholder } from "@/types/finance.types"
+import type { IShareholder, IShareholderDistribution } from "@/types/finance.types"
 import { useActionMutation } from "@/hooks/useActionMutation"
+import { formatBdt } from "@/lib/currency"
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { accountsQuery, distributionsListQuery, shareholdersQuery } from "@/queries/finance.queries"
@@ -37,6 +38,7 @@ const SHAREHOLDER_KEYS = [
  */
 const ShareholdersBoard = () => {
   const [shareholderToDelete, setShareholderToDelete] = useState<IShareholder | null>(null)
+  const [distributionToReverse, setDistributionToReverse] = useState<IShareholderDistribution | null>(null)
 
   const { data, isLoading } = useQuery(shareholdersQuery())
   const { data: distributionData, isLoading: loadingDistributions } = useQuery(distributionsListQuery())
@@ -86,11 +88,17 @@ const ShareholdersBoard = () => {
     refresh: false,
   })
 
-  const { run: reverseDistribution } = useActionMutation({
+  const { run: reverseDistribution, isPending: isReversing } = useActionMutation({
     action: deleteDistributionAction,
     invalidateKeys: SHAREHOLDER_KEYS,
     refresh: false,
   })
+
+  const handleConfirmReverse = async () => {
+    if (distributionToReverse && (await reverseDistribution(distributionToReverse.id))) {
+      setDistributionToReverse(null)
+    }
+  }
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
@@ -116,7 +124,7 @@ const ShareholdersBoard = () => {
         <DistributionList
           distributions={distributions}
           isLoading={loadingDistributions}
-          onDelete={(id) => void reverseDistribution(id)}
+          onDelete={setDistributionToReverse}
         />
       </div>
 
@@ -138,6 +146,27 @@ const ShareholdersBoard = () => {
         pendingLabel="Deleting..."
         isPending={isDeleting}
         onConfirm={() => void handleConfirmDelete()}
+      />
+
+      <ConfirmDialog
+        open={distributionToReverse !== null}
+        onOpenChange={(open) => {
+          if (!open) setDistributionToReverse(null)
+        }}
+        title="Reverse this distribution?"
+        description={
+          <>
+            The {distributionToReverse ? formatBdt(distributionToReverse.amount_bdt) : ""} paid to{" "}
+            <span className="font-medium text-foreground">{distributionToReverse?.shareholder?.name}</span> goes
+            back into {distributionToReverse?.account?.name ?? "the account it came from"}, and the payment
+            leaves their total.
+          </>
+        }
+        variant="destructive"
+        confirmLabel="Reverse"
+        pendingLabel="Reversing..."
+        isPending={isReversing}
+        onConfirm={() => void handleConfirmReverse()}
       />
     </div>
   )
