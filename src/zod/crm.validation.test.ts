@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { clientServerZodSchema } from "./crm.validation"
+import { clientServerZodSchema, createClientLinkServerZodSchema } from "./crm.validation"
 
 const validClient = {
     name: "Acme Corp",
@@ -32,5 +32,26 @@ describe("clientServerZodSchema", () => {
 
     it("rejects a status the API does not know", () => {
         expect(clientServerZodSchema.safeParse({ ...validClient, status: "deleted" }).success).toBe(false)
+    })
+})
+
+describe("createClientLinkServerZodSchema", () => {
+    const validLink = { client_id: "c1", label: "Brand folder", url: "https://drive.google.com/x" }
+
+    it("trims the label and URL into the API payload", () => {
+        expect(
+            createClientLinkServerZodSchema.parse({ ...validLink, label: "  Brand folder ", url: " https://drive.google.com/x " }),
+        ).toEqual(validLink)
+    })
+
+    it("rejects a label or URL that is only spaces", () => {
+        expect(createClientLinkServerZodSchema.safeParse({ ...validLink, label: "   " }).error?.issues[0]?.message).toBe(
+            "Give it a name",
+        )
+        expect(createClientLinkServerZodSchema.safeParse({ ...validLink, url: " " }).success).toBe(false)
+    })
+
+    it("requires the client it belongs to", () => {
+        expect(createClientLinkServerZodSchema.safeParse({ ...validLink, client_id: "" }).success).toBe(false)
     })
 })

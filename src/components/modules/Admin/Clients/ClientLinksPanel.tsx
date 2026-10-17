@@ -53,8 +53,7 @@ const ClientLinksPanel = ({ clientId }: { clientId: string }) => {
   }
 
   const { mutate: add, isPending } = useMutation({
-    mutationFn: () =>
-      addClientLinkAction({ client_id: clientId, label: label.trim(), url: url.trim() }),
+    mutationFn: () => addClientLinkAction({ client_id: clientId, label, url }),
     onSuccess: (result) => {
       if (!result.success) {
         // "Only http and https links can be stored" arrives here.
