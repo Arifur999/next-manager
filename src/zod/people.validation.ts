@@ -1,6 +1,6 @@
 import { endOfMonth, format, parseISO } from "date-fns"
 import { z } from "zod"
-import { optionalNonNegative, toNumber } from "./formFields"
+import { optionalNonNegative, positiveAmount, toNumber } from "./formFields"
 
 // Turning a department or a kind of leave off or on again. Neither is deleted
 // once in use, so this is how one is retired.
@@ -88,3 +88,16 @@ export type IInviteFormValues = z.infer<typeof inviteFormZodSchema>
 // The trimmed address is the whole payload: every invite is for operations,
 // so there is no role to send or to tamper with.
 export const createInviteServerZodSchema = inviteFormZodSchema
+
+export const capacityFormZodSchema = z.object({
+    weekly_hours: positiveAmount("Weekly hours"),
+    standard_rate_usd: optionalNonNegative("Bill rate"),
+})
+
+export type ICapacityFormValues = z.infer<typeof capacityFormZodSchema>
+
+export const capacityServerZodSchema = capacityFormZodSchema.transform((values) => ({
+    weekly_hours: Number(values.weekly_hours),
+    // A blank rate is left out of the payload.
+    standard_rate_usd: toNumber(values.standard_rate_usd),
+}))

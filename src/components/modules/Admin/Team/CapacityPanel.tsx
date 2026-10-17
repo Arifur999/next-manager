@@ -36,13 +36,7 @@ const CapacityRow = ({ row }: { row: ICapacityRow }) => {
   )
 
   const { mutate: save, isPending } = useMutation({
-    mutationFn: () =>
-      setCapacityAction(row.user.id, {
-        weekly_hours: Number(hours),
-        // An empty rate field means "leave it unset", which the engine reads
-        // as "no realization for this person" rather than a rate of zero.
-        ...(rate.trim() === "" ? {} : { standard_rate_usd: Number(rate) }),
-      }),
+    mutationFn: () => setCapacityAction(row.user.id, { weekly_hours: hours, standard_rate_usd: rate }),
     onSuccess: (result) => {
       if (!result.success) {
         toast.error(result.message || "Failed to save")

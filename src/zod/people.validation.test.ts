@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
     activeStateServerZodSchema,
+    capacityServerZodSchema,
     completePayrollServerZodSchema,
     createInviteServerZodSchema,
     createPayrollRunServerZodSchema,
@@ -122,5 +123,27 @@ describe("createInviteServerZodSchema", () => {
     it.each(["", "colleague@"])("refuses %j as an address", (email) => {
         const result = createInviteServerZodSchema.safeParse({ email })
         expect(result.error?.issues[0]?.message).toBe("Enter a valid email address")
+    })
+})
+
+describe("capacityServerZodSchema", () => {
+    it("sends the hours and rate as numbers", () => {
+        expect(capacityServerZodSchema.parse({ weekly_hours: "32.5", standard_rate_usd: "45" })).toEqual({
+            weekly_hours: 32.5,
+            standard_rate_usd: 45,
+        })
+    })
+
+    it("leaves a blank rate out", () => {
+        expect(capacityServerZodSchema.parse({ weekly_hours: "40", standard_rate_usd: "" }).standard_rate_usd).toBeUndefined()
+    })
+
+    it("refuses a week of no hours", () => {
+        const result = capacityServerZodSchema.safeParse({ weekly_hours: "0", standard_rate_usd: "" })
+        expect(result.error?.issues[0]?.message).toBe("Weekly hours must be greater than zero")
+    })
+
+    it("refuses a negative rate", () => {
+        expect(capacityServerZodSchema.safeParse({ weekly_hours: "40", standard_rate_usd: "-5" }).success).toBe(false)
     })
 })
