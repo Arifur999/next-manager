@@ -1,11 +1,11 @@
 "use client"
 
+import RelativeTime from "@/components/shared/RelativeTime"
 import EmptyState from "@/components/shared/state/EmptyState"
 import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import type { IConversation } from "@/types/workspace.types"
-import { formatDistanceToNowStrict, parseISO } from "date-fns"
 import { MessagesSquare } from "lucide-react"
 import type { ComponentProps } from "react"
 
@@ -71,9 +71,7 @@ const ConversationList = ({
                 : conversation.type === "group"
                   ? `${conversation.members.length} people · `
                   : ""}
-              {formatDistanceToNowStrict(parseISO(conversation.last_message_at), {
-                addSuffix: true,
-              })}
+              <RelativeTime value={conversation.last_message_at} strict />
             </p>
           </button>
         </li>
