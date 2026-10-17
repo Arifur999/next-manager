@@ -88,3 +88,14 @@ export const updateProfileServerZodSchema = profileFormZodSchema
 
 // The confirmation field is the form's own check and never leaves the browser.
 export const changePasswordServerZodSchema = changePasswordFormZodSchema
+
+// An empty phone is left out rather than stored as a phone number of "".
+export const registerServerZodSchema = registerFormZodSchema.transform((values) => ({
+  organization_name: values.organization_name,
+  full_name: values.full_name,
+  email: values.email,
+  phone: values.phone?.trim() || undefined,
+  password: values.password,
+}))
+
+export type IRegisterPayload = z.output<typeof registerServerZodSchema>

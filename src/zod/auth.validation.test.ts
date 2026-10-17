@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   changePasswordServerZodSchema,
   newPassword,
+  registerServerZodSchema,
   requiredEmail,
   updateProfileServerZodSchema,
 } from "./auth.validation"
@@ -59,5 +60,32 @@ describe("requiredEmail", () => {
     expect(requiredEmail.safeParse("").error?.issues.map((issue) => issue.message)).toEqual(["Email is required"])
     expect(requiredEmail.safeParse("rina").error?.issues[0]?.message).toBe("Enter a valid email address")
     expect(requiredEmail.safeParse("rina@northwind.com").success).toBe(true)
+  })
+})
+
+describe("registerServerZodSchema", () => {
+  const valid = {
+    organization_name: "Northwind Studio",
+    full_name: "Rina Das",
+    email: "rina@northwind.com",
+    phone: " 01711 ",
+    password: "welcome12",
+  }
+
+  it("builds the sign-up payload with a trimmed phone", () => {
+    expect(registerServerZodSchema.parse(valid)).toEqual({ ...valid, phone: "01711" })
+  })
+
+  it("leaves out an empty phone", () => {
+    expect(registerServerZodSchema.parse({ ...valid, phone: "  " }).phone).toBeUndefined()
+  })
+
+  it("has no role to send, whatever arrives", () => {
+    expect(registerServerZodSchema.parse({ ...valid, role: "super_admin" })).not.toHaveProperty("role")
+  })
+
+  it("refuses a missing company name and a weak password", () => {
+    expect(registerServerZodSchema.safeParse({ ...valid, organization_name: "" }).success).toBe(false)
+    expect(registerServerZodSchema.safeParse({ ...valid, password: "welcome" }).success).toBe(false)
   })
 })

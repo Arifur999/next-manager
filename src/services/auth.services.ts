@@ -9,7 +9,9 @@ import { logApiFailure } from "@/lib/apiFailure"
 import { httpClient } from "@/lib/axios/httpClient"
 import { logger } from "@/lib/logger"
 import { classifyMeResponse } from "@/lib/session"
+import type { ApiResponse } from "@/types/api.types"
 import { type IUser } from "@/types/user.types"
+import type { IRegisterPayload } from "@/zod/auth.validation"
 import { cookies } from "next/headers"
 import { cache } from "react"
 import { getApiBaseUrl } from "@/env"
@@ -65,3 +67,22 @@ export const updateMe = async (payload: Record<string, unknown>) =>
 
 export const changePassword = async (payload: Record<string, unknown>) =>
     httpClient.post<{ message: string }>("/auth/change-password", payload)
+
+/**
+ * POST to an endpoint that needs no session: sign-up, a password reset,
+ * accepting an invite. Plain fetch, because there are no cookies to forward and
+ * none are set here; the API's envelope comes back whether it succeeded or not.
+ */
+const postPublic = async <TData>(path: string, payload: unknown) => {
+    const res = await fetch(`${getApiBaseUrl()}${path}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        cache: "no-store",
+    })
+
+    return (await res.json()) as ApiResponse<TData>
+}
+
+/** Creates a company and its first admin. Returns the user, not tokens: they sign in next. */
+export const register = async (payload: IRegisterPayload) => postPublic<IUser>("/auth/register", payload)
