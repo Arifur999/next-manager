@@ -32,10 +32,8 @@ import {
   editUserFormZodSchema,
   type IEditUserFormValues,
 } from "@/zod/user.validation"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useRouter } from "next/navigation"
-import { toast } from "sonner"
 import { queryKeys } from "@/lib/queryKeys"
 
 type EditUserFormModalProps = {
@@ -50,11 +48,10 @@ const isAssignableRole = (role: string): role is IEditUserFormValues["role"] =>
   (ASSIGNABLE_ROLES as readonly string[]).includes(role)
 
 const EditUserForm = ({ user, onOpenChange }: { user: IUser; onOpenChange: (open: boolean) => void }) => {
-  const queryClient = useQueryClient()
-  const router = useRouter()
-
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IEditUserFormValues) => updateUserAction(user.id, values),
+  // No successMessage: the toast is the server's "User updated successfully".
+  const { run: saveMember, isPending } = useActionMutation({
+    action: (values: IEditUserFormValues) => updateUserAction(user.id, values),
+    invalidateKeys: [queryKeys.users.all],
   })
 
   const form = useForm({
@@ -72,18 +69,7 @@ const EditUserForm = ({ user, onOpenChange }: { user: IUser; onOpenChange: (open
       status: user.status === "suspended" ? "suspended" : "active",
     } satisfies IEditUserFormValues,
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        toast.error(result.message || "Failed to update team member")
-        return
-      }
-
-      toast.success(result.message || "Team member updated successfully")
-      onOpenChange(false)
-
-      void queryClient.invalidateQueries({ queryKey: queryKeys.users.all })
-      router.refresh()
+      if (await saveMember(value)) onOpenChange(false)
     },
   })
 
