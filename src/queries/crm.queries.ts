@@ -2,7 +2,7 @@
 // same ones, so server and browser can never disagree on a key.
 import { queryOptions } from "@tanstack/react-query"
 import { queryKeys } from "@/lib/queryKeys"
-import { getClient, getClientFinancials, getClientLinks, getClients, getLeadPipeline, getLeadSources } from "@/services/crm.services"
+import { getClient, getClientFinancials, getClientLinks, getClients, getLeadPipeline, getLeadSources, getLeadStageEvents } from "@/services/crm.services"
 
 export const clientDetailQuery = (id: string) =>
   queryOptions({ queryKey: queryKeys.clients.detail(id), queryFn: () => getClient(id) })
@@ -21,3 +21,7 @@ export const leadPipelineQuery = (queryString = "") =>
 
 export const leadSourcesQuery = () =>
   queryOptions({ queryKey: queryKeys.leadSources.list(), queryFn: () => getLeadSources() })
+
+// Under the leads root, so every move or edit that refreshes the board refreshes the history too.
+export const leadStageEventsQuery = (leadId: string) =>
+  queryOptions({ queryKey: queryKeys.leads.detail(`${leadId}/stage-events`), queryFn: () => getLeadStageEvents(leadId) })

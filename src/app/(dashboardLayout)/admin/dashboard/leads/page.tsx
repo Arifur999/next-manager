@@ -4,12 +4,14 @@ import type { Metadata } from "next";
 import { leadPipelineQuery } from "@/queries/crm.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import PageHeader from "@/components/shared/PageHeader";
+import { getUserInfo } from "@/services/auth.services";
 
 export const metadata: Metadata = {
   title: "Leads",
 };
 
 const LeadsPage = async () => {
+  const user = await getUserInfo();
 
   const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(leadPipelineQuery());
 
@@ -21,7 +23,7 @@ const LeadsPage = async () => {
       </PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
-        <LeadPipeline />
+        <LeadPipeline isAdmin={user?.role === "admin"} />
       </QueryPrefetch>
     </div>
   );

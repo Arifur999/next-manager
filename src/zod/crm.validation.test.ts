@@ -4,6 +4,9 @@ import {
     createClientLinkServerZodSchema,
     createLeadServerZodSchema,
     moveLeadServerZodSchema,
+    updateLeadServerZodSchema,
+    updateLeadSourceServerZodSchema,
+    createLeadSourceServerZodSchema,
 } from "./crm.validation"
 
 const validClient = {
@@ -96,6 +99,42 @@ describe("createLeadServerZodSchema", () => {
     it("rejects a blank name and a stage the pipeline does not have", () => {
         expect(createLeadServerZodSchema.safeParse({ ...validLead, name: "" }).success).toBe(false)
         expect(createLeadServerZodSchema.safeParse({ ...validLead, stage: "archived" }).success).toBe(false)
+    })
+})
+
+describe("updateLeadServerZodSchema", () => {
+    const edit = {
+        name: "Jane Doe",
+        company: "",
+        email: "",
+        phone: "",
+        source_id: "",
+        stage: "proposal",
+        estimated_value_usd: "900",
+        notes: "Wants a quote by Friday",
+        owner_id: "u2",
+    }
+
+    it("sends the notes and the new owner", () => {
+        const payload = updateLeadServerZodSchema.parse(edit)
+        expect(payload.notes).toBe("Wants a quote by Friday")
+        expect(payload.owner_id).toBe("u2")
+    })
+
+    it("leaves the owner alone when none is chosen", () => {
+        expect(updateLeadServerZodSchema.parse({ ...edit, owner_id: "" }).owner_id).toBeUndefined()
+    })
+})
+
+describe("lead source schemas", () => {
+    it("trims a new source's name and refuses a blank one", () => {
+        expect(createLeadSourceServerZodSchema.parse({ name: "  Upwork " })).toEqual({ name: "Upwork" })
+        expect(createLeadSourceServerZodSchema.safeParse({ name: "   " }).success).toBe(false)
+    })
+
+    it("renames or turns a source off one field at a time", () => {
+        expect(updateLeadSourceServerZodSchema.parse({ name: "Fiverr" })).toEqual({ name: "Fiverr" })
+        expect(updateLeadSourceServerZodSchema.parse({ is_active: false })).toEqual({ is_active: false })
     })
 })
 

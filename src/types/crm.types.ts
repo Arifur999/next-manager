@@ -48,8 +48,11 @@ export interface ILead {
     stage: LeadStage;
     estimated_value_usd: number;
     notes: string;
+    /** Whose deal it is; it travels onto the client when the deal is won. */
+    owner_id: string | null;
     converted_client_id: string | null;
     converted_at: string | null;
+    created_at: string;
 }
 
 export interface ILeadPipeline {

@@ -3,20 +3,27 @@
 import { OPEN_STAGES } from "@/components/modules/Admin/Leads/stages"
 import CreateLeadModal from "@/components/modules/Admin/Leads/CreateLeadModal"
 import LeadCard from "@/components/modules/Admin/Leads/LeadCard"
+import LeadSourcesDialog from "@/components/modules/Admin/Leads/LeadSourcesDialog"
 import StatTile from "@/components/shared/StatTile"
 import ErrorState from "@/components/shared/state/ErrorState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatUsd } from "@/lib/currency"
+import { plural } from "@/lib/text"
 import type { LeadStage } from "@/types/crm.types"
 import { useQuery } from "@tanstack/react-query"
 import { Target, TrendingUp } from "lucide-react"
-import { leadPipelineQuery } from "@/queries/crm.queries"
+import { leadPipelineQuery, leadSourcesQuery } from "@/queries/crm.queries"
 
 // Only the open stages get a column. Won and lost are outcomes, not places work
 // sits, and giving them columns would make the board grow forever.
-const LeadPipeline = () => {
+// `isAdmin` comes from the page: deleting a lead or a source is admin-only at the API.
+const LeadPipeline = ({ isAdmin }: { isAdmin: boolean }) => {
   const pipelineQuery = useQuery(leadPipelineQuery())
+  // The board's rows carry a source id only; the name is looked up here.
+  const sourcesQuery = useQuery(leadSourcesQuery())
+  const sourceName = (sourceId: string | null) =>
+    sourcesQuery.data?.data.find((source) => source.id === sourceId)?.name
 
   const pipeline = pipelineQuery.data?.data
   const byStage = (stage: LeadStage) =>
@@ -40,7 +47,7 @@ const LeadPipeline = () => {
                 value={formatUsd(pipeline?.open_value_usd ?? 0)}
                 // Won and lost are excluded on purpose: including them would make
                 // this number grow forever and stop meaning anything.
-                hint={`${pipeline?.open_count ?? 0} open deal${pipeline?.open_count === 1 ? "" : "s"} · won and lost excluded`}
+                hint={`${plural(pipeline?.open_count ?? 0, "open deal")} · won and lost excluded`}
                 icon={<TrendingUp className="size-5" />}
                 tone={1}
               />
@@ -59,7 +66,10 @@ const LeadPipeline = () => {
           )}
         </div>
 
-        <CreateLeadModal />
+        <div className="flex flex-wrap items-center gap-2">
+          <LeadSourcesDialog canDelete={isAdmin} />
+          <CreateLeadModal />
+        </div>
       </div>
 
       {hasFailed && (
@@ -101,7 +111,14 @@ const LeadPipeline = () => {
                   {leads.length === 0 ? (
                     <p className="py-6 text-center text-xs text-muted-foreground">Empty</p>
                   ) : (
-                    leads.map((lead) => <LeadCard key={lead.id} lead={lead} />)
+                    leads.map((lead) => (
+                      <LeadCard
+                        key={lead.id}
+                        lead={lead}
+                        sourceName={sourceName(lead.source_id)}
+                        canDelete={isAdmin}
+                      />
+                    ))
                   )}
                 </div>
               </Card>

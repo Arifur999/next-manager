@@ -56,6 +56,9 @@ export const leadFormZodSchema = z.object({
     source_id: z.string().optional(),
     stage: z.enum(LEAD_STAGES),
     estimated_value_usd: optionalNonNegative("Estimated value"),
+    notes: z.string().max(5000, "Keep the notes under 5,000 characters").optional(),
+    // Blank on a new lead makes whoever adds it the owner.
+    owner_id: z.string().optional(),
 })
 
 export type ILeadFormValues = z.infer<typeof leadFormZodSchema>
@@ -69,9 +72,30 @@ export const createLeadServerZodSchema = leadFormZodSchema.transform((values) =>
     source_id: values.source_id || null,
     stage: values.stage,
     estimated_value_usd: toNumber(values.estimated_value_usd) ?? 0,
+    notes: values.notes,
+    owner_id: values.owner_id || undefined,
 }))
+
+// Create and edit send the same fields; an edit that changes the stage is
+// recorded in the lead's history like a move.
+export const updateLeadServerZodSchema = createLeadServerZodSchema
 
 // Moving a card to another column changes its stage and nothing else.
 export const moveLeadServerZodSchema = z.object({
     stage: z.enum(LEAD_STAGES, { message: "Choose a valid stage" }),
+})
+
+// A marketplace or channel leads arrive through.
+export const leadSourceFormZodSchema = z.object({
+    name: z.string().trim().min(1, "Give the source a name").max(80, "Keep the name under 80 characters"),
+})
+
+export type ILeadSourceFormValues = z.infer<typeof leadSourceFormZodSchema>
+
+export const createLeadSourceServerZodSchema = leadSourceFormZodSchema
+
+// A rename, or turning a source off so it leaves the picker but keeps its leads' history.
+export const updateLeadSourceServerZodSchema = z.object({
+    name: leadSourceFormZodSchema.shape.name.optional(),
+    is_active: z.boolean().optional(),
 })

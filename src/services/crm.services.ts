@@ -57,6 +57,10 @@ export const createLeadSource = async (payload: Record<string, unknown>) =>
 export const updateLeadSource = async (id: string, payload: Record<string, unknown>) =>
     httpClient.patch<ILeadSource>(`/lead-sources/${id}`, payload)
 
+// Refused once a lead points at it; the API says to turn it off instead.
+export const deleteLeadSource = async (id: string) =>
+    httpClient.delete<{ message: string }>(`/lead-sources/${id}`)
+
 export const getClientLinks = async (queryString?: string) =>
     httpClient.get<IClientLink[]>("/client-links", { params: toParams(queryString) })
 
