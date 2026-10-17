@@ -1,5 +1,6 @@
 "use client"
 
+import ErrorState from "@/components/shared/state/ErrorState"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import type { SubscriptionStatus } from "@/types/platform.types"
@@ -76,7 +77,7 @@ const UsageBar = ({
 }
 
 const SubscriptionPanel = () => {
-  const { data, isLoading } = useQuery(mySubscriptionQuery())
+  const { data, isLoading, isError, isFetching, refetch } = useQuery(mySubscriptionQuery())
 
   const result = data?.data
 
@@ -84,7 +85,16 @@ const SubscriptionPanel = () => {
     return <div className="h-40 animate-pulse rounded-xl bg-muted/40" />
   }
 
-  if (!result) return null
+  if (isError || !result) {
+    return (
+      <ErrorState
+        className="rounded-xl border border-dashed"
+        message="Your plan and usage did not load."
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+      />
+    )
+  }
 
   const { subscription, usage } = result
 
