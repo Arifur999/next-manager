@@ -1,6 +1,5 @@
 "use client"
 
-import { toSafeExternalUrl } from "@/lib/safeUrl"
 import { createCredentialAction } from "@/app/(dashboardLayout)/admin/dashboard/vault/_action"
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
@@ -22,27 +21,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Eye, EyeOff, Plus } from "lucide-react"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
-import { z } from "zod"
+import { credentialFormZodSchema, type ICredentialFormValues } from "@/zod/workspace.validation"
 import { clientsListQuery } from "@/queries/crm.queries"
 import { projectsListQuery } from "@/queries/project.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
-const credentialFormSchema = z.object({
-  label: z.string().min(1, "Label is required"),
-  client_id: z.string().optional(),
-  project_id: z.string().optional(),
-  url: z
-    .string()
-    .optional()
-    .refine((value) => !value || toSafeExternalUrl(value) !== null, "Enter a full URL, including https://"),
-  username: z.string().optional(),
-  password: z.string().min(1, "Password is required"),
-  notes: z.string().optional(),
-})
-
-type CredentialFormValues = z.infer<typeof credentialFormSchema>
-
-const defaultValues: CredentialFormValues = {
+const defaultValues: ICredentialFormValues = {
   label: "",
   client_id: "",
   project_id: "",
@@ -64,7 +48,7 @@ const AddCredentialModal = () => {
   const projects = projectsData?.data ?? []
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: CredentialFormValues) =>
+    mutationFn: (values: ICredentialFormValues) =>
       createCredentialAction({
         ...values,
         client_id: values.client_id || null,
@@ -138,7 +122,7 @@ const AddCredentialModal = () => {
               }}
               className="space-y-5"
             >
-              <form.Field name="label" validators={{ onChange: credentialFormSchema.shape.label }}>
+              <form.Field name="label" validators={{ onChange: credentialFormZodSchema.shape.label }}>
                 {(field) => (
                   <AppField
                     field={field}
@@ -149,7 +133,7 @@ const AddCredentialModal = () => {
                 )}
               </form.Field>
 
-              <form.Field name="url" validators={{ onChange: credentialFormSchema.shape.url }}>
+              <form.Field name="url" validators={{ onChange: credentialFormZodSchema.shape.url }}>
                 {(field) => (
                   <AppField field={field} label="URL" placeholder="https://..." disabled={isPending} />
                 )}
@@ -162,7 +146,7 @@ const AddCredentialModal = () => {
 
                 <form.Field
                   name="password"
-                  validators={{ onChange: credentialFormSchema.shape.password }}
+                  validators={{ onChange: credentialFormZodSchema.shape.password }}
                 >
                   {(field) => (
                     <AppField
