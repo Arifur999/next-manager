@@ -57,8 +57,12 @@ describe("leaveTypeServerZodSchema", () => {
         expect(leaveTypeServerZodSchema.parse({ ...valid, days_per_year: "" }).days_per_year).toBe(0)
     })
 
-    it.each(["1.5", "-1", "366"])("rejects an allowance of %s days", (days_per_year) => {
+    it.each(["1.5", "-1", "366", "ten"])("rejects an allowance of %s days", (days_per_year) => {
         expect(leaveTypeServerZodSchema.safeParse({ ...valid, days_per_year }).success).toBe(false)
+    })
+
+    it("accepts any whole number the number box allows", () => {
+        expect(leaveTypeServerZodSchema.parse({ ...valid, days_per_year: "1e2" }).days_per_year).toBe(100)
     })
 
     it("rejects a blank name", () => {

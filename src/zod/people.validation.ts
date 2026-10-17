@@ -24,7 +24,7 @@ export const leaveTypeFormZodSchema = z.object({
     days_per_year: z
         .string()
         .refine(
-            (value) => /^\d*$/.test(value) && Number(value) <= 365,
+            (value) => value === "" || (Number.isInteger(Number(value)) && Number(value) >= 0 && Number(value) <= 365),
             "Days a year must be a whole number from 0 to 365",
         ),
     is_paid: z.boolean(),
