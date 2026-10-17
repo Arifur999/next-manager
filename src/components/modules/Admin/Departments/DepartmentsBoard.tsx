@@ -8,10 +8,9 @@ import {
 } from "@/app/(dashboardLayout)/admin/dashboard/departments/_action"
 import DepartmentList from "@/components/modules/Admin/Departments/DepartmentList"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
+import AppField from "@/components/shared/form/AppField"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IDepartment } from "@/types/people.types"
 import { departmentFormZodSchema, type IDepartmentFormValues } from "@/zod/people.validation"
@@ -107,35 +106,19 @@ const DepartmentsBoard = () => {
         >
           <form.Field name="name">
             {(field) => (
-              <div className="space-y-1.5">
-                <Label htmlFor="department-name">Name</Label>
-                <Input
-                  id="department-name"
-                  value={field.state.value}
-                  maxLength={60}
-                  onBlur={field.handleBlur}
-                  onChange={(event) => field.handleChange(event.target.value)}
-                  placeholder="Design"
-                  disabled={isPending}
-                />
-              </div>
+              <AppField field={field} label="Name" maxLength={60} placeholder="Design" disabled={isPending} />
             )}
           </form.Field>
 
           <form.Field name="description">
             {(field) => (
-              <div className="space-y-1.5">
-                <Label htmlFor="department-description">What they do</Label>
-                <Input
-                  id="department-description"
-                  value={field.state.value}
-                  maxLength={200}
-                  onBlur={field.handleBlur}
-                  onChange={(event) => field.handleChange(event.target.value)}
-                  placeholder="Optional"
-                  disabled={isPending}
-                />
-              </div>
+              <AppField
+                field={field}
+                label="What they do"
+                maxLength={200}
+                placeholder="Optional"
+                disabled={isPending}
+              />
             )}
           </form.Field>
 
