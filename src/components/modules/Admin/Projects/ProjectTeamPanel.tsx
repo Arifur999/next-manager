@@ -17,9 +17,10 @@ import {
 } from "@/components/ui/select"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IProjectMember } from "@/types/project.types"
+import { projectMemberFormZodSchema, type IProjectMemberFormValues } from "@/zod/project.validation"
+import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { UserMinus, UserPlus } from "lucide-react"
-import { useState } from "react"
 import { toast } from "sonner"
 import { projectMembersQuery } from "@/queries/project.queries"
 import { queryKeys } from "@/lib/queryKeys"
@@ -33,6 +34,8 @@ const initialsOf = (name: string) =>
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("") || "?"
 
+const emptyAssignment: IProjectMemberFormValues = { user_id: "", role_on_project: "" }
+
 /** `canManage` is false for anybody the API refuses: the controls that change
  *  things come off rather than failing when pressed. */
 const ProjectTeamPanel = ({
@@ -43,8 +46,6 @@ const ProjectTeamPanel = ({
   canManage?: boolean
 }) => {
   const queryClient = useQueryClient()
-  const [userId, setUserId] = useState("")
-  const [roleOnProject, setRoleOnProject] = useState("")
 
   const { data: membersData } = useQuery(projectMembersQuery(projectId))
   const { data: usersData } = useQuery(usersListQuery())
@@ -71,14 +72,13 @@ const ProjectTeamPanel = ({
     void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all })
   }
 
-  const handleAssign = async () => {
-    if (!userId) return
-
-    if (await assignMember({ project_id: projectId, user_id: userId, role_on_project: roleOnProject })) {
-      setUserId("")
-      setRoleOnProject("")
-    }
-  }
+  const form = useForm({
+    defaultValues: emptyAssignment,
+    validators: { onSubmit: projectMemberFormZodSchema },
+    onSubmit: async ({ value, formApi }) => {
+      if (await assignMember({ project_id: projectId, ...value })) formApi.reset()
+    },
+  })
 
   const handleRemove = async (member: IProjectMember) => {
     const result = await remove(member.id)
@@ -102,31 +102,48 @@ const ProjectTeamPanel = ({
 
       {canManage && (
       <div className="flex flex-wrap gap-2 border-b px-5 py-4">
-        <Select value={userId} onValueChange={setUserId} disabled={isAssigning || users.length === 0}>
-          <SelectTrigger className="min-w-0 flex-1">
-            <SelectValue placeholder={users.length === 0 ? "Invite a team member first" : "Choose someone"} />
-          </SelectTrigger>
-          <SelectContent>
-            {users.map((user) => (
-              <SelectItem key={user.id} value={user.id}>
-                {user.full_name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <form.Field name="user_id">
+          {(field) => (
+            <Select
+              value={field.state.value}
+              onValueChange={field.handleChange}
+              disabled={isAssigning || users.length === 0}
+            >
+              <SelectTrigger className="min-w-0 flex-1">
+                <SelectValue placeholder={users.length === 0 ? "Invite a team member first" : "Choose someone"} />
+              </SelectTrigger>
+              <SelectContent>
+                {users.map((user) => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.full_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </form.Field>
 
-        <Input
-          value={roleOnProject}
-          onChange={(event) => setRoleOnProject(event.target.value)}
-          placeholder="Role on this project"
-          className="w-44"
-          disabled={isAssigning}
-        />
+        <form.Field name="role_on_project">
+          {(field) => (
+            <Input
+              value={field.state.value ?? ""}
+              onBlur={field.handleBlur}
+              onChange={(event) => field.handleChange(event.target.value)}
+              placeholder="Role on this project"
+              className="w-44"
+              disabled={isAssigning}
+            />
+          )}
+        </form.Field>
 
-        <Button type="button" onClick={() => void handleAssign()} disabled={isAssigning || !userId}>
-          <UserPlus className="size-4" />
-          Assign
-        </Button>
+        <form.Subscribe selector={(state) => projectMemberFormZodSchema.safeParse(state.values).success}>
+          {(isComplete) => (
+            <Button type="button" onClick={() => void form.handleSubmit()} disabled={isAssigning || !isComplete}>
+              <UserPlus className="size-4" />
+              Assign
+            </Button>
+          )}
+        </form.Subscribe>
       </div>
       )}
 
