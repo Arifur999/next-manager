@@ -18,12 +18,12 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { logTimeFormZodSchema, type ILogTimeFormValues } from "@/zod/work.validation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useCallback, useState } from "react"
-import { toast } from "sonner"
 import { projectsListQuery } from "@/queries/project.queries"
 import { tasksListQuery } from "@/queries/work.queries"
 import { queryKeys } from "@/lib/queryKeys"
@@ -66,14 +66,16 @@ const TaskPicker = ({
 
 const LogTimeModal = ({ defaultDate }: { defaultDate: string }) => {
   const [open, setOpen] = useState(false)
-  const queryClient = useQueryClient()
 
   const { data: projectsData } = useQuery({ ...projectsListQuery(), enabled: open })
 
   const projects = projectsData?.data ?? []
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: ILogTimeFormValues) => logTimeAction(values),
+  const { run: logTime, isPending } = useActionMutation({
+    action: logTimeAction,
+    successMessage: "Time logged",
+    invalidateKeys: [queryKeys.timeEntries.all, queryKeys.timeSummary.all],
+    refresh: false,
   })
 
   const defaultValues: ILogTimeFormValues = {
@@ -91,19 +93,10 @@ const LogTimeModal = ({ defaultDate }: { defaultDate: string }) => {
   const form = useForm({
     defaultValues,
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        toast.error(result.message || "Failed to log time")
-        return
+      if (await logTime(value)) {
+        setOpen(false)
+        form.reset()
       }
-
-      toast.success("Time logged")
-      setOpen(false)
-      form.reset()
-
-      void queryClient.invalidateQueries({ queryKey: queryKeys.timeEntries.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.timeSummary.all })
     },
   })
 
