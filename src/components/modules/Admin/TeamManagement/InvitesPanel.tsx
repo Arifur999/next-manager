@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { ITeamInvite } from "@/types/people.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { format, isPast, parseISO } from "date-fns"
 import { Check, Copy, MailPlus, Trash2 } from "lucide-react"
 import { useState } from "react"
@@ -40,7 +41,6 @@ const statusOf = (invite: ITeamInvite) => {
 }
 
 const InvitesPanel = () => {
-  const queryClient = useQueryClient()
   const [email, setEmail] = useState("")
   const [freshLink, setFreshLink] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
@@ -49,31 +49,25 @@ const InvitesPanel = () => {
 
   const invites = data?.data ?? []
 
-  const { mutate: create, isPending } = useMutation({
-    mutationFn: () => createInviteAction({ email }),
+  // No toast: the link appearing below the form is the confirmation.
+  const { run: createLink, isPending } = useActionMutation({
+    action: createInviteAction,
+    successMessage: false,
+    invalidateKeys: [queryKeys.teamInvites.all],
+    refresh: false,
     onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not create the invite")
-        return
-      }
-
+      if (!result.success) return
       setFreshLink(result.data.join_url)
       setCopied(false)
       setEmail("")
-      void queryClient.invalidateQueries({ queryKey: queryKeys.teamInvites.all })
     },
   })
 
-  const { mutate: revoke, isPending: isRevoking } = useMutation({
-    mutationFn: (id: string) => revokeInviteAction(id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not revoke")
-        return
-      }
-      toast.success("Invite revoked — the link stops working immediately")
-      void queryClient.invalidateQueries({ queryKey: queryKeys.teamInvites.all })
-    },
+  const { run: revokeInvite, isPending: isRevoking } = useActionMutation({
+    action: revokeInviteAction,
+    successMessage: "Invite revoked — the link stops working immediately",
+    invalidateKeys: [queryKeys.teamInvites.all],
+    refresh: false,
   })
 
   const copy = async () => {
@@ -106,7 +100,7 @@ const InvitesPanel = () => {
           onSubmit={(event) => {
             event.preventDefault()
             if (!email.trim()) return
-            create()
+            void createLink({ email })
           }}
         >
           <div className="min-w-56 flex-1 space-y-1.5">
@@ -192,7 +186,7 @@ const InvitesPanel = () => {
                         variant="outline"
                         size="sm"
                         disabled={isRevoking}
-                        onClick={() => revoke(invite.id)}
+                        onClick={() => void revokeInvite(invite.id)}
                       >
                         <Trash2 className="size-3.5" />
                         <span className="sr-only">Revoke</span>
