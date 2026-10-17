@@ -1,6 +1,7 @@
-import DateCell from "@/components/shared/cell/DateCell"
 import { Badge } from "@/components/ui/badge"
 import { formatBdt } from "@/lib/currency"
+import { formatDay } from "@/lib/dates"
+import { sentenceCase } from "@/lib/text"
 import type { ITeamPayout } from "@/types/spending.types"
 import { ColumnDef } from "@tanstack/react-table"
 
@@ -9,7 +10,7 @@ export const payoutsColumns: ColumnDef<ITeamPayout>[] = [
     id: "date",
     accessorKey: "date",
     header: "Date",
-    cell: ({ row }) => <DateCell date={row.original.date} formatString="MMM dd, yyyy" />,
+    cell: ({ row }) => <span className="whitespace-nowrap">{formatDay(row.original.date)}</span>,
   },
   {
     id: "member",
@@ -28,13 +29,9 @@ export const payoutsColumns: ColumnDef<ITeamPayout>[] = [
   {
     id: "type",
     // The label people read, so search, sort and export all use it too.
-    accessorFn: (payout) => payout.type.replace(/_/g, " "),
+    accessorFn: (payout) => sentenceCase(payout.type),
     header: "Type",
-    cell: ({ row }) => (
-      <Badge variant="outline" className="capitalize">
-        {row.original.type.replace(/_/g, " ")}
-      </Badge>
-    ),
+    cell: ({ row }) => <Badge variant="outline">{sentenceCase(row.original.type)}</Badge>,
   },
   {
     id: "amount_bdt",
@@ -49,6 +46,7 @@ export const payoutsColumns: ColumnDef<ITeamPayout>[] = [
     accessorFn: (payout) => payout.account?.name ?? "",
     header: "Paid from",
     enableSorting: false,
+    meta: { priority: "low" },
     cell: ({ row }) => (
       <span className="text-sm text-muted-foreground">{row.original.account?.name ?? "N/A"}</span>
     ),
