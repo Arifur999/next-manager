@@ -5,8 +5,10 @@ import ProjectFinanceTiles from "@/components/modules/Admin/Projects/ProjectFina
 import ProjectMilestonePanel from "@/components/modules/Admin/Projects/ProjectMilestonePanel"
 import ProjectTasksPanel from "@/components/modules/Admin/Projects/ProjectTasksPanel"
 import ProjectTeamPanel from "@/components/modules/Admin/Projects/ProjectTeamPanel"
+import EmptyState from "@/components/shared/state/EmptyState"
 import ErrorState from "@/components/shared/state/ErrorState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -44,11 +46,11 @@ const ProjectDetail = ({
 
   const { data: financeData } = useQuery({ ...projectFinancialsQuery(projectId), enabled: canSeeMoney })
 
-  const { data: credentialsData } = useQuery(credentialsListQuery(`project_id=${projectId}`))
+  const credentialsQuery = useQuery(credentialsListQuery(`project_id=${projectId}`))
 
   const project = projectQuery.data?.data as (IProject & { tasks?: ITask[] }) | undefined
   const finance = financeData?.data
-  const credentials = credentialsData?.data ?? []
+  const credentials = credentialsQuery.data?.data ?? []
 
   // A failed refresh keeps the project it already has on screen; only a page
   // with nothing to show says it did not load.
@@ -167,12 +169,12 @@ const ProjectDetail = ({
               </Link>
             </CardHeader>
 
-            {credentials.length === 0 ? (
-              <p className="flex flex-col items-center gap-2 px-6 py-12 text-center text-sm text-muted-foreground">
-                <KeyRound className="size-7" aria-hidden="true" />
-                Nothing stored against this project yet.
-              </p>
-            ) : (
+            <PanelState
+              query={credentialsQuery}
+              errorMessage="The vault entries did not load."
+              isEmpty={credentials.length === 0}
+              empty={<EmptyState icon={KeyRound}>Nothing stored against this project yet.</EmptyState>}
+            >
               <ul className="divide-y">
                 {credentials.map((credential) => (
                   <li
@@ -196,7 +198,7 @@ const ProjectDetail = ({
                   </li>
                 ))}
               </ul>
-            )}
+            </PanelState>
           </Card>
         </TabsContent>
       </Tabs>
