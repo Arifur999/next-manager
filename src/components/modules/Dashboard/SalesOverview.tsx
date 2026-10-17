@@ -1,5 +1,6 @@
 "use client"
 
+import RelativeTime from "@/components/shared/RelativeTime"
 import CountSection from "@/components/shared/dashboard/CountSection"
 import { countFields, queryFields, useCount } from "@/components/shared/dashboard/useCount"
 import EmptyState from "@/components/shared/state/EmptyState"
@@ -7,7 +8,6 @@ import PanelState from "@/components/shared/state/PanelState"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { useQuery } from "@tanstack/react-query"
-import { formatDistanceToNow, parseISO } from "date-fns"
 import { FolderKanban, ListChecks, Package, UserCheck, UserPlus, Users } from "lucide-react"
 import Link from "next/link"
 import { clientsListQuery } from "@/queries/crm.queries"
@@ -157,7 +157,7 @@ const SalesOverview = () => {
                     </p>
                   </div>
                   <span className="shrink-0 text-xs text-muted-foreground">
-                    {formatDistanceToNow(parseISO(client.created_at), { addSuffix: true })}
+                    <RelativeTime value={client.created_at} />
                   </span>
                 </Link>
               </li>
