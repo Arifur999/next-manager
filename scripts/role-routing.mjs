@@ -187,16 +187,6 @@ for (const [role, expected] of [
   console.log(`${ok ? "OK  " : "FAIL"}  ${role.padEnd(16)} activity -> ${res.status} (want ${expected})`);
 }
 
-// No company role may reach the console, whatever the path under it.
-for (const role of Object.keys(EXPECT)) {
-  for (const path of ["/platform", "/platform/customers", "/platform/finance", "/platform/campaigns", "/platform/settings", "/platform/invite-agency"]) {
-    const res = await fetch(WEB + path, { headers: { Cookie: cookies[role] }, redirect: "manual" });
-    const ok = res.status === 307 || res.status === 308;
-    if (!ok) bad += 1;
-    console.log();
-  }
-}
-
 // No company role may reach the console, whatever the path under it. The
 // platform rule was a prefix without a boundary once; this checks the whole
 // area rather than only its root.
