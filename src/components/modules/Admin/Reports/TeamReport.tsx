@@ -29,7 +29,7 @@ type DepartmentRow = {
 const TeamReport = () => {
   const { data } = useQuery(kpiQuery<{ by_department?: DepartmentRow[] }>("delivery"))
 
-  const rows = (data?.data?.by_department ?? []) as DepartmentRow[]
+  const rows = data?.data?.by_department ?? []
 
   const mostHours = Math.max(...rows.map((row) => row.hours_logged), 1)
   const mostPaid = Math.max(...rows.map((row) => row.paid_bdt), 1)

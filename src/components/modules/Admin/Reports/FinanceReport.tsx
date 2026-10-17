@@ -16,12 +16,6 @@ import { cashFlowQuery } from "@/queries/insights.queries"
  * the modules that write it, and spending grouped by what it was for.
  */
 
-type CashFlow = {
-  by_source: Array<{ source: string; currency: Currency; amount: number }>
-  totals: Record<Currency, { in: number; out: number; net: number }>
-  transfer_sources: string[]
-}
-
 const SOURCE_LABEL: Record<string, string> = {
   opening_balance: "Opening balance",
   payment: "Client payments",
@@ -43,7 +37,7 @@ const FinanceReport = () => {
   // saves a round-trip rather than duplicating a query.
   const { data: expenseData } = useQuery(expensesListQuery())
 
-  const cash = cashData?.data as CashFlow | undefined
+  const cash = cashData?.data
   const expenses = expenseData?.data ?? []
 
   const byCategory = Object.values(

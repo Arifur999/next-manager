@@ -14,17 +14,10 @@ import { clientRevenueQuery } from "@/queries/insights.queries"
  * worst payer at the top of the list.
  */
 
-type ClientRevenueRow = {
-  client: { id: string; name: string; company: string } | null
-  revenue_usd: number
-  revenue_bdt_reporting: number
-  payment_count: number
-}
-
 const ClientsReport = () => {
   const { data } = useQuery(clientRevenueQuery())
 
-  const clients = (data?.data ?? []) as ClientRevenueRow[]
+  const clients = data?.data ?? []
   const top = clients[0]?.revenue_usd ?? 1
 
   return (

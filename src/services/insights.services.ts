@@ -2,7 +2,15 @@
 
 import { httpClient } from "@/lib/axios/httpClient"
 import { toParams } from "@/lib/queryString"
-import type { IDashboard, IKpiTarget, IMonthlyPoint, IProfitAndLoss } from "@/types/insights.types"
+import type {
+    ICashFlow,
+    IClientRevenue,
+    IDashboard,
+    IKpiTarget,
+    IMonthlyPoint,
+    IProfitAndLoss,
+    IProjectProfitability,
+} from "@/types/insights.types"
 import type { KpiScope } from "@/types/kpi.types"
 
 export const getDashboard = async () =>
@@ -15,13 +23,13 @@ export const getMonthlySeries = async (months = 12) =>
     httpClient.get<IMonthlyPoint[]>("/reports/monthly", { params: { months } })
 
 export const getClientRevenue = async (queryString?: string) =>
-    httpClient.get("/reports/client-revenue", { params: toParams(queryString) })
+    httpClient.get<IClientRevenue[]>("/reports/client-revenue", { params: toParams(queryString) })
 
 export const getProjectProfitability = async (queryString?: string) =>
-    httpClient.get("/reports/project-profitability", { params: toParams(queryString) })
+    httpClient.get<IProjectProfitability[]>("/reports/project-profitability", { params: toParams(queryString) })
 
 export const getCashFlow = async (queryString?: string) =>
-    httpClient.get("/reports/cash-flow", { params: toParams(queryString) })
+    httpClient.get<ICashFlow>("/reports/cash-flow", { params: toParams(queryString) })
 
 /**
  * One scope's numbers. The scope decides both what comes back and who may ask —

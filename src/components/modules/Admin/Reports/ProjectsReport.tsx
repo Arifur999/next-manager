@@ -13,18 +13,10 @@ import { projectProfitabilityQuery } from "@/queries/insights.queries"
  * paid at the top.
  */
 
-type ProjectRow = {
-  project: { id: string; name: string; code: string }
-  received_bdt_reporting: number
-  total_cost_bdt: number
-  profit_bdt: number
-  margin_pct: number
-}
-
 const ProjectsReport = () => {
   const { data } = useQuery(projectProfitabilityQuery())
 
-  const projects = (data?.data ?? []) as ProjectRow[]
+  const projects = data?.data ?? []
 
   // Nominal categories — project names have no inherent order — so every bar
   // takes the SAME slot-1 hue. Colouring them by value would spend the identity
