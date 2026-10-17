@@ -16,13 +16,13 @@ import { useActionMutation } from "@/hooks/useActionMutation"
 import { attendanceFormZodSchema, type IAttendanceFormValues } from "@/zod/people.validation"
 import { useForm, useStore } from "@tanstack/react-form"
 import { useQuery } from "@tanstack/react-query"
-import { format } from "date-fns"
 import { usersListQuery } from "@/queries/people.queries"
 import { queryKeys } from "@/lib/queryKeys"
+import { todayIsoDate } from "@/lib/dates"
 
 const newAttendanceDay = (): IAttendanceFormValues => ({
   user_id: "",
-  date: format(new Date(), "yyyy-MM-dd"),
+  date: todayIsoDate(),
   check_in: "",
   check_out: "",
 })

@@ -13,6 +13,7 @@ import { format, parseISO } from "date-fns"
 import { CalendarCheck, LogIn, LogOut } from "lucide-react"
 import { attendanceQuery } from "@/queries/people.queries"
 import { queryKeys } from "@/lib/queryKeys"
+import { todayIsoDate } from "@/lib/dates"
 
 // Who was here, which is not the hours logged against a task: that is the
 // timesheet. `canRecord` comes from the page, as `canDecide` does on the leave board.
@@ -36,7 +37,7 @@ const AttendanceBoard = ({ canRecord = false }: { canRecord?: boolean }) => {
     refresh: false,
   })
 
-  const today = format(new Date(), "yyyy-MM-dd")
+  const today = todayIsoDate()
   const mineToday = days.find((day) => format(parseISO(day.date), "yyyy-MM-dd") === today)
   const stillIn = Boolean(mineToday?.check_in && !mineToday?.check_out)
 
