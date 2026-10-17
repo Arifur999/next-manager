@@ -8,7 +8,7 @@ import type { IOrganization } from "@/types/workspace.types"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { z } from "zod"
+import { organizationFormZodSchema, type IOrganizationFormValues } from "@/zod/workspace.validation"
 import { organizationQuery } from "@/queries/workspace.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -23,33 +23,24 @@ import { queryKeys } from "@/lib/queryKeys"
  * the agency and every invoice raised from now on carries the new name.
  */
 
-const organizationSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  legal_name: z.string().optional(),
-  email: z.string().email("Enter a valid email address").optional().or(z.literal("")),
-  phone: z.string().optional(),
-  website: z.string().optional(),
-  address: z.string().optional(),
-})
-
-type OrganizationValues = z.infer<typeof organizationSchema>
-
 const OrganizationForm = ({ organization }: { organization: IOrganization }) => {
   const queryClient = useQueryClient()
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: OrganizationValues) => updateOrganizationAction(values),
+    mutationFn: (values: IOrganizationFormValues) => updateOrganizationAction(values),
   })
 
+  const defaultValues: IOrganizationFormValues = {
+    name: organization.name,
+    legal_name: organization.legal_name ?? "",
+    email: organization.email ?? "",
+    phone: organization.phone ?? "",
+    website: organization.website ?? "",
+    address: organization.address ?? "",
+  }
+
   const form = useForm({
-    defaultValues: {
-      name: organization.name,
-      legal_name: organization.legal_name ?? "",
-      email: organization.email ?? "",
-      phone: organization.phone ?? "",
-      website: organization.website ?? "",
-      address: organization.address ?? "",
-    } as OrganizationValues,
+    defaultValues,
     onSubmit: async ({ value }) => {
       const result = await mutateAsync(value)
 
@@ -76,7 +67,7 @@ const OrganizationForm = ({ organization }: { organization: IOrganization }) => 
       className="space-y-5 px-5 py-5"
     >
       <div className="grid gap-5 sm:grid-cols-2">
-        <form.Field name="name" validators={{ onChange: organizationSchema.shape.name }}>
+        <form.Field name="name" validators={{ onChange: organizationFormZodSchema.shape.name }}>
           {(field) => <AppField field={field} label="Agency name" disabled={isPending} />}
         </form.Field>
 
@@ -93,7 +84,7 @@ const OrganizationForm = ({ organization }: { organization: IOrganization }) => 
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <form.Field name="email" validators={{ onChange: organizationSchema.shape.email }}>
+        <form.Field name="email" validators={{ onChange: organizationFormZodSchema.shape.email }}>
           {(field) => <AppField field={field} label="Email" type="email" disabled={isPending} />}
         </form.Field>
 

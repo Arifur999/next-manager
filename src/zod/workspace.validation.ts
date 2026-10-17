@@ -16,6 +16,18 @@ export const credentialFormZodSchema = z.object({
 
 export type ICredentialFormValues = z.infer<typeof credentialFormZodSchema>
 
+// What appears on invoices.
+export const organizationFormZodSchema = z.object({
+    name: z.string().min(1, "Name is required"),
+    legal_name: z.string().optional(),
+    email: z.string().email("Enter a valid email address").optional().or(z.literal("")),
+    phone: z.string().optional(),
+    website: z.string().optional(),
+    address: z.string().optional(),
+})
+
+export type IOrganizationFormValues = z.infer<typeof organizationFormZodSchema>
+
 // Exported apart from the refined schema below so per-field validators can reach `.shape`.
 export const conversationFormFields = z.object({
     type: z.enum(["direct", "group"], { message: "Choose direct or group" }),
