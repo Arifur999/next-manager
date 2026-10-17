@@ -2,6 +2,8 @@
 
 import { revokeAgencyInviteAction } from "@/app/(dashboardLayout)/platform/_agencyAction"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
+import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,7 +13,7 @@ import { agencyInvitesQuery } from "@/queries/platform.queries"
 import type { IAgencyInvite } from "@/types/platform.types"
 import { useQuery } from "@tanstack/react-query"
 import { format, isPast, parseISO } from "date-fns"
-import { Trash2 } from "lucide-react"
+import { Send, Trash2 } from "lucide-react"
 import { useState } from "react"
 
 const statusOf = (invite: IAgencyInvite) => {
@@ -25,9 +27,9 @@ const statusOf = (invite: IAgencyInvite) => {
 const AgencyInviteList = () => {
   const [revoking, setRevoking] = useState<IAgencyInvite | null>(null)
 
-  const { data, isLoading } = useQuery(agencyInvitesQuery())
+  const invitesList = useQuery(agencyInvitesQuery())
 
-  const invites = data?.data ?? []
+  const invites = invitesList.data?.data ?? []
 
   const { run: revokeInvite, isPending: isRevoking } = useActionMutation({
     action: revokeAgencyInviteAction,
@@ -49,13 +51,12 @@ const AgencyInviteList = () => {
         </p>
       </CardHeader>
 
-      {isLoading && invites.length === 0 ? (
-        <div className="h-24 animate-pulse bg-muted/40" />
-      ) : invites.length === 0 ? (
-        <p className="px-6 py-10 text-center text-sm text-muted-foreground">
-          No agencies invited yet.
-        </p>
-      ) : (
+      <PanelState
+        query={invitesList}
+        errorMessage="The invites did not load."
+        isEmpty={invites.length === 0}
+        empty={<EmptyState icon={Send}>No agencies invited yet.</EmptyState>}
+      >
         <ul className="divide-y">
           {invites.map((invite) => {
             const state = statusOf(invite)
@@ -96,7 +97,7 @@ const AgencyInviteList = () => {
             )
           })}
         </ul>
-      )}
+      </PanelState>
 
       <ConfirmDialog
         open={Boolean(revoking)}
