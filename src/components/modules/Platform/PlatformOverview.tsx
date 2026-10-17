@@ -1,6 +1,7 @@
 "use client"
 
 import MetricTile, { count, usd } from "@/components/shared/kpi/MetricTile"
+import ErrorState from "@/components/shared/state/ErrorState"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { useQuery } from "@tanstack/react-query"
@@ -26,7 +27,7 @@ const urgency = (days: number | null): "destructive" | "outline" =>
   days !== null && days <= 2 ? "destructive" : "outline"
 
 const PlatformOverview = () => {
-  const { data, isLoading } = useQuery(platformOverviewQuery())
+  const { data, isLoading, isError, isFetching, refetch } = useQuery(platformOverviewQuery())
 
   const overview = data?.data
 
@@ -34,7 +35,16 @@ const PlatformOverview = () => {
     return <div className="h-48 animate-pulse rounded-xl bg-muted/40" />
   }
 
-  if (!overview) return null
+  if (isError || !overview) {
+    return (
+      <ErrorState
+        className="rounded-xl border border-dashed"
+        message="The platform overview did not load."
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+      />
+    )
+  }
 
   const { companies, ending_soon: endingSoon, newest } = overview
   const paying = companies.active + companies.past_due
