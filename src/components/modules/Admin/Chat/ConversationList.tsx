@@ -1,12 +1,13 @@
 "use client"
 
 import EmptyState from "@/components/shared/state/EmptyState"
-import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import type { IConversation } from "@/types/workspace.types"
 import { formatDistanceToNowStrict, parseISO } from "date-fns"
 import { MessagesSquare } from "lucide-react"
+import type { ComponentProps } from "react"
 
 /**
  * Every conversation, newest activity first.
@@ -17,22 +18,21 @@ import { MessagesSquare } from "lucide-react"
  */
 const ConversationList = ({
   conversations,
+  query,
   activeId,
-  isLoading,
   onSelect,
 }: {
   conversations: IConversation[]
+  query: ComponentProps<typeof PanelState>["query"]
   activeId: string | null
-  isLoading: boolean
   onSelect: (id: string) => void
-}) => {
-  if (isLoading && conversations.length === 0) return <LoadingBlock />
-
-  if (conversations.length === 0) {
-    return <EmptyState icon={MessagesSquare}>Nothing here yet.</EmptyState>
-  }
-
-  return (
+}) => (
+  <PanelState
+    query={query}
+    errorMessage="Your conversations did not load."
+    isEmpty={conversations.length === 0}
+    empty={<EmptyState icon={MessagesSquare}>Nothing here yet.</EmptyState>}
+  >
     <ul className="divide-y">
       {conversations.map((conversation) => (
         <li key={conversation.id}>
@@ -79,7 +79,7 @@ const ConversationList = ({
         </li>
       ))}
     </ul>
-  )
-}
+  </PanelState>
+)
 
 export default ConversationList

@@ -48,8 +48,8 @@ const ChatBoard = ({ meId }: { meId: string | null }) => {
     ...(archived ? { archived: "true" } : {}),
   }).toString()
 
-  const { data, isLoading } = useQuery(conversationsListQuery(query))
-  const conversations = data?.data ?? []
+  const conversationsList = useQuery(conversationsListQuery(query))
+  const conversations = conversationsList.data?.data ?? []
 
   const { data: messageData, isLoading: loadingMessages } = useQuery({ ...messagesQuery(activeId as string), enabled: Boolean(activeId) })
   const messages = messageData?.data ?? []
@@ -113,8 +113,8 @@ const ChatBoard = ({ meId }: { meId: string | null }) => {
         <NewConversationCard meId={meId} onCreate={startConversation} isPending={starting} />
         <ConversationList
           conversations={conversations}
+          query={conversationsList}
           activeId={activeId}
-          isLoading={isLoading}
           onSelect={setActiveId}
         />
       </Card>
