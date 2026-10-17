@@ -2,6 +2,7 @@
 
 import AddCredentialModal from "@/components/modules/Admin/Vault/AddCredentialModal"
 import CredentialCard from "@/components/modules/Admin/Vault/CredentialCard"
+import ErrorState from "@/components/shared/state/ErrorState"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { useQuery } from "@tanstack/react-query"
@@ -20,9 +21,57 @@ const VaultBoard = () => {
     return () => clearTimeout(timer)
   }, [term])
 
-  const { data, isLoading } = useQuery(credentialsListQuery(search ? `search=${encodeURIComponent(search)}` : undefined))
+  const credentialsList = useQuery(
+    credentialsListQuery(search ? `search=${encodeURIComponent(search)}` : undefined),
+  )
 
-  const credentials = data?.data ?? []
+  const credentials = credentialsList.data?.data ?? []
+
+  const renderCredentials = () => {
+    if (credentialsList.isError) {
+      return (
+        <ErrorState
+          className="rounded-xl border border-dashed"
+          message="The vault did not load."
+          onRetry={() => void credentialsList.refetch()}
+          isRetrying={credentialsList.isFetching}
+        />
+      )
+    }
+
+    if (credentialsList.isLoading) {
+      return (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Card key={index} className="h-48 animate-pulse bg-muted/40" />
+          ))}
+        </div>
+      )
+    }
+
+    if (credentials.length === 0) {
+      return (
+        <Card className="flex flex-col items-center gap-2 px-6 py-16 text-center">
+          <ShieldCheck className="size-8 text-muted-foreground" aria-hidden="true" />
+          <p className="text-sm font-medium">
+            {search ? "Nothing matches that search." : "No credentials stored yet."}
+          </p>
+          <p className="max-w-sm text-sm text-muted-foreground">
+            Passwords are encrypted before they are saved. Searching works on the label, URL and
+            username — never on the secret itself.
+          </p>
+        </Card>
+      )
+    }
+
+    return (
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {credentials.map((credential) => (
+          <CredentialCard key={credential.id} credential={credential} />
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -40,30 +89,7 @@ const VaultBoard = () => {
         <AddCredentialModal />
       </div>
 
-      {isLoading && credentials.length === 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <Card key={index} className="h-48 animate-pulse bg-muted/40" />
-          ))}
-        </div>
-      ) : credentials.length === 0 ? (
-        <Card className="flex flex-col items-center gap-2 px-6 py-16 text-center">
-          <ShieldCheck className="size-8 text-muted-foreground" aria-hidden="true" />
-          <p className="text-sm font-medium">
-            {search ? "Nothing matches that search." : "No credentials stored yet."}
-          </p>
-          <p className="max-w-sm text-sm text-muted-foreground">
-            Passwords are encrypted before they are saved. Searching works on the label, URL and
-            username — never on the secret itself.
-          </p>
-        </Card>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {credentials.map((credential) => (
-            <CredentialCard key={credential.id} credential={credential} />
-          ))}
-        </div>
-      )}
+      {renderCredentials()}
     </div>
   )
 }
