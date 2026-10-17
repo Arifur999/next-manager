@@ -14,12 +14,11 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { IInvitePreview } from "@/types/people.types"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation } from "@tanstack/react-query"
 import { Clock, Eye, EyeOff, LinkIcon } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
-import { toast } from "sonner"
 import { joinFormZodSchema, type IJoinFormValues } from "@/zod/auth.validation"
 
 /**
@@ -39,21 +38,17 @@ const JoinForm = ({ token, invite }: { token: string; invite: IInvitePreview | n
   const [showPassword, setShowPassword] = useState(false)
   const [submitted, setSubmitted] = useState(false)
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IJoinFormValues) => acceptInviteAction(token, values),
+  // The waiting screen that follows is the confirmation.
+  const { run: requestToJoin, isPending } = useActionMutation({
+    action: (values: IJoinFormValues) => acceptInviteAction(token, values),
+    successMessage: false,
+    refresh: false,
   })
 
   const form = useForm({
     defaultValues: { full_name: "", password: "" } satisfies IJoinFormValues,
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        toast.error(result.message || "Could not complete your request")
-        return
-      }
-
-      setSubmitted(true)
+      if (await requestToJoin(value)) setSubmitted(true)
     },
   })
 
