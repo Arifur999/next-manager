@@ -9,8 +9,8 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { formatRate } from "@/lib/currency"
-import type { IDefaultRateFormValues } from "@/zod/finance.validation"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { RefreshCw } from "lucide-react"
 import { useState } from "react"
@@ -27,48 +27,34 @@ import { queryKeys } from "@/lib/queryKeys"
  * is saved, so changing it here never restates history.
  */
 const ExchangeRateSettings = () => {
-  const queryClient = useQueryClient()
   const [draft, setDraft] = useState("")
 
   const { data } = useQuery(rateSettingsQuery())
 
   const rates = data?.data
 
-  const { mutateAsync: save, isPending: isSaving } = useMutation({
-    mutationFn: (values: IDefaultRateFormValues) => setDefaultRateAction(values),
+  const isClearingRate = draft.trim() === ""
+
+  const { run: saveRate, isPending: isSaving } = useActionMutation({
+    action: setDefaultRateAction,
+    successMessage: isClearingRate ? "Using the market rate again" : "Default rate saved",
+    invalidateKeys: [queryKeys.rateSettings.all],
+    refresh: false,
   })
 
-  const { mutateAsync: refresh, isPending: isRefreshing } = useMutation({
-    mutationFn: () => refreshRateAction(),
+  // The toast names the rate that came back, which only the result knows.
+  const { run: fetchMarketRate, isPending: isRefreshing } = useActionMutation({
+    action: refreshRateAction,
+    successMessage: false,
+    invalidateKeys: [queryKeys.rateSettings.all],
+    refresh: false,
+    onSuccess: (result) => {
+      if (result.success) toast.success(`Fetched ${formatRate(result.data.rate)} from ${result.data.provider}`)
+    },
   })
 
   const handleSave = async () => {
-    const result = await save({ default_usd_rate: draft })
-
-    if (!result.success) {
-      toast.error(result.message || "Failed to set the rate")
-      return
-    }
-
-    toast.success(draft.trim() === "" ? "Using the market rate again" : "Default rate saved")
-    setDraft("")
-    void queryClient.invalidateQueries({ queryKey: queryKeys.rateSettings.all })
-  }
-
-  const handleRefresh = async () => {
-    const result = await refresh()
-
-    if (!result.success) {
-      toast.error(result.message || "Could not reach a rate provider")
-      return
-    }
-
-    toast.success(
-      "data" in result
-        ? `Fetched ${formatRate(result.data.rate)} from ${result.data.provider}`
-        : "Rate refreshed",
-    )
-    void queryClient.invalidateQueries({ queryKey: queryKeys.rateSettings.all })
+    if (await saveRate({ default_usd_rate: draft })) setDraft("")
   }
 
   return (
@@ -97,7 +83,7 @@ const ExchangeRateSettings = () => {
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => void handleRefresh()}
+            onClick={() => void fetchMarketRate(undefined)}
             disabled={isRefreshing}
             className="ml-auto"
           >
