@@ -13,7 +13,8 @@ interface ActionOutcome {
 
 interface ActionMutationOptions<TVariables, TResult extends ActionOutcome> {
     action: (variables: TVariables) => Promise<TResult>
-    successMessage?: string
+    // false: no success toast, for changes the screen already shows (a moved card, a toggled switch).
+    successMessage?: string | false
     invalidateKeys?: QueryKey[]
     refresh?: boolean
     // Runs after the invalidations settle, for callers that need the result.
@@ -55,7 +56,7 @@ export const useActionMutation = <TVariables, TResult extends ActionOutcome>(
                 return false
             }
 
-            toast.success(successMessage ?? result.message ?? "Saved")
+            if (successMessage !== false) toast.success(successMessage ?? result.message ?? "Saved")
             await Promise.all(invalidateKeys.map((queryKey) => queryClient.invalidateQueries({ queryKey })))
             onSuccess?.(result)
             if (refresh) router.refresh()
