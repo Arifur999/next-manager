@@ -5,7 +5,7 @@ import DataTableContent from "./DataTableContent";
 import DataTablePagination from "./DataTablePagination";
 import DataTableToolbar from "./DataTableToolbar";
 import type { DataTableProps } from "./dataTable.types";
-import { useDataTable } from "./useDataTable";
+import { DEFAULT_PAGE_SIZE, useDataTable } from "./useDataTable";
 
 const DataTable = <TData,>(props: DataTableProps<TData>) => {
   const {
@@ -22,9 +22,23 @@ const DataTable = <TData,>(props: DataTableProps<TData>) => {
   const table = useDataTable(props);
   const isRefreshing = isFetching && !isLoading;
 
+  const totalRows = pagination ? (meta?.total ?? 0) : table.getPrePaginationRowModel().rows.length;
+  const totalPages = pagination ? pageCountOf(meta) : table.getPageCount();
+  // Lists that fit on one page at the smallest size never show the pager.
+  const showPagination = !isLoading && !isError && totalRows > DEFAULT_PAGE_SIZE;
+
+  // A new search starts again from page 1. Server-driven tables reset the page themselves.
+  const searchFromFirstPage = search && {
+    ...search,
+    onDebouncedChange: (value: string) => {
+      if (!pagination) table.setPageIndex(0);
+      search.onDebouncedChange(value);
+    },
+  };
+
   return (
     <div>
-      <DataTableToolbar search={search} toolbarAction={toolbarAction} isLoading={isLoading} />
+      <DataTableToolbar search={searchFromFirstPage} toolbarAction={toolbarAction} isLoading={isLoading} />
 
       <div className="font-condensed relative overflow-hidden rounded-lg border">
         {/* Rows stay on screen during a refetch; only this bar says it is running. */}
@@ -41,13 +55,8 @@ const DataTable = <TData,>(props: DataTableProps<TData>) => {
           onRetry={onRetry}
         />
 
-        {pagination && (
-          <DataTablePagination
-            table={table}
-            totalPages={pageCountOf(meta)}
-            totalRows={meta?.total}
-            isLoading={isFetching}
-          />
+        {showPagination && (
+          <DataTablePagination table={table} totalPages={totalPages} totalRows={totalRows} isLoading={isFetching} />
         )}
       </div>
     </div>
