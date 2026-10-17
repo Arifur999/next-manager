@@ -15,10 +15,11 @@ import { Label } from "@/components/ui/label"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import type { ApiResult } from "@/types/api.types"
 import type { IMilestone } from "@/types/project.types"
+import { milestoneFormZodSchema, type IMilestoneFormValues } from "@/zod/project.validation"
+import { useForm } from "@tanstack/react-form"
 import { useQuery } from "@tanstack/react-query"
 import { format, isAfter, parseISO } from "date-fns"
 import { CalendarCheck, Plus, Trash2, Undo2 } from "lucide-react"
-import { useState } from "react"
 import { milestonesListQuery } from "@/queries/project.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -72,6 +73,8 @@ const useMilestoneChange = (action: (id: string) => Promise<ApiResult<unknown>>)
     refresh: false,
   })
 
+const emptyMilestone: IMilestoneFormValues = { title: "", due_date: "" }
+
 /** `canManage` is false for anybody the API refuses: the controls that change
  *  things come off rather than failing when pressed. */
 const ProjectMilestonePanel = ({
@@ -81,9 +84,6 @@ const ProjectMilestonePanel = ({
   projectId: string
   canManage?: boolean
 }) => {
-  const [title, setTitle] = useState("")
-  const [dueDate, setDueDate] = useState("")
-
   const { data, isLoading } = useQuery(milestonesListQuery(`project_id=${projectId}`))
 
   const milestones = data?.data ?? []
@@ -100,12 +100,13 @@ const ProjectMilestonePanel = ({
   const { run: reopen, isPending: isReopening } = useMilestoneChange(reopenMilestoneAction)
   const { run: remove, isPending: isRemoving } = useMilestoneChange(deleteMilestoneAction)
 
-  const handleAdd = async () => {
-    if (await addMilestone({ project_id: projectId, title, due_date: dueDate })) {
-      setTitle("")
-      setDueDate("")
-    }
-  }
+  const form = useForm({
+    defaultValues: emptyMilestone,
+    validators: { onSubmit: milestoneFormZodSchema },
+    onSubmit: async ({ value, formApi }) => {
+      if (await addMilestone({ project_id: projectId, ...value })) formApi.reset()
+    },
+  })
 
   const isBusy = isSubmitting || isAccepting || isReopening || isRemoving
 
@@ -132,36 +133,50 @@ const ProjectMilestonePanel = ({
         className="flex flex-wrap items-end gap-3 border-b px-5 py-4"
         onSubmit={(event) => {
           event.preventDefault()
-          if (!title.trim() || !dueDate) return
-          void handleAdd()
+          event.stopPropagation()
+          void form.handleSubmit()
         }}
       >
-        <div className="min-w-48 flex-1 space-y-1.5">
-          <Label htmlFor="milestone-title">Milestone</Label>
-          <Input
-            id="milestone-title"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            placeholder="Design handover"
-            disabled={isCreating}
-          />
-        </div>
+        <form.Field name="title">
+          {(field) => (
+            <div className="min-w-48 flex-1 space-y-1.5">
+              <Label htmlFor="milestone-title">Milestone</Label>
+              <Input
+                id="milestone-title"
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(event) => field.handleChange(event.target.value)}
+                placeholder="Design handover"
+                disabled={isCreating}
+              />
+            </div>
+          )}
+        </form.Field>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="milestone-due">Due</Label>
-          <Input
-            id="milestone-due"
-            type="date"
-            value={dueDate}
-            onChange={(event) => setDueDate(event.target.value)}
-            disabled={isCreating}
-          />
-        </div>
+        <form.Field name="due_date">
+          {(field) => (
+            <div className="space-y-1.5">
+              <Label htmlFor="milestone-due">Due</Label>
+              <Input
+                id="milestone-due"
+                type="date"
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(event) => field.handleChange(event.target.value)}
+                disabled={isCreating}
+              />
+            </div>
+          )}
+        </form.Field>
 
-        <Button type="submit" disabled={isCreating || !title.trim() || !dueDate}>
-          <Plus className="size-4" />
-          Add
-        </Button>
+        <form.Subscribe selector={(state) => milestoneFormZodSchema.safeParse(state.values).success}>
+          {(isComplete) => (
+            <Button type="submit" disabled={isCreating || !isComplete}>
+              <Plus className="size-4" />
+              Add
+            </Button>
+          )}
+        </form.Subscribe>
       </form>
       )}
 
