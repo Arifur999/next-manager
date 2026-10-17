@@ -12,19 +12,8 @@ import { format, parseISO } from "date-fns"
 import { UsersRound } from "lucide-react"
 import { workloadQuery } from "@/queries/work.queries"
 
-/**
- * Who is carrying what, and what is left of them.
- *
- * Two readings of one query. `mode="load"` shows the hours going in;
- * `mode="free"` shows the hours left over. They are the same subtraction from
- * opposite ends, which is why they come from one endpoint — computing them
- * apart is how two screens end up disagreeing about one person's week.
- *
- * A capacity nobody entered is marked as assumed rather than shown as fact.
- * The default of 40 is applied deliberately so a company that never opened the
- * capacity screen still gets a figure, but a reader deciding who to give work
- * to deserves to know which denominators were guessed.
- */
+// Hours logged ("load") or left ("free"): one query read from either end, so the two
+// screens never disagree about a week. A capacity nobody entered is badged as assumed.
 const WorkloadBoard = ({ mode }: { mode: "load" | "free" }) => {
   const workloadResult = useQuery(workloadQuery())
   const workload = workloadResult.data?.data

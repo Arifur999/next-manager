@@ -19,13 +19,8 @@ const initialsOf = (name: string) =>
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("") || "?"
 
-/**
- * Who is on what, across the whole agency.
- *
- * Everyone appears, including people on nothing — that is usually the question
- * this screen is opened to answer, and a list of only the busy people cannot
- * answer it.
- */
+// Who is on what. Everyone appears, including people on nothing, which is usually
+// what this screen is opened to find.
 const AssignmentOverview = () => {
   const assignmentList = useQuery(assignmentOverviewQuery())
 

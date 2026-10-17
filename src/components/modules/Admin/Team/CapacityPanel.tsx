@@ -17,19 +17,8 @@ import { useState } from "react"
 import { capacitiesQuery } from "@/queries/work.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
-/**
- * The two numbers every KPI divides by.
- *
- * Weekly hours is the denominator of utilization; the bill rate is what turns
- * hours into money, and realization cannot be computed at all without it.
- * Both live here rather than on the user record because they are commercial
- * settings, not identity.
- *
- * A row nobody has set shows the default and says so. That matters: a
- * utilization figure computed against an assumed 40 hours is a different kind
- * of number from one computed against a week somebody actually agreed to, and
- * the difference should not be invisible.
- */
+// Weekly hours and bill rate, the denominators of utilization and realization. A
+// row nobody has set is badged "default", so an assumed week never reads as agreed.
 
 const CapacityRow = ({ row }: { row: ICapacityRow }) => {
   const [hours, setHours] = useState(String(row.weekly_hours))
