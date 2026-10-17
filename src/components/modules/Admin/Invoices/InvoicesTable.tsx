@@ -1,11 +1,12 @@
 "use client"
 
-import CreateInvoiceModal from "@/components/modules/Admin/Invoices/CreateInvoiceModal"
+import InvoiceFormModal from "@/components/modules/Admin/Invoices/InvoiceFormModal"
 import { INVOICE_STATUS_OPTIONS, invoicesColumns } from "@/components/modules/Admin/Invoices/invoicesColumns"
 import StatTile from "@/components/shared/StatTile"
 import DataTable from "@/components/shared/table/DataTable"
 import { formatUsd } from "@/lib/currency"
 import { toTableQueryProps } from "@/lib/table/queryProps"
+import { plural } from "@/lib/text"
 import { useQuery } from "@tanstack/react-query"
 import { AlertTriangle, FileText } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -34,7 +35,7 @@ const InvoicesTable = () => {
         <StatTile
           label="Outstanding"
           value={formatUsd(outstanding)}
-          hint={`${owing.length} invoice${owing.length === 1 ? "" : "s"} still owing`}
+          hint={`${plural(owing.length, "invoice")} still owing`}
           icon={<FileText className="size-5" />}
           tone={1}
         />
@@ -61,7 +62,7 @@ const InvoicesTable = () => {
         }}
         {...toTableQueryProps(invoicesQuery)}
         emptyMessage="No invoices yet."
-        toolbarAction={<CreateInvoiceModal />}
+        toolbarAction={<InvoiceFormModal />}
         search={{
           value: search,
           placeholder: "Search invoice number or client...",

@@ -9,6 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { cn } from "@/lib/utils"
 import { useState, type ReactNode } from "react"
 
 type MoneyRecordDialogProps = {
@@ -19,8 +20,16 @@ type MoneyRecordDialogProps = {
   /** Given together with onOpenChange, the caller controls the dialog. */
   open?: boolean
   onOpenChange?: (open: boolean) => void
+  /** Wide for a form with a row of fields per line, such as an invoice. */
+  size?: "default" | "wide"
   /** The form; `close` is for after a successful save. */
   children: (close: () => void) => ReactNode
+}
+
+// Written out in full: Tailwind only ships classes it sees as whole strings.
+const WIDTHS = {
+  default: "lg:w-[min(88vw,36rem)] lg:max-w-[min(88vw,36rem)]",
+  wide: "lg:w-[min(88vw,42rem)] lg:max-w-[min(88vw,42rem)]",
 }
 
 /**
@@ -28,7 +37,15 @@ type MoneyRecordDialogProps = {
  * correcting one. The form inside unmounts on close, so the next opening
  * starts from fresh values (and today's date) without a reset.
  */
-const MoneyRecordDialog = ({ title, description, trigger, open, onOpenChange, children }: MoneyRecordDialogProps) => {
+const MoneyRecordDialog = ({
+  title,
+  description,
+  trigger,
+  open,
+  onOpenChange,
+  size = "default",
+  children,
+}: MoneyRecordDialogProps) => {
   const [internalOpen, setInternalOpen] = useState(false)
   const isControlled = open !== undefined
   const isOpen = isControlled ? open : internalOpen
@@ -43,7 +60,10 @@ const MoneyRecordDialog = ({ title, description, trigger, open, onOpenChange, ch
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
 
       <DialogContent
-        className="max-h-[90vh] w-[calc(100vw-1.5rem)] max-w-[calc(100vw-1.5rem)] gap-0 overflow-hidden p-0 sm:w-[calc(100vw-3rem)] sm:max-w-[calc(100vw-3rem)] lg:w-[min(88vw,36rem)] lg:max-w-[min(88vw,36rem)]"
+        className={cn(
+          "max-h-[90vh] w-[calc(100vw-1.5rem)] max-w-[calc(100vw-1.5rem)] gap-0 overflow-hidden p-0 sm:w-[calc(100vw-3rem)] sm:max-w-[calc(100vw-3rem)]",
+          WIDTHS[size],
+        )}
         // Money forms are long; a stray click or Escape must not throw away what was typed.
         onInteractOutside={(event) => event.preventDefault()}
         onEscapeKeyDown={(event) => event.preventDefault()}

@@ -12,6 +12,8 @@ export type InvoiceStatus =
 
 export interface IInvoiceItem {
     id: string;
+    /** The catalogue service the line sells; null for a line typed by hand. */
+    service_id: string | null;
     description: string;
     quantity: number;
     unit_price: number;

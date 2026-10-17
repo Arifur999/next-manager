@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { createInvoiceServerZodSchema, createPaymentServerZodSchema } from "./billing.validation"
+import { createInvoiceServerZodSchema, createPaymentServerZodSchema, updateInvoiceServerZodSchema } from "./billing.validation"
 
 describe("createInvoiceServerZodSchema", () => {
     const valid = {
@@ -25,12 +25,23 @@ describe("createInvoiceServerZodSchema", () => {
             discount: 0,
             tax: 15,
             notes: "",
+            terms: "",
             status: "sent",
             items: [
-                { description: "Design", quantity: 2, unit_price: 450.5, sort_order: 0 },
-                { description: "Hosting", quantity: 1, unit_price: 20, sort_order: 1 },
+                { service_id: null, description: "Design", quantity: 2, unit_price: 450.5, sort_order: 0 },
+                { service_id: null, description: "Hosting", quantity: 1, unit_price: 20, sort_order: 1 },
             ],
         })
+    })
+
+    it("keeps the terms and a line's catalogue service", () => {
+        const payload = createInvoiceServerZodSchema.parse({
+            ...valid,
+            terms: "Net 14",
+            items: [{ service_id: "s1", description: "Design", quantity: "1", unit_price: "100" }],
+        })
+        expect(payload.terms).toBe("Net 14")
+        expect(payload.items[0]?.service_id).toBe("s1")
     })
 
     it("bills one unit for a blank quantity and nothing for a blank price", () => {
@@ -38,7 +49,9 @@ describe("createInvoiceServerZodSchema", () => {
             ...valid,
             items: [{ description: "Retainer", quantity: "", unit_price: "" }],
         })
-        expect(payload.items).toEqual([{ description: "Retainer", quantity: 1, unit_price: 0, sort_order: 0 }])
+        expect(payload.items).toEqual([
+            { service_id: null, description: "Retainer", quantity: 1, unit_price: 0, sort_order: 0 },
+        ])
     })
 
     it("keeps a chosen project", () => {
@@ -66,6 +79,27 @@ describe("createInvoiceServerZodSchema", () => {
 
     it("requires a client", () => {
         expect(createInvoiceServerZodSchema.safeParse({ ...valid, client_id: "" }).success).toBe(false)
+    })
+})
+
+describe("updateInvoiceServerZodSchema", () => {
+    const edited = {
+        client_id: "c1",
+        issue_date: "2026-10-12",
+        due_date: "2026-10-26",
+        notes: "",
+        terms: "",
+        items: [{ description: "Design", quantity: "1", unit_price: "100" }],
+    }
+
+    it("never sends a status, so a cancelled or part-paid invoice keeps its own", () => {
+        expect(updateInvoiceServerZodSchema.parse(edited)).not.toHaveProperty("status")
+    })
+
+    it("sends blank notes and terms, so clearing them on an edit removes them", () => {
+        const payload = updateInvoiceServerZodSchema.parse({ ...edited, notes: undefined, terms: undefined })
+        expect(payload.notes).toBe("")
+        expect(payload.terms).toBe("")
     })
 })
 
