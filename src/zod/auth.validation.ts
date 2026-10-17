@@ -127,3 +127,7 @@ export const agencyInvitePreviewZodSchema = z.object({
 })
 
 export type IAgencyInvitePreview = z.infer<typeof agencyInvitePreviewZodSchema>
+
+// GET /auth/reset-password/:token: whether the link still works, and nothing
+// about whose it is or why it stopped.
+export const resetLinkCheckZodSchema = z.object({ valid: z.boolean() })

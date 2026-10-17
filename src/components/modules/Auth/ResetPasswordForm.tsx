@@ -1,9 +1,9 @@
 "use client"
 
 import { resetPasswordAction } from "@/app/(commonLayout)/(auth)/reset-password/_action"
+import FormErrorAlert from "@/components/modules/Auth/FormErrorAlert"
 import PasswordField from "@/components/modules/Auth/PasswordField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -15,70 +15,43 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { resetPasswordFormZodSchema, type IResetPasswordFormValues } from "@/zod/auth.validation"
 import { useActionMutation } from "@/hooks/useActionMutation"
-import { useForm } from "@tanstack/react-form"
-import { LinkIcon } from "lucide-react"
-import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
+import { revalidateLogic, useForm } from "@tanstack/react-form"
+import { useRouter } from "next/navigation"
 import { focusFirstInvalid } from "@/lib/focusFirstInvalid"
 import { useRef, useState } from "react"
 
 /**
  * Setting a new password from an emailed link.
  *
- * The token comes from ?token= and is never shown or editable — it is a
+ * The page checks the token before this renders, so a dead or incomplete link
+ * never gets this far. The token is never shown or editable: it is a
  * credential, and a field holding one invites it into a screenshot.
- *
- * Arriving with no token at all is its own state rather than a form that will
- * certainly fail on submit. That happens whenever somebody's mail client
- * mangles the link, and telling them so is more use than letting them type a
- * password twice first.
  */
 
-const ResetPasswordForm = () => {
+const ResetPasswordForm = ({ token }: { token: string }) => {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const token = searchParams.get("token") ?? ""
   const [confirm, setConfirm] = useState("")
+  const [refusal, setRefusal] = useState<string | null>(null)
   const formRef = useRef<HTMLFormElement>(null)
 
-  // A dead link gets one message for expired, spent and unknown, from the server.
+  // The link can still die between the check and the submit (used in another
+  // tab, or past its 30 minutes); the server's message then shows here.
   const { run: resetPassword, isPending } = useActionMutation({
     action: resetPasswordAction,
     successMessage: "Password reset. Sign in with the new one.",
     refresh: false,
+    onError: setRefusal,
   })
 
   const form = useForm({
     defaultValues: { token, new_password: "" } satisfies IResetPasswordFormValues,
+    validationLogic: revalidateLogic(),
     onSubmitInvalid: () => focusFirstInvalid(formRef.current),
     onSubmit: async ({ value }) => {
+      setRefusal(null)
       if (await resetPassword(value)) router.replace("/login")
     },
   })
-
-  if (!token) {
-    return (
-      <div className="w-full">
-        <Card>
-          <CardHeader className="items-center text-center">
-            <LinkIcon className="size-8 text-muted-foreground" aria-hidden="true" />
-            <CardTitle>
-              <h1 className="text-2xl font-semibold tracking-tight">This link is incomplete</h1>
-            </CardTitle>
-            <CardDescription>
-              It is missing the part that identifies your request — usually a mail client
-              breaking the link across two lines. Ask for a fresh one.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <Button asChild>
-              <Link href="/forgot-password">Send a new link</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
 
   const mismatch = confirm.length > 0 && form.state.values.new_password !== confirm
 
@@ -111,7 +84,7 @@ const ResetPasswordForm = () => {
           >
             <form.Field
               name="new_password"
-              validators={{ onChange: resetPasswordFormZodSchema.shape.new_password }}
+              validators={{ onDynamic: resetPasswordFormZodSchema.shape.new_password }}
             >
               {(field) => (
                 <PasswordField field={field} label="New password" disabled={isPending} />
@@ -132,6 +105,8 @@ const ResetPasswordForm = () => {
               />
               {mismatch && <p className="text-xs text-destructive">These do not match.</p>}
             </div>
+
+            <FormErrorAlert message={refusal} />
 
             <AppSubmitButton isPending={isPending} pendingLabel="Resetting...">
               Set new password

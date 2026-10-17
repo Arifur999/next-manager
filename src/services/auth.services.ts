@@ -8,13 +8,14 @@ import "server-only"
 import { logApiFailure } from "@/lib/apiFailure"
 import { forwardAuthCookies } from "@/lib/authCookies"
 import { httpClient } from "@/lib/axios/httpClient"
-import { classifyLinkLookup, type LinkLookup } from "@/lib/linkLookup"
+import { classifyLinkLookup, INVITE_DEAD_STATUSES, type LinkLookup } from "@/lib/linkLookup"
 import { errorFields, logger } from "@/lib/logger"
 import { classifyMeResponse } from "@/lib/session"
 import { logout } from "@/services/logout"
 import type { ApiResponse } from "@/types/api.types"
 import type { ILoginResponse } from "@/types/auth.types"
 import { type IUser } from "@/types/user.types"
+import { resetLinkCheckZodSchema } from "@/zod/auth.validation"
 import type {
     IAgencyJoinFormValues,
     IForgotPasswordFormValues,
@@ -138,7 +139,11 @@ const postPublic = async <TData>(path: string, payload: unknown) => {
  * page renders, so a dead link says so before anybody fills in a form. The path
  * carries the token, so it is never logged.
  */
-export const lookupLinkToken = async <TData>(path: string, schema: z.ZodType<TData>): Promise<LinkLookup<TData>> => {
+export const lookupLinkToken = async <TData>(
+    path: string,
+    schema: z.ZodType<TData>,
+    deadStatuses: readonly number[] = INVITE_DEAD_STATUSES,
+): Promise<LinkLookup<TData>> => {
     let res: Response
     try {
         res = await fetch(`${getApiBaseUrl()}${path}`, { cache: "no-store", signal: AbortSignal.timeout(5000) })
@@ -149,7 +154,7 @@ export const lookupLinkToken = async <TData>(path: string, schema: z.ZodType<TDa
 
     // nginx answers a dead upstream with an HTML 502, which is not JSON.
     const isJson = res.headers.get("content-type")?.includes("application/json")
-    const lookup = classifyLinkLookup(res.status, isJson ? await res.json() : null, schema)
+    const lookup = classifyLinkLookup(res.status, isJson ? await res.json() : null, schema, deadStatuses)
     if (lookup.status === "unavailable") logger.warn("Link check failed", { status: res.status })
     return lookup
 }
@@ -160,6 +165,17 @@ export const register = async (payload: IRegisterPayload) => postPublic<IUser>("
 /** Answers the same whether or not the address has an account. */
 export const forgotPassword = async (payload: IForgotPasswordFormValues) =>
     postPublic<{ message: string }>("/auth/forgot-password", payload)
+
+/**
+ * Whether a reset link still works. The API answers 200 { valid } for live and
+ * dead links alike, so no status means "dead" here: a 404 would be an API that
+ * does not have this endpoint yet, and must not tell everybody their link expired.
+ */
+export const checkResetLink = async (token: string): Promise<LinkLookup<null>> => {
+    const lookup = await lookupLinkToken(`/auth/reset-password/${encodeURIComponent(token)}`, resetLinkCheckZodSchema, [])
+    if (lookup.status !== "valid") return lookup
+    return lookup.data.valid ? { status: "valid", data: null } : { status: "gone" }
+}
 
 /** One answer for an expired, spent or unknown token: the server does not tell them apart. */
 export const resetPassword = async (payload: IResetPasswordFormValues) =>

@@ -11,17 +11,18 @@ export type LinkLookup<TData> =
     | { status: "gone" }
     | { status: "unavailable" }
 
-// The API answers a dead link (expired, spent, revoked, never real) with 404;
-// 410 is accepted too. Anything else that is not a success says nothing about
-// the link, so it is never reported as dead.
-const DEAD_LINK_STATUSES = new Set([404, 410])
+// The invite lookups answer a dead link (expired, spent, revoked, never real)
+// with 404; 410 is accepted too. Anything else that is not a success says
+// nothing about the link, so it is never reported as dead.
+export const INVITE_DEAD_STATUSES: readonly number[] = [404, 410]
 
 export const classifyLinkLookup = <TData>(
     status: number,
     body: unknown,
     schema: z.ZodType<TData>,
+    deadStatuses: readonly number[] = INVITE_DEAD_STATUSES,
 ): LinkLookup<TData> => {
-    if (DEAD_LINK_STATUSES.has(status)) return { status: "gone" }
+    if (deadStatuses.includes(status)) return { status: "gone" }
     if (status < 200 || status >= 300) return { status: "unavailable" }
 
     const parsed = z.object({ data: schema }).safeParse(body)

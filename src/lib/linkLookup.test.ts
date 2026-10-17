@@ -22,6 +22,12 @@ describe("classifyLinkLookup", () => {
         expect(classifyLinkLookup(status, null, schema)).toEqual({ status: "unavailable" })
     })
 
+    it("reads no status as dead when the endpoint answers dead links in its body", () => {
+        expect(classifyLinkLookup(404, { success: false, message: "Route not found" }, schema, [])).toEqual({
+            status: "unavailable",
+        })
+    })
+
     it("treats a success it cannot read as a check that did not go through", () => {
         expect(classifyLinkLookup(200, { success: true, data: { name: "x" } }, schema)).toEqual({
             status: "unavailable",
