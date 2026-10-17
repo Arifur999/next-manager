@@ -1,12 +1,13 @@
 "use client"
 
+import RelativeTime from "@/components/shared/RelativeTime"
 import EmptyState from "@/components/shared/state/EmptyState"
 import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { useQuery } from "@tanstack/react-query"
-import { format, formatDistanceToNow, parseISO } from "date-fns"
+import { format, parseISO } from "date-fns"
 import { ShieldAlert, ShieldCheck } from "lucide-react"
 import { useState } from "react"
 import { loginEventsListQuery } from "@/queries/workspace.queries"
@@ -113,7 +114,9 @@ const LoginHistory = () => {
                 {events.map((event) => (
                   <tr key={event.id}>
                     <td className="whitespace-nowrap px-5 py-3">
-                      <p>{formatDistanceToNow(parseISO(event.created_at), { addSuffix: true })}</p>
+                      <p>
+                        <RelativeTime value={event.created_at} />
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {format(parseISO(event.created_at), "d MMM, HH:mm")}
                       </p>
