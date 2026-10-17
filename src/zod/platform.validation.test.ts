@@ -4,7 +4,9 @@ import {
     announcementServerZodSchema,
     createCompanyServerZodSchema,
     createPlanServerZodSchema,
+    platformAccessServerZodSchema,
     platformExpenseServerZodSchema,
+    platformInviteServerZodSchema,
     platformSettingsServerZodSchema,
     setSubscriptionServerZodSchema,
     updatePlanServerZodSchema,
@@ -221,5 +223,36 @@ describe("platformSettingsServerZodSchema", () => {
     it("rejects a blank product name and a trial over a year", () => {
         expect(platformSettingsServerZodSchema.safeParse({ ...valid, product_name: " " }).success).toBe(false)
         expect(platformSettingsServerZodSchema.safeParse({ ...valid, default_trial_days: "400" }).success).toBe(false)
+    })
+})
+
+describe("platformAccessServerZodSchema", () => {
+    it("accepts known permissions, and an empty list for full access", () => {
+        expect(platformAccessServerZodSchema.parse(["platform.plans.manage"])).toEqual(["platform.plans.manage"])
+        expect(platformAccessServerZodSchema.parse([])).toEqual([])
+    })
+
+    it("refuses a permission the API does not know", () => {
+        expect(platformAccessServerZodSchema.safeParse(["platform.everything"]).success).toBe(false)
+    })
+})
+
+describe("platformInviteServerZodSchema", () => {
+    it("trims the email and keeps the chosen permissions", () => {
+        expect(
+            platformInviteServerZodSchema.parse({ email: " ops@naxified.com ", permissions: ["platform.companies.view"] }),
+        ).toEqual({ email: "ops@naxified.com", permissions: ["platform.companies.view"] })
+    })
+
+    it("refuses an invite with nothing chosen, which would grant everything", () => {
+        const result = platformInviteServerZodSchema.safeParse({ email: "ops@naxified.com", permissions: [] })
+        expect(result.error?.issues[0]?.message).toBe(
+            "Choose what they may do - an operator with nothing chosen would get everything",
+        )
+    })
+
+    it("refuses an invalid email", () => {
+        const result = platformInviteServerZodSchema.safeParse({ email: "ops", permissions: ["platform.companies.view"] })
+        expect(result.success).toBe(false)
     })
 })

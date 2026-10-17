@@ -58,7 +58,7 @@ const PlatformInvites = () => {
 
   const { mutate: invite, isPending } = useMutation({
     mutationFn: () =>
-      invitePlatformAdminAction({ email: email.trim(), permissions }),
+      invitePlatformAdminAction({ email, permissions }),
     onSuccess: (result) => {
       if (!result.success) {
         toast.error(result.message || "Could not create the invite")

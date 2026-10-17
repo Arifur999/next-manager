@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { ANNOUNCEMENT_AUDIENCES, SUBSCRIPTION_STATUSES } from "@/types/platform.types"
+import { ANNOUNCEMENT_AUDIENCES, PLATFORM_PERMISSIONS, SUBSCRIPTION_STATUSES } from "@/types/platform.types"
 import { newPassword } from "./auth.validation"
 import { isoDate, optionalNonNegative, positiveAmount, toNumber } from "./formFields"
 
@@ -134,6 +134,21 @@ export const platformSettingsFormZodSchema = z.object({
 
 export type IPlatformSettingsFormValues = z.infer<typeof platformSettingsFormZodSchema>
 
+// An empty list means full access, not none: the hatch that stops the first
+// operator locking themselves out.
+const platformPermissions = z.array(z.enum(PLATFORM_PERMISSIONS, { message: "Unknown permission" }))
+
+export const platformInviteFormZodSchema = z.object({
+    email: z.string().trim().min(1, "Email is required").pipe(z.email("Enter a valid email address")),
+    // At least one, so an untouched form can never invite somebody with everything.
+    permissions: platformPermissions.min(
+        1,
+        "Choose what they may do - an operator with nothing chosen would get everything",
+    ),
+})
+
+export type IPlatformInviteFormValues = z.infer<typeof platformInviteFormZodSchema>
+
 // Server schemas: the form values checked again on the server and turned into
 // the payloads platform.validation.ts on the API expects.
 
@@ -186,3 +201,8 @@ export const platformSettingsServerZodSchema = platformSettingsFormZodSchema.tra
     default_plan_id: values.default_plan_id || null,
     default_trial_days: Number(values.default_trial_days),
 }))
+
+export const platformAccessServerZodSchema = platformPermissions
+
+// The form already holds the API's payload.
+export const platformInviteServerZodSchema = platformInviteFormZodSchema

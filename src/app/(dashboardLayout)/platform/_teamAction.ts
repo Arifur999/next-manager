@@ -1,6 +1,6 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
+import { requireId, runAction, runValidatedAction } from "@/lib/runAction"
 import {
     approvePlatformAdmin,
     createPlatformInvite,
@@ -8,75 +8,25 @@ import {
     revokePlatformInvite,
     setAdminPermissions,
 } from "@/services/platform.services"
-import type { IPlatformAdmin, IPlatformInvite } from "@/types/platform.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+import { platformAccessServerZodSchema, platformInviteServerZodSchema } from "@/zod/platform.validation"
 
-export const setPermissionsAction = async (
-    id: string,
-    permissions: string[],
-): Promise<ApiResponse<IPlatformAdmin> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid operator id" }
+// "This is the only account that can manage the platform team" comes from the
+// server and says what to do first.
+export const setPermissionsAction = async (id: string, permissions: unknown) =>
+    requireId(id, "operator") ??
+    runValidatedAction(platformAccessServerZodSchema, permissions, "Could not update access", (granted) =>
+        setAdminPermissions(id, granted),
+    )
 
-    try {
-        return await setAdminPermissions(id, permissions)
-    } catch (error: unknown) {
-        // "This is the only account that can manage the platform team" comes
-        // from the server and says what to do first.
-        return { success: false, message: getActionErrorMessage(error, "Could not update access") }
-    }
-}
+export const invitePlatformAdminAction = async (values: unknown) =>
+    runValidatedAction(platformInviteServerZodSchema, values, "Could not create the invite", createPlatformInvite)
 
-export const invitePlatformAdminAction = async (
-    payload: Record<string, unknown>,
-): Promise<
-    | ApiResponse<{
-          invite: IPlatformInvite
-          join_url: string
-          /** Whether the link reached them, or why it did not. */
-          email: { delivered: boolean; reason: string | null }
-      }>
-    | ApiErrorResponse
-> => {
-    try {
-        return await createPlatformInvite(payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not create the invite") }
-    }
-}
+export const revokePlatformInviteAction = async (id: string) =>
+    requireId(id, "invite") ?? runAction("Could not revoke the invite", () => revokePlatformInvite(id))
 
-export const revokePlatformInviteAction = async (
-    id: string,
-): Promise<ApiResponse<{ message: string }> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid invite id" }
+export const approvePlatformAdminAction = async (id: string) =>
+    requireId(id, "operator") ?? runAction("Could not approve", () => approvePlatformAdmin(id))
 
-    try {
-        return await revokePlatformInvite(id)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not revoke the invite") }
-    }
-}
-
-export const approvePlatformAdminAction = async (
-    id: string,
-): Promise<ApiResponse<unknown> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid operator id" }
-
-    try {
-        return await approvePlatformAdmin(id)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not approve") }
-    }
-}
-
-export const removePlatformAdminAction = async (
-    id: string,
-): Promise<ApiResponse<{ message: string }> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid operator id" }
-
-    try {
-        return await removePlatformAdmin(id)
-    } catch (error: unknown) {
-        // "This is the last active platform operator" arrives here.
-        return { success: false, message: getActionErrorMessage(error, "Could not remove the operator") }
-    }
-}
+// "This is the last active platform operator" arrives here.
+export const removePlatformAdminAction = async (id: string) =>
+    requireId(id, "operator") ?? runAction("Could not remove the operator", () => removePlatformAdmin(id))
