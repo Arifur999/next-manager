@@ -17,11 +17,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import type { IKpiTarget, KpiMetric, KpiPeriod } from "@/types/insights.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { useQuery } from "@tanstack/react-query"
 import { format, startOfMonth, startOfQuarter, startOfYear } from "date-fns"
 import { Target as TargetIcon, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { usersListQuery } from "@/queries/people.queries"
 import { kpiTargetsListQuery } from "@/queries/insights.queries"
 import { queryKeys } from "@/lib/queryKeys"
@@ -132,9 +132,10 @@ const periodStart = (period: KpiPeriod): string => {
   return format(start, "yyyy-MM-dd")
 }
 
-const TargetsBoard = () => {
-  const queryClient = useQueryClient()
+// Every dashboard scores against the targets, so they go stale with them.
+const TARGET_KEYS = [queryKeys.kpiTargets.all, queryKeys.kpi.all]
 
+const TargetsBoard = () => {
   const [metric, setMetric] = useState<KpiMetric>("utilization_pct")
   const [period, setPeriod] = useState<KpiPeriod>("quarter")
   const [owner, setOwner] = useState<string>(AGENCY_WIDE_TARGET)
@@ -148,38 +149,31 @@ const TargetsBoard = () => {
   const users = usersData?.data ?? []
   const spec = METRICS.find((entry) => entry.metric === metric) as MetricSpec
 
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.kpiTargets.all })
-    // Every dashboard scores against these, so they are all stale now.
-    void queryClient.invalidateQueries({ queryKey: queryKeys.kpi.all })
+  const { run: saveTarget, isPending: isSaving } = useActionMutation({
+    action: setTargetAction,
+    successMessage: "Target set",
+    invalidateKeys: TARGET_KEYS,
+    refresh: false,
+  })
+
+  // The row disappearing is the confirmation; there was never a toast for it.
+  const { run: deleteTarget, isPending: isRemoving } = useActionMutation({
+    action: deleteTargetAction,
+    successMessage: false,
+    invalidateKeys: TARGET_KEYS,
+    refresh: false,
+  })
+
+  const handleSave = async () => {
+    const isSaved = await saveTarget({
+      metric,
+      period,
+      owner,
+      target_value: value,
+      period_start: periodStart(period),
+    })
+    if (isSaved) setValue("")
   }
-
-  const { mutate: save, isPending: isSaving } = useMutation({
-    mutationFn: () =>
-      setTargetAction({ metric, period, owner, target_value: value, period_start: periodStart(period) }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        // The server explains a percentage over 100 and a duplicate period by
-        // name. Those messages are worth more than "failed".
-        toast.error(result.message || "Failed to set the target")
-        return
-      }
-      toast.success("Target set")
-      setValue("")
-      refresh()
-    },
-  })
-
-  const { mutate: remove, isPending: isRemoving } = useMutation({
-    mutationFn: (id: string) => deleteTargetAction(id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Failed to delete")
-        return
-      }
-      refresh()
-    },
-  })
 
   const labelOf = (target: IKpiTarget) =>
     METRICS.find((entry) => entry.metric === target.metric)?.label ?? target.metric
@@ -206,7 +200,7 @@ const TargetsBoard = () => {
           onSubmit={(event) => {
             event.preventDefault()
             if (!value.trim() || !Number.isFinite(Number(value))) return
-            save()
+            void handleSave()
           }}
         >
           <div className="space-y-1.5">
@@ -326,7 +320,7 @@ const TargetsBoard = () => {
                     size="sm"
                     variant="outline"
                     disabled={isRemoving}
-                    onClick={() => remove(target.id)}
+                    onClick={() => void deleteTarget(target.id)}
                   >
                     <Trash2 className="size-3.5" />
                     <span className="sr-only">Delete target</span>
