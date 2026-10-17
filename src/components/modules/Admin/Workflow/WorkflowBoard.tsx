@@ -5,6 +5,7 @@ import {
   deleteWorkflowStatusAction,
   updateWorkflowStatusAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/workflow/_action"
+import { STATUS_CATEGORIES } from "@/components/modules/Admin/Workflow/statusCategories"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { STATUS_TONE } from "@/components/shared/status/statusTone"
 import { Badge } from "@/components/ui/badge"
@@ -46,22 +47,6 @@ import { queryKeys } from "@/lib/queryKeys"
  * name. A status whose meaning was inferred would change meaning the day
  * somebody edited its label.
  */
-
-const CATEGORIES: Array<{ value: StatusCategory; label: string; blurb: string }> = [
-  { value: "open", label: "Not started", blurb: "Waiting to be picked up." },
-  { value: "active", label: "In progress", blurb: "Being worked on. Counts as in flight." },
-  { value: "blocked", label: "Blocked", blurb: "Stopped, but not finished." },
-  {
-    value: "done",
-    label: "Finished",
-    blurb: "Counts as delivered, and stops the clock on a task.",
-  },
-  {
-    value: "cancelled",
-    label: "Abandoned",
-    blurb: "Finished, but not delivered. Not counted as done.",
-  },
-]
 
 const emptyColumn: IWorkflowStatusFormValues = { name: "", category: "open" }
 
@@ -163,7 +148,7 @@ const WorkflowBoard = ({ kind }: { kind: "task" | "project" }) => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {CATEGORIES.map((option) => (
+                    {STATUS_CATEGORIES.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
                       </SelectItem>
@@ -171,7 +156,7 @@ const WorkflowBoard = ({ kind }: { kind: "task" | "project" }) => {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  {CATEGORIES.find((option) => option.value === field.state.value)?.blurb}
+                  {STATUS_CATEGORIES.find((option) => option.value === field.state.value)?.blurb}
                 </p>
               </div>
             )}
@@ -210,7 +195,7 @@ const WorkflowBoard = ({ kind }: { kind: "task" | "project" }) => {
           <ul className="divide-y">
             {statuses.map((status, index) => {
               const inUse = (status._count?.tasks ?? 0) + (status._count?.projects ?? 0)
-              const meaning = CATEGORIES.find((option) => option.value === status.category)
+              const meaning = STATUS_CATEGORIES.find((option) => option.value === status.category)
 
               return (
                 <li
