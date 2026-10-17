@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest"
 import {
     createAccountServerZodSchema,
+    createDistributionServerZodSchema,
     createExchangeServerZodSchema,
     createLoanServerZodSchema,
+    createShareholderServerZodSchema,
     payInstalmentServerZodSchema,
+    shareholderStatusServerZodSchema,
 } from "./finance.validation"
 
 describe("createAccountServerZodSchema", () => {
@@ -139,5 +142,63 @@ describe("payInstalmentServerZodSchema", () => {
     it("requires the account the instalment is paid from", () => {
         expect(payInstalmentServerZodSchema.parse({ account_id: "bdt-1" })).toEqual({ account_id: "bdt-1" })
         expect(payInstalmentServerZodSchema.safeParse({ account_id: "" }).success).toBe(false)
+    })
+})
+
+describe("createShareholderServerZodSchema", () => {
+    it("trims the name and gives a blank share as 0%", () => {
+        expect(createShareholderServerZodSchema.parse({ name: " Arif ", share_pct: "" })).toEqual({
+            name: "Arif",
+            share_pct: 0,
+        })
+    })
+
+    it("keeps a fractional share", () => {
+        expect(createShareholderServerZodSchema.parse({ name: "Arif", share_pct: "12.5" }).share_pct).toBe(12.5)
+    })
+
+    it("rejects more than all of it", () => {
+        const result = createShareholderServerZodSchema.safeParse({ name: "Arif", share_pct: "101" })
+        expect(result.error?.issues[0]?.message).toBe("Nobody owns more than all of it")
+    })
+
+    it("requires a name", () => {
+        expect(createShareholderServerZodSchema.safeParse({ name: "", share_pct: "10" }).success).toBe(false)
+    })
+})
+
+describe("shareholderStatusServerZodSchema", () => {
+    it("accepts only a true or false is_active", () => {
+        expect(shareholderStatusServerZodSchema.parse({ is_active: false })).toEqual({ is_active: false })
+        expect(shareholderStatusServerZodSchema.safeParse({ is_active: "no" }).success).toBe(false)
+    })
+
+    it("drops any other field", () => {
+        expect(shareholderStatusServerZodSchema.parse({ is_active: true, share_pct: 100 })).toEqual({ is_active: true })
+    })
+})
+
+describe("createDistributionServerZodSchema", () => {
+    const distribution = { shareholder_id: "s1", date: "2026-10-12", amount_bdt: "75000", account_id: "bdt-1" }
+
+    it("builds the API payload with a numeric amount", () => {
+        expect(createDistributionServerZodSchema.parse(distribution)).toEqual({
+            shareholder_id: "s1",
+            date: "2026-10-12",
+            amount_bdt: 75000,
+            account_id: "bdt-1",
+        })
+    })
+
+    it("requires who it is paid to and the account it comes from", () => {
+        const result = createDistributionServerZodSchema.safeParse({ ...distribution, shareholder_id: "", account_id: "" })
+        expect(result.error?.issues.map((issue) => issue.message)).toEqual([
+            "Choose who it is paid to",
+            "Choose the account it is paid from",
+        ])
+    })
+
+    it("rejects a distribution of nothing", () => {
+        expect(createDistributionServerZodSchema.safeParse({ ...distribution, amount_bdt: "0" }).success).toBe(false)
     })
 })

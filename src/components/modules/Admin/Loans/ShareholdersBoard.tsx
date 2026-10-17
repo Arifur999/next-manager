@@ -82,7 +82,7 @@ const ShareholdersBoard = () => {
 
   const { mutate: add, isPending } = useMutation({
     mutationFn: () =>
-      createShareholderAction({ name: name.trim(), share_pct: Number(pct || 0) }),
+      createShareholderAction({ name, share_pct: pct }),
     onSuccess: settle("Could not add them", () => {
       setName("")
       setPct("")
@@ -105,7 +105,7 @@ const ShareholdersBoard = () => {
       createDistributionAction({
         shareholder_id: shareholderId,
         date,
-        amount_bdt: Number(amount),
+        amount_bdt: amount,
         account_id: accountId,
       }),
     onSuccess: settle("Could not record it", () => setAmount("")),

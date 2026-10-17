@@ -91,3 +91,40 @@ export const createLoanServerZodSchema = loanFormZodSchema.transform((values) =>
 export const payInstalmentServerZodSchema = z.object({
     account_id: z.string().min(1, "Choose the account it is paid from"),
 })
+
+export const shareholderFormZodSchema = z.object({
+    name: z.string().trim().min(1, "Give them a name").max(120, "Keep the name under 120 characters"),
+    // The 100% ceiling across everybody still active is the server's to check.
+    share_pct: optionalNonNegative("Share").refine(
+        (value) => !value || Number(value) <= 100,
+        "Nobody owns more than all of it",
+    ),
+})
+
+export type IShareholderFormValues = z.infer<typeof shareholderFormZodSchema>
+
+export const createShareholderServerZodSchema = shareholderFormZodSchema.transform((values) => ({
+    name: values.name,
+    share_pct: toNumber(values.share_pct) ?? 0,
+}))
+
+// Retiring and bringing back is the one change a screen makes to a shareholder.
+export const shareholderStatusServerZodSchema = z.object({
+    is_active: z.boolean(),
+})
+
+export const distributionFormZodSchema = z.object({
+    shareholder_id: z.string().min(1, "Choose who it is paid to"),
+    date: isoDate,
+    amount_bdt: positiveAmount("Amount"),
+    account_id: z.string().min(1, "Choose the account it is paid from"),
+})
+
+export type IDistributionFormValues = z.infer<typeof distributionFormZodSchema>
+
+export const createDistributionServerZodSchema = distributionFormZodSchema.transform((values) => ({
+    shareholder_id: values.shareholder_id,
+    date: values.date,
+    amount_bdt: Number(values.amount_bdt),
+    account_id: values.account_id,
+}))
