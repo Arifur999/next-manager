@@ -25,6 +25,7 @@ import { toast } from "sonner"
 import { usersListQuery } from "@/queries/people.queries"
 import { kpiTargetsListQuery } from "@/queries/insights.queries"
 import { queryKeys } from "@/lib/queryKeys"
+import { AGENCY_WIDE_TARGET } from "@/zod/insights.validation"
 
 /**
  * The numbers the company commits to.
@@ -131,14 +132,12 @@ const periodStart = (period: KpiPeriod): string => {
   return format(start, "yyyy-MM-dd")
 }
 
-const AGENCY_WIDE = "__agency__"
-
 const TargetsBoard = () => {
   const queryClient = useQueryClient()
 
   const [metric, setMetric] = useState<KpiMetric>("utilization_pct")
   const [period, setPeriod] = useState<KpiPeriod>("quarter")
-  const [owner, setOwner] = useState<string>(AGENCY_WIDE)
+  const [owner, setOwner] = useState<string>(AGENCY_WIDE_TARGET)
   const [value, setValue] = useState("")
 
   const { data: targetsData, isLoading } = useQuery(kpiTargetsListQuery())
@@ -157,13 +156,7 @@ const TargetsBoard = () => {
 
   const { mutate: save, isPending: isSaving } = useMutation({
     mutationFn: () =>
-      setTargetAction({
-        metric,
-        period,
-        period_start: periodStart(period),
-        target_value: Number(value),
-        user_id: owner === AGENCY_WIDE ? null : owner,
-      }),
+      setTargetAction({ metric, period, owner, target_value: value, period_start: periodStart(period) }),
     onSuccess: (result) => {
       if (!result.success) {
         // The server explains a percentage over 100 and a duplicate period by
@@ -257,7 +250,7 @@ const TargetsBoard = () => {
               <SelectContent>
                 {/* An agency target is not the sum of the individual ones, so
                     both can exist for the same metric and period. */}
-                <SelectItem value={AGENCY_WIDE}>The whole agency</SelectItem>
+                <SelectItem value={AGENCY_WIDE_TARGET}>The whole agency</SelectItem>
                 {users.map((user) => (
                   <SelectItem key={user.id} value={user.id}>
                     {user.full_name}
