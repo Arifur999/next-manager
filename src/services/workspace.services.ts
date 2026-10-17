@@ -55,6 +55,13 @@ export const getCredentials = async (queryString?: string) =>
 export const createCredential = async (payload: Record<string, unknown>) =>
     httpClient.post<ICredential>("/vault", payload)
 
+// A blank password is left out, so the stored one is kept.
+export const updateCredential = async (id: string, payload: Record<string, unknown>) =>
+    httpClient.patch<ICredential>(`/vault/${id}`, payload)
+
+export const deleteCredential = async (id: string) =>
+    httpClient.delete<{ message: string }>(`/vault/${id}`)
+
 /** The only call that returns a real password — and the server logs every one. */
 export const revealCredential = async (id: string) =>
     httpClient.get<IRevealedCredential>(`/vault/${id}/reveal`)

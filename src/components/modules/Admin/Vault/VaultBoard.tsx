@@ -1,7 +1,7 @@
 "use client"
 
-import AddCredentialModal from "@/components/modules/Admin/Vault/AddCredentialModal"
 import CredentialCard from "@/components/modules/Admin/Vault/CredentialCard"
+import CredentialFormModal from "@/components/modules/Admin/Vault/CredentialFormModal"
 import ErrorState from "@/components/shared/state/ErrorState"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -10,7 +10,9 @@ import { Search, ShieldCheck } from "lucide-react"
 import { useEffect, useState } from "react"
 import { credentialsListQuery } from "@/queries/workspace.queries"
 
-const VaultBoard = () => {
+// The page reads the role: everybody here may edit (the API still checks the
+// vault edit square), and only the admin may delete or read the access log.
+const VaultBoard = ({ isAdmin }: { isAdmin: boolean }) => {
   const [term, setTerm] = useState("")
   const [search, setSearch] = useState("")
 
@@ -67,7 +69,13 @@ const VaultBoard = () => {
     return (
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {credentials.map((credential) => (
-          <CredentialCard key={credential.id} credential={credential} />
+          <CredentialCard
+            key={credential.id}
+            credential={credential}
+            canEdit
+            canDelete={isAdmin}
+            canSeeLog={isAdmin}
+          />
         ))}
       </div>
     )
@@ -86,7 +94,7 @@ const VaultBoard = () => {
           />
         </div>
 
-        <AddCredentialModal />
+        <CredentialFormModal />
       </div>
 
       {renderCredentials()}

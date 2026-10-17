@@ -5,6 +5,7 @@ import {
     credentialFormZodSchema,
     notificationRuleServerZodSchema,
     sendMessageServerZodSchema,
+    updateCredentialServerZodSchema,
     updateOrganizationServerZodSchema,
 } from "./workspace.validation"
 
@@ -59,6 +60,37 @@ describe("createCredentialServerZodSchema", () => {
 
     it("refuses a link that is not http or https", () => {
         expect(createCredentialServerZodSchema.safeParse({ ...valid, url: "data:text/html,hi" }).success).toBe(false)
+    })
+})
+
+describe("updateCredentialServerZodSchema", () => {
+    const edit = {
+        label: "Acme cPanel",
+        client_id: "c1",
+        project_id: "",
+        url: "https://acme.example",
+        username: "admin",
+        password: "",
+    }
+
+    it("keeps the stored password when the field is left blank", () => {
+        const payload = updateCredentialServerZodSchema.parse(edit)
+        expect(payload.password).toBeUndefined()
+    })
+
+    it("rotates the password when a new one is typed", () => {
+        expect(updateCredentialServerZodSchema.parse({ ...edit, password: "n3w" }).password).toBe("n3w")
+    })
+
+    it("moves an unlinked credential to the agency and clears a removed URL", () => {
+        const payload = updateCredentialServerZodSchema.parse({ ...edit, client_id: "", url: "" })
+        expect(payload.client_id).toBeNull()
+        expect(payload.project_id).toBeNull()
+        expect(payload.url).toBe("")
+    })
+
+    it("still requires a label", () => {
+        expect(updateCredentialServerZodSchema.safeParse({ ...edit, label: "" }).success).toBe(false)
     })
 })
 

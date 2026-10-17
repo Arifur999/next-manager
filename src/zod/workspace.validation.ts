@@ -70,6 +70,21 @@ export const createCredentialServerZodSchema = credentialFormZodSchema.transform
     notes: values.notes,
 }))
 
+// An edit opens with the password empty, since the list only carries a mask.
+// Blank keeps the stored password; typing one rotates it.
+export const credentialEditFormZodSchema = credentialFormZodSchema.extend({
+    password: z.string().optional(),
+})
+
+export const updateCredentialServerZodSchema = credentialEditFormZodSchema.transform((values) => ({
+    label: values.label,
+    client_id: values.client_id || null,
+    project_id: values.project_id || null,
+    url: values.url ?? "",
+    username: values.username ?? "",
+    password: values.password || undefined,
+}))
+
 // The form already holds the API's payload.
 export const updateOrganizationServerZodSchema = organizationFormZodSchema
 

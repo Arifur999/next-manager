@@ -11,10 +11,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { formatDateTime } from "@/lib/dates"
 import type { ApiResult } from "@/types/api.types"
 import type { ICredential, ICredentialAccessEntry } from "@/types/workspace.types"
 import { useMutation } from "@tanstack/react-query"
-import { format } from "date-fns"
 import { History, User } from "lucide-react"
 import { useState } from "react"
 
@@ -59,7 +59,7 @@ const AccessLogBody = ({ isLoading, result, onRetry }: AccessLogBodyProps) => {
               {ACTION_LABEL[entry.action] ?? entry.action}
             </p>
             <p className="text-xs text-muted-foreground">
-              {format(new Date(entry.created_at), "MMM dd, yyyy 'at' HH:mm")}
+              {formatDateTime(entry.created_at)}
               {entry.ip ? ` · ${entry.ip}` : ""}
             </p>
           </div>

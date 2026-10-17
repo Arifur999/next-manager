@@ -3,6 +3,7 @@
 import { toSafeExternalUrl } from "@/lib/safeUrl"
 import { revealCredentialAction } from "@/app/(dashboardLayout)/admin/dashboard/vault/_action"
 import AccessLogDialog from "@/components/modules/Admin/Vault/AccessLogDialog"
+import CredentialActions from "@/components/modules/Admin/Vault/CredentialActions"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { useActionMutation } from "@/hooks/useActionMutation"
@@ -25,7 +26,15 @@ import { toast } from "sonner"
  */
 const AUTO_HIDE_MS = 2 * 60 * 1000
 
-const CredentialCard = ({ credential }: { credential: ICredential }) => {
+type CredentialCardProps = {
+  credential: ICredential
+  canEdit: boolean
+  canDelete: boolean
+  /** The access log is admin-only at the API. */
+  canSeeLog: boolean
+}
+
+const CredentialCard = ({ credential, canEdit, canDelete, canSeeLog }: CredentialCardProps) => {
   const [revealed, setRevealed] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
@@ -85,14 +94,17 @@ const CredentialCard = ({ credential }: { credential: ICredential }) => {
           )}
         </div>
 
-        {safeUrl && (
-          <Button asChild variant="ghost" size="icon" className="shrink-0">
-            <a href={safeUrl} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="size-4" />
-              <span className="sr-only">Open {credential.label}</span>
-            </a>
-          </Button>
-        )}
+        <div className="flex shrink-0 items-center">
+          {safeUrl && (
+            <Button asChild variant="ghost" size="icon" className="shrink-0">
+              <a href={safeUrl} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="size-4" />
+                <span className="sr-only">Open {credential.label}</span>
+              </a>
+            </Button>
+          )}
+          <CredentialActions credential={credential} canEdit={canEdit} canDelete={canDelete} />
+        </div>
       </div>
 
       <dl className="mt-4 space-y-2 text-sm">
@@ -128,7 +140,7 @@ const CredentialCard = ({ credential }: { credential: ICredential }) => {
           </Button>
         )}
 
-        <AccessLogDialog credential={credential} />
+        {canSeeLog && <AccessLogDialog credential={credential} />}
       </div>
 
       {revealed && (
