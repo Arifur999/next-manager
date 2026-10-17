@@ -13,7 +13,7 @@ interface IMarketingHeaderProps {
 const MarketingHeader = ({ links, cta }: IMarketingHeaderProps) => (
   <header className="sticky top-0 z-40 border-b bg-background/92 backdrop-blur-sm supports-[backdrop-filter]:bg-background/80">
     <div className="mx-auto flex h-16 w-full max-w-content items-center gap-6 px-4 sm:px-6 lg:px-8">
-      <Wordmark />
+      <Wordmark compact />
       <div className="ml-auto flex items-center gap-2 lg:ml-6 lg:flex-1 lg:justify-between">
         <MarketingNav links={links} />
         <div className="flex items-center gap-2">
@@ -23,7 +23,9 @@ const MarketingHeader = ({ links, cta }: IMarketingHeaderProps) => (
           >
             {SIGN_IN.label}
           </Link>
-          <CtaLink href={cta.href} className="hidden sm:inline-flex">
+          {/* Compact on phones, beside the menu button; hidden below 360px, where
+              it would push the header wider than the screen. */}
+          <CtaLink href={cta.href} size="sm" className="max-[359px]:hidden sm:h-10 sm:px-4">
             {cta.label}
           </CtaLink>
           <MobileMarketingNav links={links} cta={cta} />

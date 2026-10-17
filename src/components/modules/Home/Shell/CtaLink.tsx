@@ -7,7 +7,7 @@ type CtaTone = "primary" | "quiet" | "inverse"
 interface ICtaLinkProps {
   href: string
   tone?: CtaTone
-  size?: "md" | "lg"
+  size?: "sm" | "md" | "lg"
   className?: string
   children: ReactNode
 }
@@ -21,6 +21,7 @@ const TONES: Record<CtaTone, string> = {
 }
 
 const SIZES = {
+  sm: "h-9 px-3 text-sm",
   md: "h-10 px-4 text-sm",
   lg: "h-12 px-5 text-base",
 } as const

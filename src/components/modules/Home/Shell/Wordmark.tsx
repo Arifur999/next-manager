@@ -2,8 +2,17 @@ import { site } from "@/data/site"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 
-// The name set in type. There is no logo, so none is drawn.
-const Wordmark = ({ className, inverse = false }: { className?: string; inverse?: boolean }) => (
+// The name set in type. There is no logo, so none is drawn. `compact` drops the
+// second word on phones, where the header also has to hold the primary CTA.
+const Wordmark = ({
+  className,
+  inverse = false,
+  compact = false,
+}: {
+  className?: string
+  inverse?: boolean
+  compact?: boolean
+}) => (
   <Link
     href="/"
     className={cn(
@@ -12,8 +21,13 @@ const Wordmark = ({ className, inverse = false }: { className?: string; inverse?
     )}
   >
     <span className="font-semibold tracking-tight">{site.shortName}</span>
-    <span aria-hidden="true" className={cn("h-3.5 w-px self-center", inverse ? "bg-band-foreground/30" : "bg-border")} />
-    <span className={cn("font-normal", inverse ? "text-band-foreground/70" : "text-muted-foreground")}>Management</span>
+    <span
+      aria-hidden="true"
+      className={cn("h-3.5 w-px self-center", inverse ? "bg-band-foreground/30" : "bg-border", compact && "max-sm:hidden")}
+    />
+    <span className={cn("font-normal", inverse ? "text-band-foreground/70" : "text-muted-foreground", compact && "max-sm:hidden")}>
+      Management
+    </span>
     <span className="sr-only">, home</span>
   </Link>
 )
