@@ -27,7 +27,9 @@ const SalesOverview = () => {
   const clients = useCount(clientsListQuery("limit=1"))
   const active = useCount(clientsListQuery("status=active&limit=1"))
   const inactive = useCount(clientsListQuery("status=inactive&limit=1"))
-  const services = useCount(servicesListQuery("limit=1"))
+  // /services is not paged and sends no meta.total, so its count is its rows;
+  // a catalogue runs to a few dozen. The same read as the services page.
+  const serviceList = useQuery(servicesListQuery())
 
   const planning = useCount(projectsListQuery("status=Planning&limit=1"))
   const activeProjects = useCount(projectsListQuery("status=Active&limit=1"))
@@ -71,7 +73,7 @@ const SalesOverview = () => {
           },
           {
             label: "Services",
-            ...countFields(services),
+            ...queryFields(serviceList, serviceList.data?.data.length),
             href: "/admin/dashboard/services",
             hint: "What there is to sell",
             icon: <Package className="size-5" />,
