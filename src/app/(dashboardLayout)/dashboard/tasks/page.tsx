@@ -14,10 +14,32 @@ export const metadata: Metadata = {
 //
 // Five views over it - all of it, today's, the next seven days, late, and
 // finished - each a filter off the URL rather than a page of its own.
+type MyTasksSearchParams = { due?: string; overdue?: string; completed?: string };
+
+const HEADINGS = {
+  overdue: { title: "Overdue", blurb: "Past their date and still open. Finishing one takes it off this list." },
+  today: { title: "Due today", blurb: "Everything you owe today." },
+  upcoming: { title: "Upcoming", blurb: "The next seven days — a week of work, not a backlog." },
+  completed: {
+    title: "Completed",
+    blurb: "Work you have finished. Read by what a status means, so renaming a column does not empty this.",
+  },
+  all: { title: "My tasks", blurb: "Work assigned to you." },
+};
+
+// The sidebar's links can combine; the first match names the page.
+const headingFor = (params: MyTasksSearchParams) => {
+  if (params.overdue === "true") return HEADINGS.overdue;
+  if (params.due === "today") return HEADINGS.today;
+  if (params.due === "upcoming") return HEADINGS.upcoming;
+  if (params.completed === "true") return HEADINGS.completed;
+  return HEADINGS.all;
+};
+
 const MyTasksPage = async ({
   searchParams,
 }: {
-  searchParams: Promise<{ due?: string; overdue?: string; completed?: string }>;
+  searchParams: Promise<MyTasksSearchParams>;
 }) => {
   const params = await searchParams;
 
@@ -34,33 +56,11 @@ const MyTasksPage = async ({
 
   const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(tasksListQuery(query));
 
-  const title =
-    params.overdue === "true"
-      ? "Overdue"
-      : params.due === "today"
-        ? "Due today"
-        : params.due === "upcoming"
-          ? "Upcoming"
-          : params.completed === "true"
-            ? "Completed"
-            : "My tasks";
-
-  const blurb =
-    params.overdue === "true"
-      ? "Past their date and still open. Finishing one takes it off this list."
-      : params.due === "today"
-        ? "Everything you owe today."
-        : params.due === "upcoming"
-          ? "The next seven days — a week of work, not a backlog."
-          : params.completed === "true"
-            ? "Work you have finished. Read by what a status means, so renaming a column does not empty this."
-            : "Work assigned to you.";
+  const heading = headingFor(params);
 
   return (
     <div className="space-y-6">
-      <PageHeader title={title}>
-        {blurb}
-      </PageHeader>
+      <PageHeader title={heading.title}>{heading.blurb}</PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
         <TaskBoard mineOnly />
