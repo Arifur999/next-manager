@@ -6,12 +6,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { ROLE_LABELS } from "@/zod/user.validation"
 import type { IUser } from "@/types/user.types"
-import { useMutation } from "@tanstack/react-query"
-import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { toast } from "sonner"
 
 /**
  * Your own record.
@@ -27,22 +25,14 @@ import { toast } from "sonner"
  */
 
 const ProfileForm = ({ user }: { user: IUser }) => {
-  const router = useRouter()
   const [fullName, setFullName] = useState(user.full_name)
   const [phone, setPhone] = useState(user.phone ?? "")
 
-  const { mutate: save, isPending } = useMutation({
-    mutationFn: () => updateMeAction({ full_name: fullName, phone }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not save your profile")
-        return
-      }
-      toast.success("Profile updated")
-      // The sidebar and navbar read the user server-side, so the tree has to
-      // re-render for the new name to appear anywhere but this form.
-      router.refresh()
-    },
+  // Keeps the default router refresh: the sidebar and navbar read the user
+  // server-side, so the new name appears there only after the tree re-renders.
+  const { run: saveProfile, isPending } = useActionMutation({
+    action: updateMeAction,
+    successMessage: "Profile updated",
   })
 
   const dirty = fullName.trim() !== user.full_name || phone.trim() !== (user.phone ?? "")
@@ -69,7 +59,7 @@ const ProfileForm = ({ user }: { user: IUser }) => {
         onSubmit={(event) => {
           event.preventDefault()
           if (!fullName.trim()) return
-          save()
+          void saveProfile({ full_name: fullName, phone })
         }}
       >
         <div className="grid gap-5 sm:grid-cols-2">
