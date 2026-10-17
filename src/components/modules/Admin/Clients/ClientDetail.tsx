@@ -1,18 +1,19 @@
 "use client"
 
 import ClientFinanceTiles from "@/components/modules/Admin/Clients/ClientFinanceTiles"
+import ClientPaymentsPanel from "@/components/modules/Admin/Clients/ClientPaymentsPanel"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import ClientLinksPanel from "@/components/modules/Admin/Clients/ClientLinksPanel"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { formatBdt, formatUsd } from "@/lib/currency"
+import { formatUsd } from "@/lib/currency"
 import type { IProject } from "@/types/project.types"
 import type { IClient } from "@/types/crm.types"
 import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
 import Link from "next/link"
 import { clientDetailQuery, clientFinancialsQuery } from "@/queries/crm.queries"
-import { invoicesListQuery, paymentsListQuery } from "@/queries/billing.queries"
+import { invoicesListQuery } from "@/queries/billing.queries"
 import { credentialsListQuery } from "@/queries/workspace.queries"
 
 /**
@@ -36,19 +37,15 @@ const ClientDetail = ({
 
   const { data: financeData } = useQuery({ ...clientFinancialsQuery(clientId), enabled: canSeeMoney })
 
-  // Payments and invoices still come back unfiltered - those two endpoints
-  // filter by search text rather than client id - so they are narrowed here.
-  // The vault, which now takes a client_id, is asked for directly.
-  const { data: paymentsData } = useQuery({ ...paymentsListQuery(), enabled: canSeeMoney })
+  // Invoices still come back unfiltered - that endpoint filters by search text
+  // rather than client id - so they are narrowed here. The vault, which now
+  // takes a client_id, is asked for directly.
   const { data: invoicesData } = useQuery({ ...invoicesListQuery(), enabled: canSeeMoney })
   const { data: credentialsData } = useQuery(credentialsListQuery(`client_id=${clientId}`))
 
   const client = clientData?.data as (IClient & { projects?: IProject[] }) | undefined
   const finance = financeData?.data
 
-  const payments = ((paymentsData?.data ?? [])).filter(
-    (payment) => payment.client_id === clientId,
-  )
   const invoices = ((invoicesData?.data ?? [])).filter(
     (invoice) => invoice.client_id === clientId,
   )
@@ -135,33 +132,7 @@ const ClientDetail = ({
         {canSeeMoney && (
         <>
         <TabsContent value="payments" className="mt-4">
-          <Card className="gap-0 overflow-hidden p-0">
-            {payments.length === 0 ? (
-              <p className="px-5 py-12 text-center text-sm text-muted-foreground">
-                Nothing received from this client yet.
-              </p>
-            ) : (
-              <ul className="divide-y">
-                {payments.map((payment) => (
-                  <li
-                    key={payment.id}
-                    className="flex items-center justify-between gap-3 px-5 py-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm tabular-nums">{formatUsd(payment.amount_usd)}</p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {format(new Date(payment.date), "MMM dd, yyyy")}
-                        {payment.reference ? ` · ${payment.reference}` : ""}
-                      </p>
-                    </div>
-                    <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                      {formatBdt(payment.amount_bdt_reporting)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
+          <ClientPaymentsPanel clientId={clientId} />
         </TabsContent>
 
         <TabsContent value="invoices" className="mt-4">
