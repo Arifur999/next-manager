@@ -13,18 +13,21 @@ import { useSearchParams } from "next/navigation"
 import { transactionsColumns } from "./transactionsColumns"
 import { TRANSACTIONS_TABLE } from "./transactionsTable.config"
 
-const HEADING: Record<TransactionKind, { title: string; blurb: string }> = {
+const HEADING: Record<TransactionKind, { title: string; blurb: string; empty: string }> = {
   income: {
     title: "Income",
     blurb: "Money that came in from outside — client payments, and loans coming back.",
+    empty: "No income recorded yet.",
   },
   expense: {
     title: "Expenses",
     blurb: "Money that left — costs, team payouts, withdrawals, and money lent out.",
+    empty: "No expenses recorded yet.",
   },
   transfer: {
     title: "Transfers",
     blurb: "Money moved between your own accounts. Neither income nor an expense, however much it looks like both.",
+    empty: "No transfers recorded yet. An exchange from USD to BDT shows here.",
   },
 }
 
@@ -75,8 +78,8 @@ const TransactionsBoard = () => {
           exportRows={async () => (await queryClient.fetchQuery(transactionsListQuery(filterQueryString))).data}
           {...dataTableProps}
           {...toTableQueryProps(transactionsQuery)}
-          // Shown only when nothing narrows the ledger; a filtered view says so itself.
-          emptyMessage="Nothing recorded yet."
+          // Shown only when no search or date narrows the view; a filtered view says so itself.
+          emptyMessage={kind ? HEADING[kind].empty : "Nothing recorded yet."}
         />
       </div>
     </Card>

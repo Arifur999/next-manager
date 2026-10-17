@@ -1,6 +1,6 @@
-import DateCell from "@/components/shared/cell/DateCell"
-import { Badge } from "@/components/ui/badge"
+import DataTableColumnHeader from "@/components/shared/table/DataTableColumnHeader"
 import { formatMoney } from "@/lib/currency"
+import { formatDay } from "@/lib/dates"
 import type { ITransaction, LedgerSource, TransactionKind } from "@/types/finance.types"
 import type { ColumnDef } from "@tanstack/react-table"
 
@@ -31,16 +31,21 @@ const KIND_OF: Partial<Record<LedgerSource, TransactionKind>> = {
   exchange_out: "transfer",
 }
 
-const KIND_TONE = { income: "secondary", expense: "outline", transfer: "outline" } as const
-
 const describe = (transaction: ITransaction) => transaction.description || SOURCE_LABEL[transaction.source_type]
+
+// "client payment · income", or a note that the row counts as neither.
+const sourceLine = (transaction: ITransaction) => {
+  const kind = KIND_OF[transaction.source_type]
+  const source = SOURCE_LABEL[transaction.source_type]
+  return kind ? `${source} · ${kind}` : `${source} · counted in neither direction`
+}
 
 export const transactionsColumns: ColumnDef<ITransaction>[] = [
   {
     id: "date",
     accessorKey: "date",
     header: "Date",
-    cell: ({ row }) => <DateCell date={row.original.date} formatString="d MMM yyyy" />,
+    cell: ({ row }) => <span className="whitespace-nowrap">{formatDay(row.original.date)}</span>,
   },
   {
     id: "description",
@@ -49,10 +54,7 @@ export const transactionsColumns: ColumnDef<ITransaction>[] = [
     cell: ({ row }) => (
       <div className="min-w-0">
         <p className="truncate">{describe(row.original)}</p>
-        <p className="text-xs text-muted-foreground">
-          {SOURCE_LABEL[row.original.source_type]}
-          {KIND_OF[row.original.source_type] ? "" : " · counted in neither direction"}
-        </p>
+        <p className="text-xs text-muted-foreground">{sourceLine(row.original)}</p>
       </div>
     ),
   },
@@ -73,19 +75,18 @@ export const transactionsColumns: ColumnDef<ITransaction>[] = [
   {
     id: "amount",
     accessorKey: "amount",
-    header: "Amount",
-    cell: ({ row }) => {
-      const kind = KIND_OF[row.original.source_type]
-      return (
-        <span className="whitespace-nowrap">
-          <span className="tabular-nums">{formatMoney(row.original.amount, row.original.currency)}</span>
-          {kind && (
-            <Badge variant={KIND_TONE[kind]} className="ml-2 text-[10px]">
-              {kind}
-            </Badge>
-          )}
-        </span>
-      )
-    },
+    // Right-aligned with tabular figures, so amounts line up digit under
+    // digit and a column of them can be read down.
+    header: ({ column }) => (
+      <div className="-mr-2 flex justify-end">
+        <DataTableColumnHeader column={column} title="Amount" />
+      </div>
+    ),
+    meta: { label: "Amount" },
+    cell: ({ row }) => (
+      <p className="text-right whitespace-nowrap tabular-nums">
+        {formatMoney(row.original.amount, row.original.currency)}
+      </p>
+    ),
   },
 ]
