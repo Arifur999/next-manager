@@ -28,21 +28,25 @@ const DataTable = <TData,>(props: DataTableProps<TData>) => {
   // Lists that fit on one page at the smallest size never show the pager.
   const showPagination = !isLoading && !isError && totalRows > DEFAULT_PAGE_SIZE;
 
-  // A new search starts again from page 1. Server-driven tables reset the page themselves.
-  const searchFromFirstPage = search && {
+  const { onDebouncedChange: searchOnServer } = search ?? {};
+  // Searching the rows in memory needs no callback; a caller's search starts
+  // again from page 1 (server-driven tables reset the page themselves).
+  const activeSearch = search && {
     ...search,
+    initialValue: searchOnServer ? search.initialValue : String(table.getState().globalFilter ?? ""),
     onDebouncedChange: (value: string) => {
+      if (!searchOnServer) return table.setGlobalFilter(value);
       if (!pagination) table.setPageIndex(0);
-      search.onDebouncedChange(value);
+      searchOnServer(value);
     },
   };
-  const { canReset, reset } = useDataTableReset(table, searchFromFirstPage, filters);
+  const { canReset, reset } = useDataTableReset(table, activeSearch, filters);
 
   return (
     <div>
       <DataTableToolbar
         table={table}
-        search={searchFromFirstPage}
+        search={activeSearch}
         filters={filters}
         canReset={canReset}
         onReset={reset}

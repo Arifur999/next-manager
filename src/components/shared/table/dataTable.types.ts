@@ -26,7 +26,9 @@ export interface DataTableSearchConfig {
   initialValue?: string;
   placeholder?: string;
   debounceMs?: number;
-  onDebouncedChange: (value: string) => void;
+  // Present: the caller searches (on the server). Absent: the table searches
+  // the rows it holds.
+  onDebouncedChange?: (value: string) => void;
 }
 
 export type { FilterOption as DataTableFilterOption } from "@/lib/table/filterOptions";

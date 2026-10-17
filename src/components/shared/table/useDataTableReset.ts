@@ -26,7 +26,7 @@ export const useDataTableReset = <TData,>(
   const reset = () => {
     if (isServerFiltered) filters?.onClearAll?.();
     else table.resetColumnFilters();
-    if (hasSearch) search?.onDebouncedChange("");
+    if (hasSearch) search?.onDebouncedChange?.("");
   };
 
   return { canReset: hasSearch || hasFilters, reset };

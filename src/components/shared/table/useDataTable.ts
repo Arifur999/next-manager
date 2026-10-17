@@ -40,6 +40,7 @@ export const useDataTable = <TData,>({
   const [localSorting, setLocalSorting] = useState<SortingState>([]);
   const [localPagination, setLocalPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: DEFAULT_PAGE_SIZE });
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [globalFilter, setGlobalFilter] = useState("");
   const [columnVisibility, setColumnVisibility] = usePersistentState(
     tableId ? `data-table:${tableId}:columns` : undefined,
     ALL_COLUMNS_VISIBLE,
@@ -83,6 +84,7 @@ export const useDataTable = <TData,>({
       sorting: sorting?.state ?? localSorting,
       pagination: pagination?.state ?? localPagination,
       columnFilters,
+      globalFilter,
       columnVisibility,
     },
     // Never pass a handler as undefined: TanStack spreads options over its own
@@ -98,6 +100,11 @@ export const useDataTable = <TData,>({
       setColumnFilters(updater);
       resetToFirstPage();
     },
+    onGlobalFilterChange: (value: string) => {
+      setGlobalFilter(value);
+      resetToFirstPage();
+    },
+    globalFilterFn: "includesString",
     onColumnVisibilityChange: setColumnVisibility,
   });
 
