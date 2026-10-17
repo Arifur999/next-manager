@@ -3,6 +3,7 @@
 import { site } from "@/data/site"
 import { updateSettingsAction } from "@/app/(dashboardLayout)/platform/_settingsAction"
 import { planOptionLabel } from "@/components/modules/Platform/planLabel"
+import RelativeTime from "@/components/shared/RelativeTime"
 import ErrorState from "@/components/shared/state/ErrorState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Badge } from "@/components/ui/badge"
@@ -20,7 +21,6 @@ import {
 import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IPlatformSettings } from "@/types/platform.types"
 import { useQuery } from "@tanstack/react-query"
-import { formatDistanceToNow, parseISO } from "date-fns"
 import { CircleAlert, CircleCheck, Mail } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
@@ -267,7 +267,7 @@ const SettingsForm = ({ settings }: { settings: IPlatformSettings }) => {
           Save settings
         </Button>
         <span className="text-xs text-muted-foreground">
-          Last changed {formatDistanceToNow(parseISO(settings.updated_at), { addSuffix: true })}.
+          Last changed <RelativeTime value={settings.updated_at} />.
           Every change is recorded on{" "}
           <Link
             href="/platform/activity"
