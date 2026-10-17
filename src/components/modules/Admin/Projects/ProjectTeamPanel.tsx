@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IProjectMember } from "@/types/project.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { UserMinus, UserPlus } from "lucide-react"
@@ -51,9 +52,13 @@ const ProjectTeamPanel = ({
   const members = membersData?.data ?? []
   const users = ((usersData?.data ?? [])).filter((user) => user.status === "active")
 
-  const { mutateAsync: assign, isPending: isAssigning } = useMutation({
-    mutationFn: () =>
-      assignProjectMemberAction({ project_id: projectId, user_id: userId, role_on_project: roleOnProject }),
+  const { run: assignMember, isPending: isAssigning } = useActionMutation({
+    action: assignProjectMemberAction,
+    // The server updates the role when the person is already on the project,
+    // so this is also how a role gets changed; hence "Saved".
+    successMessage: "Saved",
+    invalidateKeys: [queryKeys.projectMembers.all, queryKeys.assignmentOverview.all, queryKeys.projects.all],
+    refresh: false,
   })
 
   const { mutateAsync: remove } = useMutation({
@@ -69,19 +74,10 @@ const ProjectTeamPanel = ({
   const handleAssign = async () => {
     if (!userId) return
 
-    const result = await assign()
-
-    if (!result.success) {
-      toast.error(result.message || "Failed to assign")
-      return
+    if (await assignMember({ project_id: projectId, user_id: userId, role_on_project: roleOnProject })) {
+      setUserId("")
+      setRoleOnProject("")
     }
-
-    // The server updates the role when the person is already on the project, so
-    // this is also how a role gets changed — hence the wording.
-    toast.success("Saved")
-    setUserId("")
-    setRoleOnProject("")
-    refresh()
   }
 
   const handleRemove = async (member: IProjectMember) => {
