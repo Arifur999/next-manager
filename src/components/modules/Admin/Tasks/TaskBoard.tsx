@@ -12,6 +12,26 @@ import { ListChecks } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 import { tasksListQuery, workflowStatusesListQuery } from "@/queries/work.queries"
 
+type TaskFilters = {
+  mine: boolean
+  overdue: boolean
+  clientOwner: boolean
+  due: string | null
+  completed: boolean
+}
+
+// Names the view that is empty: "No tasks yet" on a filtered view would be a
+// claim about the whole board.
+const emptyMessageFor = ({ mine, overdue, clientOwner, due, completed }: TaskFilters) => {
+  if (overdue) return "Nothing is late."
+  if (due === "today") return "Nothing is due today."
+  if (due === "upcoming") return "Nothing due in the next seven days."
+  if (completed) return "Nothing finished yet."
+  if (mine) return "Nothing assigned to you."
+  if (clientOwner) return "No work on the clients you brought in yet."
+  return "No tasks yet."
+}
+
 /**
  * The task board.
  *
@@ -68,19 +88,7 @@ const TaskBoard = ({
     (status) => status.is_active || tasks.some((task) => task.status.id === status.id)
   )
 
-  const empty = overdue
-    ? "Nothing is late."
-    : due === "today"
-      ? "Nothing is due today."
-      : due === "upcoming"
-        ? "Nothing due in the next seven days."
-        : completed
-          ? "Nothing finished yet."
-    : mine
-      ? "Nothing assigned to you."
-      : clientOwner
-        ? "No work on the clients you brought in yet."
-        : "No tasks yet."
+  const empty = emptyMessageFor({ mine, overdue, clientOwner, due, completed })
 
   return (
     <div className="space-y-4">
