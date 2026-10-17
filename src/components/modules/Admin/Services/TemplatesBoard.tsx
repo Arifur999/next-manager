@@ -4,7 +4,7 @@ import { deleteTemplateAction } from "@/app/(dashboardLayout)/admin/dashboard/se
 import TemplateFormCard from "@/components/modules/Admin/Services/TemplateFormCard"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import EmptyState from "@/components/shared/state/EmptyState"
-import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -28,9 +28,9 @@ import { queryKeys } from "@/lib/queryKeys"
 const TemplatesBoard = () => {
   const [removing, setRemoving] = useState<IServiceTemplate | null>(null)
 
-  const { data, isLoading } = useQuery(serviceTemplatesQuery())
+  const packageList = useQuery(serviceTemplatesQuery())
 
-  const templates = data?.data ?? []
+  const templates = packageList.data?.data ?? []
 
   const { run: removePackage, isPending: isRemoving } = useActionMutation({
     action: deleteTemplateAction,
@@ -52,11 +52,12 @@ const TemplatesBoard = () => {
           <CardTitle className="text-base">Packages</CardTitle>
         </CardHeader>
 
-        {isLoading && templates.length === 0 ? (
-          <LoadingBlock />
-        ) : templates.length === 0 ? (
-          <EmptyState icon={Boxes}>No packages yet.</EmptyState>
-        ) : (
+        <PanelState
+          query={packageList}
+          errorMessage="Packages did not load."
+          isEmpty={templates.length === 0}
+          empty={<EmptyState icon={Boxes}>No packages yet.</EmptyState>}
+        >
           <ul className="divide-y">
             {templates.map((template) => {
               const estimate = template.items.reduce(
@@ -99,7 +100,7 @@ const TemplatesBoard = () => {
               )
             })}
           </ul>
-        )}
+        </PanelState>
       </Card>
 
       <ConfirmDialog
