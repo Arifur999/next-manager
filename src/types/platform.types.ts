@@ -212,7 +212,7 @@ export const PLATFORM_PERMISSION_INFO: Record<
         area: "Team",
         label: "Manage the platform team",
         description:
-            "Invite operators and set what they may do — including granting this permission, so hand it out carefully.",
+            "Invite operators and set what they may do, including granting this permission. Hand it out carefully.",
     },
     "platform.campaigns.send": {
         area: "Customers",
