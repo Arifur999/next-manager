@@ -20,7 +20,6 @@ import { formatBdt } from "@/lib/currency"
 import { teamPayoutFormZodSchema, type ITeamPayoutFormValues } from "@/zod/spending.validation"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { format } from "date-fns"
 import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useCallback, useState } from "react"
@@ -28,6 +27,7 @@ import { projectsListQuery } from "@/queries/project.queries"
 import { accountsQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
 import { usersListQuery } from "@/queries/people.queries"
+import { todayIsoDate } from "@/lib/dates"
 
 const TYPES = [
   { value: "salary", label: "Salary" },
@@ -36,14 +36,10 @@ const TYPES = [
   { value: "reimbursement", label: "Reimbursement" },
 ] as const
 
-// The user's own calendar day. toISOString() is UTC, which in Dhaka is still
-// yesterday until 6am.
-const today = () => format(new Date(), "yyyy-MM-dd")
-
 const getDefaultValues = (): ITeamPayoutFormValues => ({
   user_id: "",
   project_id: "",
-  date: today(),
+  date: todayIsoDate(),
   amount_bdt: "",
   type: "salary",
   account_id: "",

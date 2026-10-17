@@ -21,16 +21,12 @@ import type { IDuePerson } from "@/types/spending.types"
 import { dueTransactionFormZodSchema, type IDueTransactionFormValues } from "@/zod/spending.validation"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { format } from "date-fns"
 import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useCallback, useState } from "react"
 import { accountsQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
-
-// The user's own calendar day. toISOString() is UTC, which in Dhaka is still
-// yesterday until 6am.
-const today = () => format(new Date(), "yyyy-MM-dd")
+import { todayIsoDate } from "@/lib/dates"
 
 const RecordTransactionModal = ({ people }: { people: IDuePerson[] }) => {
   const [open, setOpen] = useState(false)
@@ -52,7 +48,7 @@ const RecordTransactionModal = ({ people }: { people: IDuePerson[] }) => {
   // literal "received", so the form field could never be switched to "payment".
   const defaultValues: IDueTransactionFormValues = {
     due_person_id: "",
-    date: today(),
+    date: todayIsoDate(),
     direction: "received",
     amount_bdt: "",
     account_id: "",

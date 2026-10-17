@@ -22,17 +22,13 @@ import { queryKeys } from "@/lib/queryKeys"
 import { accountsQuery } from "@/queries/finance.queries"
 import { ownerWithdrawalFormZodSchema, type IOwnerWithdrawalFormValues } from "@/zod/spending.validation"
 import { useForm } from "@tanstack/react-form"
-import { format } from "date-fns"
 import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useCallback, useState } from "react"
-
-// The user's own calendar day. toISOString() is UTC, which in Dhaka is still
-// yesterday until 6am.
-const today = () => format(new Date(), "yyyy-MM-dd")
+import { todayIsoDate } from "@/lib/dates"
 
 const getDefaultValues = (): IOwnerWithdrawalFormValues => ({
-  date: today(),
+  date: todayIsoDate(),
   amount_bdt: "",
   type: "personal",
   account_id: "",
