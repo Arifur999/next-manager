@@ -20,19 +20,8 @@ import { useState } from "react"
 import { usersListQuery } from "@/queries/people.queries"
 import { permissionGridQuery } from "@/queries/workspace.queries"
 
-/**
- * Who may do what, as a grid rather than a list of capabilities.
- *
- * Two tabs' worth of idea. **Roles** is the template every person in that role
- * starts from. **One person** is the exception, and its squares read "Inherit"
- * until somebody deliberately says otherwise.
- *
- * The sentence this screen has to keep true: nothing set here can WIDEN
- * anybody. The role gate runs first and these values only narrow inside it, so
- * giving operations "Accounts — everything" does not open the accounts page to
- * them; the question is never asked. And no value here can cross into another
- * company, because there is no scope that means another company.
- */
+// Role templates and per-person exceptions. Nothing here can widen access: the role
+// gate runs first and these only narrow inside it, and no scope reaches another company.
 
 const PermissionsBoard = () => {
   const [personId, setPersonId] = useState<string>("")

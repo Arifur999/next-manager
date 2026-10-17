@@ -14,14 +14,8 @@ import {
   type IPermissionGrid,
 } from "@/types/permission.types"
 
-/**
- * One person, treated differently from their role.
- *
- * Every square starts on "Inherit", which is the absence of a row rather than a
- * copy of the role's value — an override that happened to match the role today
- * would silently stop following it tomorrow. Choosing "Inherit" again deletes
- * the override; it does not write the role's current answer into it.
- */
+// One person's exceptions. "Inherit" is no override at all, not a copy of the role's
+// value, so choosing it again deletes the override and they follow the role again.
 
 interface UserPermissionGridProps {
   grid: IPermissionGrid

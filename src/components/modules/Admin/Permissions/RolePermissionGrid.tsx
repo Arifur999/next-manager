@@ -13,13 +13,7 @@ import {
   type IPermissionGrid,
 } from "@/types/permission.types"
 
-/**
- * What everybody in one role starts with.
- *
- * This is the template, so a change here moves every person in that role who
- * has not been given an exception. The person tab is where one individual is
- * treated differently.
- */
+// One role's template: a change moves everybody in the role who has no exception.
 
 interface RolePermissionGridProps {
   grid: IPermissionGrid
