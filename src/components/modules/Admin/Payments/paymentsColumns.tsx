@@ -14,6 +14,7 @@ export const paymentsColumns: ColumnDef<IPayment>[] = [
   {
     id: "client",
     header: "Client",
+    meta: { exportValue: (payment) => payment.client?.name },
     enableSorting: false,
     cell: ({ row }) => (
       <div className="min-w-0">
@@ -35,6 +36,7 @@ export const paymentsColumns: ColumnDef<IPayment>[] = [
   {
     id: "reporting_rate",
     header: "Rate",
+    meta: { exportValue: (payment) => payment.reporting_rate },
     enableSorting: false,
     cell: ({ row }) => (
       <span className="text-sm text-muted-foreground tabular-nums">
@@ -45,6 +47,7 @@ export const paymentsColumns: ColumnDef<IPayment>[] = [
   {
     id: "amount_bdt_reporting",
     header: "BDT (reporting)",
+    meta: { exportValue: (payment) => payment.amount_bdt_reporting },
     enableSorting: false,
     cell: ({ row }) => (
       // Muted on purpose: this is a frozen reporting figure, not money that
@@ -58,6 +61,7 @@ export const paymentsColumns: ColumnDef<IPayment>[] = [
   {
     id: "account",
     header: "Into",
+    meta: { exportValue: (payment) => payment.account?.name },
     enableSorting: false,
     cell: ({ row }) => (
       <Badge variant="outline">{row.original.account?.name ?? "N/A"}</Badge>

@@ -40,6 +40,7 @@ const PaymentsTable = () => {
         data={payments}
         columns={paymentsColumns}
         tableId="payments"
+        exportFileName="payments"
         {...toTableQueryProps(paymentsQuery)}
         emptyMessage="No payments recorded yet."
         toolbarAction={<RecordPaymentModal />}
