@@ -88,7 +88,35 @@ const TaskBoard = ({
     (status) => status.is_active || tasks.some((task) => task.status.id === status.id)
   )
 
-  const empty = emptyMessageFor({ mine, overdue, clientOwner, due, completed })
+  const renderTasks = () => {
+    if (isLoading && tasks.length === 0) {
+      return (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {(statuses.length > 0 ? statuses : [null, null, null, null]).map((column, index) => (
+            <Card key={column?.id ?? index} className="overflow-hidden p-0">
+              <LoadingBlock height="h-48" />
+            </Card>
+          ))}
+        </div>
+      )
+    }
+
+    if (tasks.length === 0) {
+      return (
+        <Card>
+          <EmptyState icon={ListChecks}>
+            {emptyMessageFor({ mine, overdue, clientOwner, due, completed })}
+          </EmptyState>
+        </Card>
+      )
+    }
+
+    // What lands this week, rather than where work is stuck: a third view over
+    // the same query, not a different screen.
+    if (asCalendar) return <TaskCalendar tasks={tasks} />
+    if (asList) return <TaskList tasks={tasks} />
+    return <TaskColumns tasks={tasks} statuses={statuses} />
+  }
 
   return (
     <div className="space-y-4">
@@ -98,27 +126,7 @@ const TaskBoard = ({
         </div>
       )}
 
-      {isLoading && tasks.length === 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {(statuses.length > 0 ? statuses : [null, null, null, null]).map((column, index) => (
-            <Card key={column?.id ?? index} className="overflow-hidden p-0">
-              <LoadingBlock height="h-48" />
-            </Card>
-          ))}
-        </div>
-      ) : tasks.length === 0 ? (
-        <Card>
-          <EmptyState icon={ListChecks}>{empty}</EmptyState>
-        </Card>
-      ) : asCalendar ? (
-        // What lands this week, rather than where work is stuck. A third
-        // view over the same query, not a different screen.
-        <TaskCalendar tasks={tasks} />
-      ) : asList ? (
-        <TaskList tasks={tasks} />
-      ) : (
-        <TaskColumns tasks={tasks} statuses={statuses} />
-      )}
+      {renderTasks()}
     </div>
   )
 }
