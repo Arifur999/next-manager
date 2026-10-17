@@ -1,4 +1,4 @@
-import { LEAD_STAGES } from "@/types/crm.types"
+import { CLIENT_STATUSES, LEAD_STAGES } from "@/types/crm.types"
 import { z } from "zod"
 import { optionalNonNegative, toNumber } from "./formFields"
 
@@ -8,7 +8,7 @@ export const clientFormZodSchema = z.object({
     email: z.email("Enter a valid email address").optional().or(z.literal("")),
     phone: z.string().optional(),
     country: z.string().optional(),
-    status: z.enum(["active", "inactive", "archived"]).optional(),
+    status: z.enum(CLIENT_STATUSES).optional(),
     notes: z.string().optional(),
 })
 
