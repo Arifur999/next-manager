@@ -66,20 +66,7 @@ const CreateInvoiceModal = () => {
   const projects = projectsData?.data ?? []
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IInvoiceFormValues) =>
-      createInvoiceAction({
-        ...values,
-        project_id: values.project_id || null,
-        discount: values.discount ? Number(values.discount) : 0,
-        tax: values.tax ? Number(values.tax) : 0,
-        status: "sent",
-        items: values.items.map((item, index) => ({
-          description: item.description,
-          quantity: Number(item.quantity) || 1,
-          unit_price: Number(item.unit_price) || 0,
-          sort_order: index,
-        })),
-      }),
+    mutationFn: (values: IInvoiceFormValues) => createInvoiceAction(values),
   })
 
   const form = useForm({
