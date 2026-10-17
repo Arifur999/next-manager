@@ -6,13 +6,16 @@ import {
 } from "@/app/(dashboardLayout)/admin/dashboard/team-management/_inviteAction"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { ROLE_LABELS } from "@/zod/user.validation"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { formatDistanceToNow, parseISO } from "date-fns"
 import { UserCheck } from "lucide-react"
-import { toast } from "sonner"
 import { usersListQuery } from "@/queries/people.queries"
 import { queryKeys } from "@/lib/queryKeys"
+
+// Each decision changes the member list and lands in the activity feed.
+const DECISION_KEYS = [queryKeys.users.all, queryKeys.activity.all]
 
 /**
  * People who joined through an invite and are waiting to be let in.
@@ -27,40 +30,23 @@ import { queryKeys } from "@/lib/queryKeys"
  */
 
 const PendingApprovals = () => {
-  const queryClient = useQueryClient()
-
   const { data } = useQuery(usersListQuery("status=pending"))
 
   const pending = data?.data ?? []
 
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.users.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.activity.all })
-  }
-
-  const { mutate: approve, isPending: isApproving } = useMutation({
-    mutationFn: (id: string) => approveMemberAction(id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        // "Starter includes 5 seats and all of them are in use" arrives here.
-        toast.error(result.message || "Could not approve")
-        return
-      }
-      toast.success("Approved — they can sign in now")
-      refresh()
-    },
+  // A full plan is refused as "Starter includes 5 seats and all of them are in use".
+  const { run: approve, isPending: isApproving } = useActionMutation({
+    action: approveMemberAction,
+    successMessage: "Approved — they can sign in now",
+    invalidateKeys: DECISION_KEYS,
+    refresh: false,
   })
 
-  const { mutate: reject, isPending: isRejecting } = useMutation({
-    mutationFn: (id: string) => rejectMemberAction(id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not turn the request down")
-        return
-      }
-      toast.success("Request turned down")
-      refresh()
-    },
+  const { run: reject, isPending: isRejecting } = useActionMutation({
+    action: rejectMemberAction,
+    successMessage: "Request turned down",
+    invalidateKeys: DECISION_KEYS,
+    refresh: false,
   })
 
   if (pending.length === 0) return null
@@ -102,7 +88,7 @@ const PendingApprovals = () => {
                 variant="outline"
                 size="sm"
                 disabled={isBusy}
-                onClick={() => reject(person.id)}
+                onClick={() => void reject(person.id)}
               >
                 Turn down
               </Button>
@@ -110,7 +96,7 @@ const PendingApprovals = () => {
                 type="button"
                 size="sm"
                 disabled={isBusy}
-                onClick={() => approve(person.id)}
+                onClick={() => void approve(person.id)}
               >
                 Approve
               </Button>
