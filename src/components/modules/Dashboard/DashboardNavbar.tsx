@@ -17,10 +17,12 @@ import NotificationBell from "@/components/modules/Dashboard/NotificationBell";
 import type { UserRole } from "@/lib/authUtils";
 import { NAV_ICONS } from "@/lib/iconMapper";
 import { ACCOUNT_LINKS } from "@/lib/navItem";
+import { organizationQuery } from "@/queries/workspace.queries";
 import { logout } from "@/services/logout"
+import { roleTitle } from "@/types/permission.types";
 import { type IUser } from "@/types/user.types";
 import { LogOut, Monitor, Moon, Sun } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -32,6 +34,27 @@ const initialsOf = (name: string) =>
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("") || "U";
+
+// Whose workspace this is: the company by name, the role as a quiet chip. The
+// platform operator has no company; the console is theirs.
+const WorkspaceLabel = ({ role }: { role: UserRole }) => {
+  const isPlatform = role === "super_admin";
+  // The same query the business settings page edits, so a renamed company
+  // shows here as soon as it is saved. The layout prefetches it.
+  const { data } = useQuery({ ...organizationQuery(), enabled: !isPlatform, staleTime: 5 * 60_000 });
+
+  if (isPlatform) return <p className="truncate text-sm font-medium">Platform console</p>;
+
+  const companyName = data?.data?.name;
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      {companyName && <p className="truncate text-sm font-medium">{companyName}</p>}
+      <span className="shrink-0 rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+        {roleTitle(role)}
+      </span>
+    </div>
+  );
+};
 
 const DashboardNavbar = ({ user, role }: { user: IUser; role: UserRole }) => {
   const router = useRouter();
@@ -47,14 +70,12 @@ const DashboardNavbar = ({ user, role }: { user: IUser; role: UserRole }) => {
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b bg-background px-4 md:px-6">
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2">
         <MobileNav role={role} />
-        <p className="text-sm text-muted-foreground">
-          <span className="capitalize">{user.role.replace(/_/g, " ")}</span> workspace
-        </p>
+        <WorkspaceLabel role={role} />
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         {/* The platform operator has no company, so nothing is ever addressed
             to them here - they are the one sending. */}
         {role !== "super_admin" && <NotificationBell />}

@@ -2,9 +2,12 @@ import DashboardNavbar from "@/components/modules/Dashboard/DashboardNavbar";
 import DashboardSidebar from "@/components/modules/Dashboard/DashboardSidebar";
 import NavGroupsProvider from "@/components/modules/Dashboard/NavGroupsProvider";
 import QueryProviders from "@/app/providers/QueryProvider";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import { NAV_GROUPS_COOKIE, parseOpenGroups } from "@/lib/navGroups";
+import { organizationQuery } from "@/queries/workspace.queries";
 import { getUserInfo } from "@/services/auth.services";
 import { toUserRole } from "@/types/user.types";
+import type { QueryClient } from "@tanstack/react-query";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import React from "react";
@@ -33,6 +36,13 @@ const DashboardLayout = async ({ children }: { children: React.ReactNode }) => {
   // groups open that the browser will show.
   const openGroups = parseOpenGroups(cookieStore.get(NAV_GROUPS_COOKIE)?.value);
 
+  // The company name in the top bar paints with the page. The platform
+  // operator has no company to ask about.
+  const prefetchOrganization = async (queryClient: QueryClient) => {
+    if (role === "super_admin") return;
+    await queryClient.prefetchQuery(organizationQuery());
+  };
+
   // TanStack Query lives here and in the auth layout, not in the root layout,
   // so the marketing page does not ship or run it. Both use the same browser
   // QueryClient (getQueryClient), so the cache survives sign-in.
@@ -42,8 +52,10 @@ const DashboardLayout = async ({ children }: { children: React.ReactNode }) => {
         <div className="flex h-screen overflow-hidden">
           <DashboardSidebar role={role} />
 
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <DashboardNavbar user={user} role={role} />
+          <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+            <QueryPrefetch prefetch={prefetchOrganization}>
+              <DashboardNavbar user={user} role={role} />
+            </QueryPrefetch>
 
             <main
               id="main-content"
