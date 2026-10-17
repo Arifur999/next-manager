@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest"
-import { NO_DEPARTMENT, createUserServerZodSchema, updateUserServerZodSchema } from "./user.validation"
+import {
+  NO_DEPARTMENT,
+  createUserServerZodSchema,
+  isAssignableRole,
+  updateUserServerZodSchema,
+} from "./user.validation"
 
 const newMember = {
   full_name: "Rahim Uddin",
@@ -44,5 +49,15 @@ describe("updateUserServerZodSchema", () => {
 
   it("refuses to put somebody back into pending", () => {
     expect(updateUserServerZodSchema.safeParse({ ...edit, status: "pending" }).success).toBe(false)
+  })
+})
+
+describe("isAssignableRole", () => {
+  it("accepts a role an admin may grant", () => {
+    expect(isAssignableRole("project_manager")).toBe(true)
+  })
+
+  it("refuses the platform role", () => {
+    expect(isAssignableRole("super_admin")).toBe(false)
   })
 })

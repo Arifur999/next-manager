@@ -2,6 +2,7 @@
 
 import { createUserAction } from "@/app/(dashboardLayout)/admin/dashboard/team-management/_action"
 import DepartmentField from "@/components/modules/Admin/TeamManagement/DepartmentField"
+import RoleField from "@/components/modules/Admin/TeamManagement/RoleField"
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
 import { Button } from "@/components/ui/button"
@@ -15,19 +16,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  ASSIGNABLE_ROLES,
   NO_DEPARTMENT,
-  ROLE_LABELS,
   createUserFormZodSchema,
   type ICreateUserFormValues,
 } from "@/zod/user.validation"
@@ -45,8 +36,6 @@ const defaultValues: ICreateUserFormValues = {
   role: "operations",
   department_id: NO_DEPARTMENT,
 }
-
-const ROLE_OPTIONS = ASSIGNABLE_ROLES.map((value) => ({ value, label: ROLE_LABELS[value] }))
 
 const CreateUserFormModal = () => {
   const [open, setOpen] = useState(false)
@@ -156,31 +145,9 @@ const CreateUserFormModal = () => {
                 )}
               </form.Field>
 
-              {/* Not an AppField: that one wraps Input. A non-Input control gets
-                  the same space-y-1.5 + Label block written out here. */}
               <form.Field name="role">
                 {(field) => (
-                  <div className="space-y-1.5">
-                    <Label htmlFor={field.name}>Role</Label>
-                    <Select
-                      value={field.state.value}
-                      onValueChange={(value) =>
-                        field.handleChange(value as ICreateUserFormValues["role"])
-                      }
-                      disabled={isPending}
-                    >
-                      <SelectTrigger id={field.name} className="w-full">
-                        <SelectValue placeholder="Choose a role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ROLE_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <RoleField value={field.state.value} onChange={field.handleChange} disabled={isPending} />
                 )}
               </form.Field>
 

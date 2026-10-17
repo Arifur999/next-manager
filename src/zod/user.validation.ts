@@ -5,7 +5,12 @@ import { z } from "zod"
 // may want a second one, and the last-admin guard makes that safe.
 export const ASSIGNABLE_ROLES = ["admin", "sales", "project_manager", "operations"] as const
 
-export const ROLE_LABELS: Record<(typeof ASSIGNABLE_ROLES)[number], string> = {
+export type AssignableRole = (typeof ASSIGNABLE_ROLES)[number]
+
+export const isAssignableRole = (role: string): role is AssignableRole =>
+  ASSIGNABLE_ROLES.some((assignable) => assignable === role)
+
+export const ROLE_LABELS: Record<AssignableRole, string> = {
   admin: "Admin — finance and company state",
   sales: "Sales — clients, leads, invoices",
   project_manager: "Project manager — projects, teams, schedule",
