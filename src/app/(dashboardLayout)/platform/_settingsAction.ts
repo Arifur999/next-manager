@@ -1,17 +1,9 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
+import { runValidatedAction } from "@/lib/runAction"
 import { updatePlatformSettings } from "@/services/platform.services"
-import type { IPlatformSettings } from "@/types/platform.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+import { platformSettingsServerZodSchema } from "@/zod/platform.validation"
 
-export const updateSettingsAction = async (
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<IPlatformSettings> | ApiErrorResponse> => {
-    try {
-        return await updatePlatformSettings(payload)
-    } catch (error: unknown) {
-        // "That plan does not exist, or is not on sale" arrives here.
-        return { success: false, message: getActionErrorMessage(error, "Could not save the settings") }
-    }
-}
+// "That plan does not exist, or is not on sale" arrives here.
+export const updateSettingsAction = async (values: unknown) =>
+    runValidatedAction(platformSettingsServerZodSchema, values, "Could not save the settings", updatePlatformSettings)

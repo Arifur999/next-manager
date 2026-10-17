@@ -62,16 +62,12 @@ const SettingsForm = ({ settings }: { settings: IPlatformSettings }) => {
   const [form, setForm] = useState({
     product_name: settings.product_name,
     support_email: settings.support_email,
-    default_plan_id: settings.default_plan_id ?? NO_PLAN,
-    default_trial_days: settings.default_trial_days,
+    default_plan_id: settings.default_plan_id ?? "",
+    default_trial_days: String(settings.default_trial_days),
   })
 
   const { mutate: save, isPending } = useMutation({
-    mutationFn: () =>
-      updateSettingsAction({
-        ...form,
-        default_plan_id: form.default_plan_id === NO_PLAN ? null : form.default_plan_id,
-      }),
+    mutationFn: () => updateSettingsAction(form),
     onSuccess: (result) => {
       if (!result.success) {
         toast.error(result.message || "Could not save the settings")
@@ -83,7 +79,7 @@ const SettingsForm = ({ settings }: { settings: IPlatformSettings }) => {
   })
 
   const smtp = settings.smtp
-  const provisions = form.default_plan_id !== NO_PLAN
+  const provisions = form.default_plan_id !== ""
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
@@ -208,8 +204,10 @@ const SettingsForm = ({ settings }: { settings: IPlatformSettings }) => {
           <div className="space-y-1.5">
             <Label htmlFor="default-plan">Starting plan</Label>
             <Select
-              value={form.default_plan_id}
-              onValueChange={(value) => setForm({ ...form, default_plan_id: value })}
+              value={form.default_plan_id || NO_PLAN}
+              onValueChange={(value) =>
+                setForm({ ...form, default_plan_id: value === NO_PLAN ? "" : value })
+              }
             >
               <SelectTrigger id="default-plan" className="w-full">
                 <SelectValue />
@@ -240,9 +238,7 @@ const SettingsForm = ({ settings }: { settings: IPlatformSettings }) => {
                 max={365}
                 value={form.default_trial_days}
                 disabled={!provisions}
-                onChange={(event) =>
-                  setForm({ ...form, default_trial_days: Number(event.target.value) })
-                }
+                onChange={(event) => setForm({ ...form, default_trial_days: event.target.value })}
                 className="w-28"
               />
               <span className="text-sm text-muted-foreground">days</span>
@@ -250,7 +246,7 @@ const SettingsForm = ({ settings }: { settings: IPlatformSettings }) => {
             <p className="text-xs text-muted-foreground">
               {!provisions
                 ? "Nothing to time until there is a starting plan."
-                : form.default_trial_days === 0
+                : Number(form.default_trial_days) === 0
                   ? "No trial — they start as a paying customer straight away."
                   : `They can use everything for ${form.default_trial_days} days before the plan has to be paid for.`}
             </p>

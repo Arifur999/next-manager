@@ -5,6 +5,7 @@ import {
     createCompanyServerZodSchema,
     createPlanServerZodSchema,
     platformExpenseServerZodSchema,
+    platformSettingsServerZodSchema,
     setSubscriptionServerZodSchema,
     updatePlanServerZodSchema,
 } from "./platform.validation"
@@ -191,5 +192,34 @@ describe("platformExpenseServerZodSchema", () => {
         expect(platformExpenseServerZodSchema.safeParse({ ...valid, amount_usd: "0" }).success).toBe(false)
         expect(platformExpenseServerZodSchema.safeParse({ ...valid, description: " " }).success).toBe(false)
         expect(platformExpenseServerZodSchema.safeParse({ ...valid, date: "01/10/2026" }).success).toBe(false)
+    })
+})
+
+describe("platformSettingsServerZodSchema", () => {
+    const valid = { product_name: " Naxified ", support_email: "help@naxified.com", default_plan_id: "p1", default_trial_days: "14" }
+
+    it("builds the API payload", () => {
+        expect(platformSettingsServerZodSchema.parse(valid)).toEqual({
+            product_name: "Naxified",
+            support_email: "help@naxified.com",
+            default_plan_id: "p1",
+            default_trial_days: 14,
+        })
+    })
+
+    it("sends no plan as null and an empty trial as zero days", () => {
+        const payload = platformSettingsServerZodSchema.parse({ ...valid, default_plan_id: "", default_trial_days: "" })
+        expect(payload.default_plan_id).toBeNull()
+        expect(payload.default_trial_days).toBe(0)
+    })
+
+    it("allows an empty support address but not an invalid one", () => {
+        expect(platformSettingsServerZodSchema.safeParse({ ...valid, support_email: "" }).success).toBe(true)
+        expect(platformSettingsServerZodSchema.safeParse({ ...valid, support_email: "help" }).success).toBe(false)
+    })
+
+    it("rejects a blank product name and a trial over a year", () => {
+        expect(platformSettingsServerZodSchema.safeParse({ ...valid, product_name: " " }).success).toBe(false)
+        expect(platformSettingsServerZodSchema.safeParse({ ...valid, default_trial_days: "400" }).success).toBe(false)
     })
 })

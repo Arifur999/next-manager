@@ -113,6 +113,27 @@ export const platformExpenseFormZodSchema = z.object({
 
 export type IPlatformExpenseFormValues = z.infer<typeof platformExpenseFormZodSchema>
 
+export const platformSettingsFormZodSchema = z.object({
+    product_name: z
+        .string()
+        .trim()
+        .min(1, "The product needs a name")
+        .max(60, "That will not fit in an email subject line"),
+    // Empty says nothing at all, which beats an address nobody reads.
+    support_email: z
+        .string()
+        .trim()
+        .pipe(z.union([z.literal(""), z.email("That is not a valid email address")])),
+    // Empty leaves new sign-ups unprovisioned until somebody sets them up by hand.
+    default_plan_id: z.string(),
+    default_trial_days: z
+        .string()
+        .trim()
+        .refine((value) => isWholeNumberBetween(value, 0, 365), "A trial is a whole number of days, from 0 to 365"),
+})
+
+export type IPlatformSettingsFormValues = z.infer<typeof platformSettingsFormZodSchema>
+
 // Server schemas: the form values checked again on the server and turned into
 // the payloads platform.validation.ts on the API expects.
 
@@ -157,4 +178,11 @@ export const platformExpenseServerZodSchema = platformExpenseFormZodSchema.trans
     description: values.description,
     category: values.category,
     amount_usd: Number(values.amount_usd),
+}))
+
+export const platformSettingsServerZodSchema = platformSettingsFormZodSchema.transform((values) => ({
+    product_name: values.product_name,
+    support_email: values.support_email,
+    default_plan_id: values.default_plan_id || null,
+    default_trial_days: Number(values.default_trial_days),
 }))
