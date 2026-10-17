@@ -1,6 +1,10 @@
 import { z } from "zod"
 import { isoDate, optionalNonNegative, positiveAmount, toNumber } from "./formFields"
 
+// Each form schema models what the inputs hold; its server schema checks the
+// same values again on the server and builds the API payload. The API drops
+// unknown keys without a word, so a misnamed field would be lost, not refused.
+
 export const projectFormZodSchema = z.object({
     client_id: z.string().min(1, "Choose a client"),
     name: z.string().min(1, "Name is required"),
@@ -15,10 +19,6 @@ export const projectFormZodSchema = z.object({
 })
 
 export type IProjectFormValues = z.infer<typeof projectFormZodSchema>
-
-// Server schemas: the form's values checked again on the server and keyed as
-// the API's request schema expects. The API drops unknown keys without a word,
-// so a misnamed field would be lost, not refused.
 
 const toProjectPayload = (values: IProjectFormValues) => ({
     client_id: values.client_id,

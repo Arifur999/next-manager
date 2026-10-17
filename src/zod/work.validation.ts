@@ -1,6 +1,10 @@
 import { z } from "zod"
 import { isoDate } from "./formFields"
 
+// Each form schema models what the inputs hold; its server schema checks the
+// same values again on the server and builds the API payload. The API drops
+// unknown keys without a word, so a misnamed field would be lost, not refused.
+
 export const taskFormZodSchema = z.object({
     project_id: z.string().min(1, "Choose a project"),
     title: z.string().min(1, "Title is required"),
@@ -12,28 +16,6 @@ export const taskFormZodSchema = z.object({
 })
 
 export type ITaskFormValues = z.infer<typeof taskFormZodSchema>
-
-export const logTimeFormZodSchema = z.object({
-    project_id: z.string().min(1, "Choose a project"),
-    task_id: z.string().optional(),
-    date: isoDate,
-    hours: z
-        .string()
-        .min(1, "Hours are required")
-        .refine((value) => Number.isFinite(Number(value)), "Hours must be a number")
-        .refine((value) => Number(value) > 0, "Hours must be greater than zero")
-        // Mirrors the server's guard so a misplaced decimal is caught before the
-        // round-trip, with the same reason given.
-        .refine((value) => Number(value) <= 24, "A day is 24 hours — check the decimal point"),
-    is_billable: z.boolean(),
-    notes: z.string().optional(),
-})
-
-export type ILogTimeFormValues = z.infer<typeof logTimeFormZodSchema>
-
-// Server schemas: the form's values checked again on the server and keyed as
-// the API's request schema expects. The API drops unknown keys without a word,
-// so a misnamed field would be lost, not refused.
 
 export const createTaskServerZodSchema = taskFormZodSchema.transform((values) => ({
     project_id: values.project_id,
@@ -53,6 +35,33 @@ export const createTaskServerZodSchema = taskFormZodSchema.transform((values) =>
 export const moveTaskServerZodSchema = z.object({
     status_id: z.string().min(1, "Choose a column"),
 })
+
+export const logTimeFormZodSchema = z.object({
+    project_id: z.string().min(1, "Choose a project"),
+    task_id: z.string().optional(),
+    date: isoDate,
+    hours: z
+        .string()
+        .min(1, "Hours are required")
+        .refine((value) => Number.isFinite(Number(value)), "Hours must be a number")
+        .refine((value) => Number(value) > 0, "Hours must be greater than zero")
+        // Mirrors the server's guard so a misplaced decimal is caught before the
+        // round-trip, with the same reason given.
+        .refine((value) => Number(value) <= 24, "A day is 24 hours — check the decimal point"),
+    is_billable: z.boolean(),
+    notes: z.string().optional(),
+})
+
+export type ILogTimeFormValues = z.infer<typeof logTimeFormZodSchema>
+
+export const logTimeServerZodSchema = logTimeFormZodSchema.transform((values) => ({
+    project_id: values.project_id,
+    task_id: values.task_id || null,
+    date: values.date,
+    hours: Number(values.hours),
+    is_billable: values.is_billable,
+    notes: values.notes,
+}))
 
 // What a status MEANS is chosen, never guessed from its name: a meaning read
 // off a label would change the day somebody renamed it.
@@ -80,12 +89,3 @@ export const updateWorkflowStatusServerZodSchema = z.object({
 })
 
 export type IWorkflowStatusChange = z.infer<typeof updateWorkflowStatusServerZodSchema>
-
-export const logTimeServerZodSchema = logTimeFormZodSchema.transform((values) => ({
-    project_id: values.project_id,
-    task_id: values.task_id || null,
-    date: values.date,
-    hours: Number(values.hours),
-    is_billable: values.is_billable,
-    notes: values.notes,
-}))
