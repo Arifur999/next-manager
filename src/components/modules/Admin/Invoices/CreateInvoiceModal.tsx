@@ -1,6 +1,5 @@
 "use client"
 
-import { createInvoiceAction } from "@/app/(dashboardLayout)/admin/dashboard/invoices/_action"
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
 import EntitySelect from "@/components/shared/form/EntitySelect"
@@ -19,15 +18,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatUsd } from "@/lib/currency"
-import { invoiceFormZodSchema, type IInvoiceFormValues } from "@/zod/billing.validation"
-import { useActionMutation } from "@/hooks/useActionMutation"
-import { useForm } from "@tanstack/react-form"
+import { useInvoiceForm } from "@/components/modules/Admin/Invoices/useInvoiceForm"
+import { invoiceFormZodSchema } from "@/zod/billing.validation"
 import { useQuery } from "@tanstack/react-query"
 import { Plus, Trash2 } from "lucide-react"
 import { useCallback, useState } from "react"
 import { clientsListQuery } from "@/queries/crm.queries"
 import { projectsListQuery } from "@/queries/project.queries"
-import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * Creating an invoice.
@@ -37,22 +34,6 @@ import { queryKeys } from "@/lib/queryKeys"
  * figure is the one that counts. A client that could send its own total could
  * send a wrong one straight into receivables.
  */
-
-const today = () => new Date().toISOString().slice(0, 10)
-const inDays = (days: number) =>
-  new Date(Date.now() + days * 86400000).toISOString().slice(0, 10)
-
-const defaultValues: IInvoiceFormValues = {
-  client_id: "",
-  project_id: "",
-  issue_date: today(),
-  due_date: inDays(14),
-  discount: "",
-  tax: "",
-  notes: "",
-  items: [{ description: "", quantity: "1", unit_price: "" }],
-}
-
 const CreateInvoiceModal = () => {
   const [open, setOpen] = useState(false)
 
@@ -62,22 +43,7 @@ const CreateInvoiceModal = () => {
   const clients = clientsData?.data ?? []
   const projects = projectsData?.data ?? []
 
-  const { run: createInvoice, isPending } = useActionMutation({
-    action: createInvoiceAction,
-    successMessage: "Invoice created successfully",
-    invalidateKeys: [queryKeys.invoices.all, queryKeys.dashboard.all],
-  })
-
-  const form = useForm({
-    defaultValues,
-    onSubmit: async ({ value }) => {
-      // A failure keeps the dialog open with the lines already typed.
-      if (await createInvoice(value)) {
-        setOpen(false)
-        form.reset()
-      }
-    },
-  })
+  const { form, isPending } = useInvoiceForm(() => setOpen(false))
 
   const handleOpenChange = useCallback(
     (next: boolean) => {
