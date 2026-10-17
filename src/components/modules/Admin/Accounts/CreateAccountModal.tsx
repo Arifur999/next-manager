@@ -3,6 +3,7 @@
 import { createAccountAction } from "@/app/(dashboardLayout)/admin/dashboard/accounts/_action"
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
+import EntitySelect from "@/components/shared/form/EntitySelect"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -162,27 +163,14 @@ const CreateAccountModal = () => {
 
                     <form.Field name="type">
                       {(field) => (
-                        <div className="space-y-1.5">
-                          <Label htmlFor={field.name}>Type</Label>
-                          <Select
-                            value={field.state.value}
-                            onValueChange={(value) =>
-                              field.handleChange(value as IAccountFormValues["type"])
-                            }
-                            disabled={isPending}
-                          >
-                            <SelectTrigger id={field.name} className="w-full">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {TYPES_BY_CURRENCY[currency].map((option) => (
-                                <SelectItem key={option.value} value={option.value}>
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                        <EntitySelect
+                          id={field.name}
+                          label="Type"
+                          value={field.state.value}
+                          onChange={field.handleChange}
+                          disabled={isPending}
+                          options={TYPES_BY_CURRENCY[currency]}
+                        />
                       )}
                     </form.Field>
                   </>
