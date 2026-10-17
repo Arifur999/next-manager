@@ -1,6 +1,6 @@
 "use client"
 
-import { METRICS } from "@/components/modules/Admin/Targets/targetMetrics"
+import { specOf } from "@/components/modules/Admin/Targets/targetMetrics"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,14 +18,8 @@ const TargetList = ({
   onDelete: (id: string) => void
   isRemoving: boolean
 }) => {
-  const labelOf = (target: IKpiTarget) =>
-    METRICS.find((entry) => entry.metric === target.metric)?.label ?? target.metric
-
-  const unitOf = (target: IKpiTarget) =>
-    METRICS.find((entry) => entry.metric === target.metric)?.unit ?? ""
-
   const formatValue = (target: IKpiTarget) => {
-    const unit = unitOf(target)
+    const { unit } = specOf(target.metric)
     if (unit === "$") return `$${target.target_value.toLocaleString()}`
     return `${target.target_value}${unit}`
   }
@@ -57,7 +51,7 @@ const TargetList = ({
             >
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">
-                  {labelOf(target)}
+                  {specOf(target.metric).label}
                   <span className="ml-2 font-normal text-muted-foreground">
                     {target.user?.full_name ?? "agency-wide"}
                   </span>

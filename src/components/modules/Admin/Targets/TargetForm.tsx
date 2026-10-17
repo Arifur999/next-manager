@@ -1,6 +1,6 @@
 "use client"
 
-import { METRICS, PERIODS, type MetricSpec } from "@/components/modules/Admin/Targets/targetMetrics"
+import { METRICS, PERIODS, specOf } from "@/components/modules/Admin/Targets/targetMetrics"
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
 import EntitySelect from "@/components/shared/form/EntitySelect"
@@ -41,7 +41,7 @@ const TargetForm = ({
 
   const metric = useStore(form.store, (state) => state.values.metric)
   const isValueBlank = useStore(form.store, (state) => !state.values.target_value.trim())
-  const spec = METRICS.find((entry) => entry.metric === metric) as MetricSpec
+  const spec = specOf(metric)
 
   return (
     <Card className="gap-0 p-0">

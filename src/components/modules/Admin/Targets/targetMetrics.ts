@@ -68,6 +68,11 @@ export const METRICS: MetricSpec[] = [
   },
 ]
 
+// Every API metric has a spec above; the fallback keeps one added later
+// readable by its raw name instead of blank.
+export const specOf = (metric: KpiMetric): MetricSpec =>
+  METRICS.find((entry) => entry.metric === metric) ?? { metric, label: metric, unit: "", hint: "" }
+
 export const PERIODS: { value: KpiPeriod; label: string }[] = [
   { value: "month", label: "This month" },
   { value: "quarter", label: "This quarter" },
