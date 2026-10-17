@@ -10,7 +10,15 @@ import { taskViewsFor } from "@/lib/pageViews";
 import type { SearchParamsRecord } from "@/lib/table/urlState";
 import { sentenceCase } from "@/lib/text";
 import { toUserRole } from "@/types/user.types";
-import { readTaskView, taskQueryString, taskViewTitle, type TaskView } from "@/components/modules/Admin/Tasks/taskView";
+import CreateTaskModal from "@/components/modules/Admin/Tasks/CreateTaskModal";
+import { taskAccessFor } from "@/components/modules/Admin/Tasks/taskAccess";
+import {
+  isNarrowed,
+  readTaskView,
+  taskQueryString,
+  taskViewTitle,
+  type TaskView,
+} from "@/components/modules/Admin/Tasks/taskView";
 
 export const metadata: Metadata = {
   title: "Tasks",
@@ -60,16 +68,19 @@ const TasksPage = async ({
 
   // The two roles that own the schedule. Sales reads this board; the API
   // refuses them every write behind it, so the create button would only be a
-  // button that fails.
-  const canManage = user?.role === "admin" || user?.role === "project_manager";
+  // button that fails. On a narrowed view a new task would not land in sight.
+  const access = taskAccessFor(role);
+  const canCreate = access === "manage" && !isNarrowed(view);
 
   return (
     <div className="space-y-6">
-      <PageHeader title={taskViewTitle(view.status)}>{blurbFor(view)}</PageHeader>
+      <PageHeader title={taskViewTitle(view.status)} actions={canCreate ? <CreateTaskModal /> : undefined}>
+        {blurbFor(view)}
+      </PageHeader>
       {role && <ViewTabs label="Task views" tabs={taskViewsFor(role)} />}
 
       <QueryPrefetch prefetch={prefetch}>
-        <TaskBoard canManage={canManage} />
+        <TaskBoard access={access} userId={user?.id ?? null} />
       </QueryPrefetch>
     </div>
   );

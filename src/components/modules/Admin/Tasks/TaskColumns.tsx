@@ -1,8 +1,16 @@
 import TaskCard from "@/components/modules/Admin/Tasks/TaskCard"
+import { canEditTask, type TaskAccess } from "@/components/modules/Admin/Tasks/taskAccess"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import type { ITask, IWorkflowStatus } from "@/types/work.types"
 
-const TaskColumns = ({ tasks, statuses }: { tasks: ITask[]; statuses: IWorkflowStatus[] }) => (
+type TaskColumnsProps = {
+  tasks: ITask[]
+  statuses: IWorkflowStatus[]
+  access: TaskAccess
+  userId: string | null
+}
+
+const TaskColumns = ({ tasks, statuses, access, userId }: TaskColumnsProps) => (
   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
     {statuses.map((column) => {
       const columnTasks = tasks.filter((task) => task.status.id === column.id)
@@ -23,7 +31,9 @@ const TaskColumns = ({ tasks, statuses }: { tasks: ITask[]; statuses: IWorkflowS
             {columnTasks.length === 0 ? (
               <p className="py-6 text-center text-xs text-muted-foreground">Empty</p>
             ) : (
-              columnTasks.map((task) => <TaskCard key={task.id} task={task} statuses={statuses} />)
+              columnTasks.map((task) => (
+                <TaskCard key={task.id} task={task} statuses={statuses} canEdit={canEditTask(access, task, userId)} />
+              ))
             )}
           </div>
         </Card>

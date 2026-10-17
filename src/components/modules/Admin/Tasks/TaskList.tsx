@@ -1,3 +1,4 @@
+import TaskLink from "@/components/modules/Admin/Tasks/TaskLink"
 import TaskPriorityBadge from "@/components/modules/Admin/Tasks/TaskPriorityBadge"
 import { isTaskOverdue } from "@/components/modules/Admin/Tasks/taskDue"
 import StatusBadge from "@/components/shared/status/StatusBadge"
@@ -21,7 +22,9 @@ const TaskList = ({ tasks }: { tasks: ITask[] }) => (
         return (
           <li key={task.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
             <div className="min-w-48 flex-1">
-              <p className="font-medium">{task.title}</p>
+              <TaskLink taskId={task.id} className="font-medium">
+                {task.title}
+              </TaskLink>
               <p className="text-xs text-muted-foreground">
                 {task.project?.name ?? "No project"}
                 {task.assignee ? ` · ${task.assignee.full_name}` : " · unassigned"}

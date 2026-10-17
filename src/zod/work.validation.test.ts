@@ -4,6 +4,8 @@ import {
     createWorkflowStatusServerZodSchema,
     logTimeServerZodSchema,
     moveTaskServerZodSchema,
+    updateOwnTaskServerZodSchema,
+    updateTaskServerZodSchema,
     updateWorkflowStatusServerZodSchema,
 } from "./work.validation"
 
@@ -35,6 +37,50 @@ describe("createTaskServerZodSchema", () => {
 
     it("rejects a priority the API does not know", () => {
         expect(createTaskServerZodSchema.safeParse({ ...validTask, priority: "critical" }).success).toBe(false)
+    })
+})
+
+describe("updateTaskServerZodSchema", () => {
+    const edit = {
+        title: "Ship the pricing page",
+        status_id: "s2",
+        assignee_id: "u1",
+        priority: "urgent",
+        due_date: "2026-11-02",
+        description: "Copy is final",
+    }
+
+    it("builds the API payload from the sheet's values", () => {
+        expect(updateTaskServerZodSchema.parse(edit)).toEqual(edit)
+    })
+
+    it("clears the assignee and due date with null so the API changes them", () => {
+        const payload = updateTaskServerZodSchema.parse({ ...edit, assignee_id: "", due_date: "" })
+        expect(payload.assignee_id).toBeNull()
+        expect(payload.due_date).toBeNull()
+    })
+
+    it("refuses a blank title, a missing column and a day that does not exist", () => {
+        const result = updateTaskServerZodSchema.safeParse({ ...edit, title: "", status_id: "", due_date: "2026-02-31" })
+        expect(result.error?.issues.map((issue) => issue.message)).toEqual([
+            "Title is required",
+            "Choose a column",
+            "Pick a date",
+        ])
+    })
+})
+
+describe("updateOwnTaskServerZodSchema", () => {
+    it("sends only the status and description, the two keys operations may change", () => {
+        const payload = updateOwnTaskServerZodSchema.parse({
+            title: "Renamed",
+            status_id: "s3",
+            assignee_id: "u2",
+            priority: "low",
+            due_date: "2026-12-01",
+            description: "Blocked on copy",
+        })
+        expect(payload).toEqual({ status_id: "s3", description: "Blocked on copy" })
     })
 })
 

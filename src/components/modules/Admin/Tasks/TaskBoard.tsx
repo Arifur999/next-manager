@@ -1,9 +1,10 @@
 "use client"
 
-import CreateTaskModal from "@/components/modules/Admin/Tasks/CreateTaskModal"
 import TaskCalendar from "@/components/modules/Admin/Tasks/TaskCalendar"
 import TaskColumns from "@/components/modules/Admin/Tasks/TaskColumns"
 import TaskList from "@/components/modules/Admin/Tasks/TaskList"
+import TaskSheet from "@/components/modules/Admin/Tasks/TaskSheet"
+import type { TaskAccess } from "@/components/modules/Admin/Tasks/taskAccess"
 import EmptyState from "@/components/shared/state/EmptyState"
 import ErrorState from "@/components/shared/state/ErrorState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
@@ -13,7 +14,6 @@ import { ListChecks } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 import {
   emptyMessageFor,
-  isNarrowed,
   readsAsList,
   readTaskView,
   taskQueryString,
@@ -28,17 +28,20 @@ import { tasksListQuery, workflowStatusesListQuery } from "@/queries/work.querie
  * fix the same bug. Every filter is applied on the SERVER, not here: filtering
  * whatever page arrived would hide late work rather than find it.
  *
- * `canManage` decides whether this is a board somebody works from or one they
+ * `access` decides whether this is a board somebody works from or one they
  * only read. Sales gets the second: they open it to see where a client they
  * brought in has got to, and the API refuses them every write behind it, so
- * offering a create button would only teach them the app is broken.
+ * offering a control would only teach them the app is broken. Any task opens
+ * in a sheet from ?task=<id>.
  */
 const TaskBoard = ({
   mineOnly = false,
-  canManage = true,
+  access,
+  userId,
 }: {
   mineOnly?: boolean
-  canManage?: boolean
+  access: TaskAccess
+  userId: string | null
 }) => {
   const searchParams = useSearchParams()
 
@@ -113,19 +116,14 @@ const TaskBoard = ({
       )
     }
 
-    return <TaskColumns tasks={tasks} statuses={statuses} />
+    return <TaskColumns tasks={tasks} statuses={statuses} access={access} userId={userId} />
   }
 
   return (
-    <div className="space-y-4">
-      {canManage && !isNarrowed(view) && (
-        <div className="flex justify-end">
-          <CreateTaskModal />
-        </div>
-      )}
-
+    <>
       {renderTasks()}
-    </div>
+      <TaskSheet tasks={tasks} access={access} userId={userId} />
+    </>
   )
 }
 

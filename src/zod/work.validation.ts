@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { isCalendarDay } from "@/lib/dates"
 import { isoDate } from "./formFields"
 
 // Each form schema models what the inputs hold; its server schema checks the
@@ -28,6 +29,33 @@ export const createTaskServerZodSchema = taskFormZodSchema.transform((values) =>
     priority: values.priority,
     due_date: values.due_date || null,
 }))
+
+// Editing a task in its sheet. The project stays put: time already logged
+// against the task is booked to that project. Blank strings mean "none".
+export const taskEditFormZodSchema = z.object({
+    title: taskFormZodSchema.shape.title,
+    status_id: z.string().min(1, "Choose a column"),
+    assignee_id: z.string(),
+    priority: taskFormZodSchema.shape.priority,
+    due_date: z.string().refine((value) => value === "" || isCalendarDay(value), "Pick a date"),
+    description: z.string(),
+})
+
+export type ITaskEditFormValues = z.infer<typeof taskEditFormZodSchema>
+
+export const updateTaskServerZodSchema = taskEditFormZodSchema.transform((values) => ({
+    title: values.title,
+    status_id: values.status_id,
+    // Clearing a field is sent as null; the API reads a missing key as "unchanged".
+    assignee_id: values.assignee_id || null,
+    priority: values.priority,
+    due_date: values.due_date || null,
+    description: values.description,
+}))
+
+// Operations may change only the status and description of their own task, and
+// the API refuses any other key by name, so everything else is stripped here.
+export const updateOwnTaskServerZodSchema = taskEditFormZodSchema.pick({ status_id: true, description: true })
 
 // Ticking a task done moves it to another column and changes nothing else.
 // Operations may only change the status of their own tasks, and the API

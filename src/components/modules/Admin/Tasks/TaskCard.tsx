@@ -3,19 +3,28 @@
 import { moveTaskAction } from "@/app/(dashboardLayout)/admin/dashboard/tasks/_action"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useActionMutation } from "@/hooks/useActionMutation"
+import TaskLink from "@/components/modules/Admin/Tasks/TaskLink"
 import TaskPriorityBadge from "@/components/modules/Admin/Tasks/TaskPriorityBadge"
 import { isTaskOverdue } from "@/components/modules/Admin/Tasks/taskDue"
 import { formatDayShort } from "@/lib/dates"
+import { cn } from "@/lib/utils"
 import type { ITask, IWorkflowStatus } from "@/types/work.types"
 import { toast } from "sonner"
 import { queryKeys } from "@/lib/queryKeys"
 
-const TaskCard = ({ task, statuses }: { task: ITask; statuses: IWorkflowStatus[] }) => {
+type TaskCardProps = {
+  task: ITask
+  statuses: IWorkflowStatus[]
+  /** Whether this reader may move the task; without it the card only opens it. */
+  canEdit: boolean
+}
+
+const TaskCard = ({ task, statuses, canEdit }: TaskCardProps) => {
   // The ticked box and the card's new column are the confirmation.
   const { run: moveTask, isPending } = useActionMutation({
     action: (statusId: string) => moveTaskAction(task.id, { status_id: statusId }),
     successMessage: false,
-    invalidateKeys: [queryKeys.tasks.all, queryKeys.dashboard.all],
+    invalidateKeys: [queryKeys.tasks.all, queryKeys.taskReport.all, queryKeys.dashboard.all],
     refresh: false,
   })
 
@@ -53,24 +62,25 @@ const TaskCard = ({ task, statuses }: { task: ITask; statuses: IWorkflowStatus[]
   return (
     <div className="rounded-lg border bg-card p-3">
       <div className="flex items-start gap-2.5">
-        <Checkbox
-          checked={isDone}
-          onCheckedChange={toggleDone}
-          disabled={isPending}
-          aria-label={isDone ? `Reopen ${task.title}` : `Mark ${task.title} done`}
-          // 24px to see and hit; below md the pseudo-element stretches the
-          // target to 44px for a thumb without moving the layout.
-          className="size-6 after:-inset-2.5 md:after:-inset-1"
-        />
+        {canEdit && (
+          <Checkbox
+            checked={isDone}
+            onCheckedChange={toggleDone}
+            disabled={isPending}
+            aria-label={isDone ? `Reopen ${task.title}` : `Mark ${task.title} done`}
+            // 24px to see and hit; below md the pseudo-element stretches the
+            // target to 44px for a thumb without moving the layout.
+            className="size-6 after:-inset-2.5 md:after:-inset-1"
+          />
+        )}
 
         <div className="min-w-0 flex-1">
-          <p
-            className={`text-sm ${
-              isDone ? "text-muted-foreground line-through" : "font-medium"
-            }`}
+          <TaskLink
+            taskId={task.id}
+            className={cn("text-sm", isDone ? "text-muted-foreground line-through" : "font-medium")}
           >
             {task.title}
-          </p>
+          </TaskLink>
           <p className="mt-0.5 truncate text-xs text-muted-foreground">
             {task.project?.code ?? "No project"}
             {task.assignee ? ` · ${task.assignee.full_name}` : " · unassigned"}
@@ -79,11 +89,7 @@ const TaskCard = ({ task, statuses }: { task: ITask; statuses: IWorkflowStatus[]
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <TaskPriorityBadge priority={task.priority} />
             {task.due_date && (
-              <span
-                className={`text-[11px] ${
-                  overdue ? "font-medium text-destructive" : "text-muted-foreground"
-                }`}
-              >
+              <span className={cn("text-[11px]", overdue ? "font-medium text-destructive" : "text-muted-foreground")}>
                 {overdue ? "overdue · " : "due "}
                 {formatDayShort(task.due_date)}
               </span>

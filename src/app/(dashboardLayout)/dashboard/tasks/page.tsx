@@ -7,6 +7,9 @@ import PageHeader from "@/components/shared/PageHeader";
 import ViewTabs from "@/components/shared/ViewTabs";
 import { MY_TASK_VIEWS } from "@/lib/pageViews";
 import { readTaskView, taskQueryString } from "@/components/modules/Admin/Tasks/taskView";
+import { taskAccessFor } from "@/components/modules/Admin/Tasks/taskAccess";
+import { getUserInfo } from "@/services/auth.services";
+import { toUserRole } from "@/types/user.types";
 
 export const metadata: Metadata = {
   title: "Tasks",
@@ -43,7 +46,7 @@ const MyTasksPage = async ({
 }: {
   searchParams: Promise<MyTasksSearchParams>;
 }) => {
-  const params = await searchParams;
+  const [params, user] = await Promise.all([searchParams, getUserInfo()]);
 
   // Read the same way the board reads it, so the first paint is the view that
   // was asked for rather than every task followed by a correction.
@@ -61,7 +64,7 @@ const MyTasksPage = async ({
       <ViewTabs label="Task views" tabs={MY_TASK_VIEWS} />
 
       <QueryPrefetch prefetch={prefetch}>
-        <TaskBoard mineOnly />
+        <TaskBoard mineOnly access={taskAccessFor(toUserRole(user?.role))} userId={user?.id ?? null} />
       </QueryPrefetch>
     </div>
   );

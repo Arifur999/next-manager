@@ -1,5 +1,6 @@
 "use client"
 
+import TaskLink from "@/components/modules/Admin/Tasks/TaskLink"
 import MonthGrid from "@/components/shared/calendar/MonthGrid"
 import { STATUS_TONE } from "@/components/shared/status/statusTone"
 import { cn } from "@/lib/utils"
@@ -36,17 +37,15 @@ const TaskCalendar = ({ tasks }: { tasks: ITask[] }) => {
           const overdue = isTaskOverdue(task, today)
 
           return (
-            <div
-              title={`${task.title}${task.assignee ? ` · ${task.assignee.full_name}` : ""}`}
+            <TaskLink
+              taskId={task.id}
               className={cn(
-                "truncate rounded px-1.5 py-0.5 text-[11px]",
-                overdue
-                  ? "bg-destructive/12 text-destructive"
-                  : STATUS_TONE[task.status.category]
+                "block truncate rounded px-1.5 py-0.5 text-[11px]",
+                overdue ? "bg-destructive-subtle text-destructive-subtle-foreground" : STATUS_TONE[task.status.category],
               )}
             >
-              {task.title}
-            </div>
+              <span title={`${task.title}${task.assignee ? ` · ${task.assignee.full_name}` : ""}`}>{task.title}</span>
+            </TaskLink>
           )
         }}
       />
