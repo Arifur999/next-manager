@@ -5,6 +5,35 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { CalendarClock, Table2, TrendingUp } from "lucide-react"
 import { useState } from "react"
 
+type ChartRow = { key: string; cells: string[] }
+
+const ChartTable = ({ columns, rows }: { columns: string[]; rows: ChartRow[] }) => (
+  <div className="overflow-x-auto">
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="border-b text-left text-xs text-muted-foreground">
+          {columns.map((column, index) => (
+            <th key={column} className={`px-5 py-2.5 font-medium ${index > 0 ? "text-right" : ""}`}>
+              {column}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody className="divide-y">
+        {rows.map((row) => (
+          <tr key={row.key}>
+            {row.cells.map((cell, index) => (
+              <td key={index} className={`px-5 py-2.5 ${index > 0 ? "text-right tabular-nums" : ""}`}>
+                {cell}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)
+
 /** A chart and its table view, so neither has to be built twice. */
 const ChartCard = ({
   title,
@@ -18,10 +47,11 @@ const ChartCard = ({
   note: string
   empty?: string
   columns: string[]
-  rows: Array<{ key: string; cells: string[] }>
+  rows: ChartRow[]
   children: React.ReactNode
 }) => {
   const [asTable, setAsTable] = useState(false)
+  const hasRows = rows.length > 0
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
@@ -31,7 +61,7 @@ const ChartCard = ({
           <p className="text-sm text-muted-foreground">{note}</p>
         </div>
 
-        {rows.length > 0 && (
+        {hasRows && (
           <Button
             type="button"
             variant="outline"
@@ -45,45 +75,14 @@ const ChartCard = ({
         )}
       </CardHeader>
 
-      {rows.length === 0 ? (
+      {!hasRows && (
         <p className="flex flex-col items-center gap-2 px-6 py-12 text-center text-sm text-muted-foreground">
           <CalendarClock className="size-7" aria-hidden="true" />
           {empty ?? "Nothing to show yet."}
         </p>
-      ) : asTable ? (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left text-xs text-muted-foreground">
-                {columns.map((column, index) => (
-                  <th
-                    key={column}
-                    className={`px-5 py-2.5 font-medium ${index > 0 ? "text-right" : ""}`}
-                  >
-                    {column}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {rows.map((row) => (
-                <tr key={row.key}>
-                  {row.cells.map((cell, index) => (
-                    <td
-                      key={index}
-                      className={`px-5 py-2.5 ${index > 0 ? "text-right tabular-nums" : ""}`}
-                    >
-                      {cell}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="h-64 p-4">{children}</div>
       )}
+      {hasRows && asTable && <ChartTable columns={columns} rows={rows} />}
+      {hasRows && !asTable && <div className="h-64 p-4">{children}</div>}
     </Card>
   )
 }
