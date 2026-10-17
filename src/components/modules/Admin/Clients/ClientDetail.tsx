@@ -3,6 +3,8 @@
 import ClientFinanceTiles from "@/components/modules/Admin/Clients/ClientFinanceTiles"
 import ClientInvoicesPanel from "@/components/modules/Admin/Clients/ClientInvoicesPanel"
 import ClientPaymentsPanel from "@/components/modules/Admin/Clients/ClientPaymentsPanel"
+import ErrorState from "@/components/shared/state/ErrorState"
+import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import ClientLinksPanel from "@/components/modules/Admin/Clients/ClientLinksPanel"
@@ -32,22 +34,38 @@ const ClientDetail = ({
   clientId: string
   canSeeMoney?: boolean
 }) => {
-  const { data: clientData, isLoading } = useQuery(clientDetailQuery(clientId))
+  const clientQuery = useQuery(clientDetailQuery(clientId))
 
   const { data: financeData } = useQuery({ ...clientFinancialsQuery(clientId), enabled: canSeeMoney })
 
   const { data: credentialsData } = useQuery(credentialsListQuery(`client_id=${clientId}`))
 
-  const client = clientData?.data as (IClient & { projects?: IProject[] }) | undefined
+  const client = clientQuery.data?.data as (IClient & { projects?: IProject[] }) | undefined
   const finance = financeData?.data
 
   const credentials = credentialsData?.data ?? []
 
-  if (isLoading && !client) {
-    return <Card className="h-64 animate-pulse bg-muted/40" />
+  // A failed refresh keeps the client it already has on screen; only a page
+  // with nothing to show says it did not load.
+  if (!client && clientQuery.isError) {
+    return (
+      <Card>
+        <ErrorState
+          message="This client did not load."
+          onRetry={() => void clientQuery.refetch()}
+          isRetrying={clientQuery.isFetching}
+        />
+      </Card>
+    )
   }
 
-  if (!client) return null
+  if (!client) {
+    return (
+      <Card className="overflow-hidden p-0">
+        <LoadingBlock height="h-64" />
+      </Card>
+    )
+  }
 
   return (
     <div className="space-y-6">
