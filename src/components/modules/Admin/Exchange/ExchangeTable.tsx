@@ -1,11 +1,18 @@
 "use client"
 
+import { deleteExchangeAction } from "@/app/(dashboardLayout)/admin/dashboard/exchange/_action"
 import RecordExchangeModal from "@/components/modules/Admin/Exchange/RecordExchangeModal"
+import DeleteMoneyRecordDialog from "@/components/modules/Admin/Money/DeleteMoneyRecordDialog"
+import { exchangeReversal } from "@/components/modules/Admin/Money/reversalCopy"
 import { exchangeColumns } from "@/components/modules/Admin/Exchange/exchangeColumns"
 import StatTile from "@/components/shared/StatTile"
 import DataTable from "@/components/shared/table/DataTable"
+import { useRowActionModalState } from "@/hooks/useRowActionModalState"
 import { formatBdt, formatRate, formatUsd } from "@/lib/currency"
+import { queryKeys } from "@/lib/queryKeys"
 import { toTableQueryProps } from "@/lib/table/queryProps"
+import { plural } from "@/lib/text"
+import type { IExchange } from "@/types/finance.types"
 import { useQuery } from "@tanstack/react-query"
 import { ArrowLeftRight, TrendingDown } from "lucide-react"
 import { exchangesListQuery } from "@/queries/finance.queries"
@@ -23,6 +30,12 @@ const ExchangeTable = () => {
   // fees included, which is why it reads lower than any single quoted rate.
   const effectiveRate = sentUsd > 0 ? receivedBdt / sentUsd : 0
 
+  // Delete only: the API has no edit for an exchange (see exchangeReversal).
+  const { deletingItem, isDeleteDialogOpen, onDeleteOpenChange, tableActions } = useRowActionModalState<IExchange>({
+    enableView: false,
+    enableEdit: false,
+  })
+
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -30,7 +43,7 @@ const ExchangeTable = () => {
           label="Exchanged"
           value={formatUsd(sentUsd)}
           secondary={`${formatBdt(receivedBdt)} received`}
-          hint={`${exchanges.length} exchange${exchanges.length === 1 ? "" : "s"}`}
+          hint={plural(exchanges.length, "exchange")}
           icon={<ArrowLeftRight className="size-5" />}
           tone={2}
         />
@@ -60,6 +73,18 @@ const ExchangeTable = () => {
         {...toTableQueryProps(exchangesQuery)}
         emptyMessage="No exchanges recorded yet."
         toolbarAction={<RecordExchangeModal />}
+        actions={tableActions}
+      />
+
+      <DeleteMoneyRecordDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={onDeleteOpenChange}
+        recordId={deletingItem?.id}
+        title="Delete this exchange?"
+        description={deletingItem ? exchangeReversal(deletingItem) : ""}
+        action={deleteExchangeAction}
+        successMessage="Exchange deleted"
+        invalidateKeys={[queryKeys.exchanges.all]}
       />
 
       <p className="text-xs text-muted-foreground">

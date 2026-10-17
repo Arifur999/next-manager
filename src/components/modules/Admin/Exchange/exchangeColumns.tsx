@@ -1,6 +1,6 @@
-import DateCell from "@/components/shared/cell/DateCell"
 import { Badge } from "@/components/ui/badge"
 import { formatBdt, formatRate, formatUsd } from "@/lib/currency"
+import { formatDay } from "@/lib/dates"
 import type { IExchange } from "@/types/finance.types"
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowRight } from "lucide-react"
@@ -10,7 +10,7 @@ export const exchangeColumns: ColumnDef<IExchange>[] = [
     id: "date",
     accessorKey: "date",
     header: "Date",
-    cell: ({ row }) => <DateCell date={row.original.date} formatString="MMM dd, yyyy" />,
+    cell: ({ row }) => <span className="whitespace-nowrap">{formatDay(row.original.date)}</span>,
   },
   {
     id: "route",
@@ -36,7 +36,7 @@ export const exchangeColumns: ColumnDef<IExchange>[] = [
   {
     id: "fee_usd",
     header: "Fee",
-    meta: { exportValue: (exchange) => exchange.fee_usd },
+    meta: { exportValue: (exchange) => exchange.fee_usd, priority: "low" },
     enableSorting: false,
     cell: ({ row }) =>
       row.original.fee_usd > 0 ? (
