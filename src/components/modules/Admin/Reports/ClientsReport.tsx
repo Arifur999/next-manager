@@ -2,6 +2,7 @@
 
 import ShareRow from "@/components/modules/Admin/Reports/ShareRow"
 import ReportEmpty from "@/components/modules/Admin/Reports/ReportEmpty"
+import PanelState from "@/components/shared/state/PanelState"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt, formatUsd } from "@/lib/currency"
 import { useQuery } from "@tanstack/react-query"
@@ -16,9 +17,9 @@ import { clientRevenueQuery } from "@/queries/insights.queries"
  */
 
 const ClientsReport = () => {
-  const { data } = useQuery(clientRevenueQuery())
+  const revenueQuery = useQuery(clientRevenueQuery())
 
-  const clients = data?.data ?? []
+  const clients = revenueQuery.data?.data ?? []
   const top = clients[0]?.revenue_usd ?? 1
 
   return (
@@ -31,9 +32,12 @@ const ClientsReport = () => {
         </p>
       </CardHeader>
 
-      {clients.length === 0 ? (
-        <ReportEmpty>No payments recorded yet.</ReportEmpty>
-      ) : (
+      <PanelState
+        query={revenueQuery}
+        errorMessage="Revenue by client did not load."
+        isEmpty={clients.length === 0}
+        empty={<ReportEmpty>No payments recorded yet.</ReportEmpty>}
+      >
         <ul className="divide-y">
           {clients.map((row) => (
             <ShareRow
@@ -45,7 +49,7 @@ const ClientsReport = () => {
             />
           ))}
         </ul>
-      )}
+      </PanelState>
     </Card>
   )
 }
