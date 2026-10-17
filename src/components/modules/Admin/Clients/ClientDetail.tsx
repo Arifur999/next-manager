@@ -3,8 +3,10 @@
 import ClientFinanceTiles from "@/components/modules/Admin/Clients/ClientFinanceTiles"
 import ClientInvoicesPanel from "@/components/modules/Admin/Clients/ClientInvoicesPanel"
 import ClientPaymentsPanel from "@/components/modules/Admin/Clients/ClientPaymentsPanel"
+import EmptyState from "@/components/shared/state/EmptyState"
 import ErrorState from "@/components/shared/state/ErrorState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import ClientLinksPanel from "@/components/modules/Admin/Clients/ClientLinksPanel"
@@ -13,6 +15,7 @@ import { formatUsd } from "@/lib/currency"
 import type { IProject } from "@/types/project.types"
 import type { IClient } from "@/types/crm.types"
 import { useQuery } from "@tanstack/react-query"
+import { KeyRound } from "lucide-react"
 import Link from "next/link"
 import { clientDetailQuery, clientFinancialsQuery } from "@/queries/crm.queries"
 import { credentialsListQuery } from "@/queries/workspace.queries"
@@ -38,12 +41,12 @@ const ClientDetail = ({
 
   const { data: financeData } = useQuery({ ...clientFinancialsQuery(clientId), enabled: canSeeMoney })
 
-  const { data: credentialsData } = useQuery(credentialsListQuery(`client_id=${clientId}`))
+  const credentialsQuery = useQuery(credentialsListQuery(`client_id=${clientId}`))
 
   const client = clientQuery.data?.data as (IClient & { projects?: IProject[] }) | undefined
   const finance = financeData?.data
 
-  const credentials = credentialsData?.data ?? []
+  const credentials = credentialsQuery.data?.data ?? []
 
   // A failed refresh keeps the client it already has on screen; only a page
   // with nothing to show says it did not load.
@@ -153,11 +156,12 @@ const ClientDetail = ({
 
         <TabsContent value="vault" className="mt-4">
           <Card className="gap-0 overflow-hidden p-0">
-            {credentials.length === 0 ? (
-              <p className="px-5 py-12 text-center text-sm text-muted-foreground">
-                Nothing stored against this client yet.
-              </p>
-            ) : (
+            <PanelState
+              query={credentialsQuery}
+              errorMessage="The vault entries did not load."
+              isEmpty={credentials.length === 0}
+              empty={<EmptyState icon={KeyRound}>Nothing stored against this client yet.</EmptyState>}
+            >
               <ul className="divide-y">
                 {credentials.map((credential) => (
                   <li
@@ -181,7 +185,7 @@ const ClientDetail = ({
                   </li>
                 ))}
               </ul>
-            )}
+            </PanelState>
           </Card>
         </TabsContent>
 
