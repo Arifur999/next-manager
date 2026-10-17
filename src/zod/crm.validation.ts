@@ -11,3 +11,18 @@ export const clientFormZodSchema = z.object({
 })
 
 export type IClientFormValues = z.infer<typeof clientFormZodSchema>
+
+// Server schemas: the form's values checked again on the server and keyed as
+// the API's request schema expects. The API drops unknown keys without a word,
+// so a misnamed field would be lost, not refused.
+
+// Create and edit send the same fields.
+export const clientServerZodSchema = clientFormZodSchema.transform((values) => ({
+    name: values.name,
+    company: values.company,
+    email: values.email,
+    phone: values.phone,
+    country: values.country,
+    status: values.status,
+    notes: values.notes,
+}))
