@@ -5,21 +5,22 @@ import { useActionMutation } from "@/hooks/useActionMutation"
 import { queryKeys } from "@/lib/queryKeys"
 import type { IInvoiceFormValues } from "@/zod/billing.validation"
 import { useForm } from "@tanstack/react-form"
+import { addDays, format } from "date-fns"
 
-const today = () => new Date().toISOString().slice(0, 10)
-const inDays = (days: number) =>
-  new Date(Date.now() + days * 86400000).toISOString().slice(0, 10)
+// The user's own calendar days. toISOString() is UTC, which in Dhaka is still
+// yesterday until 6am.
+const inDays = (days: number) => format(addDays(new Date(), days), "yyyy-MM-dd")
 
-const defaultValues: IInvoiceFormValues = {
+const getDefaultValues = (): IInvoiceFormValues => ({
   client_id: "",
   project_id: "",
-  issue_date: today(),
+  issue_date: inDays(0),
   due_date: inDays(14),
   discount: "",
   tax: "",
   notes: "",
   items: [{ description: "", quantity: "1", unit_price: "" }],
-}
+})
 
 // The new-invoice form and its save. onCreated runs once the invoice exists;
 // a failure keeps the form open with the lines already typed.
@@ -31,7 +32,7 @@ export const useInvoiceForm = (onCreated: () => void) => {
   })
 
   const form = useForm({
-    defaultValues,
+    defaultValues: getDefaultValues(),
     onSubmit: async ({ value, formApi }) => {
       if (await createInvoice(value)) {
         onCreated()

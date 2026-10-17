@@ -20,6 +20,7 @@ import { formatBdt, formatRate } from "@/lib/currency"
 import { paymentFormZodSchema, type IPaymentFormValues } from "@/zod/billing.validation"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
+import { format } from "date-fns"
 import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useCallback, useState } from "react"
@@ -28,9 +29,11 @@ import { projectsListQuery } from "@/queries/project.queries"
 import { queryKeys } from "@/lib/queryKeys"
 import { accountsQuery, rateSettingsQuery } from "@/queries/finance.queries"
 
-const today = () => new Date().toISOString().slice(0, 10)
+// The user's own calendar day. toISOString() is UTC, which in Dhaka is still
+// yesterday until 6am.
+const today = () => format(new Date(), "yyyy-MM-dd")
 
-const defaultValues: IPaymentFormValues = {
+const getDefaultValues = (): IPaymentFormValues => ({
   client_id: "",
   project_id: "",
   date: today(),
@@ -39,7 +42,7 @@ const defaultValues: IPaymentFormValues = {
   account_id: "",
   reference: "",
   notes: "",
-}
+})
 
 const RecordPaymentModal = () => {
   const [open, setOpen] = useState(false)
@@ -73,7 +76,7 @@ const RecordPaymentModal = () => {
   })
 
   const form = useForm({
-    defaultValues,
+    defaultValues: getDefaultValues(),
     onSubmit: async ({ value }) => {
       // A failure keeps the dialog open with what was typed.
       if (await recordPayment(value)) {

@@ -21,6 +21,7 @@ import type { IDuePerson } from "@/types/spending.types"
 import { dueTransactionFormZodSchema, type IDueTransactionFormValues } from "@/zod/spending.validation"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
+import { format } from "date-fns"
 import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useCallback, useState } from "react"
@@ -36,7 +37,9 @@ import { queryKeys } from "@/lib/queryKeys"
  * working that out from scratch, so each row says which way it points.
  */
 
-const today = () => new Date().toISOString().slice(0, 10)
+// The user's own calendar day. toISOString() is UTC, which in Dhaka is still
+// yesterday until 6am.
+const today = () => format(new Date(), "yyyy-MM-dd")
 
 const RecordTransactionModal = ({ people }: { people: IDuePerson[] }) => {
   const [open, setOpen] = useState(false)

@@ -22,19 +22,22 @@ import { queryKeys } from "@/lib/queryKeys"
 import { accountsQuery } from "@/queries/finance.queries"
 import { ownerWithdrawalFormZodSchema, type IOwnerWithdrawalFormValues } from "@/zod/spending.validation"
 import { useForm } from "@tanstack/react-form"
+import { format } from "date-fns"
 import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useCallback, useState } from "react"
 
-const today = () => new Date().toISOString().slice(0, 10)
+// The user's own calendar day. toISOString() is UTC, which in Dhaka is still
+// yesterday until 6am.
+const today = () => format(new Date(), "yyyy-MM-dd")
 
-const defaultValues: IOwnerWithdrawalFormValues = {
+const getDefaultValues = (): IOwnerWithdrawalFormValues => ({
   date: today(),
   amount_bdt: "",
   type: "personal",
   account_id: "",
   notes: "",
-}
+})
 
 const RecordWithdrawalModal = () => {
   const [open, setOpen] = useState(false)
@@ -51,7 +54,7 @@ const RecordWithdrawalModal = () => {
   })
 
   const form = useForm({
-    defaultValues,
+    defaultValues: getDefaultValues(),
     onSubmit: async ({ value }) => {
       // A failure keeps the dialog open with what was typed.
       if (await recordWithdrawal(value)) {

@@ -20,6 +20,7 @@ import { formatBdt } from "@/lib/currency"
 import { teamPayoutFormZodSchema, type ITeamPayoutFormValues } from "@/zod/spending.validation"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
+import { format } from "date-fns"
 import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useCallback, useState } from "react"
@@ -35,9 +36,11 @@ const TYPES = [
   { value: "reimbursement", label: "Reimbursement" },
 ] as const
 
-const today = () => new Date().toISOString().slice(0, 10)
+// The user's own calendar day. toISOString() is UTC, which in Dhaka is still
+// yesterday until 6am.
+const today = () => format(new Date(), "yyyy-MM-dd")
 
-const defaultValues: ITeamPayoutFormValues = {
+const getDefaultValues = (): ITeamPayoutFormValues => ({
   user_id: "",
   project_id: "",
   date: today(),
@@ -45,7 +48,7 @@ const defaultValues: ITeamPayoutFormValues = {
   type: "salary",
   account_id: "",
   notes: "",
-}
+})
 
 const RecordPayoutModal = () => {
   const [open, setOpen] = useState(false)
@@ -66,7 +69,7 @@ const RecordPayoutModal = () => {
   })
 
   const form = useForm({
-    defaultValues,
+    defaultValues: getDefaultValues(),
     onSubmit: async ({ value }) => {
       // A failure keeps the dialog open with what was typed.
       if (await recordPayout(value)) {

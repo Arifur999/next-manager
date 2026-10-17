@@ -20,15 +20,18 @@ import { formatBdt, formatRate, formatUsd } from "@/lib/currency"
 import { exchangeFormFields, exchangeFormZodSchema, type IExchangeFormValues } from "@/zod/finance.validation"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
+import { format } from "date-fns"
 import { useQuery } from "@tanstack/react-query"
 import { ArrowLeftRight } from "lucide-react"
 import { useCallback, useState } from "react"
 import { accountsQuery, rateSettingsQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
-const today = () => new Date().toISOString().slice(0, 10)
+// The user's own calendar day. toISOString() is UTC, which in Dhaka is still
+// yesterday until 6am.
+const today = () => format(new Date(), "yyyy-MM-dd")
 
-const defaultValues: IExchangeFormValues = {
+const getDefaultValues = (): IExchangeFormValues => ({
   date: today(),
   from_account_id: "",
   to_account_id: "",
@@ -36,7 +39,7 @@ const defaultValues: IExchangeFormValues = {
   rate: "",
   fee_usd: "",
   notes: "",
-}
+})
 
 const RecordExchangeModal = () => {
   const [open, setOpen] = useState(false)
@@ -59,7 +62,7 @@ const RecordExchangeModal = () => {
   })
 
   const form = useForm({
-    defaultValues,
+    defaultValues: getDefaultValues(),
     validators: {
       // The fee-vs-amount rule spans two fields, so it lives on the form rather
       // than on either one of them.
