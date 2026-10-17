@@ -10,6 +10,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { useActionMutation } from "@/hooks/useActionMutation"
+import { roleTitle } from "@/types/permission.types"
 import type { INotificationRule } from "@/types/workspace.types"
 import { useQuery } from "@tanstack/react-query"
 import { BellRing } from "lucide-react"
@@ -30,8 +31,6 @@ import { NOTIFICATION_AUDIENCE_ROLES } from "@/zod/workspace.validation"
  * was handed to, whatever their role, so a role picker there would be a control
  * that does nothing — the server drops one if it is sent.
  */
-
-const roleLabel = (role: string) => role.replace(/_/g, " ")
 
 type RuleChange = { in_app?: boolean; email?: boolean; roles?: string[] }
 
@@ -142,12 +141,11 @@ const NotificationRules = () => {
                       type="button"
                       size="sm"
                       variant={rule.roles.includes(role) ? "default" : "outline"}
-                      className="capitalize"
                       disabled={isPending || (!rule.in_app && !rule.email)}
                       aria-pressed={rule.roles.includes(role)}
                       onClick={() => toggleRole(rule, role, !rule.roles.includes(role))}
                     >
-                      {roleLabel(role)}
+                      {roleTitle(role)}
                     </Button>
                   ))}
                 </div>
