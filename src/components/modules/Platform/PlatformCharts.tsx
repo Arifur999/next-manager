@@ -1,6 +1,7 @@
 "use client"
 
 import ChartCard from "@/components/modules/Platform/ChartCard"
+import ErrorState from "@/components/shared/state/ErrorState"
 import { useQuery } from "@tanstack/react-query"
 import { format, parse, parseISO } from "date-fns"
 import {
@@ -60,7 +61,7 @@ const ChartTooltip = ({
 }
 
 const PlatformCharts = () => {
-  const { data, isLoading } = useQuery(platformTrendQuery())
+  const { data, isLoading, isError, isFetching, refetch } = useQuery(platformTrendQuery())
 
   const trend = data?.data
 
@@ -68,7 +69,16 @@ const PlatformCharts = () => {
     return <div className="h-64 animate-pulse rounded-xl bg-muted/40" />
   }
 
-  if (!trend) return null
+  if (isError || !trend) {
+    return (
+      <ErrorState
+        className="rounded-xl border border-dashed"
+        message="The charts did not load."
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+      />
+    )
+  }
 
   const signups = trend.signups.map((row) => ({
     ...row,
