@@ -18,12 +18,11 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt, formatRate, formatUsd } from "@/lib/currency"
 import { exchangeFormFields, exchangeFormZodSchema, type IExchangeFormValues } from "@/zod/finance.validation"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { ArrowLeftRight } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
-import { toast } from "sonner"
 import { accountsQuery, rateSettingsQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -41,8 +40,6 @@ const defaultValues: IExchangeFormValues = {
 
 const RecordExchangeModal = () => {
   const [open, setOpen] = useState(false)
-  const queryClient = useQueryClient()
-  const router = useRouter()
 
   const { data: accountsData } = useQuery({ ...accountsQuery(), enabled: open })
   const { data: rateData } = useQuery({ ...rateSettingsQuery(), enabled: open })
@@ -53,8 +50,12 @@ const RecordExchangeModal = () => {
   const usdAccounts = accounts.filter((a) => a.currency === "USD" && a.is_active)
   const bdtAccounts = accounts.filter((a) => a.currency === "BDT" && a.is_active)
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IExchangeFormValues) => createExchangeAction(values),
+  // The server refuses an overdraw and says how much is actually there; that
+  // message is what the failure toast shows.
+  const { run: recordExchange, isPending } = useActionMutation({
+    action: createExchangeAction,
+    successMessage: "Exchange recorded successfully",
+    invalidateKeys: [queryKeys.exchanges.all, queryKeys.accounts.all, queryKeys.dashboard.all],
   })
 
   const form = useForm({
@@ -65,23 +66,10 @@ const RecordExchangeModal = () => {
       onSubmit: exchangeFormZodSchema,
     },
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        // The server refuses an overdraw and says how much is actually there —
-        // that message is more useful than anything this form could invent.
-        toast.error(result.message || "Failed to record exchange")
-        return
+      if (await recordExchange(value)) {
+        setOpen(false)
+        form.reset()
       }
-
-      toast.success(result.message || "Exchange recorded successfully")
-      setOpen(false)
-      form.reset()
-
-      void queryClient.invalidateQueries({ queryKey: queryKeys.exchanges.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
-      router.refresh()
     },
   })
 
