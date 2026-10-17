@@ -18,12 +18,11 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt } from "@/lib/currency"
 import { teamPayoutFormZodSchema, type ITeamPayoutFormValues } from "@/zod/spending.validation"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
-import { toast } from "sonner"
 import { projectsListQuery } from "@/queries/project.queries"
 import { accountsQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
@@ -50,8 +49,6 @@ const defaultValues: ITeamPayoutFormValues = {
 
 const RecordPayoutModal = () => {
   const [open, setOpen] = useState(false)
-  const queryClient = useQueryClient()
-  const router = useRouter()
 
   const { data: usersData } = useQuery({ ...usersListQuery(), enabled: open })
   const { data: accountsData } = useQuery({ ...accountsQuery(), enabled: open })
@@ -62,28 +59,20 @@ const RecordPayoutModal = () => {
   const projects = projectsData?.data ?? []
   const bdtAccounts = accounts.filter((account) => account.currency === "BDT" && account.is_active)
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: ITeamPayoutFormValues) => createTeamPayoutAction(values),
+  const { run: recordPayout, isPending } = useActionMutation({
+    action: createTeamPayoutAction,
+    successMessage: "Payout recorded successfully",
+    invalidateKeys: [queryKeys.payouts.all, queryKeys.accounts.all, queryKeys.dashboard.all],
   })
 
   const form = useForm({
     defaultValues,
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        toast.error(result.message || "Failed to record payout")
-        return
+      // A failure keeps the dialog open with what was typed.
+      if (await recordPayout(value)) {
+        setOpen(false)
+        form.reset()
       }
-
-      toast.success(result.message || "Payout recorded successfully")
-      setOpen(false)
-      form.reset()
-
-      void queryClient.invalidateQueries({ queryKey: queryKeys.payouts.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
-      router.refresh()
     },
   })
 
