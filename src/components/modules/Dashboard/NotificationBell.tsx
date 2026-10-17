@@ -5,6 +5,7 @@ import {
   markAllNotificationsReadAction,
   markNotificationReadAction,
 } from "@/app/(dashboardLayout)/_notificationAction"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -46,10 +47,10 @@ const NotificationBell = () => {
     // handful of times a day.
     refetchInterval: 60 * 1000 })
 
-  const { data, isLoading } = useQuery({ ...notificationsQuery(), enabled: open })
+  const notificationsList = useQuery({ ...notificationsQuery(), enabled: open })
 
   const unread = countData?.data?.unread ?? 0
-  const notifications = data?.data ?? []
+  const notifications = notificationsList.data?.data ?? []
 
   // Silent on success: the "new" badge going away is the confirmation.
   const { run: markRead } = useActionMutation({
@@ -102,13 +103,16 @@ const NotificationBell = () => {
           )}
         </div>
 
-        {isLoading ? (
-          <div className="h-24 animate-pulse bg-muted/40" />
-        ) : notifications.length === 0 ? (
-          <p className="px-4 py-10 text-center text-sm text-muted-foreground">
-            Nothing yet. Work assigned to you, and notices from {site.name}, show up here.
-          </p>
-        ) : (
+        <PanelState
+          query={notificationsList}
+          errorMessage="Your notifications did not load."
+          isEmpty={notifications.length === 0}
+          empty={
+            <p className="px-4 py-10 text-center text-sm text-muted-foreground">
+              Nothing yet. Work assigned to you, and notices from {site.name}, show up here.
+            </p>
+          }
+        >
           <ScrollArea className="max-h-96">
             <ul className="divide-y">
               {notifications.map((notification) => (
@@ -159,7 +163,7 @@ const NotificationBell = () => {
               ))}
             </ul>
           </ScrollArea>
-        )}
+        </PanelState>
       </PopoverContent>
     </Popover>
   )
