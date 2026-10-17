@@ -1,41 +1,7 @@
 import { z } from "zod"
+import { isoDate, optionalNonNegative, positiveAmount } from "./formFields"
 
-/**
- * Form schemas.
- *
- * Money and rate fields are STRINGS here, not numbers. An `<input>` hands back
- * a string whatever its type attribute says, so modelling them as numbers meant
- * the schema's input type and the field's actual value disagreed — TanStack
- * Form catches that at compile time, and `z.coerce.number()` only hides it by
- * accepting `unknown`.
- *
- * They are parsed to numbers once, at submit, by toNumber() below. That keeps
- * one conversion point instead of one per field.
- */
-
-/** A string that has to read as a number greater than zero. */
-const positiveAmount = (label: string) =>
-    z
-        .string()
-        .min(1, `${label} is required`)
-        .refine((value) => Number.isFinite(Number(value)), `${label} must be a number`)
-        .refine((value) => Number(value) > 0, `${label} must be greater than zero`)
-
-/** Same, but zero is allowed and blank means "not given". */
-const optionalNonNegative = (label: string) =>
-    z
-        .string()
-        .optional()
-        .refine(
-            (value) => !value || (Number.isFinite(Number(value)) && Number(value) >= 0),
-            `${label} must be a number that is not negative`,
-        )
-
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date")
-
-/** "" and undefined both become undefined; anything else becomes a number. */
-export const toNumber = (value: string | undefined): number | undefined =>
-    value === undefined || value === "" ? undefined : Number(value)
+export { toNumber } from "./formFields"
 
 export const accountFormZodSchema = z.object({
     name: z.string().min(1, "Name is required"),
