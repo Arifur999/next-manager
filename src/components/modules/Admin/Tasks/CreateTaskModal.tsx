@@ -16,83 +16,53 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { taskFormZodSchema, type ITaskFormValues } from "@/zod/work.validation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useCallback, useState } from "react"
-import { toast } from "sonner"
-import { z } from "zod"
 import { projectsListQuery } from "@/queries/project.queries"
 import { workflowStatusesListQuery } from "@/queries/work.queries"
 import { queryKeys } from "@/lib/queryKeys"
 import { usersListQuery } from "@/queries/people.queries"
 
-const taskFormSchema = z.object({
-  project_id: z.string().min(1, "Choose a project"),
-  title: z.string().min(1, "Title is required"),
-  assignee_id: z.string().optional(),
-  // An id, not a word: the columns belong to the agency now.
-  status_id: z.string().optional(),
-  priority: z.enum(["low", "medium", "high", "urgent"]),
-  due_date: z.string().optional(),
-})
-
-type TaskFormValues = z.infer<typeof taskFormSchema>
+const emptyTask: ITaskFormValues = {
+  project_id: "",
+  title: "",
+  assignee_id: "",
+  status_id: "",
+  priority: "medium",
+  due_date: "",
+}
 
 const CreateTaskModal = () => {
   const [open, setOpen] = useState(false)
-  const queryClient = useQueryClient()
 
   const { data: projectsData } = useQuery({ ...projectsListQuery(), enabled: open })
   const { data: usersData } = useQuery({ ...usersListQuery(), enabled: open })
 
   const projects = projectsData?.data ?? []
-  const users = ((usersData?.data ?? [])).filter((user) => user.status === "active")
+  const users = (usersData?.data ?? []).filter((user) => user.status === "active")
 
   // The agency's own columns, rather than a list of words baked in here.
   const { data: statusData } = useQuery(workflowStatusesListQuery("kind=task"))
   const statuses = statusData?.data ?? []
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: TaskFormValues) =>
-      createTaskAction({
-        ...values,
-        assignee_id: values.assignee_id || null,
-        due_date: values.due_date || null,
-      }),
+  const { run: createTask, isPending } = useActionMutation({
+    action: createTaskAction,
+    successMessage: "Task created",
+    invalidateKeys: [queryKeys.tasks.all, queryKeys.dashboard.all],
+    refresh: false,
   })
 
-  const defaultValues: TaskFormValues = {
-    project_id: "",
-    title: "",
-    assignee_id: "",
-    status_id: "",
-    priority: "medium",
-    due_date: "",
-  }
-
   const form = useForm({
-    defaultValues,
+    defaultValues: emptyTask,
     onSubmit: async ({ value }) => {
-      // An empty string is not a missing value to the API, it is an invalid
-      // id - and the form starts with one. Dropping it means "put it on the
-      // board default", which is what leaving the picker alone means.
-      const result = await mutateAsync({
-        ...value,
-        status_id: value.status_id || undefined,
-      })
-
-      if (!result.success) {
-        toast.error(result.message || "Failed to create task")
-        return
+      if (await createTask(value)) {
+        setOpen(false)
+        form.reset()
       }
-
-      toast.success("Task created")
-      setOpen(false)
-      form.reset()
-
-      void queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
     },
   })
 
@@ -136,7 +106,7 @@ const CreateTaskModal = () => {
               }}
               className="space-y-5"
             >
-              <form.Field name="title" validators={{ onChange: taskFormSchema.shape.title }}>
+              <form.Field name="title" validators={{ onChange: taskFormZodSchema.shape.title }}>
                 {(field) => (
                   <AppField
                     field={field}
@@ -149,7 +119,7 @@ const CreateTaskModal = () => {
 
               <form.Field
                 name="project_id"
-                validators={{ onChange: taskFormSchema.shape.project_id }}
+                validators={{ onChange: taskFormZodSchema.shape.project_id }}
               >
                 {(field) => (
                   <EntitySelect
@@ -213,7 +183,7 @@ const CreateTaskModal = () => {
                       label="Priority"
                       value={field.state.value}
                       onChange={(value) =>
-                        field.handleChange(value as TaskFormValues["priority"])
+                        field.handleChange(value as ITaskFormValues["priority"])
                       }
                       disabled={isPending}
                       options={[

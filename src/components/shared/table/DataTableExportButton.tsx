@@ -1,10 +1,10 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { todayIsoDate } from "@/lib/dates";
 import { downloadCsv } from "@/lib/download";
 import { toCsv } from "@/lib/table/csv";
 import type { Column, Table } from "@tanstack/react-table";
-import { format } from "date-fns";
 import { Download } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -51,7 +51,7 @@ const DataTableExportButton = <TData,>({ table, fileName, fetchRows }: DataTable
 
     const headers = columns.map((column) => getColumnLabel(column));
     const body = rows.map((row, index) => columns.map((column) => exportValueOf(column, row, index)));
-    downloadCsv(toCsv(headers, body), `${fileName}-${format(new Date(), "yyyy-MM-dd")}`);
+    downloadCsv(toCsv(headers, body), `${fileName}-${todayIsoDate()}`);
   };
 
   return (

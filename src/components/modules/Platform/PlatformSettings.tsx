@@ -2,6 +2,9 @@
 
 import { site } from "@/data/site"
 import { updateSettingsAction } from "@/app/(dashboardLayout)/platform/_settingsAction"
+import { planOptionLabel } from "@/components/modules/Platform/planLabel"
+import ErrorState from "@/components/shared/state/ErrorState"
+import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,13 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IPlatformSettings } from "@/types/platform.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { formatDistanceToNow, parseISO } from "date-fns"
 import { CircleAlert, CircleCheck, Mail } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
-import { toast } from "sonner"
 import { platformSettingsQuery } from "@/queries/platform.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -41,12 +44,24 @@ import { queryKeys } from "@/lib/queryKeys"
 const NO_PLAN = "__none__"
 
 const PlatformSettings = () => {
-  const { data, isLoading } = useQuery(platformSettingsQuery())
+  const { data, isLoading, isFetching, refetch } = useQuery(platformSettingsQuery())
 
   const settings = data?.data
 
-  if (isLoading || !settings) {
-    return <div className="h-72 animate-pulse rounded-xl bg-muted/40" />
+  if (isLoading) {
+    return <LoadingBlock height="h-72" rounded />
+  }
+
+  // Only when nothing ever arrived: a failed background refetch keeps the form.
+  if (!settings) {
+    return (
+      <ErrorState
+        className="rounded-xl border border-dashed"
+        message="The platform settings did not load."
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+      />
+    )
   }
 
   // Keyed on when the server last changed, so the form seeds itself from props
@@ -57,33 +72,22 @@ const PlatformSettings = () => {
 }
 
 const SettingsForm = ({ settings }: { settings: IPlatformSettings }) => {
-  const queryClient = useQueryClient()
-
   const [form, setForm] = useState({
     product_name: settings.product_name,
     support_email: settings.support_email,
-    default_plan_id: settings.default_plan_id ?? NO_PLAN,
-    default_trial_days: settings.default_trial_days,
+    default_plan_id: settings.default_plan_id ?? "",
+    default_trial_days: String(settings.default_trial_days),
   })
 
-  const { mutate: save, isPending } = useMutation({
-    mutationFn: () =>
-      updateSettingsAction({
-        ...form,
-        default_plan_id: form.default_plan_id === NO_PLAN ? null : form.default_plan_id,
-      }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not save the settings")
-        return
-      }
-      toast.success("Settings saved")
-      void queryClient.invalidateQueries({ queryKey: queryKeys.platformSettings.all })
-    },
+  const { run: saveSettings, isPending } = useActionMutation({
+    action: updateSettingsAction,
+    successMessage: "Settings saved",
+    invalidateKeys: [queryKeys.platformSettings.all],
+    refresh: false,
   })
 
   const smtp = settings.smtp
-  const provisions = form.default_plan_id !== NO_PLAN
+  const provisions = form.default_plan_id !== ""
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
@@ -208,8 +212,10 @@ const SettingsForm = ({ settings }: { settings: IPlatformSettings }) => {
           <div className="space-y-1.5">
             <Label htmlFor="default-plan">Starting plan</Label>
             <Select
-              value={form.default_plan_id}
-              onValueChange={(value) => setForm({ ...form, default_plan_id: value })}
+              value={form.default_plan_id || NO_PLAN}
+              onValueChange={(value) =>
+                setForm({ ...form, default_plan_id: value === NO_PLAN ? "" : value })
+              }
             >
               <SelectTrigger id="default-plan" className="w-full">
                 <SelectValue />
@@ -218,7 +224,7 @@ const SettingsForm = ({ settings }: { settings: IPlatformSettings }) => {
                 <SelectItem value={NO_PLAN}>Nothing — set them up by hand</SelectItem>
                 {settings.plans.map((plan) => (
                   <SelectItem key={plan.id} value={plan.id}>
-                    {plan.name} — ${plan.price_usd}/mo
+                    {planOptionLabel(plan)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -240,9 +246,7 @@ const SettingsForm = ({ settings }: { settings: IPlatformSettings }) => {
                 max={365}
                 value={form.default_trial_days}
                 disabled={!provisions}
-                onChange={(event) =>
-                  setForm({ ...form, default_trial_days: Number(event.target.value) })
-                }
+                onChange={(event) => setForm({ ...form, default_trial_days: event.target.value })}
                 className="w-28"
               />
               <span className="text-sm text-muted-foreground">days</span>
@@ -250,7 +254,7 @@ const SettingsForm = ({ settings }: { settings: IPlatformSettings }) => {
             <p className="text-xs text-muted-foreground">
               {!provisions
                 ? "Nothing to time until there is a starting plan."
-                : form.default_trial_days === 0
+                : Number(form.default_trial_days) === 0
                   ? "No trial — they start as a paying customer straight away."
                   : `They can use everything for ${form.default_trial_days} days before the plan has to be paid for.`}
             </p>
@@ -259,7 +263,7 @@ const SettingsForm = ({ settings }: { settings: IPlatformSettings }) => {
       </Card>
 
       <div className="flex flex-wrap items-center gap-3 lg:col-span-2">
-        <Button onClick={() => save()} disabled={isPending}>
+        <Button onClick={() => void saveSettings(form)} disabled={isPending}>
           Save settings
         </Button>
         <span className="text-xs text-muted-foreground">

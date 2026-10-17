@@ -1,6 +1,6 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
+import { requireId, runAction, runValidatedAction } from "@/lib/runAction"
 import {
     createDistribution,
     createShareholder,
@@ -8,64 +8,28 @@ import {
     deleteShareholder,
     updateShareholder,
 } from "@/services/finance.services"
-import type { IShareholder, IShareholderDistribution } from "@/types/finance.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+import { createDistributionServerZodSchema, createShareholderServerZodSchema } from "@/zod/finance.validation"
+import { activeStateServerZodSchema } from "@/zod/formFields"
 
-type Result = ApiResponse<IShareholder> | ApiErrorResponse
-type Removed = ApiResponse<{ message: string }> | ApiErrorResponse
+// The API's refusals already say what to do ("Shares would total 120%. The
+// others already hold 90%.", "has distributions recorded"), so they reach the
+// toast as sent.
 
-export const createShareholderAction = async (
-    payload: Record<string, unknown>,
-): Promise<Result> => {
-    try {
-        return await createShareholder(payload)
-    } catch (error: unknown) {
-        // "Shares would total 120%. The others already hold 90%." arrives here,
-        // and already says what to do about it.
-        return { success: false, message: getActionErrorMessage(error, "Could not add them") }
-    }
-}
+export const createShareholderAction = async (values: unknown) =>
+    runValidatedAction(createShareholderServerZodSchema, values, "Could not add them", createShareholder)
 
-export const updateShareholderAction = async (
-    id: string,
-    payload: Record<string, unknown>,
-): Promise<Result> => {
-    if (!id) return { success: false, message: "Invalid shareholder id" }
+// Retiring and bringing back is the one change a screen makes to a shareholder.
+export const updateShareholderAction = async (id: string, values: unknown) =>
+    requireId(id, "shareholder") ??
+    runValidatedAction(activeStateServerZodSchema, values, "Could not update them", (payload) =>
+        updateShareholder(id, payload),
+    )
 
-    try {
-        return await updateShareholder(id, payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not update them") }
-    }
-}
+export const deleteShareholderAction = async (id: string) =>
+    requireId(id, "shareholder") ?? runAction("Could not delete them", () => deleteShareholder(id))
 
-export const deleteShareholderAction = async (id: string): Promise<Removed> => {
-    if (!id) return { success: false, message: "Invalid shareholder id" }
+export const createDistributionAction = async (values: unknown) =>
+    runValidatedAction(createDistributionServerZodSchema, values, "Could not record it", createDistribution)
 
-    try {
-        return await deleteShareholder(id)
-    } catch (error: unknown) {
-        // "This shareholder has distributions recorded" arrives here.
-        return { success: false, message: getActionErrorMessage(error, "Could not delete them") }
-    }
-}
-
-export const createDistributionAction = async (
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<IShareholderDistribution> | ApiErrorResponse> => {
-    try {
-        return await createDistribution(payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not record it") }
-    }
-}
-
-export const deleteDistributionAction = async (id: string): Promise<Removed> => {
-    if (!id) return { success: false, message: "Invalid distribution id" }
-
-    try {
-        return await deleteDistribution(id)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not reverse it") }
-    }
-}
+export const deleteDistributionAction = async (id: string) =>
+    requireId(id, "distribution") ?? runAction("Could not reverse it", () => deleteDistribution(id))

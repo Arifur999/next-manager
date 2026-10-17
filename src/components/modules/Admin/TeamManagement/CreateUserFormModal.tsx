@@ -1,10 +1,8 @@
 "use client"
 
 import { createUserAction } from "@/app/(dashboardLayout)/admin/dashboard/team-management/_action"
-import DepartmentField, {
-  NO_DEPARTMENT,
-  toDepartmentId,
-} from "@/components/modules/Admin/TeamManagement/DepartmentField"
+import DepartmentField from "@/components/modules/Admin/TeamManagement/DepartmentField"
+import RoleField from "@/components/modules/Admin/TeamManagement/RoleField"
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
 import { Button } from "@/components/ui/button"
@@ -18,27 +16,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  ASSIGNABLE_ROLES,
-  ROLE_LABELS,
+  NO_DEPARTMENT,
   createUserFormZodSchema,
   type ICreateUserFormValues,
 } from "@/zod/user.validation"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
-import { toast } from "sonner"
 import { queryKeys } from "@/lib/queryKeys"
 
 const defaultValues: ICreateUserFormValues = {
@@ -50,35 +37,22 @@ const defaultValues: ICreateUserFormValues = {
   department_id: NO_DEPARTMENT,
 }
 
-const ROLE_OPTIONS = ASSIGNABLE_ROLES.map((value) => ({ value, label: ROLE_LABELS[value] }))
-
 const CreateUserFormModal = () => {
   const [open, setOpen] = useState(false)
-  const queryClient = useQueryClient()
-  const router = useRouter()
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: ICreateUserFormValues) =>
-      createUserAction({ ...values, department_id: toDepartmentId(values.department_id) }),
+  // No successMessage: the toast is the server's "User created successfully".
+  const { run: addMember, isPending } = useActionMutation({
+    action: createUserAction,
+    invalidateKeys: [queryKeys.users.all],
   })
 
   const form = useForm({
     defaultValues,
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      // The action never throws, so success is a value to branch on.
-      if (!result.success) {
-        toast.error(result.message || "Failed to create team member")
-        return
+      if (await addMember(value)) {
+        setOpen(false)
+        form.reset()
       }
-
-      toast.success(result.message || "Team member created successfully")
-      setOpen(false)
-      form.reset()
-
-      void queryClient.invalidateQueries({ queryKey: queryKeys.users.all })
-      router.refresh()
     },
   })
 
@@ -131,7 +105,13 @@ const CreateUserFormModal = () => {
                 validators={{ onChange: createUserFormZodSchema.shape.full_name }}
               >
                 {(field) => (
-                  <AppField field={field} label="Full name" placeholder="e.g. Rahim Uddin" disabled={isPending} />
+                  <AppField
+                    field={field}
+                    label="Full name"
+                    autoComplete="off"
+                    placeholder="e.g. Rahim Uddin"
+                    disabled={isPending}
+                  />
                 )}
               </form.Field>
 
@@ -144,6 +124,7 @@ const CreateUserFormModal = () => {
                     field={field}
                     label="Email"
                     type="email"
+                    autoComplete="off"
                     placeholder="name@example.com"
                     disabled={isPending}
                   />
@@ -152,7 +133,7 @@ const CreateUserFormModal = () => {
 
               <form.Field name="phone">
                 {(field) => (
-                  <AppField field={field} label="Phone" placeholder="Optional" disabled={isPending} />
+                  <AppField field={field} label="Phone" autoComplete="off" placeholder="Optional" disabled={isPending} />
                 )}
               </form.Field>
 
@@ -165,37 +146,16 @@ const CreateUserFormModal = () => {
                     field={field}
                     label="Temporary password"
                     type="password"
+                    autoComplete="new-password"
                     placeholder="At least 8 characters"
                     disabled={isPending}
                   />
                 )}
               </form.Field>
 
-              {/* Not an AppField: that one wraps Input. A non-Input control gets
-                  the same space-y-1.5 + Label block written out here. */}
               <form.Field name="role">
                 {(field) => (
-                  <div className="space-y-1.5">
-                    <Label htmlFor={field.name}>Role</Label>
-                    <Select
-                      value={field.state.value}
-                      onValueChange={(value) =>
-                        field.handleChange(value as ICreateUserFormValues["role"])
-                      }
-                      disabled={isPending}
-                    >
-                      <SelectTrigger id={field.name} className="w-full">
-                        <SelectValue placeholder="Choose a role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ROLE_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <RoleField value={field.state.value} onChange={field.handleChange} disabled={isPending} />
                 )}
               </form.Field>
 

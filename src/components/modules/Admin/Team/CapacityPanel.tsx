@@ -1,33 +1,26 @@
 "use client"
 
 import { setCapacityAction } from "@/app/(dashboardLayout)/admin/dashboard/team-management/_capacityAction"
+import EmptyState from "@/components/shared/state/EmptyState"
+import ErrorState from "@/components/shared/state/ErrorState"
+import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { ICapacityRow } from "@/types/work.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import type { ICapacityFormValues } from "@/zod/people.validation"
+import { useQuery } from "@tanstack/react-query"
+import { UsersRound } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { capacitiesQuery } from "@/queries/work.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
-/**
- * The two numbers every KPI divides by.
- *
- * Weekly hours is the denominator of utilization; the bill rate is what turns
- * hours into money, and realization cannot be computed at all without it.
- * Both live here rather than on the user record because they are commercial
- * settings, not identity.
- *
- * A row nobody has set shows the default and says so. That matters: a
- * utilization figure computed against an assumed 40 hours is a different kind
- * of number from one computed against a week somebody actually agreed to, and
- * the difference should not be invisible.
- */
+// Weekly hours and bill rate, the denominators of utilization and realization. A
+// row nobody has set is badged "default", so an assumed week never reads as agreed.
 
 const CapacityRow = ({ row }: { row: ICapacityRow }) => {
-  const queryClient = useQueryClient()
   const [hours, setHours] = useState(String(row.weekly_hours))
   const [rate, setRate] = useState(
     // 0 means unset, so the field starts empty rather than showing a zero
@@ -35,24 +28,12 @@ const CapacityRow = ({ row }: { row: ICapacityRow }) => {
     row.standard_rate_usd > 0 ? String(row.standard_rate_usd) : "",
   )
 
-  const { mutate: save, isPending } = useMutation({
-    mutationFn: () =>
-      setCapacityAction(row.user.id, {
-        weekly_hours: Number(hours),
-        // An empty rate field means "leave it unset", which the engine reads
-        // as "no realization for this person" rather than a rate of zero.
-        ...(rate.trim() === "" ? {} : { standard_rate_usd: Number(rate) }),
-      }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Failed to save")
-        return
-      }
-      toast.success(`${row.user.full_name} updated`)
-      void queryClient.invalidateQueries({ queryKey: queryKeys.capacities.all })
-      // Every utilization and realization figure divides by this.
-      void queryClient.invalidateQueries({ queryKey: queryKeys.kpi.all })
-    },
+  const { run: saveCapacity, isPending } = useActionMutation({
+    action: (values: ICapacityFormValues) => setCapacityAction(row.user.id, values),
+    successMessage: `${row.user.full_name} updated`,
+    // Every utilization and realization figure divides by this.
+    invalidateKeys: [queryKeys.capacities.all, queryKeys.kpi.all],
+    refresh: false,
   })
 
   const dirty =
@@ -101,7 +82,12 @@ const CapacityRow = ({ row }: { row: ICapacityRow }) => {
           />
         </label>
 
-        <Button type="button" size="sm" disabled={isPending || !dirty} onClick={() => save()}>
+        <Button
+          type="button"
+          size="sm"
+          disabled={isPending || !dirty}
+          onClick={() => void saveCapacity({ weekly_hours: hours, standard_rate_usd: rate })}
+        >
           Save
         </Button>
       </div>
@@ -110,27 +96,43 @@ const CapacityRow = ({ row }: { row: ICapacityRow }) => {
 }
 
 const CapacityPanel = () => {
-  const { data, isLoading } = useQuery(capacitiesQuery())
+  const capacityList = useQuery(capacitiesQuery())
 
-  const rows = data?.data ?? []
-  const unrated = rows.filter((row) => row.standard_rate_usd <= 0).length
+  const capacities = capacityList.data?.data ?? []
+  const unrated = capacities.filter((capacity) => capacity.standard_rate_usd <= 0).length
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
       <CardHeader className="border-b px-5 py-4">
         <CardTitle className="text-base">Capacity and rates</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          {unrated === 0
-            ? "Every person has a bill rate, so realization is computable across the agency."
-            : `${unrated} of ${rows.length} have no bill rate. Realization stays uncomputed for them — the software will not guess what an hour is worth.`}
-        </p>
+        {capacities.length > 0 && (
+          <p className="text-sm text-muted-foreground">
+            {unrated === 0
+              ? "Every person has a bill rate, so realization is computable across the agency."
+              : `${unrated} of ${capacities.length} have no bill rate. Realization stays uncomputed for them — the software will not guess what an hour is worth.`}
+          </p>
+        )}
       </CardHeader>
 
-      {isLoading && rows.length === 0 ? (
-        <div className="h-32 animate-pulse bg-muted/40" />
-      ) : (
+      {/* The error shows only when nothing loaded: each row holds figures
+          being typed, and a failed refetch must not take them away. */}
+      {capacityList.isError && capacities.length === 0 && (
+        <ErrorState
+          message="Capacities did not load."
+          onRetry={() => void capacityList.refetch()}
+          isRetrying={capacityList.isFetching}
+        />
+      )}
+
+      {capacityList.isLoading && <LoadingBlock height="h-32" />}
+
+      {capacityList.isSuccess && capacities.length === 0 && (
+        <EmptyState icon={UsersRound}>Nobody on the team yet.</EmptyState>
+      )}
+
+      {capacities.length > 0 && (
         <ul className="divide-y">
-          {rows.map((row) => (
+          {capacities.map((row) => (
             // Keyed by user so a saved row keeps its own input state rather
             // than inheriting the next person's.
             <CapacityRow key={row.user.id} row={row} />

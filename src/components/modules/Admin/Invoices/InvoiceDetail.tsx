@@ -1,5 +1,6 @@
 "use client"
 
+import ErrorState from "@/components/shared/state/ErrorState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,7 +13,7 @@ import { invoiceDetailQuery } from "@/queries/billing.queries"
 import { organizationQuery } from "@/queries/workspace.queries"
 
 const InvoiceDetail = ({ invoiceId }: { invoiceId: string }) => {
-  const { data, isLoading } = useQuery(invoiceDetailQuery(invoiceId))
+  const { data, isLoading, isFetching, refetch } = useQuery(invoiceDetailQuery(invoiceId))
 
   const { data: orgData } = useQuery(organizationQuery())
 
@@ -23,15 +24,29 @@ const InvoiceDetail = ({ invoiceId }: { invoiceId: string }) => {
     return <Card className="h-64 animate-pulse bg-muted/40" />
   }
 
-  if (!invoice) return null
+  // A failed read lands here, including the 404 for an invoice that is not
+  // this agency's: say so rather than render nothing.
+  if (!invoice) {
+    return (
+      <Card>
+        <ErrorState
+          message="This invoice did not load."
+          onRetry={() => void refetch()}
+          isRetrying={isFetching}
+        />
+        <Link href="/admin/dashboard/invoices" className="mx-auto text-sm text-primary underline-offset-4 hover:underline">
+          Back to invoices
+        </Link>
+      </Card>
+    )
+  }
 
   const status = invoice.is_overdue ? "overdue" : invoice.status
 
   return (
     <div className="space-y-6" data-print="page">
-      {/* Letterhead. Only on the printed copy — on screen the sidebar already
-          says whose agency this is, but a page being sent to a client has to
-          carry it or it is a screenshot rather than a document. */}
+      {/* Letterhead on the printed copy only: on screen the sidebar says whose
+          agency this is, but a page sent to a client has to carry it. */}
       {organization && (
         <div className="hidden border-b pb-4 print:block">
           <p className="text-lg font-semibold">{organization.legal_name || organization.name}</p>

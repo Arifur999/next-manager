@@ -14,45 +14,32 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { UserPlus } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
-import { z } from "zod"
 import { queryKeys } from "@/lib/queryKeys"
+import { duePersonFormZodSchema, type IDuePersonFormValues } from "@/zod/spending.validation"
 
-/**
- * Informal lending, in and out.
- *
- * The sign convention is the thing to get right on screen: a POSITIVE balance
- * means the agency has taken more from that person than it has given back, so
- * the agency owes THEM. Showing a bare signed number would leave every reader
- * working that out from scratch, so each row says which way it points.
- */
+const defaultValues: IDuePersonFormValues = { name: "", phone: "" }
 
 const AddPersonModal = () => {
   const [open, setOpen] = useState(false)
-  const queryClient = useQueryClient()
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: { name: string; phone?: string }) => createDuePersonAction(values),
+  const { run: addPerson, isPending } = useActionMutation({
+    action: createDuePersonAction,
+    successMessage: "Person added",
+    invalidateKeys: [queryKeys.duePeople.all],
+    refresh: false,
   })
 
   const form = useForm({
-    defaultValues: { name: "", phone: "" },
+    defaultValues,
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        toast.error(result.message || "Failed to add person")
-        return
+      if (await addPerson(value)) {
+        setOpen(false)
+        form.reset()
       }
-
-      toast.success("Person added")
-      setOpen(false)
-      form.reset()
-      void queryClient.invalidateQueries({ queryKey: queryKeys.duePeople.all })
     },
   })
 
@@ -91,7 +78,7 @@ const AddPersonModal = () => {
           }}
           className="space-y-5"
         >
-          <form.Field name="name" validators={{ onChange: z.string().min(1, "Name is required") }}>
+          <form.Field name="name" validators={{ onChange: duePersonFormZodSchema.shape.name }}>
             {(field) => <AppField field={field} label="Name" disabled={isPending} />}
           </form.Field>
 

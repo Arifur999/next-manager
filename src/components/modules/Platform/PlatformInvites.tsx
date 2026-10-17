@@ -5,22 +5,28 @@ import {
   invitePlatformAdminAction,
   revokePlatformInviteAction,
 } from "@/app/(dashboardLayout)/platform/_teamAction"
+import InviteLinkPanel from "@/components/modules/Platform/InviteLinkPanel"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
+import AppField from "@/components/shared/form/AppField"
+import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import {
   PLATFORM_PERMISSIONS,
   PLATFORM_PERMISSION_INFO,
   type IPlatformInvite,
-  type PlatformPermission,
 } from "@/types/platform.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { platformInviteFormZodSchema, type IPlatformInviteFormValues } from "@/zod/platform.validation"
+import { useForm } from "@tanstack/react-form"
+import { useQuery } from "@tanstack/react-query"
 import { format, isPast, parseISO } from "date-fns"
-import { Check, Copy, MailPlus, Trash2, TriangleAlert } from "lucide-react"
+import { MailPlus, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 import { platformInvitesQuery } from "@/queries/platform.queries"
@@ -44,69 +50,52 @@ const statusOf = (invite: IPlatformInvite) => {
   return { label: "waiting", tone: "default" as const }
 }
 
+const inviteDefaults: IPlatformInviteFormValues = { email: "", permissions: [] }
+
 const PlatformInvites = () => {
-  const queryClient = useQueryClient()
-  const [email, setEmail] = useState("")
-  const [permissions, setPermissions] = useState<string[]>([])
   const [freshLink, setFreshLink] = useState<string | null>(null)
   const [mailed, setMailed] = useState<{ delivered: boolean; reason: string | null } | null>(null)
-  const [copied, setCopied] = useState(false)
+  const [revoking, setRevoking] = useState<IPlatformInvite | null>(null)
 
-  const { data, isLoading } = useQuery(platformInvitesQuery())
+  const invitesList = useQuery(platformInvitesQuery())
 
-  const invites = data?.data ?? []
+  const invites = invitesList.data?.data ?? []
 
-  const { mutate: invite, isPending } = useMutation({
-    mutationFn: () =>
-      invitePlatformAdminAction({ email: email.trim(), permissions }),
+  const { run: sendInvite, isPending } = useActionMutation({
+    action: invitePlatformAdminAction,
+    // The server phrases its message against what happened to the email.
+    successMessage: false,
+    invalidateKeys: [queryKeys.platformInvites.all],
+    refresh: false,
     onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not create the invite")
-        return
-      }
+      if (!result.success) return
 
-      const url = "data" in result ? result.data?.join_url : undefined
-      const mail = "data" in result ? result.data?.email : undefined
-      setFreshLink(url ?? null)
-      setMailed(mail ?? null)
+      const mail = result.data.email
+      setFreshLink(result.data.join_url)
+      setMailed(mail)
 
-      // The server phrases this against what actually happened to the mail.
-      if (mail?.delivered) toast.success(result.message)
-      else toast.warning(result.message, { description: mail?.reason ?? undefined })
-      setCopied(false)
-      setEmail("")
-      setPermissions([])
-      void queryClient.invalidateQueries({ queryKey: queryKeys.platformInvites.all })
+      if (mail.delivered) toast.success(result.message)
+      else toast.warning(result.message, { description: mail.reason ?? undefined })
     },
   })
 
-  const { mutate: revoke, isPending: isRevoking } = useMutation({
-    mutationFn: (id: string) => revokePlatformInviteAction(id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not revoke")
-        return
-      }
-      toast.success("Invite revoked — the link stops working immediately")
-      void queryClient.invalidateQueries({ queryKey: queryKeys.platformInvites.all })
-    },
+  const { run: revokeInvite, isPending: isRevoking } = useActionMutation({
+    action: revokePlatformInviteAction,
+    successMessage: "Invite revoked — the link stops working immediately",
+    invalidateKeys: [queryKeys.platformInvites.all],
+    refresh: false,
   })
 
-  const copy = async () => {
-    if (!freshLink) return
-
-    try {
-      await navigator.clipboard.writeText(freshLink)
-      setCopied(true)
-    } catch {
-      toast.message("Copy it from the box above")
-    }
+  const handleRevoke = async () => {
+    if (revoking && (await revokeInvite(revoking.id))) setRevoking(null)
   }
 
-  const toggle = (permission: PlatformPermission, on: boolean) =>
-    setPermissions((current) =>
-      on ? [...current, permission] : current.filter((value) => value !== permission),
-    )
+  const form = useForm({
+    defaultValues: inviteDefaults,
+    onSubmit: async ({ value, formApi }) => {
+      if (await sendInvite(value)) formApi.reset()
+    },
+  })
 
   return (
     <div className="space-y-6">
@@ -126,107 +115,90 @@ const PlatformInvites = () => {
 
         <form
           className="space-y-5 p-5"
+          noValidate
           onSubmit={(event) => {
             event.preventDefault()
-            if (!email.trim() || permissions.length === 0) return
-            invite()
+            event.stopPropagation()
+            void form.handleSubmit()
           }}
         >
-          <div className="max-w-md space-y-1.5">
-            <Label htmlFor="operator-email">Their email</Label>
-            <Input
-              id="operator-email"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="colleague@example.com"
-              disabled={isPending}
-            />
-          </div>
+          <form.Field name="email" validators={{ onChange: platformInviteFormZodSchema.shape.email }}>
+            {(field) => (
+              <AppField
+                field={field}
+                label="Their email"
+                type="email"
+                placeholder="colleague@example.com"
+                className="max-w-md"
+                disabled={isPending}
+              />
+            )}
+          </form.Field>
 
           <div className="space-y-2">
             <Label>What they may do</Label>
             <p className="text-xs text-muted-foreground">
-              {/* This used to grant everything when nothing was ticked, which is
-                  what an untouched form looks like. Now at least one is required
-                  and the server refuses the rest. */}
+              {/* An empty list means full access, so an untouched form must not be sendable. */}
               Pick at least one. Choosing now is better than narrowing later — until you
               do, an operator can suspend any customer you have.
             </p>
 
-            <div className="grid gap-2 pt-1 sm:grid-cols-2">
-              {PLATFORM_PERMISSIONS.map((permission) => {
-                const info = PLATFORM_PERMISSION_INFO[permission]
+            <form.Field name="permissions">
+              {(field) => (
+                <div className="grid gap-2 pt-1 sm:grid-cols-2">
+                  {PLATFORM_PERMISSIONS.map((permission) => {
+                    const info = PLATFORM_PERMISSION_INFO[permission]
+                    const granted = field.state.value
 
-                return (
-                  <div key={permission} className="flex items-start gap-2.5">
-                    <Checkbox
-                      id={`invite-${permission}`}
-                      className="mt-0.5"
-                      checked={permissions.includes(permission)}
-                      onCheckedChange={(checked) => toggle(permission, checked === true)}
-                      disabled={isPending}
-                    />
-                    <Label htmlFor={`invite-${permission}`} className="font-normal">
-                      {info.label}
-                      <span className="block text-xs text-muted-foreground">{info.area}</span>
-                    </Label>
-                  </div>
-                )
-              })}
-            </div>
+                    return (
+                      <div key={permission} className="flex items-start gap-2.5">
+                        <Checkbox
+                          id={`invite-${permission}`}
+                          className="mt-0.5"
+                          checked={granted.includes(permission)}
+                          onCheckedChange={(checked) =>
+                            field.handleChange(
+                              checked === true
+                                ? [...granted, permission]
+                                : granted.filter((value) => value !== permission),
+                            )
+                          }
+                          disabled={isPending}
+                        />
+                        <Label htmlFor={`invite-${permission}`} className="font-normal">
+                          {info.label}
+                          <span className="block text-xs text-muted-foreground">{info.area}</span>
+                        </Label>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </form.Field>
           </div>
 
-          <Button type="submit" disabled={isPending || !email.trim() || permissions.length === 0}>
-            <MailPlus className="size-4" />
-            {isPending ? "Sending..." : "Send invite"}
-          </Button>
+          <form.Subscribe
+            selector={({ values }) => values.email.trim() !== "" && values.permissions.length > 0}
+          >
+            {(isReady) => (
+              <Button type="submit" disabled={isPending || !isReady}>
+                <MailPlus className="size-4" />
+                {isPending ? "Sending..." : "Send invite"}
+              </Button>
+            )}
+          </form.Subscribe>
         </form>
 
         {freshLink && (
-          <div className="border-t bg-muted/40 px-5 py-4">
-            {/* The link is shown either way. Mail can be filtered, and a
-                sending domain that is not yet verified reaches nobody but your
-                own address — an operator with no way to pass the link on is
-                stuck waiting on somebody else's spam folder. */}
-            <p className="flex items-center gap-2 text-sm font-medium">
-              {mailed?.delivered ? (
-                <>
-                  <Check className="size-4" aria-hidden="true" />
-                  Emailed to them
-                </>
-              ) : (
-                <>
-                  <TriangleAlert className="size-4" aria-hidden="true" />
-                  Not emailed — send them this link yourself
-                </>
-              )}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {mailed?.delivered
-                ? "Keep a copy anyway, in case it lands in their spam. This is the only time it can be read — lose it and you revoke the invite and send another."
-                : (mailed?.reason ??
-                  "This is the only time it can be read. Lose it and you revoke the invite and send another.")}
-            </p>
-
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Input readOnly value={freshLink} className="min-w-64 flex-1 font-mono text-xs" />
-              <Button type="button" variant="outline" onClick={copy}>
-                {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-                {copied ? "Copied" : "Copy"}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => {
-                  setFreshLink(null)
-                  setMailed(null)
-                }}
-              >
-                Done
-              </Button>
-            </div>
-          </div>
+          <InviteLinkPanel
+            key={freshLink}
+            link={freshLink}
+            mail={mailed}
+            onDone={() => {
+              setFreshLink(null)
+              setMailed(null)
+            }}
+          />
         )}
       </Card>
 
@@ -235,13 +207,12 @@ const PlatformInvites = () => {
           <CardTitle className="text-base">Invites</CardTitle>
         </CardHeader>
 
-        {isLoading && invites.length === 0 ? (
-          <div className="h-24 animate-pulse bg-muted/40" />
-        ) : invites.length === 0 ? (
-          <p className="px-6 py-10 text-center text-sm text-muted-foreground">
-            No invites sent yet.
-          </p>
-        ) : (
+        <PanelState
+          query={invitesList}
+          errorMessage="The invites did not load."
+          isEmpty={invites.length === 0}
+          empty={<EmptyState icon={MailPlus}>No invites sent yet.</EmptyState>}
+        >
           <ul className="divide-y">
             {invites.map((invite) => {
               const state = statusOf(invite)
@@ -272,7 +243,7 @@ const PlatformInvites = () => {
                         variant="outline"
                         size="sm"
                         disabled={isRevoking}
-                        onClick={() => revoke(invite.id)}
+                        onClick={() => setRevoking(invite)}
                       >
                         <Trash2 className="size-3.5" />
                         <span className="sr-only">Revoke</span>
@@ -283,8 +254,29 @@ const PlatformInvites = () => {
               )
             })}
           </ul>
-        )}
+        </PanelState>
       </Card>
+
+      <ConfirmDialog
+        open={Boolean(revoking)}
+        onOpenChange={(open) => {
+          if (!open) setRevoking(null)
+        }}
+        title="Revoke this invite?"
+        description={
+          revoking && (
+            <>
+              The link sent to <span className="font-medium text-foreground">{revoking.email}</span>{" "}
+              stops working immediately. Nothing was created from it, so nothing else changes.
+            </>
+          )
+        }
+        variant="destructive"
+        confirmLabel="Revoke"
+        pendingLabel="Revoking..."
+        isPending={isRevoking}
+        onConfirm={() => void handleRevoke()}
+      />
     </div>
   )
 }

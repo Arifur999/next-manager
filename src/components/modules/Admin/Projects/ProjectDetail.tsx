@@ -1,24 +1,23 @@
 "use client"
 
 import ProjectBaselineCard from "@/components/modules/Admin/Projects/ProjectBaselineCard"
+import ProjectFinanceTiles from "@/components/modules/Admin/Projects/ProjectFinanceTiles"
 import ProjectMilestonePanel from "@/components/modules/Admin/Projects/ProjectMilestonePanel"
+import ProjectTasksPanel from "@/components/modules/Admin/Projects/ProjectTasksPanel"
 import ProjectTeamPanel from "@/components/modules/Admin/Projects/ProjectTeamPanel"
-import StatTile from "@/components/shared/StatTile"
-import { STATUS_TONE } from "@/components/shared/status/statusTone"
+import EmptyState from "@/components/shared/state/EmptyState"
+import ErrorState from "@/components/shared/state/ErrorState"
+import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { formatBdt, formatPercent, formatUsd } from "@/lib/currency"
-import type { ITask } from "@/types/work.types"
-import type { IProject } from "@/types/project.types"
 import ProjectLinksPanel from "@/components/modules/Admin/Projects/ProjectLinksPanel"
 import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
-import { ArrowDownLeft, KeyRound, Receipt, TrendingUp } from "lucide-react"
+import { KeyRound } from "lucide-react"
 import Link from "next/link"
 import { projectDetailQuery, projectFinancialsQuery } from "@/queries/project.queries"
-import { tasksListQuery } from "@/queries/work.queries"
 import { credentialsListQuery } from "@/queries/workspace.queries"
 
 /**
@@ -41,29 +40,37 @@ const ProjectDetail = ({
   /** Whether the panels that CHANGE a project appear. Admin and PM only. */
   canManage?: boolean
 }) => {
-  const { data: projectData, isLoading } = useQuery(projectDetailQuery(projectId))
+  const projectQuery = useQuery(projectDetailQuery(projectId))
 
   const { data: financeData } = useQuery({ ...projectFinancialsQuery(projectId), enabled: canSeeMoney })
 
-  const { data: tasksData } = useQuery(tasksListQuery(`project_id=${projectId}`))
+  const credentialsQuery = useQuery(credentialsListQuery(`project_id=${projectId}`))
 
-  const { data: credentialsData } = useQuery(credentialsListQuery(`project_id=${projectId}`))
-
-  const project = projectData?.data as (IProject & { tasks?: ITask[] }) | undefined
+  const project = projectQuery.data?.data
   const finance = financeData?.data
-  const tasks = ((tasksData?.data ?? []))
-  const credentials = credentialsData?.data ?? []
+  const credentials = credentialsQuery.data?.data ?? []
 
-  if (isLoading && !project) {
-    return <Card className="h-64 animate-pulse bg-muted/40" />
+  // A failed refresh keeps the project it already has on screen; only a page
+  // with nothing to show says it did not load.
+  if (!project && projectQuery.isError) {
+    return (
+      <Card>
+        <ErrorState
+          message="This project did not load."
+          onRetry={() => void projectQuery.refetch()}
+          isRetrying={projectQuery.isFetching}
+        />
+      </Card>
+    )
   }
 
-  if (!project) return null
-
-  // By category: a renamed "Done" still counts as finished, and so does a
-  // second finished status the agency added.
-  const doneCount = tasks.filter((task) => task.status.category === "done").length
-  const progress = tasks.length > 0 ? (doneCount / tasks.length) * 100 : 0
+  if (!project) {
+    return (
+      <Card className="overflow-hidden p-0">
+        <LoadingBlock height="h-64" />
+      </Card>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -94,44 +101,7 @@ const ProjectDetail = ({
 
       {/* Undefined for anybody who may not see it, because the query never
           ran - not because a flag is checked in two places. */}
-      {canSeeMoney && finance && (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatTile
-            label="Contract value"
-            value={formatUsd(finance.contract_value_usd)}
-            hint={`${formatUsd(finance.invoiced_usd)} invoiced`}
-            tone={2}
-          />
-          <StatTile
-            label="Received"
-            value={formatUsd(finance.received_usd)}
-            secondary={`${formatBdt(finance.received_bdt)} at recorded rates`}
-            hint={`${formatUsd(finance.outstanding_usd)} still owed`}
-            icon={<ArrowDownLeft className="size-5" />}
-            tone={1}
-          />
-          <StatTile
-            label="Cost"
-            value={formatBdt(finance.total_cost_bdt)}
-            secondary={`${formatBdt(finance.team_cost_bdt)} team · ${formatBdt(finance.expense_bdt)} expenses`}
-            icon={<Receipt className="size-5" />}
-            tone={4}
-          />
-          <StatTile
-            label="Profit"
-            value={formatBdt(finance.profit_bdt)}
-            // Money received minus money spent — not contract value minus cost,
-            // because unpaid work is not profit.
-            hint={
-              finance.received_bdt > 0
-                ? `${formatPercent((finance.profit_bdt / finance.received_bdt) * 100)} margin on what has been paid`
-                : "Nothing received yet"
-            }
-            icon={<TrendingUp className="size-5" />}
-            tone={3}
-          />
-        </div>
-      )}
+      {canSeeMoney && finance && <ProjectFinanceTiles finance={finance} />}
 
       <Tabs defaultValue="tasks">
         <TabsList>
@@ -144,41 +114,7 @@ const ProjectDetail = ({
         </TabsList>
 
         <TabsContent value="tasks" className="mt-4">
-          <Card className="gap-0 overflow-hidden p-0">
-            <CardHeader className="border-b px-5 py-4">
-              <CardTitle className="text-base">
-                {doneCount} of {tasks.length} done
-              </CardTitle>
-              <Progress value={progress} className="mt-2 h-1.5" />
-            </CardHeader>
-
-            {tasks.length === 0 ? (
-              <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-                No tasks on this project yet.
-              </p>
-            ) : (
-              <ul className="divide-y">
-                {tasks.map((task) => (
-                  <li key={task.id} className="flex items-center justify-between gap-3 px-5 py-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{task.title}</p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {task.assignee?.full_name ?? "Unassigned"}
-                        {task.due_date && ` · due ${format(new Date(task.due_date), "MMM dd")}`}
-                      </p>
-                    </div>
-                    <span
-                      className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-medium capitalize ${
-                        STATUS_TONE[task.status.category]
-                      }`}
-                    >
-                      {task.status.name}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
+          <ProjectTasksPanel projectId={projectId} />
         </TabsContent>
 
         <TabsContent value="milestones" className="mt-4 space-y-4">
@@ -231,12 +167,12 @@ const ProjectDetail = ({
               </Link>
             </CardHeader>
 
-            {credentials.length === 0 ? (
-              <p className="flex flex-col items-center gap-2 px-6 py-12 text-center text-sm text-muted-foreground">
-                <KeyRound className="size-7" aria-hidden="true" />
-                Nothing stored against this project yet.
-              </p>
-            ) : (
+            <PanelState
+              query={credentialsQuery}
+              errorMessage="The vault entries did not load."
+              isEmpty={credentials.length === 0}
+              empty={<EmptyState icon={KeyRound}>Nothing stored against this project yet.</EmptyState>}
+            >
               <ul className="divide-y">
                 {credentials.map((credential) => (
                   <li
@@ -260,7 +196,7 @@ const ProjectDetail = ({
                   </li>
                 ))}
               </ul>
-            )}
+            </PanelState>
           </Card>
         </TabsContent>
       </Tabs>

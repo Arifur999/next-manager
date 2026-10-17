@@ -7,108 +7,81 @@ import {
   setPayrollItemsAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/payroll/_action"
 import PayrollRunCard from "@/components/modules/Admin/People/PayrollRunCard"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import EmptyState from "@/components/shared/state/EmptyState"
+import ErrorState from "@/components/shared/state/ErrorState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { endOfMonth, format, startOfMonth } from "date-fns"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import type { IPayrollRun } from "@/types/people.types"
+import { useQuery } from "@tanstack/react-query"
+import { format, parseISO } from "date-fns"
 import { Wallet } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { accountsQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
 import { payrollRunsQuery } from "@/queries/people.queries"
+import type { IPayrollItemFormValues } from "@/zod/people.validation"
 
-/**
- * A month's salaries.
- *
- * The board holds only what the runs share; one run is its own component. The
- * screen says plainly that completing a run is what creates the money, because
- * that is the one irreversible action here — the payouts it writes are the same
- * rows a manual payout produces, and they cannot be un-written by coming back
- * to this page.
- */
+// Completing a run writes team payouts and moves the ledger.
+const PAYROLL_KEYS = [
+  queryKeys.payroll.all,
+  queryKeys.payouts.all,
+  queryKeys.accounts.all,
+  queryKeys.transactions.all,
+]
+
+// A month's salaries. Paying a run is the one irreversible action here: its
+// payouts are ordinary team payouts, reversed where they live, not on this page.
 const PayrollBoard = () => {
-  const queryClient = useQueryClient()
   const [month, setMonth] = useState(format(new Date(), "yyyy-MM"))
+  const [discarding, setDiscarding] = useState<IPayrollRun | null>(null)
 
-  const { data, isLoading } = useQuery(payrollRunsQuery())
-  const { data: accountData } = useQuery(accountsQuery())
+  const runList = useQuery(payrollRunsQuery())
+  const accountList = useQuery(accountsQuery())
 
-  const runs = data?.data ?? []
+  const runs = runList.data?.data ?? []
   // Salaries are BDT, like every other team payout.
-  const accounts = ((accountData?.data ?? [])).filter(
+  const accounts = (accountList.data?.data ?? []).filter(
     (account) => account.currency === "BDT" && account.is_active
   )
 
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.payroll.all })
-    // Completing a run writes team payouts and moves the ledger.
-    void queryClient.invalidateQueries({ queryKey: queryKeys.payouts.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all })
-  }
-
-  const { mutate: open, isPending } = useMutation({
-    mutationFn: () => {
-      const start = startOfMonth(new Date(`${month}-01T00:00:00Z`))
-      return createPayrollRunAction({
-        period_start: format(start, "yyyy-MM-dd"),
-        period_end: format(endOfMonth(start), "yyyy-MM-dd"),
-      })
-    },
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not open it")
-        return
-      }
-      toast.success("Payroll opened with a line per person")
-      refresh()
-    },
+  const { run: openPayroll, isPending } = useActionMutation({
+    action: createPayrollRunAction,
+    successMessage: "Payroll opened with a line per person",
+    invalidateKeys: PAYROLL_KEYS,
+    refresh: false,
   })
 
-  const { mutate: save } = useMutation({
-    mutationFn: ({ id, items }: { id: string; items: unknown[] }) =>
+  const { run: savePayrollItems, isPending: isSaving } = useActionMutation({
+    action: ({ id, items }: { id: string; items: IPayrollItemFormValues[] }) =>
       setPayrollItemsAction(id, { items }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not save it")
-        return
-      }
-      toast.success("Saved")
-      refresh()
-    },
+    successMessage: "Saved",
+    invalidateKeys: PAYROLL_KEYS,
+    refresh: false,
   })
 
-  const { mutate: pay } = useMutation({
-    mutationFn: ({ id, accountId }: { id: string; accountId: string }) =>
+  // No successMessage: the server counts what it actually paid.
+  const { run: payPayroll, isPending: isPaying } = useActionMutation({
+    action: ({ id, accountId }: { id: string; accountId: string }) =>
       completePayrollAction(id, { account_id: accountId }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not pay it")
-        return
-      }
-      // The server counts what it actually paid.
-      toast.success(result.message)
-      refresh()
-    },
+    invalidateKeys: PAYROLL_KEYS,
+    refresh: false,
   })
 
-  const { mutate: discard } = useMutation({
-    mutationFn: (id: string) => deletePayrollRunAction(id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        // "That run has been paid. Reverse the payouts it created instead…"
-        toast.error(result.message || "Could not discard it")
-        return
-      }
-      toast.success("Draft discarded")
-      refresh()
-    },
+  const { run: discardDraft, isPending: isDiscarding } = useActionMutation({
+    action: deletePayrollRunAction,
+    successMessage: "Draft discarded",
+    invalidateKeys: PAYROLL_KEYS,
+    refresh: false,
   })
+
+  const confirmDiscard = async () => {
+    if (discarding && (await discardDraft(discarding.id))) setDiscarding(null)
+  }
 
   return (
     <div className="space-y-4">
@@ -121,7 +94,7 @@ const PayrollBoard = () => {
           className="flex flex-wrap items-end gap-3 px-6 pb-6"
           onSubmit={(event) => {
             event.preventDefault()
-            open()
+            void openPayroll({ month })
           }}
         >
           <div className="space-y-1.5">
@@ -146,26 +119,63 @@ const PayrollBoard = () => {
         </form>
       </Card>
 
-      {isLoading && runs.length === 0 ? (
+      {/* The error shows only when nothing loaded: a run card holds figures
+          being typed, and a failed refetch must not take them away. */}
+      {runList.isError && runs.length === 0 && (
+        <Card>
+          <ErrorState
+            message="Payroll did not load."
+            onRetry={() => void runList.refetch()}
+            isRetrying={runList.isFetching}
+          />
+        </Card>
+      )}
+
+      {runList.isLoading && (
         <Card>
           <LoadingBlock rounded />
         </Card>
-      ) : runs.length === 0 ? (
+      )}
+
+      {runList.isSuccess && runs.length === 0 && (
         <Card>
           <EmptyState icon={Wallet}>No payroll yet.</EmptyState>
         </Card>
-      ) : (
-        runs.map((run) => (
-          <PayrollRunCard
-            key={run.id}
-            run={run}
-            accounts={accounts}
-            onSave={(items) => save({ id: run.id, items })}
-            onPay={(accountId) => pay({ id: run.id, accountId })}
-            onDiscard={() => discard(run.id)}
-          />
-        ))
       )}
+
+      {runs.map((run) => (
+        <PayrollRunCard
+          key={run.id}
+          run={run}
+          accounts={accounts}
+          onSave={(items) => savePayrollItems({ id: run.id, items })}
+          onPay={(accountId) => payPayroll({ id: run.id, accountId })}
+          isBusy={isSaving || isPaying}
+          onDiscard={() => setDiscarding(run)}
+        />
+      ))}
+
+      <ConfirmDialog
+        open={discarding !== null}
+        onOpenChange={(open) => {
+          if (!open) setDiscarding(null)
+        }}
+        title="Discard this draft?"
+        description={
+          <>
+            This throws away the{" "}
+            <span className="font-medium text-foreground">
+              {discarding ? format(parseISO(discarding.period_start), "MMMM yyyy") : ""}
+            </span>{" "}
+            draft and the figures typed into it. Nothing has been paid from it, so no money moves.
+          </>
+        }
+        variant="destructive"
+        confirmLabel="Discard"
+        pendingLabel="Discarding..."
+        isPending={isDiscarding}
+        onConfirm={() => void confirmDiscard()}
+      />
     </div>
   )
 }

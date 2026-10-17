@@ -4,6 +4,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { clientRevenueQuery } from "@/queries/insights.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Client report",
@@ -24,16 +25,11 @@ const ClientsReportPage = async () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {mine ? "Your clients" : "Clients"}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {mine
-            ? "What the clients you brought in have actually paid. Money received, not money invoiced — an unpaid invoice is a hope, and ranking clients by what they were billed would put your worst payer at the top."
-            : "Who actually pays. Money received, not money invoiced — an unpaid invoice is a hope, and ranking clients by what they were billed would put your worst payer at the top."}
-        </p>
-      </div>
+      <PageHeader title={mine ? "Your clients" : "Clients"}>
+        {mine
+          ? "What the clients you brought in have actually paid. Money received, not money invoiced — an unpaid invoice is a hope, and ranking clients by what they were billed would put your worst payer at the top."
+          : "Who actually pays. Money received, not money invoiced — an unpaid invoice is a hope, and ranking clients by what they were billed would put your worst payer at the top."}
+      </PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
         <ClientsReport />

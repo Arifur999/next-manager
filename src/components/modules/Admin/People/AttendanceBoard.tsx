@@ -3,32 +3,20 @@
 import { clockAction } from "@/app/(dashboardLayout)/dashboard/attendance/_action"
 import RecordAttendanceCard from "@/components/modules/Admin/People/RecordAttendanceCard"
 import EmptyState from "@/components/shared/state/EmptyState"
-import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { CalendarCheck, LogIn, LogOut } from "lucide-react"
-import { toast } from "sonner"
 import { attendanceQuery } from "@/queries/people.queries"
 import { queryKeys } from "@/lib/queryKeys"
+import { todayIsoDate } from "@/lib/dates"
 
-/**
- * Who was here.
- *
- * Being present is not the same as logging hours — somebody can be in all day
- * and log nothing against a task. This screen answers the first question only,
- * and the timesheet answers the second.
- *
- * A row with no check-out is somebody still in, not a gap in the data, and it
- * says so rather than showing a blank.
- *
- * Writing down somebody else's day is a different claim and lives in its own
- * card, shown only to the roles the route lets do it. `canRecord` is passed in
- * from the page rather than read here, the same way the leave board is told
- * whether to offer Approve.
- */
+// Who was here, which is not the hours logged against a task: that is the
+// timesheet. `canRecord` comes from the page, as `canDecide` does on the leave board.
 
 const hoursBetween = (from: string | null, to: string | null) => {
   if (!from || !to) return null
@@ -37,28 +25,20 @@ const hoursBetween = (from: string | null, to: string | null) => {
 }
 
 const AttendanceBoard = ({ canRecord = false }: { canRecord?: boolean }) => {
-  const queryClient = useQueryClient()
+  const attendanceList = useQuery(attendanceQuery())
 
-  const { data, isLoading } = useQuery(attendanceQuery())
+  const days = attendanceList.data?.data ?? []
 
-  const rows = data?.data ?? []
-
-  const { mutate: clock, isPending } = useMutation({
-    mutationFn: () => clockAction(),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not record that")
-        return
-      }
-      // The server says which happened — asking the client to guess is how the
-      // button ends up claiming the opposite of what was stored.
-      toast.success(result.message)
-      void queryClient.invalidateQueries({ queryKey: queryKeys.attendance.all })
-    },
+  // No successMessage: the server says which happened. Guessing here is how the
+  // button ends up claiming the opposite of what was stored.
+  const { run: clock, isPending } = useActionMutation({
+    action: clockAction,
+    invalidateKeys: [queryKeys.attendance.all],
+    refresh: false,
   })
 
-  const today = format(new Date(), "yyyy-MM-dd")
-  const mineToday = rows.find((row) => format(parseISO(row.date), "yyyy-MM-dd") === today)
+  const today = todayIsoDate()
+  const mineToday = days.find((day) => format(parseISO(day.date), "yyyy-MM-dd") === today)
   const stillIn = Boolean(mineToday?.check_in && !mineToday?.check_out)
 
   const table = (
@@ -72,17 +52,18 @@ const AttendanceBoard = ({ canRecord = false }: { canRecord?: boolean }) => {
           </p>
         </div>
 
-        <Button onClick={() => clock()} disabled={isPending} variant={stillIn ? "outline" : "default"}>
+        <Button onClick={() => void clock(undefined)} disabled={isPending} variant={stillIn ? "outline" : "default"}>
           {stillIn ? <LogOut className="size-4" /> : <LogIn className="size-4" />}
           {stillIn ? "Check out" : "Check in"}
         </Button>
       </CardHeader>
 
-      {isLoading && rows.length === 0 ? (
-        <LoadingBlock />
-      ) : rows.length === 0 ? (
-        <EmptyState icon={CalendarCheck}>Nothing recorded yet.</EmptyState>
-      ) : (
+      <PanelState
+        query={attendanceList}
+        errorMessage="Attendance did not load."
+        isEmpty={days.length === 0}
+        empty={<EmptyState icon={CalendarCheck}>Nothing recorded yet.</EmptyState>}
+      >
         <div className="overflow-x-auto">
           <table className="w-full min-w-[42rem] text-sm">
             <thead>
@@ -95,7 +76,7 @@ const AttendanceBoard = ({ canRecord = false }: { canRecord?: boolean }) => {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {rows.map((row) => {
+              {days.map((row) => {
                 const hours = hoursBetween(row.check_in, row.check_out)
 
                 return (
@@ -134,7 +115,7 @@ const AttendanceBoard = ({ canRecord = false }: { canRecord?: boolean }) => {
             </tbody>
           </table>
         </div>
-      )}
+      </PanelState>
     </Card>
   )
 

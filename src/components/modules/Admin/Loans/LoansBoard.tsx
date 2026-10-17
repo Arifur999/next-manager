@@ -1,96 +1,98 @@
 "use client"
 
 import {
+  closeLoanAction,
   createLoanAction,
   deleteLoanAction,
   payLoanInstalmentAction,
   reverseLoanInstalmentAction,
-  updateLoanAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/loans/_action"
-import LoanCard from "@/components/modules/Admin/Loans/LoanCard"
 import LoanFormCard from "@/components/modules/Admin/Loans/LoanFormCard"
-import EmptyState from "@/components/shared/state/EmptyState"
-import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import LoanList from "@/components/modules/Admin/Loans/LoanList"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { Card } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import type { ILoan, ILoanInstalment } from "@/types/finance.types"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
-import { Landmark } from "lucide-react"
-import { toast } from "sonner"
+import { useState } from "react"
 import { accountsQuery, loanSummaryQuery, loansListQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
-/**
- * What the agency owes, and to whom.
- *
- * The board holds only what the loans share; one loan is its own component, and
- * so is its schedule. Every figure on this page is derived by the server from
- * the instalments — nothing here adds anything up itself, so a number on the
- * summary strip cannot disagree with the card underneath it.
- */
-const LoansBoard = () => {
-  const queryClient = useQueryClient()
+// Every loan change moves an account and writes the ledger.
+const LOAN_KEYS = [
+  queryKeys.loans.all,
+  queryKeys.loanSummary.all,
+  queryKeys.accounts.all,
+  queryKeys.transactions.all,
+]
 
-  const { data, isLoading } = useQuery(loansListQuery())
+// What the agency owes, and to whom. Every figure is derived by the server from
+// the instalments and nothing here adds up, so the summary cannot disagree with
+// a card below it.
+const LoansBoard = () => {
+  const [loanToDelete, setLoanToDelete] = useState<ILoan | null>(null)
+  const [instalmentToReverse, setInstalmentToReverse] = useState<ILoanInstalment | null>(null)
+
+  const loansQuery = useQuery(loansListQuery())
   const { data: summaryData } = useQuery(loanSummaryQuery())
   const { data: accountData } = useQuery(accountsQuery())
 
-  const loans = data?.data ?? []
+  const loans = loansQuery.data?.data ?? []
   const summary = summaryData?.data
   // Borrowing is in BDT, like every other record that is not a client payment.
-  const accounts = ((accountData?.data ?? [])).filter(
+  const accounts = (accountData?.data ?? []).filter(
     (account) => account.currency === "BDT" && account.is_active
   )
 
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.loans.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.loanSummary.all })
-    // Every one of these moves an account and writes the ledger.
-    void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all })
-  }
-
-  const settle = (fallback: string) => (result: { success: boolean; message?: string }) => {
-    if (!result.success) {
-      toast.error(result.message || fallback)
-      return
-    }
-    // The server says what is left owed; repeating it here would be a second
-    // place for that number to live.
-    toast.success(result.message)
-    refresh()
-  }
-
-  const { mutate: record, isPending } = useMutation({
-    mutationFn: (payload: Record<string, unknown>) => createLoanAction(payload),
-    onSuccess: settle("Could not record it"),
+  // No successMessage: the server's own message is the toast, and after a
+  // payment it says what is left owed, a number that should live in one place.
+  const { run: recordLoan, isPending: isRecording } = useActionMutation({
+    action: createLoanAction,
+    invalidateKeys: LOAN_KEYS,
+    refresh: false,
   })
 
-  const { mutate: pay } = useMutation({
-    mutationFn: ({ id, accountId }: { id: string; accountId: string }) =>
+  const { run: payInstalment } = useActionMutation({
+    action: ({ id, accountId }: { id: string; accountId: string }) =>
       payLoanInstalmentAction(id, { account_id: accountId }),
-    onSuccess: settle("Could not pay it"),
+    invalidateKeys: LOAN_KEYS,
+    refresh: false,
   })
 
-  const { mutate: reverse } = useMutation({
-    mutationFn: (id: string) => reverseLoanInstalmentAction(id),
-    onSuccess: settle("Could not reverse it"),
+  const { run: reverseInstalment, isPending: isReversing } = useActionMutation({
+    action: reverseLoanInstalmentAction,
+    invalidateKeys: LOAN_KEYS,
+    refresh: false,
   })
 
-  const { mutate: close } = useMutation({
-    mutationFn: (id: string) => updateLoanAction(id, { status: "closed" }),
-    onSuccess: settle("Could not close it"),
+  const handleConfirmReverse = async () => {
+    if (instalmentToReverse && (await reverseInstalment(instalmentToReverse.id))) {
+      setInstalmentToReverse(null)
+    }
+  }
+
+  const { run: closeLoan } = useActionMutation({
+    action: closeLoanAction,
+    invalidateKeys: LOAN_KEYS,
+    refresh: false,
   })
 
-  const { mutate: remove } = useMutation({
-    mutationFn: (id: string) => deleteLoanAction(id),
-    // "This loan has repayments recorded. Close it instead" arrives here.
-    onSuccess: settle("Could not delete it"),
+  // "This loan has repayments recorded. Close it instead" is the failure toast.
+  const { run: deleteLoan, isPending: isDeleting } = useActionMutation({
+    action: deleteLoanAction,
+    invalidateKeys: LOAN_KEYS,
+    refresh: false,
   })
+
+  const handleConfirmDelete = async () => {
+    if (loanToDelete && (await deleteLoan(loanToDelete.id))) setLoanToDelete(null)
+  }
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-      <LoanFormCard accounts={accounts} onSubmit={record} isPending={isPending} />
+      <LoanFormCard accounts={accounts} onSubmit={recordLoan} isPending={isRecording} />
 
       <div className="space-y-4">
         {summary && summary.loan_count > 0 && (
@@ -135,28 +137,54 @@ const LoansBoard = () => {
           </Card>
         )}
 
-        {isLoading && loans.length === 0 ? (
-          <Card>
-            <LoadingBlock rounded />
-          </Card>
-        ) : loans.length === 0 ? (
-          <Card>
-            <EmptyState icon={Landmark}>Nothing borrowed.</EmptyState>
-          </Card>
-        ) : (
-          loans.map((loan) => (
-            <LoanCard
-              key={loan.id}
-              loan={loan}
-              accounts={accounts}
-              onPay={(instalmentId, accountId) => pay({ id: instalmentId, accountId })}
-              onReverse={(instalmentId) => reverse(instalmentId)}
-              onClose={() => close(loan.id)}
-              onDelete={() => remove(loan.id)}
-            />
-          ))
-        )}
+        <LoanList
+          loans={loans}
+          query={loansQuery}
+          accounts={accounts}
+          onPay={(instalmentId, accountId) => void payInstalment({ id: instalmentId, accountId })}
+          onReverse={setInstalmentToReverse}
+          onClose={(loan) => void closeLoan(loan.id)}
+          onDelete={setLoanToDelete}
+        />
       </div>
+
+      <ConfirmDialog
+        open={loanToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setLoanToDelete(null)
+        }}
+        title="Delete this loan?"
+        description={
+          <>
+            This removes the <span className="font-medium text-foreground">{loanToDelete?.lender}</span> loan
+            and its schedule. If it was paid into an account, that money comes back out of it.
+          </>
+        }
+        variant="destructive"
+        confirmLabel="Delete"
+        pendingLabel="Deleting..."
+        isPending={isDeleting}
+        onConfirm={() => void handleConfirmDelete()}
+      />
+
+      <ConfirmDialog
+        open={instalmentToReverse !== null}
+        onOpenChange={(open) => {
+          if (!open) setInstalmentToReverse(null)
+        }}
+        title="Reverse this repayment?"
+        description={
+          <>
+            Instalment {instalmentToReverse?.seq} goes back to unpaid, and the money it took returns
+            to {instalmentToReverse?.paid_from_account?.name ?? "the account it was paid from"}. The
+            ledger keeps both rows, so the history still shows it was paid and reversed.
+          </>
+        }
+        confirmLabel="Reverse"
+        pendingLabel="Reversing..."
+        isPending={isReversing}
+        onConfirm={() => void handleConfirmReverse()}
+      />
     </div>
   )
 }

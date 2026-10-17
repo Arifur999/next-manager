@@ -3,6 +3,8 @@
 import RolePermissionGrid from "@/components/modules/Admin/Permissions/RolePermissionGrid"
 import UserPermissionGrid from "@/components/modules/Admin/Permissions/UserPermissionGrid"
 import { usePermissionGrid } from "@/components/shared/permission/usePermissionGrid"
+import ErrorState from "@/components/shared/state/ErrorState"
+import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Select,
@@ -12,44 +14,46 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ROLE_LABEL, titleise } from "@/types/permission.types"
+import { roleTitle } from "@/types/permission.types"
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { usersListQuery } from "@/queries/people.queries"
+import { permissionGridQuery } from "@/queries/workspace.queries"
 
-/**
- * Who may do what, as a grid rather than a list of capabilities.
- *
- * Two tabs' worth of idea. **Roles** is the template every person in that role
- * starts from. **One person** is the exception, and its squares read "Inherit"
- * until somebody deliberately says otherwise.
- *
- * The sentence this screen has to keep true: nothing set here can WIDEN
- * anybody. The role gate runs first and these values only narrow inside it, so
- * giving operations "Accounts — everything" does not open the accounts page to
- * them; the question is never asked. And no value here can cross into another
- * company, because there is no scope that means another company.
- */
+// Role templates and per-person exceptions. Nothing here can widen access: the role
+// gate runs first and these only narrow inside it, and no scope reaches another company.
 
 const PermissionsBoard = () => {
   const [personId, setPersonId] = useState<string>("")
 
   const roleGrid = usePermissionGrid()
   const personGrid = usePermissionGrid(personId || undefined)
+  // The same cached read as roleGrid, observed for the error and refetch the hook does not return.
+  const gridRead = useQuery(permissionGridQuery())
 
-  const { data: userData } = useQuery(usersListQuery())
+  const userList = useQuery(usersListQuery())
 
   // An admin passes every check by design, so an override stored against one
   // would look like a restriction and enforce nothing.
-  const people = ((userData?.data ?? [])).filter((user) => user.role !== "admin")
+  const people = (userList.data?.data ?? []).filter((user) => user.role !== "admin")
 
-  if (roleGrid.isLoading && !roleGrid.grid) {
-    return <div className="h-96 animate-pulse rounded-xl bg-muted/40" />
+  if (gridRead.isError && !roleGrid.grid) {
+    return (
+      <Card>
+        <ErrorState
+          message="The permission grid did not load."
+          onRetry={() => void gridRead.refetch()}
+          isRetrying={gridRead.isFetching}
+        />
+      </Card>
+    )
   }
 
-  if (!roleGrid.grid) return null
+  // A local, so the narrowing from the check above holds inside the closures below.
+  const grid = roleGrid.grid
+  if (!grid) return <LoadingBlock height="h-96" rounded />
 
-  const roles = roleGrid.grid.roles
+  const roles = grid.roles
 
   return (
     <Tabs defaultValue="roles" className="space-y-4">
@@ -63,7 +67,7 @@ const PermissionsBoard = () => {
           <TabsList>
             {roles.map((role) => (
               <TabsTrigger key={role} value={role}>
-                {ROLE_LABEL[role] ?? titleise(role)}
+                {roleTitle(role)}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -73,7 +77,7 @@ const PermissionsBoard = () => {
               <Card className="gap-0 overflow-hidden p-0">
                 <CardHeader className="border-b px-5 py-4">
                   <CardTitle className="text-base">
-                    {ROLE_LABEL[role] ?? titleise(role)}
+                    {roleTitle(role)}
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">
                     Everybody in this role, unless they have been given an exception on
@@ -83,7 +87,7 @@ const PermissionsBoard = () => {
 
                 <CardContent className="p-0">
                   <RolePermissionGrid
-                    grid={roleGrid.grid!}
+                    grid={grid}
                     role={role}
                     disabled={roleGrid.isBusy}
                     save={roleGrid.save}
@@ -116,7 +120,7 @@ const PermissionsBoard = () => {
                       {user.full_name}
                       <span className="text-muted-foreground">
                         {" "}
-                        — {ROLE_LABEL[user.role] ?? titleise(user.role)}
+                        — {roleTitle(user.role)}
                       </span>
                     </SelectItem>
                   ))}

@@ -10,19 +10,12 @@ import { scopeAt } from "@/components/shared/permission/usePermissionGrid"
 import {
   ACTION_LABEL,
   MODULE_LABEL,
-  titleise,
+  roleTitle,
   type IPermissionGrid,
-  type PermissionScope,
 } from "@/types/permission.types"
 
-/**
- * One person, treated differently from their role.
- *
- * Every square starts on "Inherit", which is the absence of a row rather than a
- * copy of the role's value — an override that happened to match the role today
- * would silently stop following it tomorrow. Choosing "Inherit" again deletes
- * the override; it does not write the role's current answer into it.
- */
+// One person's exceptions. "Inherit" is no override at all, not a copy of the role's
+// value, so choosing it again deletes the override and they follow the role again.
 
 interface UserPermissionGridProps {
   grid: IPermissionGrid
@@ -54,14 +47,14 @@ const UserPermissionGrid = ({ grid, disabled, save }: UserPermissionGridProps) =
                 next === INHERIT
                   ? {
                       run: () => clearUserPermissionAction(person.id, module, action),
-                      note: `${person.full_name} follows ${titleise(person.role)} again here`,
+                      note: `${person.full_name} follows ${roleTitle(person.role)} again here`,
                     }
                   : {
                       run: () =>
                         setUserPermissionAction(person.id, {
                           module,
                           action,
-                          scope: next as PermissionScope,
+                          scope: next,
                         }),
                       note: `${person.full_name} — ${MODULE_LABEL[module] ?? module} ${action} saved`,
                     },

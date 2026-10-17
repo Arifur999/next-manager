@@ -2,6 +2,7 @@
 
 import CreateAccountModal from "@/components/modules/Admin/Accounts/CreateAccountModal"
 import StatTile from "@/components/shared/StatTile"
+import ErrorState from "@/components/shared/state/ErrorState"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt, formatMoney, formatUsd } from "@/lib/currency"
@@ -11,35 +12,34 @@ import { useQuery } from "@tanstack/react-query"
 import { Banknote, Wallet } from "lucide-react"
 import { accountsQuery } from "@/queries/finance.queries"
 
-const sumBalances = (rows: IAccount[]) => rows.reduce((running, row) => running + row.balance, 0)
+const sumBalances = (accounts: IAccount[]) => accounts.reduce((running, account) => running + account.balance, 0)
 
-// Declared at module scope, not inside the board: a component created during
-// render is remounted every time the parent re-renders, losing any state inside
-// it — and React Compiler flags the pattern for exactly that reason.
+// At module scope: a component declared during render remounts, losing its
+// state, every time the board re-renders.
 const CurrencyColumn = ({
   title,
-  rows,
+  accounts,
   currency,
 }: {
   title: string
-  rows: IAccount[]
+  accounts: IAccount[]
   currency: Currency
 }) => (
   <Card className="gap-0 overflow-hidden p-0">
     <CardHeader className="flex flex-row items-center justify-between border-b px-5 py-4">
       <CardTitle className="text-base">{title}</CardTitle>
       <span className="text-sm font-medium tabular-nums">
-        {formatMoney(sumBalances(rows), currency)}
+        {formatMoney(sumBalances(accounts), currency)}
       </span>
     </CardHeader>
 
-    {rows.length === 0 ? (
+    {accounts.length === 0 ? (
       <p className="px-5 py-10 text-center text-sm text-muted-foreground">
         No {currency} accounts yet.
       </p>
     ) : (
       <ul className="divide-y">
-        {rows.map((account) => (
+        {accounts.map((account) => (
           <li key={account.id} className="flex items-center justify-between gap-3 px-5 py-3.5">
             <div className="min-w-0">
               <p className="truncate text-sm font-medium">{account.name}</p>
@@ -65,19 +65,27 @@ const CurrencyColumn = ({
   </Card>
 )
 
-/**
- * Accounts, grouped by currency.
- *
- * Grouped rather than listed flat because the two currencies are genuinely
- * separate pots — a single list with a mixed total would invite exactly the
- * addition this app refuses to do anywhere else.
- */
+// Accounts grouped by currency, because a flat list with one total would add
+// USD to BDT, which this app never does.
 const AccountsBoard = () => {
-  const { data, isLoading } = useQuery(accountsQuery())
+  const { data, isLoading, isError, isFetching, refetch } = useQuery(accountsQuery())
 
   const accounts = data?.data ?? []
-  const usd = accounts.filter((account) => account.currency === "USD")
-  const bdt = accounts.filter((account) => account.currency === "BDT")
+  const usdAccounts = accounts.filter((account) => account.currency === "USD")
+  const bdtAccounts = accounts.filter((account) => account.currency === "BDT")
+
+  // Two empty columns and a zero balance would read as "no money".
+  if (isError) {
+    return (
+      <Card>
+        <ErrorState
+          message="Accounts did not load."
+          onRetry={() => void refetch()}
+          isRetrying={isFetching}
+        />
+      </Card>
+    )
+  }
 
   if (isLoading && accounts.length === 0) {
     return (
@@ -94,15 +102,15 @@ const AccountsBoard = () => {
         <div className="grid flex-1 gap-4 sm:grid-cols-2">
           <StatTile
             label="Held in USD"
-            value={formatUsd(sumBalances(usd))}
-            hint={`${usd.length} account${usd.length === 1 ? "" : "s"}`}
+            value={formatUsd(sumBalances(usdAccounts))}
+            hint={`${usdAccounts.length} account${usdAccounts.length === 1 ? "" : "s"}`}
             icon={<Wallet className="size-5" />}
             tone={1}
           />
           <StatTile
             label="Held in BDT"
-            value={formatBdt(sumBalances(bdt))}
-            hint={`${bdt.length} account${bdt.length === 1 ? "" : "s"}`}
+            value={formatBdt(sumBalances(bdtAccounts))}
+            hint={`${bdtAccounts.length} account${bdtAccounts.length === 1 ? "" : "s"}`}
             icon={<Banknote className="size-5" />}
             tone={3}
           />
@@ -112,8 +120,8 @@ const AccountsBoard = () => {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <CurrencyColumn title="USD wallets" rows={usd} currency="USD" />
-        <CurrencyColumn title="BDT wallets" rows={bdt} currency="BDT" />
+        <CurrencyColumn title="USD wallets" accounts={usdAccounts} currency="USD" />
+        <CurrencyColumn title="BDT wallets" accounts={bdtAccounts} currency="BDT" />
       </div>
 
       <p className="text-xs text-muted-foreground">

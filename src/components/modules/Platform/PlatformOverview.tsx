@@ -1,6 +1,8 @@
 "use client"
 
 import MetricTile, { count, usd } from "@/components/shared/kpi/MetricTile"
+import ErrorState from "@/components/shared/state/ErrorState"
+import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { useQuery } from "@tanstack/react-query"
@@ -9,14 +11,10 @@ import { CalendarClock } from "lucide-react"
 import { platformOverviewQuery } from "@/queries/platform.queries"
 
 /**
- * How the platform business is doing.
+ * How the platform business is doing: the two numbers that answer it, then the
+ * one list an operator acts on rather than reads, what lapses this week.
  *
- * The console listed companies and plans and nothing that answers "how are we
- * doing" — so this leads with the two numbers that do, and then with the one
- * list an operator acts on rather than reads: what lapses this week.
- *
- * Nothing here is a company's own money. The API does not return it, so this
- * screen could not show it if it tried.
+ * Nothing here is a company's own money; the API does not return it.
  */
 
 const daysLeft = (iso: string | null) =>
@@ -26,15 +24,24 @@ const urgency = (days: number | null): "destructive" | "outline" =>
   days !== null && days <= 2 ? "destructive" : "outline"
 
 const PlatformOverview = () => {
-  const { data, isLoading } = useQuery(platformOverviewQuery())
+  const { data, isLoading, isError, isFetching, refetch } = useQuery(platformOverviewQuery())
 
   const overview = data?.data
 
   if (isLoading && !overview) {
-    return <div className="h-48 animate-pulse rounded-xl bg-muted/40" />
+    return <LoadingBlock height="h-48" rounded />
   }
 
-  if (!overview) return null
+  if (isError || !overview) {
+    return (
+      <ErrorState
+        className="rounded-xl border border-dashed"
+        message="The platform overview did not load."
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+      />
+    )
+  }
 
   const { companies, ending_soon: endingSoon, newest } = overview
   const paying = companies.active + companies.past_due

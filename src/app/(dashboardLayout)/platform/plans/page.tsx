@@ -2,6 +2,7 @@ import CompaniesBoard from "@/components/modules/Platform/CompaniesBoard";
 import PlansBoard from "@/components/modules/Platform/PlansBoard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Metadata } from "next";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Plans",
@@ -11,13 +12,10 @@ export const metadata: Metadata = {
 // customer onto it are the same job, done minutes apart.
 const PlansPage = () => (
   <div className="space-y-6">
-    <div>
-      <h1 className="text-2xl font-semibold tracking-tight">Plans</h1>
-      <p className="text-sm text-muted-foreground">
-        The tiers you sell, and which company is on which. Editing a tier moves every
-        company on it at once.
-      </p>
-    </div>
+    <PageHeader title="Plans">
+      The tiers you sell, and which company is on which. Editing a tier moves every
+      company on it at once.
+    </PageHeader>
 
     <Tabs defaultValue="plans">
       <TabsList>

@@ -1,19 +1,21 @@
 "use client"
 
-import StatTile from "@/components/shared/StatTile"
+import ClientFinanceTiles from "@/components/modules/Admin/Clients/ClientFinanceTiles"
+import ClientInvoicesPanel from "@/components/modules/Admin/Clients/ClientInvoicesPanel"
+import ClientPaymentsPanel from "@/components/modules/Admin/Clients/ClientPaymentsPanel"
+import EmptyState from "@/components/shared/state/EmptyState"
+import ErrorState from "@/components/shared/state/ErrorState"
+import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import ClientLinksPanel from "@/components/modules/Admin/Clients/ClientLinksPanel"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { formatBdt, formatUsd } from "@/lib/currency"
-import type { IProject } from "@/types/project.types"
-import type { IClient } from "@/types/crm.types"
+import { formatUsd } from "@/lib/currency"
 import { useQuery } from "@tanstack/react-query"
-import { format } from "date-fns"
-import { ArrowDownLeft, FileText, FolderKanban, TrendingUp } from "lucide-react"
+import { FolderKanban, KeyRound } from "lucide-react"
 import Link from "next/link"
 import { clientDetailQuery, clientFinancialsQuery } from "@/queries/crm.queries"
-import { invoicesListQuery, paymentsListQuery } from "@/queries/billing.queries"
 import { credentialsListQuery } from "@/queries/workspace.queries"
 
 /**
@@ -33,33 +35,38 @@ const ClientDetail = ({
   clientId: string
   canSeeMoney?: boolean
 }) => {
-  const { data: clientData, isLoading } = useQuery(clientDetailQuery(clientId))
+  const clientQuery = useQuery(clientDetailQuery(clientId))
 
   const { data: financeData } = useQuery({ ...clientFinancialsQuery(clientId), enabled: canSeeMoney })
 
-  // Payments and invoices still come back unfiltered - those two endpoints
-  // filter by search text rather than client id - so they are narrowed here.
-  // The vault, which now takes a client_id, is asked for directly.
-  const { data: paymentsData } = useQuery({ ...paymentsListQuery(), enabled: canSeeMoney })
-  const { data: invoicesData } = useQuery({ ...invoicesListQuery(), enabled: canSeeMoney })
-  const { data: credentialsData } = useQuery(credentialsListQuery(`client_id=${clientId}`))
+  const credentialsQuery = useQuery(credentialsListQuery(`client_id=${clientId}`))
 
-  const client = clientData?.data as (IClient & { projects?: IProject[] }) | undefined
+  const client = clientQuery.data?.data
   const finance = financeData?.data
 
-  const payments = ((paymentsData?.data ?? [])).filter(
-    (payment) => payment.client_id === clientId,
-  )
-  const invoices = ((invoicesData?.data ?? [])).filter(
-    (invoice) => invoice.client_id === clientId,
-  )
-  const credentials = credentialsData?.data ?? []
+  const credentials = credentialsQuery.data?.data ?? []
 
-  if (isLoading && !client) {
-    return <Card className="h-64 animate-pulse bg-muted/40" />
+  // A failed refresh keeps the client it already has on screen; only a page
+  // with nothing to show says it did not load.
+  if (!client && clientQuery.isError) {
+    return (
+      <Card>
+        <ErrorState
+          message="This client did not load."
+          onRetry={() => void clientQuery.refetch()}
+          isRetrying={clientQuery.isFetching}
+        />
+      </Card>
+    )
   }
 
-  if (!client) return null
+  if (!client) {
+    return (
+      <Card className="overflow-hidden p-0">
+        <LoadingBlock height="h-64" />
+      </Card>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -79,41 +86,7 @@ const ClientDetail = ({
 
       {/* Undefined for anybody who may not see it, because the query never
           ran — not because a flag is checked in two places. */}
-      {canSeeMoney && finance && (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatTile
-            label="Lifetime value"
-            value={formatUsd(finance.lifetime_value_usd)}
-            secondary={`${formatBdt(finance.lifetime_value_bdt_reporting)} at recorded rates`}
-            // Money in the bank, not money hoped for — the server counts
-            // received, never invoiced.
-            hint={`${finance.payment_count} payment${finance.payment_count === 1 ? "" : "s"} received`}
-            icon={<TrendingUp className="size-5" />}
-            tone={1}
-          />
-          <StatTile
-            label="Invoiced"
-            value={formatUsd(finance.total_invoiced_usd)}
-            hint="Excludes drafts and cancelled invoices"
-            icon={<FileText className="size-5" />}
-            tone={2}
-          />
-          <StatTile
-            label="Outstanding"
-            value={formatUsd(finance.outstanding_usd)}
-            hint="Floored at zero — an overpayment is a credit, not a negative debt"
-            icon={<ArrowDownLeft className="size-5" />}
-            tone={4}
-          />
-          <StatTile
-            label="Projects"
-            value={String(finance.project_count)}
-            hint={`Client since ${format(new Date(finance.client_since), "MMM yyyy")}`}
-            icon={<FolderKanban className="size-5" />}
-            tone={3}
-          />
-        </div>
-      )}
+      {canSeeMoney && finance && <ClientFinanceTiles finance={finance} />}
 
       <Tabs defaultValue="projects">
         <TabsList>
@@ -127,13 +100,11 @@ const ClientDetail = ({
 
         <TabsContent value="projects" className="mt-4">
           <Card className="gap-0 overflow-hidden p-0">
-            {(client.projects ?? []).length === 0 ? (
-              <p className="px-5 py-12 text-center text-sm text-muted-foreground">
-                No projects for this client yet.
-              </p>
+            {client.projects.length === 0 ? (
+              <EmptyState icon={FolderKanban}>No projects for this client yet.</EmptyState>
             ) : (
               <ul className="divide-y">
-                {(client.projects ?? []).map((project) => (
+                {client.projects.map((project) => (
                   <li key={project.id}>
                     <Link
                       href={`/admin/dashboard/projects/${project.id}`}
@@ -165,86 +136,28 @@ const ClientDetail = ({
           <ClientLinksPanel clientId={clientId} />
         </TabsContent>
 
-        {/* Unreachable without their triggers, but left in the DOM they are
-            two lists waiting for data that will never arrive. */}
+        {/* Rendered for money roles only: both panels fetch admin-only lists,
+            which anybody else would be refused. */}
         {canSeeMoney && (
         <>
         <TabsContent value="payments" className="mt-4">
-          <Card className="gap-0 overflow-hidden p-0">
-            {payments.length === 0 ? (
-              <p className="px-5 py-12 text-center text-sm text-muted-foreground">
-                Nothing received from this client yet.
-              </p>
-            ) : (
-              <ul className="divide-y">
-                {payments.map((payment) => (
-                  <li
-                    key={payment.id}
-                    className="flex items-center justify-between gap-3 px-5 py-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm tabular-nums">{formatUsd(payment.amount_usd)}</p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {format(new Date(payment.date), "MMM dd, yyyy")}
-                        {payment.reference ? ` · ${payment.reference}` : ""}
-                      </p>
-                    </div>
-                    <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                      {formatBdt(payment.amount_bdt_reporting)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
+          <ClientPaymentsPanel clientId={clientId} />
         </TabsContent>
 
         <TabsContent value="invoices" className="mt-4">
-          <Card className="gap-0 overflow-hidden p-0">
-            {invoices.length === 0 ? (
-              <p className="px-5 py-12 text-center text-sm text-muted-foreground">
-                No invoices raised for this client yet.
-              </p>
-            ) : (
-              <ul className="divide-y">
-                {invoices.map((invoice) => (
-                  <li key={invoice.id}>
-                    <Link
-                      href={`/admin/dashboard/invoices/${invoice.id}`}
-                      className="flex items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-muted/50"
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">{invoice.invoice_number}</p>
-                        <p className="text-xs text-muted-foreground">
-                          due {format(new Date(invoice.due_date), "MMM dd, yyyy")}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-3">
-                        <Badge
-                          variant="outline"
-                          className={`capitalize ${invoice.is_overdue ? "border-destructive text-destructive" : ""}`}
-                        >
-                          {(invoice.is_overdue ? "overdue" : invoice.status).replace(/_/g, " ")}
-                        </Badge>
-                        <span className="text-sm tabular-nums">{formatUsd(invoice.total)}</span>
-                      </div>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
+          <ClientInvoicesPanel clientId={clientId} />
         </TabsContent>
         </>
         )}
 
         <TabsContent value="vault" className="mt-4">
           <Card className="gap-0 overflow-hidden p-0">
-            {credentials.length === 0 ? (
-              <p className="px-5 py-12 text-center text-sm text-muted-foreground">
-                Nothing stored against this client yet.
-              </p>
-            ) : (
+            <PanelState
+              query={credentialsQuery}
+              errorMessage="The vault entries did not load."
+              isEmpty={credentials.length === 0}
+              empty={<EmptyState icon={KeyRound}>Nothing stored against this client yet.</EmptyState>}
+            >
               <ul className="divide-y">
                 {credentials.map((credential) => (
                   <li
@@ -268,7 +181,7 @@ const ClientDetail = ({
                   </li>
                 ))}
               </ul>
-            )}
+            </PanelState>
           </Card>
         </TabsContent>
 

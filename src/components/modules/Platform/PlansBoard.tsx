@@ -1,15 +1,24 @@
 "use client"
 
 import { createPlanAction, updatePlanAction } from "@/app/(dashboardLayout)/platform/_action"
+import AppField from "@/components/shared/form/AppField"
+import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IPlan } from "@/types/platform.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import {
+  planFormZodSchema,
+  type IPlanFormValues,
+  type IPlanLimitsFormValues,
+} from "@/zod/platform.validation"
+import { useForm } from "@tanstack/react-form"
+import { useQuery } from "@tanstack/react-query"
+import { Layers } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { plansQuery } from "@/queries/platform.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -27,33 +36,21 @@ import { queryKeys } from "@/lib/queryKeys"
 
 const limitLabel = (value: number | null) => (value === null ? "unlimited" : String(value))
 
+const newPlanDefaults: IPlanFormValues = { code: "", name: "", price_usd: "" }
+
 const PlanRow = ({ plan }: { plan: IPlan }) => {
-  const queryClient = useQueryClient()
   const [price, setPrice] = useState(String(plan.price_usd))
   const [seats, setSeats] = useState(plan.max_seats === null ? "" : String(plan.max_seats))
   const [projects, setProjects] = useState(
     plan.max_projects === null ? "" : String(plan.max_projects),
   )
 
-  const { mutate: save, isPending } = useMutation({
-    mutationFn: () =>
-      updatePlanAction(plan.id, {
-        price_usd: Number(price),
-        // An empty box is unlimited, which the API expects as null. Sending 0
-        // would create a plan nobody could use, and it refuses that anyway.
-        max_seats: seats.trim() === "" ? null : Number(seats),
-        max_projects: projects.trim() === "" ? null : Number(projects),
-      }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not update the plan")
-        return
-      }
-      toast.success(`${plan.name} updated`)
-      void queryClient.invalidateQueries({ queryKey: queryKeys.platformPlans.all })
-      // Company rows show their plan's limits, so they are stale now too.
-      void queryClient.invalidateQueries({ queryKey: queryKeys.platformCompanies.all })
-    },
+  const { run: savePlan, isPending } = useActionMutation({
+    action: (values: IPlanLimitsFormValues) => updatePlanAction(plan.id, values),
+    successMessage: `${plan.name} updated`,
+    // Company rows show their plan's limits, so they are stale now too.
+    invalidateKeys: [queryKeys.platformPlans.all, queryKeys.platformCompanies.all],
+    refresh: false,
   })
 
   const dirty =
@@ -123,7 +120,12 @@ const PlanRow = ({ plan }: { plan: IPlan }) => {
           />
         </label>
 
-        <Button type="button" size="sm" disabled={isPending || !dirty} onClick={() => save()}>
+        <Button
+          type="button"
+          size="sm"
+          disabled={isPending || !dirty}
+          onClick={() => void savePlan({ price_usd: price, max_seats: seats, max_projects: projects })}
+        >
           Save
         </Button>
       </div>
@@ -132,32 +134,21 @@ const PlanRow = ({ plan }: { plan: IPlan }) => {
 }
 
 const PlansBoard = () => {
-  const queryClient = useQueryClient()
-  const [code, setCode] = useState("")
-  const [name, setName] = useState("")
-  const [price, setPrice] = useState("")
+  const plansList = useQuery(plansQuery())
 
-  const { data, isLoading } = useQuery(plansQuery())
+  const plans = plansList.data?.data ?? []
 
-  const plans = data?.data ?? []
+  const { run: createPlan, isPending } = useActionMutation({
+    action: createPlanAction,
+    successMessage: "Plan created",
+    invalidateKeys: [queryKeys.platformPlans.all],
+    refresh: false,
+  })
 
-  const { mutate: create, isPending } = useMutation({
-    mutationFn: () =>
-      createPlanAction({
-        code: code.trim().toLowerCase(),
-        name: name.trim(),
-        price_usd: price.trim() === "" ? 0 : Number(price),
-      }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not create the plan")
-        return
-      }
-      toast.success("Plan created")
-      setCode("")
-      setName("")
-      setPrice("")
-      void queryClient.invalidateQueries({ queryKey: queryKeys.platformPlans.all })
+  const form = useForm({
+    defaultValues: newPlanDefaults,
+    onSubmit: async ({ value, formApi }) => {
+      if (await createPlan(value)) formApi.reset()
     },
   })
 
@@ -174,53 +165,59 @@ const PlansBoard = () => {
 
         <form
           className="flex flex-wrap items-end gap-3 p-5"
+          noValidate
           onSubmit={(event) => {
             event.preventDefault()
-            if (!code.trim() || !name.trim()) return
-            create()
+            event.stopPropagation()
+            void form.handleSubmit()
           }}
         >
-          <div className="space-y-1.5">
-            <Label htmlFor="plan-code">Code</Label>
-            <Input
-              id="plan-code"
-              value={code}
-              onChange={(event) => setCode(event.target.value)}
-              placeholder="agency_pro"
-              className="w-40 font-mono"
-              disabled={isPending}
-            />
-          </div>
+          <form.Field name="code" validators={{ onChange: planFormZodSchema.shape.code }}>
+            {(field) => (
+              <AppField
+                field={field}
+                label="Code"
+                placeholder="agency_pro"
+                className="w-40 font-mono"
+                disabled={isPending}
+              />
+            )}
+          </form.Field>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="plan-name">Name</Label>
-            <Input
-              id="plan-name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Agency Pro"
-              className="w-44"
-              disabled={isPending}
-            />
-          </div>
+          <form.Field name="name" validators={{ onChange: planFormZodSchema.shape.name }}>
+            {(field) => (
+              <AppField
+                field={field}
+                label="Name"
+                placeholder="Agency Pro"
+                className="w-44"
+                disabled={isPending}
+              />
+            )}
+          </form.Field>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="plan-price">$ / month</Label>
-            <Input
-              id="plan-price"
-              type="number"
-              step="any"
-              value={price}
-              onChange={(event) => setPrice(event.target.value)}
-              placeholder="0"
-              className="w-28 tabular-nums"
-              disabled={isPending}
-            />
-          </div>
+          <form.Field name="price_usd" validators={{ onChange: planFormZodSchema.shape.price_usd }}>
+            {(field) => (
+              <AppField
+                field={field}
+                label="$ / month"
+                type="number"
+                placeholder="0"
+                className="w-28 tabular-nums"
+                disabled={isPending}
+              />
+            )}
+          </form.Field>
 
-          <Button type="submit" disabled={isPending || !code.trim() || !name.trim()}>
-            Create plan
-          </Button>
+          <form.Subscribe
+            selector={(state) => state.values.code.trim() !== "" && state.values.name.trim() !== ""}
+          >
+            {(isFilledIn) => (
+              <Button type="submit" disabled={isPending || !isFilledIn}>
+                Create plan
+              </Button>
+            )}
+          </form.Subscribe>
         </form>
       </Card>
 
@@ -233,15 +230,22 @@ const PlansBoard = () => {
           </p>
         </CardHeader>
 
-        {isLoading && plans.length === 0 ? (
-          <div className="h-32 animate-pulse bg-muted/40" />
-        ) : (
+        <PanelState
+          query={plansList}
+          errorMessage="The plans did not load."
+          isEmpty={plans.length === 0}
+          empty={
+            <EmptyState icon={Layers} hint="Create the first one above, then put companies on it.">
+              No plans yet.
+            </EmptyState>
+          }
+        >
           <ul className="divide-y">
             {plans.map((plan) => (
               <PlanRow key={plan.id} plan={plan} />
             ))}
           </ul>
-        )}
+        </PanelState>
       </Card>
     </div>
   )

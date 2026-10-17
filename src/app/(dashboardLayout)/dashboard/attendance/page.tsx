@@ -4,6 +4,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { attendanceQuery } from "@/queries/people.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Attendance",
@@ -24,14 +25,11 @@ const AttendancePage = async () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Attendance</h1>
-        <p className="text-sm text-muted-foreground">
-          Who was here, and for how long. Hours booked against a task live on the
-          timesheet — being present and doing named work are different facts, and a
-          screen that mixes them answers neither question.
-        </p>
-      </div>
+      <PageHeader title="Attendance">
+        Who was here, and for how long. Hours booked against a task live on the
+        timesheet — being present and doing named work are different facts, and a
+        screen that mixes them answers neither question.
+      </PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
         <AttendanceBoard canRecord={canRecord} />

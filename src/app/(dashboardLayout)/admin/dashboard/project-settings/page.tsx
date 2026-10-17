@@ -3,6 +3,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { workflowStatusesListQuery } from "@/queries/work.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Project Settings",
@@ -14,13 +15,10 @@ const ProjectSettingsPage = async () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Project Settings</h1>
-        <p className="text-sm text-muted-foreground">
-          The states a project moves through. Adding &quot;Review&quot; or
-          &quot;Archived&quot; here puts them on the projects list straight away.
-        </p>
-      </div>
+      <PageHeader title="Project Settings">
+        The states a project moves through. Adding &quot;Review&quot; or
+        &quot;Archived&quot; here puts them on the projects list straight away.
+      </PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
         <WorkflowBoard kind="project" />

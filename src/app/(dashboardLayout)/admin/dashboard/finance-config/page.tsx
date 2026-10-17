@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { rateSettingsQuery } from "@/queries/finance.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import { expenseCategoriesQuery } from "@/queries/spending.queries";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Finance Configuration",
@@ -18,13 +19,10 @@ const FinanceConfigurationPage = async () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Finance Configuration</h1>
-        <p className="text-sm text-muted-foreground">
-          How this agency counts money: what a dollar is worth in the reports, and what a
-          cost gets counted as.
-        </p>
-      </div>
+      <PageHeader title="Finance Configuration">
+        How this agency counts money: what a dollar is worth in the reports, and what a
+        cost gets counted as.
+      </PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
         <FinanceConfiguration />

@@ -1,6 +1,6 @@
 import { format } from "date-fns"
 import { afterEach, describe, expect, it } from "vitest"
-import { isCalendarDay, toDate } from "./dates"
+import { isCalendarDay, toDate, todayIsoDate } from "./dates"
 
 const originalTimeZone = process.env.TZ
 
@@ -37,5 +37,22 @@ describe("isCalendarDay", () => {
     expect(isCalendarDay("2026-13-01")).toBe(false)
     expect(isCalendarDay("2026-02-31")).toBe(false)
     expect(isCalendarDay("17/10/2026")).toBe(false)
+  })
+})
+
+describe("todayIsoDate", () => {
+  const originalTimeZone = process.env.TZ
+
+  afterEach(() => {
+    process.env.TZ = originalTimeZone
+  })
+
+  // Regression: forms seeded the date from toISOString(), the UTC day, so a
+  // payment recorded in Dhaka before 6am defaulted to yesterday.
+  it("is the local day, not the UTC day, early in the morning in Dhaka", () => {
+    process.env.TZ = "Asia/Dhaka"
+    const twoThirtyInDhaka = new Date("2026-10-16T20:30:00Z")
+    expect(twoThirtyInDhaka.toISOString().slice(0, 10)).toBe("2026-10-16")
+    expect(todayIsoDate(twoThirtyInDhaka)).toBe("2026-10-17")
   })
 })

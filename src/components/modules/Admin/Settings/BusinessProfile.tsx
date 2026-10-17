@@ -3,63 +3,45 @@
 import { updateOrganizationAction } from "@/app/(dashboardLayout)/admin/dashboard/business/_action"
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
+import ErrorState from "@/components/shared/state/ErrorState"
+import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import type { IOrganization } from "@/types/workspace.types"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { toast } from "sonner"
-import { z } from "zod"
+import { useQuery } from "@tanstack/react-query"
+import { organizationFormZodSchema, type IOrganizationFormValues } from "@/zod/workspace.validation"
 import { organizationQuery } from "@/queries/workspace.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
 /**
  * Who the agency is, on paper.
  *
- * This was a tab inside Settings, which is why it read as missing — the things
- * you change least often are the hardest to find when they are nested behind
- * something else.
- *
  * Everything here ends up on an invoice, so a change is not cosmetic: rename
  * the agency and every invoice raised from now on carries the new name.
  */
 
-const organizationSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  legal_name: z.string().optional(),
-  email: z.string().email("Enter a valid email address").optional().or(z.literal("")),
-  phone: z.string().optional(),
-  website: z.string().optional(),
-  address: z.string().optional(),
-})
-
-type OrganizationValues = z.infer<typeof organizationSchema>
-
 const OrganizationForm = ({ organization }: { organization: IOrganization }) => {
-  const queryClient = useQueryClient()
-
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: OrganizationValues) => updateOrganizationAction(values),
+  const { run: saveOrganization, isPending } = useActionMutation({
+    action: updateOrganizationAction,
+    successMessage: "Business information updated",
+    invalidateKeys: [queryKeys.organization.all],
+    refresh: false,
   })
 
+  const defaultValues: IOrganizationFormValues = {
+    name: organization.name,
+    legal_name: organization.legal_name ?? "",
+    email: organization.email ?? "",
+    phone: organization.phone ?? "",
+    website: organization.website ?? "",
+    address: organization.address ?? "",
+  }
+
   const form = useForm({
-    defaultValues: {
-      name: organization.name,
-      legal_name: organization.legal_name ?? "",
-      email: organization.email ?? "",
-      phone: organization.phone ?? "",
-      website: organization.website ?? "",
-      address: organization.address ?? "",
-    } as OrganizationValues,
+    defaultValues,
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        toast.error(result.message || "Failed to update the profile")
-        return
-      }
-
-      toast.success("Business information updated")
-      void queryClient.invalidateQueries({ queryKey: queryKeys.organization.all })
+      await saveOrganization(value)
     },
   })
 
@@ -76,7 +58,7 @@ const OrganizationForm = ({ organization }: { organization: IOrganization }) => 
       className="space-y-5 px-5 py-5"
     >
       <div className="grid gap-5 sm:grid-cols-2">
-        <form.Field name="name" validators={{ onChange: organizationSchema.shape.name }}>
+        <form.Field name="name" validators={{ onChange: organizationFormZodSchema.shape.name }}>
           {(field) => <AppField field={field} label="Agency name" disabled={isPending} />}
         </form.Field>
 
@@ -93,7 +75,7 @@ const OrganizationForm = ({ organization }: { organization: IOrganization }) => 
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <form.Field name="email" validators={{ onChange: organizationSchema.shape.email }}>
+        <form.Field name="email" validators={{ onChange: organizationFormZodSchema.shape.email }}>
           {(field) => <AppField field={field} label="Email" type="email" disabled={isPending} />}
         </form.Field>
 
@@ -118,9 +100,27 @@ const OrganizationForm = ({ organization }: { organization: IOrganization }) => 
 }
 
 const BusinessProfile = () => {
-  const { data } = useQuery(organizationQuery())
+  const { data, isLoading, isFetching, refetch } = useQuery(organizationQuery())
 
   const organization = data?.data
+
+  const renderDetails = () => {
+    if (isLoading) return <LoadingBlock height="h-64" />
+
+    if (!organization) {
+      return (
+        <ErrorState
+          message="The business details did not load."
+          onRetry={() => void refetch()}
+          isRetrying={isFetching}
+        />
+      )
+    }
+
+    // Keyed on the id so the form seeds once the fetch lands rather than
+    // rendering empty and never picking the values up.
+    return <OrganizationForm key={organization.id} organization={organization} />
+  }
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
@@ -132,13 +132,7 @@ const BusinessProfile = () => {
         </p>
       </CardHeader>
 
-      {organization ? (
-        // Keyed on the id so the form seeds once the fetch lands rather than
-        // rendering empty and never picking the values up.
-        <OrganizationForm key={organization.id} organization={organization} />
-      ) : (
-        <div className="h-64 animate-pulse bg-muted/40" />
-      )}
+      {renderDetails()}
     </Card>
   )
 }

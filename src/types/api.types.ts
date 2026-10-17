@@ -7,16 +7,12 @@ export interface ApiResponse<TData = unknown> {
     meta?: PaginationMeta;
 }
 
-// Mirrors what the backend's sendResponse() emits. `totalPages` is the house
-// name and is being added beside the old `totalPage`; read it through
-// pageCountOf so either API version works.
+// Mirrors what the backend's sendResponse() emits.
 export interface PaginationMeta {
     page: number;
     limit: number;
     total: number;
     totalPages?: number;
-    /** @deprecated Use totalPages; removed from the API once this app reads it. */
-    totalPage?: number;
     /**
      * Sums for the whole filtered list rather than the page that came back —
      * the transactions ledger sends this.
@@ -54,5 +50,3 @@ export type ApiResult<TData> =
     | { success: true; message: string; data: TData; meta?: PaginationMeta }
     | { success: false; message: string; fieldErrors?: Record<string, string[]> };
 
-export const pageCountOf = (meta: Pick<PaginationMeta, "totalPages" | "totalPage"> | undefined) =>
-    meta?.totalPages ?? meta?.totalPage;

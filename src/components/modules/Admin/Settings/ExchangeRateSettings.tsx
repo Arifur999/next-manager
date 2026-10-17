@@ -4,12 +4,15 @@ import {
   refreshRateAction,
   setDefaultRateAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/finance-config/_action"
+import ErrorState from "@/components/shared/state/ErrorState"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { formatRate } from "@/lib/currency"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import type { IDefaultRateFormValues } from "@/zod/finance.validation"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { RefreshCw } from "lucide-react"
 import { useState } from "react"
@@ -17,64 +20,39 @@ import { toast } from "sonner"
 import { rateSettingsQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
-/**
- * The USD -> BDT rate used for REPORTING.
- *
- * This is not the rate an exchange uses — that one is typed in per exchange
- * because it is what the processor actually paid. This figure only decides how
- * a USD payment is reported in BDT, and it is frozen onto each payment when it
- * is saved, so changing it here never restates history.
- */
+// The USD -> BDT rate for REPORTING only; an exchange records what the processor
+// actually paid. It is frozen onto each payment, so changing it never restates history.
 const ExchangeRateSettings = () => {
-  const queryClient = useQueryClient()
   const [draft, setDraft] = useState("")
 
-  const { data } = useQuery(rateSettingsQuery())
+  const rateQuery = useQuery(rateSettingsQuery())
 
-  const rates = data?.data
+  const rates = rateQuery.data?.data
 
-  const { mutateAsync: save, isPending: isSaving } = useMutation({
-    mutationFn: (rate: number | null) => setDefaultRateAction(rate),
+  const isClearingRate = draft.trim() === ""
+
+  const { run: saveRate, isPending: isSaving } = useActionMutation({
+    action: setDefaultRateAction,
+    successMessage: isClearingRate ? "Using the market rate again" : "Default rate saved",
+    invalidateKeys: [queryKeys.rateSettings.all],
+    refresh: false,
   })
 
-  const { mutateAsync: refresh, isPending: isRefreshing } = useMutation({
-    mutationFn: () => refreshRateAction(),
+  // The toast names the rate that came back, which only the result knows.
+  const { run: fetchMarketRate, isPending: isRefreshing } = useActionMutation({
+    action: refreshRateAction,
+    successMessage: false,
+    invalidateKeys: [queryKeys.rateSettings.all],
+    refresh: false,
+    onSuccess: (result) => {
+      if (result.success) toast.success(`Fetched ${formatRate(result.data.rate)} from ${result.data.provider}`)
+    },
   })
 
   const handleSave = async () => {
-    const value = draft.trim() === "" ? null : Number(draft)
-
-    if (value !== null && !Number.isFinite(value)) {
-      toast.error("That is not a number")
-      return
-    }
-
-    const result = await save(value)
-
-    if (!result.success) {
-      toast.error(result.message || "Failed to set the rate")
-      return
-    }
-
-    toast.success(value === null ? "Using the market rate again" : "Default rate saved")
-    setDraft("")
-    void queryClient.invalidateQueries({ queryKey: queryKeys.rateSettings.all })
-  }
-
-  const handleRefresh = async () => {
-    const result = await refresh()
-
-    if (!result.success) {
-      toast.error(result.message || "Could not reach a rate provider")
-      return
-    }
-
-    toast.success(
-      "data" in result
-        ? `Fetched ${formatRate(result.data.rate)} from ${result.data.provider}`
-        : "Rate refreshed",
-    )
-    void queryClient.invalidateQueries({ queryKey: queryKeys.rateSettings.all })
+    // Typed here because the action takes unknown: a misspelled key fails to compile.
+    const values: IDefaultRateFormValues = { default_usd_rate: draft }
+    if (await saveRate(values)) setDraft("")
   }
 
   return (
@@ -88,29 +66,39 @@ const ExchangeRateSettings = () => {
       </CardHeader>
 
       <div className="space-y-5 px-5 py-5">
-        <div className="flex flex-wrap items-end gap-4">
-          <div>
-            <p className="text-xs text-muted-foreground">In force now</p>
-            <p className="text-2xl font-semibold tabular-nums">
-              {rates?.effective_rate ? formatRate(rates.effective_rate) : "—"}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {rates?.effective_source === "manual" ? "your default" : "today's market rate"}
-            </p>
-          </div>
+        {/* A dash and "today's market rate" would be a claim about a rate that
+            never arrived. */}
+        {rateQuery.isError ? (
+          <ErrorState
+            message="The exchange rate did not load."
+            onRetry={() => void rateQuery.refetch()}
+            isRetrying={rateQuery.isFetching}
+          />
+        ) : (
+          <div className="flex flex-wrap items-end gap-4">
+            <div>
+              <p className="text-xs text-muted-foreground">In force now</p>
+              <p className="text-2xl font-semibold tabular-nums">
+                {rates?.effective_rate ? formatRate(rates.effective_rate) : "—"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {rates?.effective_source === "manual" ? "your default" : "today's market rate"}
+              </p>
+            </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => void handleRefresh()}
-            disabled={isRefreshing}
-            className="ml-auto"
-          >
-            <RefreshCw className={`size-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
-            {isRefreshing ? "Fetching..." : "Fetch market rate"}
-          </Button>
-        </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void fetchMarketRate(undefined)}
+              disabled={isRefreshing}
+              className="ml-auto"
+            >
+              <RefreshCw className={`size-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+              {isRefreshing ? "Fetching..." : "Fetch market rate"}
+            </Button>
+          </div>
+        )}
 
         <div className="space-y-1.5">
           <Label htmlFor="default-rate">Your own default</Label>

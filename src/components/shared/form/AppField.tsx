@@ -30,6 +30,12 @@ type AppFieldProps = {
     prepend?: React.ReactNode;
     className?: string;
     disabled?: boolean;
+    /** Help under the input, read out with it by screen readers. */
+    description?: React.ReactNode;
+    maxLength?: number;
+    min?: number;
+    max?: number;
+    step?: number | string;
 };
 
 const AppField = ({
@@ -43,6 +49,11 @@ const AppField = ({
     disabled = false,
     autoComplete,
     inputMode,
+    description,
+    maxLength,
+    min,
+    max,
+    step,
 }: AppFieldProps) => {
     // Only after touch, and only the first one: showing "required" the instant a
     // form opens tells the user off for something they have not done yet.
@@ -52,6 +63,9 @@ const AppField = ({
             : null;
 
     const hasError = firstError !== null;
+    const descriptionId = `${field.name}-description`;
+    const errorId = `${field.name}-error`;
+    const describedBy = [description ? descriptionId : null, hasError ? errorId : null].filter(Boolean).join(" ");
 
     return (
         <div className={cn("space-y-1.5", className)}>
@@ -74,11 +88,15 @@ const AppField = ({
                     placeholder={placeholder}
                     autoComplete={autoComplete}
                     inputMode={inputMode}
+                    maxLength={maxLength}
+                    min={min}
+                    max={max}
+                    step={step}
                     onBlur={field.handleBlur}
                     onChange={(event) => field.handleChange(event.target.value)}
                     disabled={disabled}
                     aria-invalid={hasError}
-                    aria-describedby={hasError ? `${field.name}-error` : undefined}
+                    aria-describedby={describedBy || undefined}
                     className={cn(
                         prepend && "pl-10",
                         append && "pr-10",
@@ -91,8 +109,14 @@ const AppField = ({
                 )}
             </div>
 
+            {description && (
+                <p id={descriptionId} className="text-xs text-muted-foreground">
+                    {description}
+                </p>
+            )}
+
             {hasError && (
-                <p id={`${field.name}-error`} role="alert" className="text-sm text-destructive">
+                <p id={errorId} role="alert" className="text-sm text-destructive">
                     {firstError}
                 </p>
             )}

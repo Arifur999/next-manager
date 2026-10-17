@@ -3,6 +3,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { serviceTemplatesQuery, servicesListQuery } from "@/queries/catalog.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Service packages",
@@ -17,12 +18,9 @@ const TemplatesBoardPage = async () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Packages</h1>
-        <p className="text-sm text-muted-foreground">
-          Named bundles, so a repeat offer is one pick rather than five. A package carries no price of its own — what it costs is whatever its lines are sold at on the day.
-        </p>
-      </div>
+      <PageHeader title="Packages">
+        Named bundles, so a repeat offer is one pick rather than five. A package carries no price of its own — what it costs is whatever its lines are sold at on the day.
+      </PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
         <TemplatesBoard />

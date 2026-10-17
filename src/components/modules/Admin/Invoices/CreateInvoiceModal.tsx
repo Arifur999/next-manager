@@ -1,6 +1,5 @@
 "use client"
 
-import { createInvoiceAction } from "@/app/(dashboardLayout)/admin/dashboard/invoices/_action"
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
 import EntitySelect from "@/components/shared/form/EntitySelect"
@@ -15,68 +14,21 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { formatUsd } from "@/lib/currency"
-import { useForm } from "@tanstack/react-form"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Plus, Trash2 } from "lucide-react"
-import { useRouter } from "next/navigation"
+import InvoiceLineItems from "@/components/modules/Admin/Invoices/InvoiceLineItems"
+import InvoiceTotals from "@/components/modules/Admin/Invoices/InvoiceTotals"
+import { useInvoiceForm } from "@/components/modules/Admin/Invoices/useInvoiceForm"
+import { invoiceFormZodSchema } from "@/zod/billing.validation"
+import { useQuery } from "@tanstack/react-query"
+import { Plus } from "lucide-react"
 import { useCallback, useState } from "react"
-import { toast } from "sonner"
-import { z } from "zod"
 import { clientsListQuery } from "@/queries/crm.queries"
 import { projectsListQuery } from "@/queries/project.queries"
-import { queryKeys } from "@/lib/queryKeys"
 
-/**
- * Creating an invoice.
- *
- * The total is NOT a field. It is worked out from the line items here for the
- * preview, and worked out again on the server from the same items — the server's
- * figure is the one that counts. A client that could send its own total could
- * send a wrong one straight into receivables.
- */
-
-const itemSchema = z.object({
-  description: z.string().min(1, "Describe the line"),
-  quantity: z.string().min(1, "Qty"),
-  unit_price: z.string().min(1, "Price"),
-})
-
-const invoiceFormSchema = z.object({
-  client_id: z.string().min(1, "Choose a client"),
-  project_id: z.string().optional(),
-  issue_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date"),
-  due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date"),
-  discount: z.string().optional(),
-  tax: z.string().optional(),
-  notes: z.string().optional(),
-  items: z.array(itemSchema).min(1, "Add at least one line"),
-})
-
-type InvoiceFormValues = z.infer<typeof invoiceFormSchema>
-
-const today = () => new Date().toISOString().slice(0, 10)
-const inDays = (days: number) =>
-  new Date(Date.now() + days * 86400000).toISOString().slice(0, 10)
-
-const defaultValues: InvoiceFormValues = {
-  client_id: "",
-  project_id: "",
-  issue_date: today(),
-  due_date: inDays(14),
-  discount: "",
-  tax: "",
-  notes: "",
-  items: [{ description: "", quantity: "1", unit_price: "" }],
-}
-
+// Creating an invoice. There is no total field: the server works it out from
+// the lines, so a client cannot send a wrong one into receivables.
 const CreateInvoiceModal = () => {
   const [open, setOpen] = useState(false)
-  const queryClient = useQueryClient()
-  const router = useRouter()
 
   const { data: clientsData } = useQuery({ ...clientsListQuery(), enabled: open })
   const { data: projectsData } = useQuery({ ...projectsListQuery(), enabled: open })
@@ -84,42 +36,7 @@ const CreateInvoiceModal = () => {
   const clients = clientsData?.data ?? []
   const projects = projectsData?.data ?? []
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: InvoiceFormValues) =>
-      createInvoiceAction({
-        ...values,
-        project_id: values.project_id || null,
-        discount: values.discount ? Number(values.discount) : 0,
-        tax: values.tax ? Number(values.tax) : 0,
-        status: "sent",
-        items: values.items.map((item, index) => ({
-          description: item.description,
-          quantity: Number(item.quantity) || 1,
-          unit_price: Number(item.unit_price) || 0,
-          sort_order: index,
-        })),
-      }),
-  })
-
-  const form = useForm({
-    defaultValues,
-    onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        toast.error(result.message || "Failed to create invoice")
-        return
-      }
-
-      toast.success(result.message || "Invoice created")
-      setOpen(false)
-      form.reset()
-
-      void queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
-      router.refresh()
-    },
-  })
+  const { form, isPending } = useInvoiceForm(() => setOpen(false))
 
   const handleOpenChange = useCallback(
     (next: boolean) => {
@@ -165,7 +82,7 @@ const CreateInvoiceModal = () => {
             >
               <form.Field
                 name="client_id"
-                validators={{ onChange: invoiceFormSchema.shape.client_id }}
+                validators={{ onChange: invoiceFormZodSchema.shape.client_id }}
               >
                 {(field) => (
                   <EntitySelect
@@ -222,85 +139,7 @@ const CreateInvoiceModal = () => {
                 </form.Field>
               </div>
 
-              <form.Field name="items" mode="array">
-                {(itemsField) => (
-                  <div className="space-y-3">
-                    <Label>Lines</Label>
-
-                    {itemsField.state.value.map((_, index) => (
-                      <div key={index} className="flex items-start gap-2">
-                        <form.Field name={`items[${index}].description`}>
-                          {(field) => (
-                            <Input
-                              value={field.state.value}
-                              onChange={(event) => field.handleChange(event.target.value)}
-                              placeholder="What is being billed"
-                              disabled={isPending}
-                              className="flex-1"
-                              aria-label={`Line ${index + 1} description`}
-                            />
-                          )}
-                        </form.Field>
-
-                        <form.Field name={`items[${index}].quantity`}>
-                          {(field) => (
-                            <Input
-                              type="number"
-                              value={field.state.value}
-                              onChange={(event) => field.handleChange(event.target.value)}
-                              placeholder="Qty"
-                              disabled={isPending}
-                              className="w-20"
-                              aria-label={`Line ${index + 1} quantity`}
-                            />
-                          )}
-                        </form.Field>
-
-                        <form.Field name={`items[${index}].unit_price`}>
-                          {(field) => (
-                            <Input
-                              type="number"
-                              value={field.state.value}
-                              onChange={(event) => field.handleChange(event.target.value)}
-                              placeholder="Price"
-                              disabled={isPending}
-                              className="w-28"
-                              aria-label={`Line ${index + 1} unit price`}
-                            />
-                          )}
-                        </form.Field>
-
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          // The last line cannot be removed: the server refuses
-                          // an invoice with no lines, so removing it would only
-                          // produce a failure at submit.
-                          disabled={isPending || itemsField.state.value.length === 1}
-                          onClick={() => itemsField.removeValue(index)}
-                        >
-                          <Trash2 className="size-4" />
-                          <span className="sr-only">Remove line {index + 1}</span>
-                        </Button>
-                      </div>
-                    ))}
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={isPending}
-                      onClick={() =>
-                        itemsField.pushValue({ description: "", quantity: "1", unit_price: "" })
-                      }
-                    >
-                      <Plus className="size-3.5" />
-                      Add line
-                    </Button>
-                  </div>
-                )}
-              </form.Field>
+              <InvoiceLineItems form={form} isPending={isPending} />
 
               <div className="grid gap-5 sm:grid-cols-2">
                 <form.Field name="discount">
@@ -328,40 +167,7 @@ const CreateInvoiceModal = () => {
                 </form.Field>
               </div>
 
-              {/* A preview only — the server recomputes this from the same
-                  lines, and its figure is the one that gets stored. */}
-              <form.Subscribe
-                selector={(state) =>
-                  [state.values.items, state.values.discount, state.values.tax] as const
-                }
-              >
-                {([items, discount, tax]) => {
-                  const subtotal = items.reduce(
-                    (running, item) =>
-                      running + (Number(item.quantity) || 0) * (Number(item.unit_price) || 0),
-                    0,
-                  )
-                  const total = subtotal - Number(discount || 0) + Number(tax || 0)
-
-                  return (
-                    <div className="rounded-lg bg-muted/60 px-4 py-3 text-sm">
-                      <div className="flex justify-between text-muted-foreground">
-                        <span>Subtotal</span>
-                        <span className="tabular-nums">{formatUsd(subtotal)}</span>
-                      </div>
-                      <div className="mt-1 flex justify-between font-medium">
-                        <span>Total</span>
-                        <span className="tabular-nums">{formatUsd(total)}</span>
-                      </div>
-                      {total < 0 && (
-                        <p className="mt-2 text-xs text-destructive">
-                          The discount is larger than the subtotal — the server will refuse this.
-                        </p>
-                      )}
-                    </div>
-                  )
-                }}
-              </form.Subscribe>
+              <InvoiceTotals form={form} />
 
               <DialogFooter>
                 <DialogClose asChild>

@@ -1,11 +1,11 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Card, CardHeader, CardTitle } from "@/components/ui/card"
+import ChartCard from "@/components/modules/Platform/ChartCard"
+import ErrorState from "@/components/shared/state/ErrorState"
+import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import { formatUsd } from "@/lib/currency"
 import { useQuery } from "@tanstack/react-query"
 import { format, parse, parseISO } from "date-fns"
-import { CalendarClock, Table2, TrendingUp } from "lucide-react"
-import { useState } from "react"
 import {
   Bar,
   BarChart,
@@ -31,10 +31,7 @@ import { platformTrendQuery } from "@/queries/platform.queries"
  * colourblind separation or contrast against this surface.
  */
 
-const usd = (value: number) => `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
-
-const compact = (value: number) =>
-  new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(value)
+const compactUsd = (value: number) => formatUsd(value, { compact: true })
 
 type TooltipProps = {
   active?: boolean
@@ -62,99 +59,25 @@ const ChartTooltip = ({
   )
 }
 
-/** A chart and its table view, so neither has to be built twice. */
-const ChartCard = ({
-  title,
-  note,
-  empty,
-  columns,
-  rows,
-  children,
-}: {
-  title: string
-  note: string
-  empty?: string
-  columns: string[]
-  rows: Array<{ key: string; cells: string[] }>
-  children: React.ReactNode
-}) => {
-  const [asTable, setAsTable] = useState(false)
-
-  return (
-    <Card className="gap-0 overflow-hidden p-0">
-      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 border-b px-5 py-4">
-        <div>
-          <CardTitle className="text-base">{title}</CardTitle>
-          <p className="text-sm text-muted-foreground">{note}</p>
-        </div>
-
-        {rows.length > 0 && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setAsTable((shown) => !shown)}
-            aria-pressed={asTable}
-          >
-            {asTable ? <TrendingUp className="size-4" /> : <Table2 className="size-4" />}
-            {asTable ? "Chart" : "Table"}
-          </Button>
-        )}
-      </CardHeader>
-
-      {rows.length === 0 ? (
-        <p className="flex flex-col items-center gap-2 px-6 py-12 text-center text-sm text-muted-foreground">
-          <CalendarClock className="size-7" aria-hidden="true" />
-          {empty ?? "Nothing to show yet."}
-        </p>
-      ) : asTable ? (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left text-xs text-muted-foreground">
-                {columns.map((column, index) => (
-                  <th
-                    key={column}
-                    className={`px-5 py-2.5 font-medium ${index > 0 ? "text-right" : ""}`}
-                  >
-                    {column}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {rows.map((row) => (
-                <tr key={row.key}>
-                  {row.cells.map((cell, index) => (
-                    <td
-                      key={index}
-                      className={`px-5 py-2.5 ${index > 0 ? "text-right tabular-nums" : ""}`}
-                    >
-                      {cell}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="h-64 p-4">{children}</div>
-      )}
-    </Card>
-  )
-}
-
 const PlatformCharts = () => {
-  const { data, isLoading } = useQuery(platformTrendQuery())
+  const { data, isLoading, isError, isFetching, refetch } = useQuery(platformTrendQuery())
 
   const trend = data?.data
 
   if (isLoading && !trend) {
-    return <div className="h-64 animate-pulse rounded-xl bg-muted/40" />
+    return <LoadingBlock height="h-64" rounded />
   }
 
-  if (!trend) return null
+  if (isError || !trend) {
+    return (
+      <ErrorState
+        className="rounded-xl border border-dashed"
+        message="The charts did not load."
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+      />
+    )
+  }
 
   const signups = trend.signups.map((row) => ({
     ...row,
@@ -213,7 +136,7 @@ const PlatformCharts = () => {
         columns={["Plan", "Companies", "Monthly"]}
         rows={trend.revenue_by_plan.map((row) => ({
           key: row.name,
-          cells: [row.name, String(row.companies), usd(row.mrr_usd)],
+          cells: [row.name, String(row.companies), formatUsd(row.mrr_usd)],
         }))}
       >
         <ResponsiveContainer width="100%" height="100%">
@@ -225,7 +148,7 @@ const PlatformCharts = () => {
             <CartesianGrid strokeDasharray="3 3" className="stroke-border" horizontal={false} />
             <XAxis
               type="number"
-              tickFormatter={compact}
+              tickFormatter={compactUsd}
               tickLine={false}
               axisLine={false}
               className="fill-muted-foreground text-xs"
@@ -238,7 +161,7 @@ const PlatformCharts = () => {
               axisLine={false}
               className="fill-muted-foreground text-xs"
             />
-            <Tooltip cursor={{ className: "fill-muted/40" }} content={<ChartTooltip format={usd} />} />
+            <Tooltip cursor={{ className: "fill-muted/40" }} content={<ChartTooltip format={formatUsd} />} />
             <Bar dataKey="mrr_usd" name="Monthly" fill="var(--chart-3)" radius={[0, 4, 4, 0]} />
           </BarChart>
         </ResponsiveContainer>
@@ -258,7 +181,7 @@ const PlatformCharts = () => {
           columns={["Date", "Monthly revenue", "Paying"]}
           rows={mrr.map((row) => ({
             key: row.date,
-            cells: [row.label, usd(row.mrr_usd), String(row.companies_active)],
+            cells: [row.label, formatUsd(row.mrr_usd), String(row.companies_active)],
           }))}
         >
           <ResponsiveContainer width="100%" height="100%">
@@ -275,12 +198,12 @@ const PlatformCharts = () => {
                   makes every comparison on it meaningless. It is in the table
                   view instead. */}
               <YAxis
-                tickFormatter={compact}
+                tickFormatter={compactUsd}
                 tickLine={false}
                 axisLine={false}
                 className="fill-muted-foreground text-xs"
               />
-              <Tooltip content={<ChartTooltip format={usd} />} />
+              <Tooltip content={<ChartTooltip format={formatUsd} />} />
               <Line
                 type="monotone"
                 dataKey="mrr_usd"

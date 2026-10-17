@@ -18,32 +18,27 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt, formatRate, formatUsd } from "@/lib/currency"
 import { exchangeFormFields, exchangeFormZodSchema, type IExchangeFormValues } from "@/zod/finance.validation"
-import { toNumber } from "@/zod/formFields"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { ArrowLeftRight } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
-import { toast } from "sonner"
 import { accountsQuery, rateSettingsQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
+import { todayIsoDate } from "@/lib/dates"
 
-const today = () => new Date().toISOString().slice(0, 10)
-
-const defaultValues: IExchangeFormValues = {
-  date: today(),
+const getDefaultValues = (): IExchangeFormValues => ({
+  date: todayIsoDate(),
   from_account_id: "",
   to_account_id: "",
   amount_usd: "",
   rate: "",
   fee_usd: "",
   notes: "",
-}
+})
 
 const RecordExchangeModal = () => {
   const [open, setOpen] = useState(false)
-  const queryClient = useQueryClient()
-  const router = useRouter()
 
   const { data: accountsData } = useQuery({ ...accountsQuery(), enabled: open })
   const { data: rateData } = useQuery({ ...rateSettingsQuery(), enabled: open })
@@ -54,41 +49,26 @@ const RecordExchangeModal = () => {
   const usdAccounts = accounts.filter((a) => a.currency === "USD" && a.is_active)
   const bdtAccounts = accounts.filter((a) => a.currency === "BDT" && a.is_active)
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IExchangeFormValues) =>
-      createExchangeAction({
-        ...values,
-        amount_usd: toNumber(values.amount_usd),
-        rate: toNumber(values.rate),
-        fee_usd: toNumber(values.fee_usd) ?? 0,
-      }),
+  // The server refuses an overdraw and says how much is actually there; that
+  // message is what the failure toast shows.
+  const { run: recordExchange, isPending } = useActionMutation({
+    action: createExchangeAction,
+    successMessage: "Exchange recorded successfully",
+    invalidateKeys: [queryKeys.exchanges.all, queryKeys.accounts.all, queryKeys.dashboard.all],
   })
 
   const form = useForm({
-    defaultValues,
+    defaultValues: getDefaultValues(),
     validators: {
       // The fee-vs-amount rule spans two fields, so it lives on the form rather
       // than on either one of them.
       onSubmit: exchangeFormZodSchema,
     },
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        // The server refuses an overdraw and says how much is actually there —
-        // that message is more useful than anything this form could invent.
-        toast.error(result.message || "Failed to record exchange")
-        return
+      if (await recordExchange(value)) {
+        setOpen(false)
+        form.reset()
       }
-
-      toast.success(result.message || "Exchange recorded successfully")
-      setOpen(false)
-      form.reset()
-
-      void queryClient.invalidateQueries({ queryKey: queryKeys.exchanges.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
-      router.refresh()
     },
   })
 
@@ -152,6 +132,11 @@ const RecordExchangeModal = () => {
                       label: account.name,
                       hint: formatUsd(account.balance),
                     }))}
+                    error={
+                      field.state.meta.isTouched && field.state.meta.errors.length > 0
+                        ? "Choose the USD account"
+                        : null
+                    }
                   />
                 )}
               </form.Field>
@@ -170,6 +155,11 @@ const RecordExchangeModal = () => {
                       label: account.name,
                       hint: formatBdt(account.balance),
                     }))}
+                    error={
+                      field.state.meta.isTouched && field.state.meta.errors.length > 0
+                        ? "Choose the BDT account"
+                        : null
+                    }
                   />
                 )}
               </form.Field>

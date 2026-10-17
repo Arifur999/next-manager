@@ -1,6 +1,7 @@
 import { site } from "@/data/site"
 import PlatformFinance from "@/components/modules/Platform/PlatformFinance";
 import type { Metadata } from "next";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Financial report",
@@ -8,13 +9,10 @@ export const metadata: Metadata = {
 
 const PlatformFinancePage = () => (
   <div className="space-y-6">
-    <div>
-      <h1 className="text-2xl font-semibold tracking-tight">Financial report</h1>
-      <p className="text-sm text-muted-foreground">
-        {site.name}&apos;s own money: subscription revenue in, what it costs to run out. No
-        customer&apos;s books appear here and none can.
-      </p>
-    </div>
+    <PageHeader title="Financial report">
+      {site.name}&apos;s own money: subscription revenue in, what it costs to run out. No
+      customer&apos;s books appear here and none can.
+    </PageHeader>
 
     <PlatformFinance />
   </div>

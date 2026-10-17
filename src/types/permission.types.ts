@@ -87,3 +87,6 @@ export const ROLE_LABEL: Record<string, string> = {
 /** A slug the labels above have not been taught still has to read as itself. */
 export const titleise = (value: string) =>
     value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+
+/** A role as a title, such as "Project Manager". */
+export const roleTitle = (role: string) => ROLE_LABEL[role] ?? titleise(role)

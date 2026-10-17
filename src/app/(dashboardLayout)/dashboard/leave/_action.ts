@@ -1,44 +1,20 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
+import { requireId, runAction, runValidatedAction } from "@/lib/runAction"
 import { cancelLeave, decideLeave, requestLeave } from "@/services/people.services"
-import type { ILeaveRequest } from "@/types/people.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+import { leaveDecisionServerZodSchema, requestLeaveServerZodSchema } from "@/zod/people.validation"
 
-type Result = ApiResponse<ILeaveRequest> | ApiErrorResponse
+// "You already have approved leave covering those dates" is the server's
+// refusal, and already says what to do about it.
+export const requestLeaveAction = async (values: unknown) =>
+    runValidatedAction(requestLeaveServerZodSchema, values, "Could not send it", requestLeave)
 
-export const requestLeaveAction = async (
-    payload: Record<string, unknown>,
-): Promise<Result> => {
-    try {
-        return await requestLeave(payload)
-    } catch (error: unknown) {
-        // "You already have approved leave covering those dates" arrives here,
-        // and already says what to do about it.
-        return { success: false, message: getActionErrorMessage(error, "Could not send it") }
-    }
-}
+export const cancelLeaveAction = async (id: string) =>
+    requireId(id, "request") ?? runAction("Could not withdraw it", () => cancelLeave(id))
 
-export const cancelLeaveAction = async (id: string): Promise<Result> => {
-    if (!id) return { success: false, message: "Invalid request id" }
-
-    try {
-        return await cancelLeave(id)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not withdraw it") }
-    }
-}
-
-export const decideLeaveAction = async (
-    id: string,
-    payload: Record<string, unknown>,
-): Promise<Result> => {
-    if (!id) return { success: false, message: "Invalid request id" }
-
-    try {
-        return await decideLeave(id, payload)
-    } catch (error: unknown) {
-        // "Somebody else has to decide your own leave" arrives here.
-        return { success: false, message: getActionErrorMessage(error, "Could not decide it") }
-    }
-}
+// Nobody decides their own leave, and the server refuses it by name.
+export const decideLeaveAction = async (id: string, values: unknown) =>
+    requireId(id, "request") ??
+    runValidatedAction(leaveDecisionServerZodSchema, values, "Could not decide it", (payload) =>
+        decideLeave(id, payload),
+    )

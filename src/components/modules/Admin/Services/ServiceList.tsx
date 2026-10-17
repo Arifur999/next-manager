@@ -3,31 +3,26 @@
 import Link from "next/link"
 
 import EmptyState from "@/components/shared/state/EmptyState"
-import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatUsd } from "@/lib/currency"
 import type { IService } from "@/types/catalog.types"
 import { Package, Power, Trash2 } from "lucide-react"
+import type { ComponentProps } from "react"
 
-/**
- * Everything on the catalogue.
- *
- * Each row says what is riding on it, because that is what decides whether it
- * can be deleted — and seeing "on 4 invoices" beforehand is better than finding
- * out by being refused.
- */
+// Each row says what it is on, because that decides whether it can be deleted.
 const ServiceList = ({
   services,
-  isLoading,
+  query,
   onEditable = true,
   onEdit,
   onToggle,
   onDelete,
 }: {
   services: IService[]
-  isLoading: boolean
+  query: ComponentProps<typeof PanelState>["query"]
   /** Whether the row actions appear. False for anybody the API refuses. */
   onEditable?: boolean
   onEdit: (service: IService) => void
@@ -42,13 +37,16 @@ const ServiceList = ({
       </p>
     </CardHeader>
 
-    {isLoading && services.length === 0 ? (
-      <LoadingBlock />
-    ) : services.length === 0 ? (
-      <EmptyState icon={Package} hint="Add one on the left and it appears in every invoice.">
-        Nothing on the catalogue yet.
-      </EmptyState>
-    ) : (
+    <PanelState
+      query={query}
+      errorMessage="The catalogue did not load."
+      isEmpty={services.length === 0}
+      empty={
+        <EmptyState icon={Package} hint="Add one on the left and it appears in every invoice.">
+          Nothing on the catalogue yet.
+        </EmptyState>
+      }
+    >
       <ul className="divide-y">
         {services.map((service) => {
           const used =
@@ -117,7 +115,7 @@ const ServiceList = ({
           )
         })}
       </ul>
-    )}
+    </PanelState>
   </Card>
 )
 

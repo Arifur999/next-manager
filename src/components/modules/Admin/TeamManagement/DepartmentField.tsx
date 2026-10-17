@@ -11,24 +11,10 @@ import {
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 import { departmentsQuery } from "@/queries/people.queries"
+import { NO_DEPARTMENT } from "@/zod/user.validation"
 
-/**
- * The department picker, shared by the create and edit forms.
- *
- * One component because the two forms would otherwise drift: the sentinel for
- * "no department" has to mean the same thing in both, and a Select cannot hold
- * an empty string.
- *
- * Only active departments are offered. A retired one still shows on people who
- * are already in it — that is the point of retiring rather than deleting — but
- * nobody new should be put into a team the agency has stopped using.
- */
-
-export const NO_DEPARTMENT = "__none__"
-
-/** Turns the form's sentinel into what the API wants: null, not a string. */
-export const toDepartmentId = (value: string | undefined) =>
-  !value || value === NO_DEPARTMENT ? null : value
+// The department picker shared by the create and edit forms, so "no department"
+// means the same in both. Nobody new is put into a retired department.
 
 const DepartmentField = ({
   value,
@@ -39,12 +25,12 @@ const DepartmentField = ({
   onChange: (value: string) => void
   disabled?: boolean
 }) => {
-  const { data } = useQuery(departmentsQuery())
-  const all = data?.data ?? []
+  const departmentList = useQuery(departmentsQuery())
+  const departments = departmentList.data?.data ?? []
 
   // Keep a retired department visible while it is the one selected, so opening
   // somebody's row does not silently move them out of it on save.
-  const options = all.filter((department) => department.is_active || department.id === value)
+  const options = departments.filter((department) => department.is_active || department.id === value)
 
   return (
     <div className="space-y-1.5">
@@ -63,7 +49,7 @@ const DepartmentField = ({
           ))}
         </SelectContent>
       </Select>
-      {all.length === 0 && (
+      {departments.length === 0 && (
         <p className="text-xs text-muted-foreground">
           No departments yet —{" "}
           <Link

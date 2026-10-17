@@ -5,6 +5,9 @@ import {
   removePlatformAdminAction,
   setPermissionsAction,
 } from "@/app/(dashboardLayout)/platform/_teamAction"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
+import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,11 +19,11 @@ import {
   type IPlatformAdmin,
   type PlatformPermission,
 } from "@/types/platform.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { ShieldCheck } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { platformAdminsQuery } from "@/queries/platform.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -37,59 +40,49 @@ import { queryKeys } from "@/lib/queryKeys"
  * too. It is the moment access actually changes.
  */
 
-// Grouped in the order permissions are handed out, not alphabetically.
-const AREAS = ["Companies", "Plans", "Finance", "Team", "Customers"] as const
+// Read off the permission list, in the order permissions are handed out, so a
+// new area cannot be left out of the editor.
+const AREAS = [...new Set(PLATFORM_PERMISSIONS.map((permission) => PLATFORM_PERMISSION_INFO[permission].area))]
 
 const byArea = (area: string) =>
   PLATFORM_PERMISSIONS.filter((permission) => PLATFORM_PERMISSION_INFO[permission].area === area)
 
+// Every change to the team is written to the activity feed, so both refetch.
+const TEAM_KEYS = [queryKeys.platformAdmins.all, queryKeys.platformActivity.all]
+
 const AdminRow = ({ admin, canRemove }: { admin: IPlatformAdmin; canRemove: boolean }) => {
-  const queryClient = useQueryClient()
   const [draft, setDraft] = useState<string[]>(admin.permissions)
   const [editing, setEditing] = useState(false)
+  const [isConfirmingRemoval, setIsConfirmingRemoval] = useState(false)
 
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.platformAdmins.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.platformActivity.all })
+  const { run: saveAccess, isPending } = useActionMutation({
+    action: (permissions: string[]) => setPermissionsAction(admin.id, permissions),
+    successMessage: `${admin.full_name}'s access updated`,
+    invalidateKeys: TEAM_KEYS,
+    refresh: false,
+  })
+
+  const { run: approveOperator, isPending: isApproving } = useActionMutation({
+    action: approvePlatformAdminAction,
+    successMessage: `${admin.full_name} can sign in now`,
+    invalidateKeys: TEAM_KEYS,
+    refresh: false,
+  })
+
+  const { run: removeOperator, isPending: isRemoving } = useActionMutation({
+    action: removePlatformAdminAction,
+    successMessage: `${admin.full_name} removed`,
+    invalidateKeys: TEAM_KEYS,
+    refresh: false,
+  })
+
+  const handleRemove = async () => {
+    if (await removeOperator(admin.id)) setIsConfirmingRemoval(false)
   }
 
-  const { mutate: save, isPending } = useMutation({
-    mutationFn: () => setPermissionsAction(admin.id, draft),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not update access")
-        return
-      }
-      toast.success(`${admin.full_name}'s access updated`)
-      setEditing(false)
-      refresh()
-    },
-  })
-
-  const { mutate: approve, isPending: isApproving } = useMutation({
-    mutationFn: () => approvePlatformAdminAction(admin.id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not approve")
-        return
-      }
-      toast.success(`${admin.full_name} can sign in now`)
-      refresh()
-    },
-  })
-
-  const { mutate: remove, isPending: isRemoving } = useMutation({
-    mutationFn: () => removePlatformAdminAction(admin.id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        // "This is the last active platform operator" arrives here.
-        toast.error(result.message || "Could not remove")
-        return
-      }
-      toast.success(`${admin.full_name} removed`)
-      refresh()
-    },
-  })
+  const handleSave = async () => {
+    if (await saveAccess(draft)) setEditing(false)
+  }
 
   const toggle = (permission: PlatformPermission, on: boolean) =>
     setDraft((current) =>
@@ -132,7 +125,12 @@ const AdminRow = ({ admin, canRemove }: { admin: IPlatformAdmin; canRemove: bool
 
         <div className="flex shrink-0 items-center gap-2">
           {admin.status === "pending" && (
-            <Button type="button" size="sm" disabled={busy} onClick={() => approve()}>
+            <Button
+              type="button"
+              size="sm"
+              disabled={busy}
+              onClick={() => void approveOperator(admin.id)}
+            >
               Approve
             </Button>
           )}
@@ -154,7 +152,7 @@ const AdminRow = ({ admin, canRemove }: { admin: IPlatformAdmin; canRemove: bool
               variant="outline"
               size="sm"
               disabled={busy}
-              onClick={() => remove()}
+              onClick={() => setIsConfirmingRemoval(true)}
             >
               Remove
             </Button>
@@ -202,7 +200,7 @@ const AdminRow = ({ admin, canRemove }: { admin: IPlatformAdmin; canRemove: bool
           ))}
 
           <div className="flex items-center gap-2 pt-1">
-            <Button type="button" size="sm" disabled={isPending} onClick={() => save()}>
+            <Button type="button" size="sm" disabled={isPending} onClick={() => void handleSave()}>
               {isPending ? "Saving..." : "Save access"}
             </Button>
             {draft.length === 0 && (
@@ -213,14 +211,26 @@ const AdminRow = ({ admin, canRemove }: { admin: IPlatformAdmin; canRemove: bool
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={isConfirmingRemoval}
+        onOpenChange={setIsConfirmingRemoval}
+        title={`Remove ${admin.full_name} from the platform team?`}
+        description="They lose access to this console straight away. What they did stays in admin activity."
+        variant="destructive"
+        confirmLabel="Remove"
+        pendingLabel="Removing..."
+        isPending={isRemoving}
+        onConfirm={() => void handleRemove()}
+      />
     </li>
   )
 }
 
 const PlatformTeam = () => {
-  const { data, isLoading } = useQuery(platformAdminsQuery())
+  const team = useQuery(platformAdminsQuery())
 
-  const admins = data?.data ?? []
+  const admins = team.data?.data ?? []
   const activeCount = admins.filter((admin) => admin.status === "active").length
 
   return (
@@ -236,9 +246,12 @@ const PlatformTeam = () => {
         </p>
       </CardHeader>
 
-      {isLoading && admins.length === 0 ? (
-        <div className="h-32 animate-pulse bg-muted/40" />
-      ) : (
+      <PanelState
+        query={team}
+        errorMessage="The platform team did not load."
+        isEmpty={admins.length === 0}
+        empty={<EmptyState icon={ShieldCheck}>Nobody is on the platform team.</EmptyState>}
+      >
         <ul className="divide-y">
           {admins.map((admin) => (
             <AdminRow
@@ -250,7 +263,7 @@ const PlatformTeam = () => {
             />
           ))}
         </ul>
-      )}
+      </PanelState>
     </Card>
   )
 }

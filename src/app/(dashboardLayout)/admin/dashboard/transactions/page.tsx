@@ -5,6 +5,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { transactionsListQuery } from "@/queries/finance.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Transactions",
@@ -19,14 +20,11 @@ const TransactionsPage = async ({ searchParams }: { searchParams: Promise<Search
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Transactions</h1>
-        <p className="text-sm text-muted-foreground">
-          Every movement of money, written by whatever caused it — a payment, an expense,
-          an exchange. Nothing is typed in here, which is why it can be trusted to agree
-          with the records it summarises.
-        </p>
-      </div>
+      <PageHeader title="Transactions">
+        Every movement of money, written by whatever caused it — a payment, an expense,
+        an exchange. Nothing is typed in here, which is why it can be trusted to agree
+        with the records it summarises.
+      </PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
         <TransactionsBoard />

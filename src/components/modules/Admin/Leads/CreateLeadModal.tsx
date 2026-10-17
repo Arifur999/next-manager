@@ -1,6 +1,5 @@
 "use client"
 
-import { ALL_STAGES } from "@/components/modules/Admin/Leads/stages"
 import { createLeadAction } from "@/app/(dashboardLayout)/admin/dashboard/leads/_action"
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
@@ -16,85 +15,49 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import type { LeadStage } from "@/types/crm.types"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { LEAD_STAGES, type LeadStage } from "@/types/crm.types"
+import { leadFormZodSchema, type ILeadFormValues } from "@/zod/crm.validation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useCallback, useState } from "react"
-import { toast } from "sonner"
-import { z } from "zod"
 import { leadSourcesQuery } from "@/queries/crm.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
-const leadFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  company: z.string().optional(),
-  email: z.string().email("Enter a valid email address").optional().or(z.literal("")),
-  phone: z.string().optional(),
-  // An id now, not typed text - see LeadSource on the server for why. Empty
-  // string means nobody said, which is a real answer.
-  source_id: z.string().optional(),
-  stage: z.enum(["new", "contacted", "proposal", "negotiating", "won", "lost"]),
-  estimated_value_usd: z
-    .string()
-    .optional()
-    .refine(
-      (value) => !value || (Number.isFinite(Number(value)) && Number(value) >= 0),
-      "Estimated value must be a number that is not negative",
-    ),
-})
+const emptyLead: ILeadFormValues = {
+  name: "",
+  company: "",
+  email: "",
+  phone: "",
+  source_id: "",
+  stage: "new",
+  estimated_value_usd: "",
+}
 
-type LeadFormValues = z.infer<typeof leadFormSchema>
-
-// Only the open stages get a column. Won and lost are outcomes, not places work
-// sits, and giving them columns would make the board grow forever.
 const CreateLeadModal = () => {
   const [open, setOpen] = useState(false)
-  const queryClient = useQueryClient()
 
   const { data: sourcesData } = useQuery({ ...leadSourcesQuery(), enabled: open })
 
   // Retired marketplaces stay out of the picker but keep their history on the
   // leads that already point at them.
-  const activeSources = ((sourcesData?.data ?? [])).filter(
-    (source) => source.is_active,
-  )
+  const activeSources = (sourcesData?.data ?? []).filter((source) => source.is_active)
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: LeadFormValues) =>
-      createLeadAction({
-        ...values,
-        estimated_value_usd: values.estimated_value_usd ? Number(values.estimated_value_usd) : 0,
-        // An empty pick means "nobody said", which the API models as null
-        // rather than as an empty string.
-        source_id: values.source_id || null,
-      }),
+  const { run: addLead, isPending } = useActionMutation({
+    action: createLeadAction,
+    successMessage: "Lead added",
+    invalidateKeys: [queryKeys.leads.all],
+    refresh: false,
   })
 
-  const defaultValues: LeadFormValues = {
-    name: "",
-    company: "",
-    email: "",
-    phone: "",
-    source_id: "",
-    stage: "new",
-    estimated_value_usd: "",
-  }
-
   const form = useForm({
-    defaultValues,
+    defaultValues: emptyLead,
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        toast.error(result.message || "Failed to create lead")
-        return
+      if (await addLead(value)) {
+        setOpen(false)
+        form.reset()
       }
-
-      toast.success("Lead added")
-      setOpen(false)
-      form.reset()
-      void queryClient.invalidateQueries({ queryKey: queryKeys.leads.all })
     },
   })
 
@@ -136,7 +99,7 @@ const CreateLeadModal = () => {
           }}
           className="space-y-5"
         >
-          <form.Field name="name" validators={{ onChange: leadFormSchema.shape.name }}>
+          <form.Field name="name" validators={{ onChange: leadFormZodSchema.shape.name }}>
             {(field) => <AppField field={field} label="Name" disabled={isPending} />}
           </form.Field>
 
@@ -165,7 +128,7 @@ const CreateLeadModal = () => {
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
-            <form.Field name="email" validators={{ onChange: leadFormSchema.shape.email }}>
+            <form.Field name="email" validators={{ onChange: leadFormZodSchema.shape.email }}>
               {(field) => <AppField field={field} label="Email" type="email" disabled={isPending} />}
             </form.Field>
 
@@ -183,7 +146,7 @@ const CreateLeadModal = () => {
                   value={field.state.value}
                   onChange={(value) => field.handleChange(value as LeadStage)}
                   disabled={isPending}
-                  options={ALL_STAGES.map((stage) => ({
+                  options={LEAD_STAGES.map((stage) => ({
                     value: stage,
                     label: stage.charAt(0).toUpperCase() + stage.slice(1),
                   }))}

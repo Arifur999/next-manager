@@ -2,6 +2,7 @@ import PlatformCharts from "@/components/modules/Platform/PlatformCharts";
 import PlatformOverview from "@/components/modules/Platform/PlatformOverview";
 import { getUserInfo } from "@/services/auth.services";
 import type { Metadata } from "next";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Platform",
@@ -19,14 +20,11 @@ const PlatformPage = async () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
-          Signed in as {user?.full_name ?? "super admin"}. This account belongs to no
-          company and cannot read any company&apos;s money — only how big it is and what it
-          pays.
-        </p>
-      </div>
+      <PageHeader title="Dashboard">
+        Signed in as {user?.full_name ?? "super admin"}. This account belongs to no
+        company and cannot read any company&apos;s money — only how big it is and what it
+        pays.
+      </PageHeader>
 
       <PlatformOverview />
       <PlatformCharts />

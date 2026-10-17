@@ -1,17 +1,17 @@
 "use client"
 
 import { updateMeAction } from "@/app/(dashboardLayout)/my-profile/_action"
+import AppField from "@/components/shared/form/AppField"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { profileFormZodSchema, type IProfileFormValues } from "@/zod/auth.validation"
 import { ROLE_LABELS } from "@/zod/user.validation"
 import type { IUser } from "@/types/user.types"
-import { useMutation } from "@tanstack/react-query"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
-import { toast } from "sonner"
+import { useForm } from "@tanstack/react-form"
 
 /**
  * Your own record.
@@ -27,25 +27,25 @@ import { toast } from "sonner"
  */
 
 const ProfileForm = ({ user }: { user: IUser }) => {
-  const router = useRouter()
-  const [fullName, setFullName] = useState(user.full_name)
-  const [phone, setPhone] = useState(user.phone ?? "")
+  // Keeps the default router refresh: the sidebar and navbar read the user
+  // server-side, so the new name appears there only after the tree re-renders.
+  const { run: saveProfile, isPending } = useActionMutation({
+    action: updateMeAction,
+    successMessage: "Profile updated",
+  })
 
-  const { mutate: save, isPending } = useMutation({
-    mutationFn: () => updateMeAction({ full_name: fullName.trim(), phone: phone.trim() }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not save your profile")
-        return
-      }
-      toast.success("Profile updated")
-      // The sidebar and navbar read the user server-side, so the tree has to
-      // re-render for the new name to appear anywhere but this form.
-      router.refresh()
+  const defaultValues: IProfileFormValues = { full_name: user.full_name, phone: user.phone ?? "" }
+
+  const form = useForm({
+    defaultValues,
+    onSubmit: async ({ value }) => {
+      await saveProfile(value)
     },
   })
 
-  const dirty = fullName.trim() !== user.full_name || phone.trim() !== (user.phone ?? "")
+  // Against the saved record, which the refresh after a save brings up to date.
+  const isChanged = (values: IProfileFormValues) =>
+    values.full_name.trim() !== user.full_name || values.phone.trim() !== (user.phone ?? "")
 
   // ROLE_LABELS covers the roles an admin can assign. super_admin is not one
   // of them but does own an account, so it falls back to its own value rather
@@ -66,34 +66,32 @@ const ProfileForm = ({ user }: { user: IUser }) => {
 
       <form
         className="space-y-5 p-5"
+        noValidate
         onSubmit={(event) => {
           event.preventDefault()
-          if (!fullName.trim()) return
-          save()
+          event.stopPropagation()
+          void form.handleSubmit()
         }}
       >
         <div className="grid gap-5 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="profile-name">Full name</Label>
-            <Input
-              id="profile-name"
-              value={fullName}
-              onChange={(event) => setFullName(event.target.value)}
-              disabled={isPending}
-              required
-            />
-          </div>
+          <form.Field name="full_name" validators={{ onChange: profileFormZodSchema.shape.full_name }}>
+            {(field) => (
+              <AppField field={field} label="Full name" autoComplete="name" disabled={isPending} />
+            )}
+          </form.Field>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="profile-phone">Phone</Label>
-            <Input
-              id="profile-phone"
-              value={phone}
-              onChange={(event) => setPhone(event.target.value)}
-              placeholder="Optional"
-              disabled={isPending}
-            />
-          </div>
+          <form.Field name="phone">
+            {(field) => (
+              <AppField
+                field={field}
+                label="Phone"
+                type="tel"
+                autoComplete="tel"
+                placeholder="Optional"
+                disabled={isPending}
+              />
+            )}
+          </form.Field>
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">
@@ -116,9 +114,13 @@ const ProfileForm = ({ user }: { user: IUser }) => {
           </div>
         </div>
 
-        <Button type="submit" disabled={isPending || !dirty || !fullName.trim()}>
-          {isPending ? "Saving..." : "Save changes"}
-        </Button>
+        <form.Subscribe selector={({ values }) => isChanged(values) && values.full_name.trim() !== ""}>
+          {(canSave) => (
+            <Button type="submit" disabled={isPending || !canSave}>
+              {isPending ? "Saving..." : "Save changes"}
+            </Button>
+          )}
+        </form.Subscribe>
       </form>
     </Card>
   )

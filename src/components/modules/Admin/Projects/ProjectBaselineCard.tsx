@@ -5,11 +5,14 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { formatUsd } from "@/lib/currency"
+import type { IBaselineFormValues } from "@/zod/project.validation"
+import { useForm } from "@tanstack/react-form"
+import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { Lock } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { projectDetailQuery } from "@/queries/project.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -25,10 +28,9 @@ import { queryKeys } from "@/lib/queryKeys"
  * make this number lie without anybody noticing.
  */
 
+const emptyBaseline: IBaselineFormValues = { baseline_hours: "", baseline_value_usd: "" }
+
 const ProjectBaselineCard = ({ projectId }: { projectId: string }) => {
-  const queryClient = useQueryClient()
-  const [hours, setHours] = useState("")
-  const [value, setValue] = useState("")
   const [replacing, setReplacing] = useState(false)
 
   const { data } = useQuery(projectDetailQuery(projectId))
@@ -36,24 +38,23 @@ const ProjectBaselineCard = ({ projectId }: { projectId: string }) => {
   const project = data?.data
   const isBaselined = Boolean(project?.baseline_set_at)
 
-  const { mutate: save, isPending } = useMutation({
-    mutationFn: () =>
-      setBaselineAction(projectId, {
-        baseline_hours: Number(hours),
-        ...(value.trim() === "" ? {} : { baseline_value_usd: Number(value) }),
-        ...(isBaselined ? { replace_existing: true } : {}),
-      }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Failed to set the baseline")
-        return
+  const { run: saveBaseline, isPending } = useActionMutation({
+    action: (values: IBaselineFormValues) =>
+      setBaselineAction(projectId, { ...values, replace_existing: isBaselined }),
+    successMessage: isBaselined ? "Baseline replaced" : "Baseline set",
+    invalidateKeys: [queryKeys.projects.all, queryKeys.kpi.all],
+    refresh: false,
+  })
+
+  // No form-level validator: zero or negative figures are refused by the server
+  // schema, whose message says what is wrong, where a dead button would not.
+  const form = useForm({
+    defaultValues: emptyBaseline,
+    onSubmit: async ({ value, formApi }) => {
+      if (await saveBaseline(value)) {
+        formApi.reset()
+        setReplacing(false)
       }
-      toast.success(isBaselined ? "Baseline replaced" : "Baseline set")
-      setHours("")
-      setValue("")
-      setReplacing(false)
-      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.kpi.all })
     },
   })
 
@@ -67,8 +68,8 @@ const ProjectBaselineCard = ({ projectId }: { projectId: string }) => {
         <div>
           <CardTitle className="text-base">Baseline</CardTitle>
           <p className="text-sm text-muted-foreground">
-            {isBaselined
-              ? `Frozen ${format(parseISO(project.baseline_set_at as string), "dd MMM yyyy")} — plan-vs-actual and scope drift are measured from here.`
+            {project.baseline_set_at
+              ? `Frozen ${format(parseISO(project.baseline_set_at), "dd MMM yyyy")} — plan-vs-actual and scope drift are measured from here.`
               : "Freeze what was sold, so overrun and scope drift have an original to be measured from."}
           </p>
         </div>
@@ -92,10 +93,10 @@ const ProjectBaselineCard = ({ projectId }: { projectId: string }) => {
           <div>
             <p className="text-xs text-muted-foreground">Baseline value</p>
             <p className="mt-1 text-lg font-semibold tabular-nums">
-              ${Number(project.baseline_value_usd).toLocaleString()}
+              {formatUsd(Number(project.baseline_value_usd))}
               {Number(project.contract_value_usd) !== Number(project.baseline_value_usd) && (
                 <span className="ml-2 text-sm font-normal text-muted-foreground">
-                  now ${Number(project.contract_value_usd).toLocaleString()}
+                  now {formatUsd(Number(project.contract_value_usd))}
                 </span>
               )}
             </p>
@@ -108,43 +109,57 @@ const ProjectBaselineCard = ({ projectId }: { projectId: string }) => {
           className="flex flex-wrap items-end gap-3 px-5 py-4"
           onSubmit={(event) => {
             event.preventDefault()
-            if (!hours.trim() || Number(hours) <= 0) return
-            save()
+            event.stopPropagation()
+            void form.handleSubmit()
           }}
         >
-          <div className="space-y-1.5">
-            <Label htmlFor="baseline-hours">Hours sold</Label>
-            <Input
-              id="baseline-hours"
-              type="number"
-              step="any"
-              value={hours}
-              onChange={(event) => setHours(event.target.value)}
-              placeholder="120"
-              className="w-32 tabular-nums"
-              disabled={isPending}
-            />
-          </div>
+          <form.Field name="baseline_hours">
+            {(field) => (
+              <div className="space-y-1.5">
+                <Label htmlFor="baseline-hours">Hours sold</Label>
+                <Input
+                  id="baseline-hours"
+                  type="number"
+                  step="any"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  placeholder="120"
+                  className="w-32 tabular-nums"
+                  disabled={isPending}
+                />
+              </div>
+            )}
+          </form.Field>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="baseline-value">Value ($)</Label>
-            <Input
-              id="baseline-value"
-              type="number"
-              step="any"
-              value={value}
-              onChange={(event) => setValue(event.target.value)}
-              // Left blank it takes the contract as it stands, which at
-              // kickoff is exactly what "what we sold" means.
-              placeholder={Number(project.contract_value_usd).toLocaleString()}
-              className="w-36 tabular-nums"
-              disabled={isPending}
-            />
-          </div>
+          <form.Field name="baseline_value_usd">
+            {(field) => (
+              <div className="space-y-1.5">
+                <Label htmlFor="baseline-value">Value ($)</Label>
+                <Input
+                  id="baseline-value"
+                  type="number"
+                  step="any"
+                  value={field.state.value ?? ""}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  // Left blank it takes the contract as it stands, which at
+                  // kickoff is exactly what "what we sold" means.
+                  placeholder={Number(project.contract_value_usd).toLocaleString()}
+                  className="w-36 tabular-nums"
+                  disabled={isPending}
+                />
+              </div>
+            )}
+          </form.Field>
 
-          <Button type="submit" disabled={isPending || !hours.trim()}>
-            {isBaselined ? "Replace baseline" : "Set baseline"}
-          </Button>
+          <form.Subscribe selector={(state) => state.values.baseline_hours.trim() === ""}>
+            {(isHoursBlank) => (
+              <Button type="submit" disabled={isPending || isHoursBlank}>
+                {isBaselined ? "Replace baseline" : "Set baseline"}
+              </Button>
+            )}
+          </form.Subscribe>
 
           {replacing && (
             <Button

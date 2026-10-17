@@ -1,32 +1,22 @@
 "use client"
 
 import EmptyState from "@/components/shared/state/EmptyState"
-import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
+import { roleTitle } from "@/types/permission.types"
 import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { UsersRound } from "lucide-react"
 import { workloadQuery } from "@/queries/work.queries"
 
-/**
- * Who is carrying what, and what is left of them.
- *
- * Two readings of one query. `mode="load"` shows the hours going in;
- * `mode="free"` shows the hours left over. They are the same subtraction from
- * opposite ends, which is why they come from one endpoint — computing them
- * apart is how two screens end up disagreeing about one person's week.
- *
- * A capacity nobody entered is marked as assumed rather than shown as fact.
- * The default of 40 is applied deliberately so a company that never opened the
- * capacity screen still gets a figure, but a reader deciding who to give work
- * to deserves to know which denominators were guessed.
- */
+// Hours logged ("load") or left ("free"): one query read from either end, so the two
+// screens never disagree about a week. A capacity nobody entered is badged as assumed.
 const WorkloadBoard = ({ mode }: { mode: "load" | "free" }) => {
-  const { data, isLoading } = useQuery(workloadQuery())
-  const workload = data?.data
+  const workloadResult = useQuery(workloadQuery())
+  const workload = workloadResult.data?.data
   const rows = workload?.rows ?? []
 
   return (
@@ -42,11 +32,12 @@ const WorkloadBoard = ({ mode }: { mode: "load" | "free" }) => {
         </p>
       </CardHeader>
 
-      {isLoading && rows.length === 0 ? (
-        <LoadingBlock />
-      ) : rows.length === 0 ? (
-        <EmptyState icon={UsersRound}>Nobody on the team yet.</EmptyState>
-      ) : (
+      <PanelState
+        query={workloadResult}
+        errorMessage="Workload did not load."
+        isEmpty={rows.length === 0}
+        empty={<EmptyState icon={UsersRound}>Nobody on the team yet.</EmptyState>}
+      >
         <ul className="divide-y">
           {rows.map((row) => {
             // Over 100% is real and worth seeing, so the bar is clamped for
@@ -71,8 +62,8 @@ const WorkloadBoard = ({ mode }: { mode: "load" | "free" }) => {
                         </Badge>
                       )}
                     </p>
-                    <p className="text-xs capitalize text-muted-foreground">
-                      {row.user.role.replace(/_/g, " ")}
+                    <p className="text-xs text-muted-foreground">
+                      {roleTitle(row.user.role)}
                       {row.user.department?.name ? ` · ${row.user.department.name}` : ""}
                     </p>
                   </div>
@@ -95,7 +86,7 @@ const WorkloadBoard = ({ mode }: { mode: "load" | "free" }) => {
             )
           })}
         </ul>
-      )}
+      </PanelState>
     </Card>
   )
 }

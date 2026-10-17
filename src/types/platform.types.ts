@@ -16,6 +16,14 @@ export type SubscriptionStatus =
     /** No writing, by the company's. */
     | "cancelled";
 
+export const SUBSCRIPTION_STATUSES = [
+    "trialing",
+    "active",
+    "past_due",
+    "suspended",
+    "cancelled",
+] as const satisfies readonly SubscriptionStatus[];
+
 export interface IPlan {
     id: string;
     code: string;
@@ -266,6 +274,10 @@ export interface IPlatformTrend {
     revenue_by_plan: Array<{ name: string; companies: number; mrr_usd: number }>;
 }
 
+export const ANNOUNCEMENT_AUDIENCES = ["all", "trialing", "active"] as const;
+
+export type AnnouncementAudience = (typeof ANNOUNCEMENT_AUDIENCES)[number];
+
 /**
  * A notice from the platform to its customers.
  *
@@ -277,7 +289,7 @@ export interface IAnnouncement {
     id: string;
     title: string;
     body: string;
-    audience: "all" | "trialing" | "active";
+    audience: AnnouncementAudience;
     send_email: boolean;
     /** Null while it is a draft. */
     published_at: string | null;
@@ -286,6 +298,9 @@ export interface IAnnouncement {
     updated_at: string;
     _count?: { reads: number };
 }
+
+/** One that has gone out: only these have a publish date. */
+export type ISentAnnouncement = IAnnouncement & { published_at: string };
 
 /** What the publish call reports back about the mail it tried to send. */
 export interface IPublishResult extends IAnnouncement {

@@ -4,13 +4,17 @@ import {
   createInviteAction,
   revokeInviteAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/team-management/_inviteAction"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
+import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { ITeamInvite } from "@/types/people.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { format, isPast, parseISO } from "date-fns"
 import { Check, Copy, MailPlus, Trash2 } from "lucide-react"
 import { useState } from "react"
@@ -18,19 +22,8 @@ import { toast } from "sonner"
 import { invitesQuery } from "@/queries/people.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
-/**
- * Inviting operations members.
- *
- * Every invite is for `operations`, so there is no role picker. Sales and
- * project managers are created directly on the Members tab — handing out that
- * authority is a decision an admin makes deliberately rather than something
- * emailed to whoever opens a link first.
- *
- * The link is shown exactly once, on the response that creates it. Nothing can
- * read it back afterwards because only its hash is stored, so this screen
- * keeps it on screen until dismissed rather than tucking it into a toast that
- * vanishes in four seconds.
- */
+// Inviting operations members only; other roles are added on the Members tab. The
+// link can be read just once (only its hash is stored), so it stays until dismissed.
 
 const statusOf = (invite: ITeamInvite) => {
   if (invite.used_at) return { label: "used", tone: "secondary" as const }
@@ -40,42 +33,39 @@ const statusOf = (invite: ITeamInvite) => {
 }
 
 const InvitesPanel = () => {
-  const queryClient = useQueryClient()
   const [email, setEmail] = useState("")
   const [freshLink, setFreshLink] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [revoking, setRevoking] = useState<ITeamInvite | null>(null)
 
-  const { data, isLoading } = useQuery(invitesQuery())
+  const inviteList = useQuery(invitesQuery())
 
-  const invites = data?.data ?? []
+  const invites = inviteList.data?.data ?? []
 
-  const { mutate: create, isPending } = useMutation({
-    mutationFn: () => createInviteAction({ email: email.trim() }),
+  // No toast: the link appearing below the form is the confirmation.
+  const { run: createLink, isPending } = useActionMutation({
+    action: createInviteAction,
+    successMessage: false,
+    invalidateKeys: [queryKeys.teamInvites.all],
+    refresh: false,
     onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not create the invite")
-        return
-      }
-
-      const url = "data" in result ? result.data?.join_url : undefined
-      setFreshLink(url ?? null)
+      if (!result.success) return
+      setFreshLink(result.data.join_url)
       setCopied(false)
       setEmail("")
-      void queryClient.invalidateQueries({ queryKey: queryKeys.teamInvites.all })
     },
   })
 
-  const { mutate: revoke, isPending: isRevoking } = useMutation({
-    mutationFn: (id: string) => revokeInviteAction(id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not revoke")
-        return
-      }
-      toast.success("Invite revoked — the link stops working immediately")
-      void queryClient.invalidateQueries({ queryKey: queryKeys.teamInvites.all })
-    },
+  const { run: revokeInvite, isPending: isRevoking } = useActionMutation({
+    action: revokeInviteAction,
+    successMessage: "Invite revoked — the link stops working immediately",
+    invalidateKeys: [queryKeys.teamInvites.all],
+    refresh: false,
   })
+
+  const confirmRevoke = async () => {
+    if (revoking && (await revokeInvite(revoking.id))) setRevoking(null)
+  }
 
   const copy = async () => {
     if (!freshLink) return
@@ -84,9 +74,7 @@ const InvitesPanel = () => {
       await navigator.clipboard.writeText(freshLink)
       setCopied(true)
     } catch {
-      // Clipboard access is refused in plenty of ordinary situations. The link
-      // is on screen and selectable, so this is a missing convenience rather
-      // than a failure worth an error toast.
+      // Clipboard access is often refused; the link is on screen to copy by hand.
       toast.message("Copy it from the box above")
     }
   }
@@ -107,7 +95,7 @@ const InvitesPanel = () => {
           onSubmit={(event) => {
             event.preventDefault()
             if (!email.trim()) return
-            create()
+            void createLink({ email })
           }}
         >
           <div className="min-w-56 flex-1 space-y-1.5">
@@ -115,6 +103,7 @@ const InvitesPanel = () => {
             <Input
               id="invite-email"
               type="email"
+              autoComplete="off"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="colleague@example.com"
@@ -132,7 +121,6 @@ const InvitesPanel = () => {
           <div className="border-t bg-muted/40 px-5 py-4">
             <p className="text-sm font-medium">Send them this link</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {/* The honest warning: it genuinely cannot be recovered. */}
               This is the only time it can be read. If you lose it, revoke the invite and
               create another.
             </p>
@@ -159,13 +147,12 @@ const InvitesPanel = () => {
           </p>
         </CardHeader>
 
-        {isLoading && invites.length === 0 ? (
-          <div className="h-24 animate-pulse bg-muted/40" />
-        ) : invites.length === 0 ? (
-          <p className="px-6 py-10 text-center text-sm text-muted-foreground">
-            No invites sent yet.
-          </p>
-        ) : (
+        <PanelState
+          query={inviteList}
+          errorMessage="Invites did not load."
+          isEmpty={invites.length === 0}
+          empty={<EmptyState icon={MailPlus}>No invites sent yet.</EmptyState>}
+        >
           <ul className="divide-y">
             {invites.map((invite) => {
               const state = statusOf(invite)
@@ -193,7 +180,7 @@ const InvitesPanel = () => {
                         variant="outline"
                         size="sm"
                         disabled={isRevoking}
-                        onClick={() => revoke(invite.id)}
+                        onClick={() => setRevoking(invite)}
                       >
                         <Trash2 className="size-3.5" />
                         <span className="sr-only">Revoke</span>
@@ -204,8 +191,27 @@ const InvitesPanel = () => {
               )
             })}
           </ul>
-        )}
+        </PanelState>
       </Card>
+
+      <ConfirmDialog
+        open={revoking !== null}
+        onOpenChange={(open) => {
+          if (!open) setRevoking(null)
+        }}
+        title="Revoke this invite?"
+        description={
+          <>
+            The link sent to <span className="font-medium text-foreground">{revoking?.email}</span>{" "}
+            stops working immediately. You can create a new invite for them afterwards.
+          </>
+        }
+        variant="destructive"
+        confirmLabel="Revoke"
+        pendingLabel="Revoking..."
+        isPending={isRevoking}
+        onConfirm={() => void confirmRevoke()}
+      />
     </div>
   )
 }

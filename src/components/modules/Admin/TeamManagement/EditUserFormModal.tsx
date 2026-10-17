@@ -1,10 +1,8 @@
 "use client"
 
 import { updateUserAction } from "@/app/(dashboardLayout)/admin/dashboard/team-management/_action"
-import DepartmentField, {
-  NO_DEPARTMENT,
-  toDepartmentId,
-} from "@/components/modules/Admin/TeamManagement/DepartmentField"
+import DepartmentField from "@/components/modules/Admin/TeamManagement/DepartmentField"
+import RoleField from "@/components/modules/Admin/TeamManagement/RoleField"
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
 import { Button } from "@/components/ui/button"
@@ -20,24 +18,15 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { type IUser } from "@/types/user.types"
 import {
-  ASSIGNABLE_ROLES,
-  ROLE_LABELS,
+  NO_DEPARTMENT,
   editUserFormZodSchema,
+  isAssignableRole,
   type IEditUserFormValues,
 } from "@/zod/user.validation"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useRouter } from "next/navigation"
-import { toast } from "sonner"
 import { queryKeys } from "@/lib/queryKeys"
 
 type EditUserFormModalProps = {
@@ -46,22 +35,11 @@ type EditUserFormModalProps = {
   user: IUser | null
 }
 
-const ROLE_OPTIONS = ASSIGNABLE_ROLES.map((value) => ({ value, label: ROLE_LABELS[value] }))
-
-const isAssignableRole = (role: string): role is IEditUserFormValues["role"] =>
-  (ASSIGNABLE_ROLES as readonly string[]).includes(role)
-
 const EditUserForm = ({ user, onOpenChange }: { user: IUser; onOpenChange: (open: boolean) => void }) => {
-  const queryClient = useQueryClient()
-  const router = useRouter()
-
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IEditUserFormValues) =>
-      updateUserAction(user.id, {
-        ...values,
-        // The sentinel never leaves the form: the API wants null.
-        department_id: toDepartmentId(values.department_id),
-      }),
+  // No successMessage: the toast is the server's "User updated successfully".
+  const { run: saveMember, isPending } = useActionMutation({
+    action: (values: IEditUserFormValues) => updateUserAction(user.id, values),
+    invalidateKeys: [queryKeys.users.all],
   })
 
   const form = useForm({
@@ -72,25 +50,12 @@ const EditUserForm = ({ user, onOpenChange }: { user: IUser; onOpenChange: (open
       // rather than rendering a Select with a value that is not an option.
       role: isAssignableRole(user.role) ? user.role : "operations",
       department_id: user.department?.id ?? NO_DEPARTMENT,
-      // A checkbox again rather than a three-way picker: `pending` is not
-      // something an admin assigns, it is what the invite flow sets and what
-      // approval clears. Offering it here would let an active person be pushed
-      // back into limbo with nothing recording why.
+      // Active or suspended only: `pending` is set by the invite flow and cleared
+      // by approval, never assigned by hand.
       status: user.status === "suspended" ? "suspended" : "active",
     } satisfies IEditUserFormValues,
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        toast.error(result.message || "Failed to update team member")
-        return
-      }
-
-      toast.success(result.message || "Team member updated successfully")
-      onOpenChange(false)
-
-      void queryClient.invalidateQueries({ queryKey: queryKeys.users.all })
-      router.refresh()
+      if (await saveMember(value)) onOpenChange(false)
     },
   })
 
@@ -107,34 +72,18 @@ const EditUserForm = ({ user, onOpenChange }: { user: IUser; onOpenChange: (open
       className="space-y-5"
     >
       <form.Field name="full_name" validators={{ onChange: editUserFormZodSchema.shape.full_name }}>
-        {(field) => <AppField field={field} label="Full name" disabled={isPending} />}
+        {(field) => <AppField field={field} label="Full name" autoComplete="off" disabled={isPending} />}
       </form.Field>
 
       <form.Field name="phone">
-        {(field) => <AppField field={field} label="Phone" placeholder="Optional" disabled={isPending} />}
+        {(field) => (
+          <AppField field={field} label="Phone" autoComplete="off" placeholder="Optional" disabled={isPending} />
+        )}
       </form.Field>
 
       <form.Field name="role">
         {(field) => (
-          <div className="space-y-1.5">
-            <Label htmlFor={field.name}>Role</Label>
-            <Select
-              value={field.state.value}
-              onValueChange={(value) => field.handleChange(value as IEditUserFormValues["role"])}
-              disabled={isPending}
-            >
-              <SelectTrigger id={field.name} className="w-full">
-                <SelectValue placeholder="Choose a role" />
-              </SelectTrigger>
-              <SelectContent>
-                {ROLE_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <RoleField value={field.state.value} onChange={field.handleChange} disabled={isPending} />
         )}
       </form.Field>
 

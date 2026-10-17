@@ -1,12 +1,17 @@
 "use client"
 
 import { site } from "@/data/site"
+import {
+  markAllNotificationsReadAction,
+  markNotificationReadAction,
+} from "@/app/(dashboardLayout)/_notificationAction"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { markAllNotificationsRead, markNotificationRead } from "@/services/workspace.services"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { useQuery } from "@tanstack/react-query"
 import { formatDistanceToNow, parseISO } from "date-fns"
 import { Bell } from "lucide-react"
 import { useState } from "react"
@@ -30,34 +35,34 @@ import { queryKeys } from "@/lib/queryKeys"
  * fetched once the panel is actually opened.
  */
 
+// The list and the badge both change when anything is marked read.
+const BELL_KEYS = [queryKeys.notifications.all, queryKeys.notificationsUnread.all]
+
 const NotificationBell = () => {
-  const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
 
-  const { data: countData } = useQuery({ ...unreadCountQuery(), // Company notifications move faster than platform notices, but not by
-    // much: a task assignment can wait a minute. A tighter loop would be one
-    // request per user per interval, forever, for a number that changes a
-    // handful of times a day.
-    refetchInterval: 60 * 1000 })
+  // A task assignment can wait a minute; a tighter poll is a request per user,
+  // forever, for a number that changes a few times a day.
+  const { data: countData } = useQuery({ ...unreadCountQuery(), refetchInterval: 60 * 1000 })
 
-  const { data, isLoading } = useQuery({ ...notificationsQuery(), enabled: open })
+  const notificationsList = useQuery({ ...notificationsQuery(), enabled: open })
 
   const unread = countData?.data?.unread ?? 0
-  const notifications = data?.data ?? []
+  const notifications = notificationsList.data?.data ?? []
 
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.notificationsUnread.all })
-  }
-
-  const { mutate: markRead } = useMutation({
-    mutationFn: (id: string) => markNotificationRead(id),
-    onSuccess: refresh,
+  // Silent on success: the "new" badge going away is the confirmation.
+  const { run: markRead } = useActionMutation({
+    action: markNotificationReadAction,
+    successMessage: false,
+    invalidateKeys: BELL_KEYS,
+    refresh: false,
   })
 
-  const { mutate: markAll, isPending: isMarkingAll } = useMutation({
-    mutationFn: () => markAllNotificationsRead(),
-    onSuccess: refresh,
+  const { run: markAll, isPending: isMarkingAll } = useActionMutation({
+    action: markAllNotificationsReadAction,
+    successMessage: false,
+    invalidateKeys: BELL_KEYS,
+    refresh: false,
   })
 
   return (
@@ -89,20 +94,23 @@ const NotificationBell = () => {
               size="sm"
               className="h-7 text-xs"
               disabled={isMarkingAll}
-              onClick={() => markAll()}
+              onClick={() => void markAll(undefined)}
             >
               Mark all read
             </Button>
           )}
         </div>
 
-        {isLoading ? (
-          <div className="h-24 animate-pulse bg-muted/40" />
-        ) : notifications.length === 0 ? (
-          <p className="px-4 py-10 text-center text-sm text-muted-foreground">
-            Nothing yet. Work assigned to you, and notices from {site.name}, show up here.
-          </p>
-        ) : (
+        <PanelState
+          query={notificationsList}
+          errorMessage="Your notifications did not load."
+          isEmpty={notifications.length === 0}
+          empty={
+            <p className="px-4 py-10 text-center text-sm text-muted-foreground">
+              Nothing yet. Work assigned to you, and notices from {site.name}, show up here.
+            </p>
+          }
+        >
           <ScrollArea className="max-h-96">
             <ul className="divide-y">
               {notifications.map((notification) => (
@@ -143,7 +151,7 @@ const NotificationBell = () => {
                         variant="ghost"
                         size="sm"
                         className="h-6 text-xs"
-                        onClick={() => markRead(notification.id)}
+                        onClick={() => void markRead(notification.id)}
                       >
                         Mark read
                       </Button>
@@ -153,7 +161,7 @@ const NotificationBell = () => {
               ))}
             </ul>
           </ScrollArea>
-        )}
+        </PanelState>
       </PopoverContent>
     </Popover>
   )

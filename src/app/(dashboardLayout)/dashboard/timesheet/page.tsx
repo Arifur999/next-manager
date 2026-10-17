@@ -2,6 +2,7 @@ import TimesheetBoard from "@/components/modules/Admin/Time/TimesheetBoard";
 import { getUserInfo } from "@/services/auth.services";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Timesheet",
@@ -17,13 +18,10 @@ const TimesheetPage = async () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Timesheet</h1>
-        <p className="text-sm text-muted-foreground">
-          Your week. Log the non-billable hours too — utilization is only honest when the
-          denominator is real.
-        </p>
-      </div>
+      <PageHeader title="Timesheet">
+        Your week. Log the non-billable hours too — utilization is only honest when the
+        denominator is real.
+      </PageHeader>
 
       {/*
         Scoped to the viewer explicitly. The API only narrows to "own rows" for

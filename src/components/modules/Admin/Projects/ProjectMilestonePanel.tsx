@@ -7,17 +7,23 @@ import {
   reopenMilestoneAction,
   submitMilestoneAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/projects/_milestoneAction"
-import { Badge } from "@/components/ui/badge"
+import MilestoneRow from "@/components/modules/Admin/Projects/MilestoneRow"
+import { statusOf } from "@/components/modules/Admin/Projects/milestoneStatus"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
+import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import type { ApiResult } from "@/types/api.types"
 import type { IMilestone } from "@/types/project.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { format, isAfter, parseISO } from "date-fns"
-import { CalendarCheck, Plus, Trash2, Undo2 } from "lucide-react"
+import { milestoneFormZodSchema, type IMilestoneFormValues } from "@/zod/project.validation"
+import { useForm } from "@tanstack/react-form"
+import { useQuery } from "@tanstack/react-query"
+import { CalendarCheck, Plus } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { milestonesListQuery } from "@/queries/project.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -33,33 +39,17 @@ import { queryKeys } from "@/lib/queryKeys"
  * is how an on-time rate quietly becomes fiction.
  */
 
-const dayOf = (value: string) => parseISO(value.slice(0, 10))
+// Submit, accept, reopen and delete show their result on the row itself, so
+// only a failure gets a toast.
+const useMilestoneChange = (action: (id: string) => Promise<ApiResult<unknown>>) =>
+  useActionMutation({
+    action,
+    successMessage: false,
+    invalidateKeys: [queryKeys.milestones.all],
+    refresh: false,
+  })
 
-type Status = {
-  label: string
-  late: boolean
-  tone: "outline" | "secondary" | "destructive"
-}
-
-const statusOf = (milestone: IMilestone): Status => {
-  if (milestone.submitted_at) {
-    const late = isAfter(dayOf(milestone.submitted_at), dayOf(milestone.due_date))
-
-    if (milestone.accepted_at) {
-      return { label: late ? "accepted, late" : "accepted", late, tone: late ? "destructive" : "secondary" }
-    }
-
-    // Submitted and waiting. Worth its own state: delivered is not done, and
-    // rolling the two together hides work sitting on a client's desk.
-    return { label: late ? "submitted, late" : "submitted", late, tone: late ? "destructive" : "outline" }
-  }
-
-  if (isAfter(new Date(), dayOf(milestone.due_date))) {
-    return { label: "overdue", late: true, tone: "destructive" }
-  }
-
-  return { label: "due", late: false, tone: "outline" }
-}
+const emptyMilestone: IMilestoneFormValues = { title: "", due_date: "" }
 
 /** `canManage` is false for anybody the API refuses: the controls that change
  *  things come off rather than failing when pressed. */
@@ -70,80 +60,51 @@ const ProjectMilestonePanel = ({
   projectId: string
   canManage?: boolean
 }) => {
-  const queryClient = useQueryClient()
-  const [title, setTitle] = useState("")
-  const [dueDate, setDueDate] = useState("")
+  const [milestoneToDelete, setMilestoneToDelete] = useState<IMilestone | null>(null)
 
-  const { data, isLoading } = useQuery(milestonesListQuery(`project_id=${projectId}`))
+  const milestonesQuery = useQuery(milestonesListQuery(`project_id=${projectId}`))
 
-  const milestones = data?.data ?? []
+  const milestones = milestonesQuery.data?.data ?? []
 
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.milestones.all })
+  const { run: addMilestone, isPending: isCreating } = useActionMutation({
+    action: createMilestoneAction,
+    successMessage: "Milestone added",
+    invalidateKeys: [queryKeys.milestones.all],
+    refresh: false,
+  })
+
+  const { run: submit, isPending: isSubmitting } = useMilestoneChange(submitMilestoneAction)
+  const { run: accept, isPending: isAccepting } = useMilestoneChange(acceptMilestoneAction)
+  const { run: reopen, isPending: isReopening } = useMilestoneChange(reopenMilestoneAction)
+  const { run: remove, isPending: isRemoving } = useMilestoneChange(deleteMilestoneAction)
+
+  const form = useForm({
+    defaultValues: emptyMilestone,
+    validators: { onSubmit: milestoneFormZodSchema },
+    onSubmit: async ({ value, formApi }) => {
+      if (await addMilestone({ project_id: projectId, ...value })) formApi.reset()
+    },
+  })
+
+  const handleDelete = async () => {
+    if (milestoneToDelete && (await remove(milestoneToDelete.id))) setMilestoneToDelete(null)
   }
-
-  const run = (label: string) => ({
-    onSuccess: (result: { success: boolean; message?: string }) => {
-      if (!result.success) {
-        toast.error(result.message || `Failed to ${label}`)
-        return
-      }
-      refresh()
-    },
-  })
-
-  const { mutate: create, isPending: isCreating } = useMutation({
-    mutationFn: () =>
-      createMilestoneAction({ project_id: projectId, title: title.trim(), due_date: dueDate }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Failed to add the milestone")
-        return
-      }
-      toast.success("Milestone added")
-      setTitle("")
-      setDueDate("")
-      refresh()
-    },
-  })
-
-  const { mutate: submit, isPending: isSubmitting } = useMutation({
-    mutationFn: (id: string) => submitMilestoneAction(id),
-    ...run("submit"),
-  })
-
-  const { mutate: accept, isPending: isAccepting } = useMutation({
-    mutationFn: (id: string) => acceptMilestoneAction(id),
-    ...run("accept"),
-  })
-
-  const { mutate: reopen, isPending: isReopening } = useMutation({
-    mutationFn: (id: string) => reopenMilestoneAction(id),
-    ...run("reopen"),
-  })
-
-  const { mutate: remove, isPending: isRemoving } = useMutation({
-    mutationFn: (id: string) => deleteMilestoneAction(id),
-    ...run("delete"),
-  })
 
   const isBusy = isSubmitting || isAccepting || isReopening || isRemoving
 
   const delivered = milestones.filter((milestone) => milestone.submitted_at)
   const onTime = delivered.filter((milestone) => !statusOf(milestone).late)
+  // A fraction, not a percentage: "2 of 3" is honest about how few it is
+  // computed from; "67%" is not.
+  const deliverySummary =
+    delivered.length === 0 ? "Nothing delivered yet." : `${onTime.length} of ${delivered.length} delivered on time`
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
         <div>
           <CardTitle className="text-base">Milestones</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            {delivered.length === 0
-              ? "Nothing delivered yet."
-              : /* Stated as a fraction, not a percentage. "2 of 3" is honest
-                   about how few it is computed from; "67%" is not. */
-                `${onTime.length} of ${delivered.length} delivered on time`}
-          </p>
+          {milestonesQuery.isSuccess && <p className="text-sm text-muted-foreground">{deliverySummary}</p>}
         </div>
       </CardHeader>
 
@@ -152,125 +113,98 @@ const ProjectMilestonePanel = ({
         className="flex flex-wrap items-end gap-3 border-b px-5 py-4"
         onSubmit={(event) => {
           event.preventDefault()
-          if (!title.trim() || !dueDate) return
-          create()
+          event.stopPropagation()
+          void form.handleSubmit()
         }}
       >
-        <div className="min-w-48 flex-1 space-y-1.5">
-          <Label htmlFor="milestone-title">Milestone</Label>
-          <Input
-            id="milestone-title"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            placeholder="Design handover"
-            disabled={isCreating}
-          />
-        </div>
+        <form.Field name="title">
+          {(field) => (
+            <div className="min-w-48 flex-1 space-y-1.5">
+              <Label htmlFor="milestone-title">Milestone</Label>
+              <Input
+                id="milestone-title"
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(event) => field.handleChange(event.target.value)}
+                placeholder="Design handover"
+                disabled={isCreating}
+              />
+            </div>
+          )}
+        </form.Field>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="milestone-due">Due</Label>
-          <Input
-            id="milestone-due"
-            type="date"
-            value={dueDate}
-            onChange={(event) => setDueDate(event.target.value)}
-            disabled={isCreating}
-          />
-        </div>
+        <form.Field name="due_date">
+          {(field) => (
+            <div className="space-y-1.5">
+              <Label htmlFor="milestone-due">Due</Label>
+              <Input
+                id="milestone-due"
+                type="date"
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(event) => field.handleChange(event.target.value)}
+                disabled={isCreating}
+              />
+            </div>
+          )}
+        </form.Field>
 
-        <Button type="submit" disabled={isCreating || !title.trim() || !dueDate}>
-          <Plus className="size-4" />
-          Add
-        </Button>
+        <form.Subscribe selector={(state) => milestoneFormZodSchema.safeParse(state.values).success}>
+          {(isComplete) => (
+            <Button type="submit" disabled={isCreating || !isComplete}>
+              <Plus className="size-4" />
+              Add
+            </Button>
+          )}
+        </form.Subscribe>
       </form>
       )}
 
-      {isLoading && milestones.length === 0 ? (
-        <div className="h-32 animate-pulse bg-muted/40" />
-      ) : milestones.length === 0 ? (
-        <p className="flex flex-col items-center gap-2 px-6 py-12 text-center text-sm text-muted-foreground">
-          <CalendarCheck className="size-7" aria-hidden="true" />
-          No milestones yet. Without a dated promise there is nothing to be on time for.
-        </p>
-      ) : (
+      <PanelState
+        query={milestonesQuery}
+        errorMessage="The milestones did not load."
+        isEmpty={milestones.length === 0}
+        empty={
+          <EmptyState icon={CalendarCheck}>
+            No milestones yet. Without a dated promise there is nothing to be on time for.
+          </EmptyState>
+        }
+      >
         <ul className="divide-y">
-          {milestones.map((milestone) => {
-            const state = statusOf(milestone)
-
-            return (
-              <li
-                key={milestone.id}
-                className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{milestone.title}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    Due {format(dayOf(milestone.due_date), "dd MMM yyyy")}
-                    {milestone.submitted_at
-                      ? ` · submitted ${format(dayOf(milestone.submitted_at), "dd MMM")}`
-                      : ""}
-                  </p>
-                </div>
-
-                <div className="flex shrink-0 items-center gap-2">
-                  <Badge variant={state.tone} className="text-xs">
-                    {state.label}
-                  </Badge>
-
-                  {!milestone.submitted_at && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      disabled={isBusy}
-                      onClick={() => submit(milestone.id)}
-                    >
-                      Submit
-                    </Button>
-                  )}
-
-                  {milestone.submitted_at && !milestone.accepted_at && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      disabled={isBusy}
-                      onClick={() => accept(milestone.id)}
-                    >
-                      Accept
-                    </Button>
-                  )}
-
-                  {milestone.submitted_at && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      disabled={isBusy}
-                      onClick={() => reopen(milestone.id)}
-                      title="Undo the submission so it can be corrected"
-                    >
-                      <Undo2 className="size-3.5" />
-                      <span className="sr-only">Reopen</span>
-                    </Button>
-                  )}
-
-                  {canManage && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={isBusy}
-                    onClick={() => remove(milestone.id)}
-                  >
-                    <Trash2 className="size-3.5" />
-                    <span className="sr-only">Delete</span>
-                  </Button>
-                  )}
-                </div>
-              </li>
-            )
-          })}
+          {milestones.map((milestone) => (
+            <MilestoneRow
+              key={milestone.id}
+              milestone={milestone}
+              canManage={canManage}
+              isBusy={isBusy}
+              onSubmit={(id) => void submit(id)}
+              onAccept={(id) => void accept(id)}
+              onReopen={(id) => void reopen(id)}
+              onDelete={setMilestoneToDelete}
+            />
+          ))}
         </ul>
-      )}
+      </PanelState>
+
+      <ConfirmDialog
+        open={milestoneToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setMilestoneToDelete(null)
+        }}
+        title="Delete this milestone?"
+        description={
+          <>
+            <span className="font-medium text-foreground">{milestoneToDelete?.title}</span> and its
+            delivery record go for good. A missed milestone deleted here also stops counting against
+            the on-time rate.
+          </>
+        }
+        variant="destructive"
+        confirmLabel="Delete"
+        pendingLabel="Deleting..."
+        isPending={isRemoving}
+        onConfirm={() => void handleDelete()}
+      />
     </Card>
   )
 }

@@ -32,7 +32,7 @@ import { kpiQuery } from "@/queries/insights.queries"
 const SalesDashboard = ({ range }: { range: string }) => {
   const { data, isLoading, isError, isFetching, refetch } = useQuery(kpiQuery<SalesKpi>("sales", range))
 
-  const kpi = data?.data as SalesKpi | undefined
+  const kpi = data?.data
 
   if (isLoading && !kpi) {
     return <KpiSkeleton />

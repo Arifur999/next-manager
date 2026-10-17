@@ -3,6 +3,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { teamPayoutsListQuery } from "@/queries/spending.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Team Payouts",
@@ -14,13 +15,10 @@ const PayoutsPage = async () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Team payouts</h1>
-        <p className="text-sm text-muted-foreground">
-          What the agency pays its own people. A payout tied to a project counts as that
-          project&apos;s team cost.
-        </p>
-      </div>
+      <PageHeader title="Team payouts">
+        What the agency pays its own people. A payout tied to a project counts as that
+        project&apos;s team cost.
+      </PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
         <PayoutsTable />

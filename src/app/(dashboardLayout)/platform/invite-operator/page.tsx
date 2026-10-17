@@ -1,6 +1,7 @@
 import { site } from "@/data/site"
 import PlatformInvites from "@/components/modules/Platform/PlatformInvites";
 import type { Metadata } from "next";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Invite operator",
@@ -17,14 +18,11 @@ export const metadata: Metadata = {
  */
 const InviteOperatorPage = () => (
   <div className="space-y-6">
-    <div>
-      <h1 className="text-2xl font-semibold tracking-tight">Invite an operator</h1>
-      <p className="text-sm text-muted-foreground">
-        Somebody who helps you run {site.name}: they see every customer and can suspend any
-        of them. They choose their own password and you approve them; a link alone does
-        not create an operator.
-      </p>
-    </div>
+    <PageHeader title="Invite an operator">
+      Somebody who helps you run {site.name}: they see every customer and can suspend any
+      of them. They choose their own password and you approve them; a link alone does
+      not create an operator.
+    </PageHeader>
 
     <PlatformInvites />
   </div>

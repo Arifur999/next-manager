@@ -2,83 +2,55 @@
 
 import {
   createLeaveTypeAction,
-  updateLeaveTypeAction,
+  setLeaveTypeActiveAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/leave-settings/_action"
 import EmptyState from "@/components/shared/state/EmptyState"
-import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import AppField from "@/components/shared/form/AppField"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { ILeaveType } from "@/types/people.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { leaveTypeFormZodSchema, type ILeaveTypeFormValues } from "@/zod/people.validation"
+import { useForm } from "@tanstack/react-form"
+import { useQuery } from "@tanstack/react-query"
 import { CalendarOff, Power } from "lucide-react"
-import { useState } from "react"
-import { toast } from "sonner"
 import { leaveTypesQuery } from "@/queries/people.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
-/**
- * The kinds of leave an agency gives.
- *
- * A kind is retired, never deleted: leave already approved against it has to
- * keep saying what it was for, and a request pointing at a row that no longer
- * exists is a hole in somebody's record rather than a tidy list. That is why
- * there is a Power button here and no bin, unlike the category boards this
- * otherwise follows.
- *
- * Zero days means uncapped, not none. The distinction is the whole reason
- * unpaid leave works — the balance reports `null` for it and the card says "no
- * limit", where a zero allowance that refused every request would be worse than
- * not having the feature.
- */
+// A renamed or retired kind changes what the balance card can offer.
+const LEAVE_TYPE_KEYS = [queryKeys.leaveTypes.all, queryKeys.leaveBalance.all]
+
+const newLeaveType: ILeaveTypeFormValues = { name: "", days_per_year: "", is_paid: true }
+
+// The kinds of leave. A kind is retired, never deleted, so leave approved against
+// it keeps saying what it was for. Zero days means uncapped ("no limit"), not none.
 const LeaveTypeBoard = () => {
-  const queryClient = useQueryClient()
-  const [name, setName] = useState("")
-  const [days, setDays] = useState("")
-  const [isPaid, setIsPaid] = useState(true)
+  const typeList = useQuery(leaveTypesQuery())
+  const types = typeList.data?.data ?? []
 
-  const { data, isLoading } = useQuery(leaveTypesQuery())
-  const types = data?.data ?? []
-
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.leaveTypes.all })
-    // A renamed or retired kind changes what the balance card can offer.
-    void queryClient.invalidateQueries({ queryKey: queryKeys.leaveBalance.all })
-  }
-
-  const { mutate: add, isPending } = useMutation({
-    mutationFn: () =>
-      createLeaveTypeAction({
-        name: name.trim(),
-        days_per_year: Number(days || 0),
-        is_paid: isPaid,
-      }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not add it")
-        return
-      }
-      toast.success("Added")
-      setName("")
-      setDays("")
-      setIsPaid(true)
-      refresh()
-    },
+  const { run: addLeaveType, isPending } = useActionMutation({
+    action: createLeaveTypeAction,
+    successMessage: "Added",
+    invalidateKeys: LEAVE_TYPE_KEYS,
+    refresh: false,
   })
 
-  const { mutate: toggle } = useMutation({
-    mutationFn: (type: ILeaveType) =>
-      updateLeaveTypeAction(type.id, { is_active: !type.is_active }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not update it")
-        return
-      }
-      toast.success("Saved")
-      refresh()
+  const { run: toggleRetired } = useActionMutation({
+    action: (type: ILeaveType) => setLeaveTypeActiveAction(type.id, { is_active: !type.is_active }),
+    successMessage: "Saved",
+    invalidateKeys: LEAVE_TYPE_KEYS,
+    refresh: false,
+  })
+
+  const form = useForm({
+    defaultValues: newLeaveType,
+    validators: { onSubmit: leaveTypeFormZodSchema },
+    onSubmit: async ({ value, formApi }) => {
+      if (await addLeaveType(value)) formApi.reset()
     },
   })
 
@@ -93,59 +65,62 @@ const LeaveTypeBoard = () => {
           className="space-y-4 px-6 pb-6"
           onSubmit={(event) => {
             event.preventDefault()
-            if (!name.trim()) return
-            add()
+            void form.handleSubmit()
           }}
         >
-          <div className="space-y-1.5">
-            <Label htmlFor="leave-type-name">Name</Label>
-            <Input
-              id="leave-type-name"
-              value={name}
-              maxLength={60}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Study leave"
-              disabled={isPending}
-            />
-          </div>
+          <form.Field name="name">
+            {(field) => (
+              <AppField field={field} label="Name" maxLength={60} placeholder="Study leave" disabled={isPending} />
+            )}
+          </form.Field>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="leave-type-days">Days a year</Label>
-            <Input
-              id="leave-type-days"
-              type="number"
-              min={0}
-              max={365}
-              step="1"
-              value={days}
-              placeholder="0"
-              onChange={(event) => setDays(event.target.value)}
-              disabled={isPending}
-            />
-            <p className="text-xs text-muted-foreground">
-              Leave it at zero for a kind you want recorded but not capped — that reads as
-              &ldquo;no limit&rdquo;, not as nothing left.
-            </p>
-          </div>
+          <form.Field name="days_per_year">
+            {(field) => (
+              <AppField
+                field={field}
+                label="Days a year"
+                type="number"
+                min={0}
+                max={365}
+                step="1"
+                placeholder="0"
+                disabled={isPending}
+                description={
+                  <>
+                    Leave it at zero for a kind you want recorded but not capped — that reads as
+                    &ldquo;no limit&rdquo;, not as nothing left.
+                  </>
+                }
+              />
+            )}
+          </form.Field>
 
-          <div className="flex items-start gap-2.5">
-            <Checkbox
-              id="leave-type-paid"
-              checked={isPaid}
-              onCheckedChange={(checked) => setIsPaid(checked === true)}
-              disabled={isPending}
-            />
-            <div className="grid gap-1 leading-none">
-              <Label htmlFor="leave-type-paid">Paid</Label>
-              <p className="text-xs text-muted-foreground">
-                Unpaid leave is still worth recording — it explains an absence.
-              </p>
-            </div>
-          </div>
+          <form.Field name="is_paid">
+            {(field) => (
+              <div className="flex items-start gap-2.5">
+                <Checkbox
+                  id="leave-type-paid"
+                  checked={field.state.value}
+                  onCheckedChange={(checked) => field.handleChange(checked === true)}
+                  disabled={isPending}
+                />
+                <div className="grid gap-1 leading-none">
+                  <Label htmlFor="leave-type-paid">Paid</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Unpaid leave is still worth recording — it explains an absence.
+                  </p>
+                </div>
+              </div>
+            )}
+          </form.Field>
 
-          <Button type="submit" disabled={isPending || !name.trim()} className="w-full">
-            Add
-          </Button>
+          <form.Subscribe selector={(state) => state.values.name.trim() === ""}>
+            {(isNameBlank) => (
+              <Button type="submit" disabled={isPending || isNameBlank} className="w-full">
+                Add
+              </Button>
+            )}
+          </form.Subscribe>
         </form>
       </Card>
 
@@ -158,13 +133,16 @@ const LeaveTypeBoard = () => {
           </p>
         </CardHeader>
 
-        {isLoading && types.length === 0 ? (
-          <LoadingBlock />
-        ) : types.length === 0 ? (
-          <EmptyState icon={CalendarOff}>
-            No kinds of leave yet. Nobody can ask to be away until there is one.
-          </EmptyState>
-        ) : (
+        <PanelState
+          query={typeList}
+          errorMessage="The kinds of leave did not load."
+          isEmpty={types.length === 0}
+          empty={
+            <EmptyState icon={CalendarOff}>
+              No kinds of leave yet. Nobody can ask to be away until there is one.
+            </EmptyState>
+          }
+        >
           <ul className="divide-y">
             {types.map((type) => (
               <li
@@ -190,7 +168,7 @@ const LeaveTypeBoard = () => {
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={() => toggle(type)}
+                  onClick={() => void toggleRetired(type)}
                   aria-label={type.is_active ? `Retire ${type.name}` : `Offer ${type.name} again`}
                   title={type.is_active ? "Retire" : "Offer again"}
                 >
@@ -199,7 +177,7 @@ const LeaveTypeBoard = () => {
               </li>
             ))}
           </ul>
-        )}
+        </PanelState>
       </Card>
     </div>
   )

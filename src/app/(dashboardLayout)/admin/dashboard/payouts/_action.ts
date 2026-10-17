@@ -1,28 +1,11 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
+import { requireId, runAction, runValidatedAction } from "@/lib/runAction"
 import { createTeamPayout, deleteTeamPayout } from "@/services/spending.services"
-import type { ITeamPayout } from "@/types/spending.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+import { createTeamPayoutServerZodSchema } from "@/zod/spending.validation"
 
-export const createTeamPayoutAction = async (
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<ITeamPayout> | ApiErrorResponse> => {
-    try {
-        return await createTeamPayout(payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to record payout") }
-    }
-}
+export const createTeamPayoutAction = async (values: unknown) =>
+    runValidatedAction(createTeamPayoutServerZodSchema, values, "Failed to record payout", createTeamPayout)
 
-export const deleteTeamPayoutAction = async (
-    id: string,
-): Promise<ApiResponse<{ message: string }> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid payout id" }
-
-    try {
-        return await deleteTeamPayout(id)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to delete payout") }
-    }
-}
+export const deleteTeamPayoutAction = async (id: string) =>
+    requireId(id, "payout") ?? runAction("Failed to delete payout", () => deleteTeamPayout(id))

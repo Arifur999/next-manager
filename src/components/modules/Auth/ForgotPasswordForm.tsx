@@ -38,7 +38,7 @@ const ForgotPasswordForm = () => {
   })
 
   const form = useForm({
-    defaultValues: { email: "" } as IForgotPasswordFormValues,
+    defaultValues: { email: "" } satisfies IForgotPasswordFormValues,
     onSubmit: async ({ value }) => {
       await mutateAsync(value)
       // Shown whatever came back. A failure that is visible only for real

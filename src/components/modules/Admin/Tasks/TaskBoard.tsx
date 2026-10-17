@@ -2,19 +2,44 @@
 
 import CreateTaskModal from "@/components/modules/Admin/Tasks/CreateTaskModal"
 import TaskCalendar from "@/components/modules/Admin/Tasks/TaskCalendar"
-import TaskCard from "@/components/modules/Admin/Tasks/TaskCard"
+import TaskColumns from "@/components/modules/Admin/Tasks/TaskColumns"
+import TaskList from "@/components/modules/Admin/Tasks/TaskList"
 import EmptyState from "@/components/shared/state/EmptyState"
+import ErrorState from "@/components/shared/state/ErrorState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { useQuery } from "@tanstack/react-query"
-import { format, isBefore, startOfToday } from "date-fns"
 import { ListChecks } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 import { tasksListQuery, workflowStatusesListQuery } from "@/queries/work.queries"
 
+type TaskFilters = {
+  mine: boolean
+  overdue: boolean
+  clientOwner: boolean
+  due: string | null
+  completed: boolean
+}
+
+// Names the view that is empty: "No tasks yet" on a filtered view would be a
+// claim about the whole board.
+const emptyMessageFor = ({ mine, overdue, clientOwner, due, completed }: TaskFilters) => {
+  if (overdue) return "Nothing is late."
+  if (due === "today") return "Nothing is due today."
+  if (due === "upcoming") return "Nothing due in the next seven days."
+  if (completed) return "Nothing finished yet."
+  if (mine) return "Nothing assigned to you."
+  if (clientOwner) return "No work on the clients you brought in yet."
+  return "No tasks yet."
+}
+
 /**
- * The task board.
+ * The task board, and every other view of tasks over the same query.
+ *
+ * Board, List, Overdue and My Tasks are sidebar entries pointing at this one
+ * component with a different URL: four pages would be four places to fix the
+ * same bug. Overdue is filtered on the SERVER, not here: filtering whatever
+ * page arrived would hide late work rather than find it.
  *
  * `canManage` decides whether this is a board somebody works from or one they
  * only read. Sales gets the second: they open it to see where a client they
@@ -56,32 +81,74 @@ const TaskBoard = ({
     .filter(Boolean)
     .join("&")
 
-  const { data, isLoading } = useQuery(tasksListQuery(query))
+  const tasksQuery = useQuery(tasksListQuery(query))
 
   // The columns are the agency's own now, so the board asks for them instead
   // of carrying a list of four words that used to be true.
-  const { data: statusData } = useQuery(workflowStatusesListQuery("kind=task"))
+  const statusesQuery = useQuery(workflowStatusesListQuery("kind=task"))
 
-  const tasks = data?.data ?? []
-  const statuses = ((statusData?.data ?? [])).filter(
+  const tasks = tasksQuery.data?.data ?? []
+  const statuses = ((statusesQuery.data?.data ?? [])).filter(
     // A retired column still holds work, so it is drawn when something is on
     // it - just never offered as somewhere to put anything new.
     (status) => status.is_active || tasks.some((task) => task.status.id === status.id)
   )
 
-  const empty = overdue
-    ? "Nothing is late."
-    : due === "today"
-      ? "Nothing is due today."
-      : due === "upcoming"
-        ? "Nothing due in the next seven days."
-        : completed
-          ? "Nothing finished yet."
-    : mine
-      ? "Nothing assigned to you."
-      : clientOwner
-        ? "No work on the clients you brought in yet."
-        : "No tasks yet."
+  const renderTasks = () => {
+    if (!tasksQuery.data && tasksQuery.isError) {
+      return (
+        <Card>
+          <ErrorState
+            message="The tasks did not load."
+            onRetry={() => void tasksQuery.refetch()}
+            isRetrying={tasksQuery.isFetching}
+          />
+        </Card>
+      )
+    }
+
+    if (tasksQuery.isLoading && tasks.length === 0) {
+      return (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {(statuses.length > 0 ? statuses : [null, null, null, null]).map((column, index) => (
+            <Card key={column?.id ?? index} className="overflow-hidden p-0">
+              <LoadingBlock height="h-48" />
+            </Card>
+          ))}
+        </div>
+      )
+    }
+
+    if (tasks.length === 0) {
+      return (
+        <Card>
+          <EmptyState icon={ListChecks}>
+            {emptyMessageFor({ mine, overdue, clientOwner, due, completed })}
+          </EmptyState>
+        </Card>
+      )
+    }
+
+    // What lands this week, rather than where work is stuck: a third view over
+    // the same query, not a different screen.
+    if (asCalendar) return <TaskCalendar tasks={tasks} />
+    if (asList) return <TaskList tasks={tasks} />
+
+    // Without its columns the board would draw nothing, tasks and all.
+    if (!statusesQuery.data && statusesQuery.isError) {
+      return (
+        <Card>
+          <ErrorState
+            message="The board's columns did not load."
+            onRetry={() => void statusesQuery.refetch()}
+            isRetrying={statusesQuery.isFetching}
+          />
+        </Card>
+      )
+    }
+
+    return <TaskColumns tasks={tasks} statuses={statuses} />
+  }
 
   return (
     <div className="space-y-4">
@@ -91,91 +158,7 @@ const TaskBoard = ({
         </div>
       )}
 
-      {isLoading && tasks.length === 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {(statuses.length > 0 ? statuses : [null, null, null, null]).map((column, index) => (
-            <Card key={column?.id ?? index} className="overflow-hidden p-0">
-              <LoadingBlock height="h-48" />
-            </Card>
-          ))}
-        </div>
-      ) : tasks.length === 0 ? (
-        <Card>
-          <EmptyState icon={ListChecks}>{empty}</EmptyState>
-        </Card>
-      ) : asCalendar ? (
-        // What lands this week, rather than where work is stuck. A third
-        // view over the same query, not a different screen.
-        <TaskCalendar tasks={tasks} />
-      ) : asList ? (
-        // One flat list, newest deadline first. A board is for seeing where
-        // work is stuck; a list is for working through it, and a column of
-        // four late tasks beside three empty columns says nothing.
-        <Card className="gap-0 overflow-hidden p-0">
-          <ul className="divide-y">
-            {tasks.map((task) => (
-              <li key={task.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-                <div className="min-w-48 flex-1">
-                  <p className="font-medium">{task.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {task.project?.name ?? "No project"}
-                    {task.assignee ? ` · ${task.assignee.full_name}` : " · unassigned"}
-                  </p>
-                </div>
-
-                <Badge variant="outline">{task.status.name}</Badge>
-
-                {task.due_date && (
-                  <span
-                    className={
-                      isBefore(new Date(task.due_date), startOfToday()) &&
-                      task.status.category !== "done"
-                        ? "text-sm font-medium"
-                        : "text-sm text-muted-foreground"
-                    }
-                  >
-                    {format(new Date(task.due_date), "d MMM")}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {statuses.map((column) => {
-            const columnTasks = tasks.filter((task) => task.status.id === column.id)
-
-            return (
-              <Card key={column.id} className="gap-0 overflow-hidden p-0">
-                <CardHeader className="flex flex-row items-center justify-between border-b px-4 py-3">
-                  <CardTitle className="text-sm">
-                    {column.name}
-                    {!column.is_active && (
-                      <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-                        (off)
-                      </span>
-                    )}
-                  </CardTitle>
-                  <span className="text-xs text-muted-foreground tabular-nums">
-                    {columnTasks.length}
-                  </span>
-                </CardHeader>
-
-                <div className="space-y-2 p-3">
-                  {columnTasks.length === 0 ? (
-                    <p className="py-6 text-center text-xs text-muted-foreground">Empty</p>
-                  ) : (
-                    columnTasks.map((task) => (
-                      <TaskCard key={task.id} task={task} statuses={statuses} />
-                    ))
-                  )}
-                </div>
-              </Card>
-            )
-          })}
-        </div>
-      )}
+      {renderTasks()}
     </div>
   )
 }

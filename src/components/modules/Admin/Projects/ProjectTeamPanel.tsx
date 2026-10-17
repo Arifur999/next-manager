@@ -1,5 +1,12 @@
 "use client"
 
+import {
+  assignProjectMemberAction,
+  removeProjectMemberAction,
+} from "@/app/(dashboardLayout)/admin/dashboard/projects/_action"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
+import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,12 +18,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { assignProjectMember, removeProjectMember } from "@/services/project.services"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IProjectMember } from "@/types/project.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { UserMinus, UserPlus } from "lucide-react"
+import { projectMemberFormZodSchema, type IProjectMemberFormValues } from "@/zod/project.validation"
+import { useForm } from "@tanstack/react-form"
+import { useQuery } from "@tanstack/react-query"
+import { UserMinus, UserPlus, Users } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { projectMembersQuery } from "@/queries/project.queries"
 import { queryKeys } from "@/lib/queryKeys"
 import { usersListQuery } from "@/queries/people.queries"
@@ -29,6 +37,12 @@ const initialsOf = (name: string) =>
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("") || "?"
 
+const emptyAssignment: IProjectMemberFormValues = { user_id: "", role_on_project: "" }
+
+// Who is on a project shows on the team tab, the people overview and the
+// member count on the project itself.
+const teamKeys = [queryKeys.projectMembers.all, queryKeys.assignmentOverview.all, queryKeys.projects.all]
+
 /** `canManage` is false for anybody the API refuses: the controls that change
  *  things come off rather than failing when pressed. */
 const ProjectTeamPanel = ({
@@ -38,59 +52,40 @@ const ProjectTeamPanel = ({
   projectId: string
   canManage?: boolean
 }) => {
-  const queryClient = useQueryClient()
-  const [userId, setUserId] = useState("")
-  const [roleOnProject, setRoleOnProject] = useState("")
+  const [memberToRemove, setMemberToRemove] = useState<IProjectMember | null>(null)
 
-  const { data: membersData } = useQuery(projectMembersQuery(projectId))
+  const membersQuery = useQuery(projectMembersQuery(projectId))
   const { data: usersData } = useQuery(usersListQuery())
 
-  const members = membersData?.data ?? []
+  const members = membersQuery.data?.data ?? []
   const users = ((usersData?.data ?? [])).filter((user) => user.status === "active")
 
-  const { mutateAsync: assign, isPending: isAssigning } = useMutation({
-    mutationFn: () =>
-      assignProjectMember({ project_id: projectId, user_id: userId, role_on_project: roleOnProject }),
+  const { run: assignMember, isPending: isAssigning } = useActionMutation({
+    action: assignProjectMemberAction,
+    // The server updates the role when the person is already on the project,
+    // so this is also how a role gets changed; hence "Saved".
+    successMessage: "Saved",
+    invalidateKeys: teamKeys,
+    refresh: false,
   })
 
-  const { mutateAsync: remove } = useMutation({
-    mutationFn: (id: string) => removeProjectMember(id),
+  const { run: removeMember, isPending: isRemoving } = useActionMutation({
+    action: removeProjectMemberAction,
+    successMessage: memberToRemove ? `${memberToRemove.user.full_name} removed from the project` : undefined,
+    invalidateKeys: teamKeys,
+    refresh: false,
   })
 
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.projectMembers.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.assignmentOverview.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all })
-  }
+  const form = useForm({
+    defaultValues: emptyAssignment,
+    validators: { onSubmit: projectMemberFormZodSchema },
+    onSubmit: async ({ value, formApi }) => {
+      if (await assignMember({ project_id: projectId, ...value })) formApi.reset()
+    },
+  })
 
-  const handleAssign = async () => {
-    if (!userId) return
-
-    const result = await assign()
-
-    if (!result.success) {
-      toast.error(result.message || "Failed to assign")
-      return
-    }
-
-    // The server updates the role when the person is already on the project, so
-    // this is also how a role gets changed — hence the wording.
-    toast.success("Saved")
-    setUserId("")
-    setRoleOnProject("")
-    refresh()
-  }
-
-  const handleRemove = async (member: IProjectMember) => {
-    const result = await remove(member.id)
-
-    if (!result.success) {
-      toast.error(result.message || "Failed to remove")
-      return
-    }
-
-    toast.success(`${member.user.full_name} removed from the project`)
-    refresh()
+  const handleRemove = async () => {
+    if (memberToRemove && (await removeMember(memberToRemove.id))) setMemberToRemove(null)
   }
 
   // Somebody already on the project is still offered: re-assigning is how the
@@ -103,39 +98,62 @@ const ProjectTeamPanel = ({
 
       {canManage && (
       <div className="flex flex-wrap gap-2 border-b px-5 py-4">
-        <Select value={userId} onValueChange={setUserId} disabled={isAssigning || users.length === 0}>
-          <SelectTrigger className="min-w-0 flex-1">
-            <SelectValue placeholder={users.length === 0 ? "Invite a team member first" : "Choose someone"} />
-          </SelectTrigger>
-          <SelectContent>
-            {users.map((user) => (
-              <SelectItem key={user.id} value={user.id}>
-                {user.full_name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <form.Field name="user_id">
+          {(field) => (
+            <Select
+              value={field.state.value}
+              onValueChange={field.handleChange}
+              disabled={isAssigning || users.length === 0}
+            >
+              <SelectTrigger className="min-w-0 flex-1" aria-label="Team member to assign">
+                <SelectValue placeholder={users.length === 0 ? "Invite a team member first" : "Choose someone"} />
+              </SelectTrigger>
+              <SelectContent>
+                {users.map((user) => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.full_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </form.Field>
 
-        <Input
-          value={roleOnProject}
-          onChange={(event) => setRoleOnProject(event.target.value)}
-          placeholder="Role on this project"
-          className="w-44"
-          disabled={isAssigning}
-        />
+        <form.Field name="role_on_project">
+          {(field) => (
+            <Input
+              value={field.state.value ?? ""}
+              onBlur={field.handleBlur}
+              onChange={(event) => field.handleChange(event.target.value)}
+              placeholder="Role on this project"
+              aria-label="Role on this project"
+              className="w-44"
+              disabled={isAssigning}
+            />
+          )}
+        </form.Field>
 
-        <Button type="button" onClick={() => void handleAssign()} disabled={isAssigning || !userId}>
-          <UserPlus className="size-4" />
-          Assign
-        </Button>
+        <form.Subscribe selector={(state) => projectMemberFormZodSchema.safeParse(state.values).success}>
+          {(isComplete) => (
+            <Button type="button" onClick={() => void form.handleSubmit()} disabled={isAssigning || !isComplete}>
+              <UserPlus className="size-4" />
+              Assign
+            </Button>
+          )}
+        </form.Subscribe>
       </div>
       )}
 
-      {members.length === 0 ? (
-        <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-          Nobody assigned yet.
-        </p>
-      ) : (
+      <PanelState
+        query={membersQuery}
+        errorMessage="The team did not load."
+        isEmpty={members.length === 0}
+        empty={
+          <EmptyState icon={Users} hint={canManage ? "Choose someone above to put them on this project." : undefined}>
+            Nobody assigned yet.
+          </EmptyState>
+        }
+      >
         <ul className="divide-y">
           {members.map((member) => (
             <li key={member.id} className="flex items-center gap-3 px-5 py-3">
@@ -157,7 +175,7 @@ const ProjectTeamPanel = ({
                 type="button"
                 variant="ghost"
                 size="icon"
-                onClick={() => void handleRemove(member)}
+                onClick={() => setMemberToRemove(member)}
               >
                 <UserMinus className="size-4" />
                 <span className="sr-only">Remove {member.user.full_name}</span>
@@ -166,7 +184,26 @@ const ProjectTeamPanel = ({
             </li>
           ))}
         </ul>
-      )}
+      </PanelState>
+
+      <ConfirmDialog
+        open={memberToRemove !== null}
+        onOpenChange={(open) => {
+          if (!open) setMemberToRemove(null)
+        }}
+        title="Remove from this project?"
+        description={
+          <>
+            <span className="font-medium text-foreground">{memberToRemove?.user.full_name}</span> comes
+            off the team for this project. Their tasks and logged hours stay as they are.
+          </>
+        }
+        variant="destructive"
+        confirmLabel="Remove"
+        pendingLabel="Removing..."
+        isPending={isRemoving}
+        onConfirm={() => void handleRemove()}
+      />
     </Card>
   )
 }

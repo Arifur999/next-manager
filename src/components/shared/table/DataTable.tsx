@@ -1,6 +1,5 @@
 "use client";
 
-import { pageCountOf } from "@/types/api.types";
 import { useEffect, useRef } from "react";
 import DataTableContent from "./DataTableContent";
 import DataTablePagination from "./DataTablePagination";
@@ -35,7 +34,7 @@ const DataTable = <TData,>(props: DataTableProps<TData>) => {
 
   // A server page that stopped existing (its last row was deleted) moves to the
   // last real page, replacing the URL so Back never lands on the empty page.
-  const serverPageCount = pagination && meta ? Math.max(pageCountOf(meta) ?? 1, 1) : undefined;
+  const serverPageCount = pagination && meta ? Math.max(meta.totalPages ?? 1, 1) : undefined;
   useEffect(() => {
     if (!pagination || serverPageCount === undefined || isFetching) return;
     if (pagination.state.pageIndex < serverPageCount) return;

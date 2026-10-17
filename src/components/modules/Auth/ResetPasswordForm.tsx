@@ -1,7 +1,7 @@
 "use client"
 
 import { resetPasswordAction } from "@/app/(commonLayout)/(auth)/reset-password/_action"
-import AppField from "@/components/shared/form/AppField"
+import PasswordField from "@/components/modules/Auth/PasswordField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
 import { Button } from "@/components/ui/button"
 import {
@@ -14,14 +14,13 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { resetPasswordFormZodSchema, type IResetPasswordFormValues } from "@/zod/auth.validation"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation } from "@tanstack/react-query"
-import { Eye, EyeOff, LinkIcon } from "lucide-react"
+import { LinkIcon } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { focusFirstInvalid } from "@/lib/focusFirstInvalid"
 import { useRef, useState } from "react"
-import { toast } from "sonner"
 
 /**
  * Setting a new password from an emailed link.
@@ -39,29 +38,21 @@ const ResetPasswordForm = () => {
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get("token") ?? ""
-  const [showPassword, setShowPassword] = useState(false)
   const [confirm, setConfirm] = useState("")
   const formRef = useRef<HTMLFormElement>(null)
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IResetPasswordFormValues) => resetPasswordAction(values),
+  // A dead link gets one message for expired, spent and unknown, from the server.
+  const { run: resetPassword, isPending } = useActionMutation({
+    action: resetPasswordAction,
+    successMessage: "Password reset. Sign in with the new one.",
+    refresh: false,
   })
 
   const form = useForm({
-    defaultValues: { token, new_password: "" } as IResetPasswordFormValues,
+    defaultValues: { token, new_password: "" } satisfies IResetPasswordFormValues,
     onSubmitInvalid: () => focusFirstInvalid(formRef.current),
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        // "That reset link is no longer valid. Ask for a new one." — one
-        // message for expired, spent and unknown, and it comes from the server.
-        toast.error(result.message || "Could not reset your password")
-        return
-      }
-
-      toast.success("Password reset. Sign in with the new one.")
-      router.replace("/login")
+      if (await resetPassword(value)) router.replace("/login")
     },
   })
 
@@ -123,26 +114,7 @@ const ResetPasswordForm = () => {
               validators={{ onChange: resetPasswordFormZodSchema.shape.new_password }}
             >
               {(field) => (
-                <div className="relative">
-                  <AppField
-                    field={field}
-                    label="New password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    placeholder="At least 8 characters, with a letter and a number"
-                    disabled={isPending}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-7"
-                    onClick={() => setShowPassword((shown) => !shown)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? <EyeOff aria-hidden="true" className="size-4" /> : <Eye aria-hidden="true" className="size-4" />}
-                  </Button>
-                </div>
+                <PasswordField field={field} label="New password" disabled={isPending} />
               )}
             </form.Field>
 

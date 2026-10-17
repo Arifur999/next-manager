@@ -2,18 +2,21 @@
 
 import { site } from "@/data/site"
 import { setNotificationRuleAction } from "@/app/(dashboardLayout)/admin/dashboard/notifications/_action"
+import ErrorState from "@/components/shared/state/ErrorState"
+import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { INotificationRule } from "@/types/workspace.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { BellRing } from "lucide-react"
 import Link from "next/link"
-import { toast } from "sonner"
 import { notificationRulesQuery } from "@/queries/workspace.queries"
 import { queryKeys } from "@/lib/queryKeys"
+import { NOTIFICATION_AUDIENCE_ROLES } from "@/zod/workspace.validation"
 
 /**
  * What the company tells its own people about.
@@ -28,37 +31,44 @@ import { queryKeys } from "@/lib/queryKeys"
  * that does nothing — the server drops one if it is sent.
  */
 
-const AUDIENCE_ROLES = ["admin", "sales", "project_manager", "operations"] as const
-
 const roleLabel = (role: string) => role.replace(/_/g, " ")
 
+type RuleChange = { in_app?: boolean; email?: boolean; roles?: string[] }
+
 const NotificationRules = () => {
-  const queryClient = useQueryClient()
+  const { data, isLoading, isFetching, refetch } = useQuery(notificationRulesQuery())
 
-  const { data, isLoading } = useQuery(notificationRulesQuery())
+  const rules = data?.data
 
-  const rules = data?.data ?? []
-
-  const { mutate: save, isPending } = useMutation({
-    mutationFn: ({ event, payload }: { event: string; payload: Record<string, unknown> }) =>
-      setNotificationRuleAction(event, payload),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not save that")
-        return
-      }
-      void queryClient.invalidateQueries({ queryKey: queryKeys.notificationRules.all })
-    },
+  const { run: saveRule, isPending } = useActionMutation({
+    action: ({ event, change }: { event: string; change: RuleChange }) =>
+      setNotificationRuleAction(event, change),
+    // The switch flipping is the confirmation.
+    successMessage: false,
+    invalidateKeys: [queryKeys.notificationRules.all],
+    refresh: false,
   })
 
-  if (isLoading && rules.length === 0) {
-    return <div className="h-64 animate-pulse rounded-xl bg-muted/40" />
+  if (isLoading) {
+    return <LoadingBlock height="h-64" rounded />
+  }
+
+  // Only when nothing ever arrived: a failed refetch after a toggle keeps the switches.
+  if (!rules) {
+    return (
+      <ErrorState
+        className="rounded-xl border border-dashed"
+        message="The notification settings did not load."
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+      />
+    )
   }
 
   const toggleRole = (rule: INotificationRule, role: string, on: boolean) =>
-    save({
+    void saveRule({
       event: rule.event,
-      payload: {
+      change: {
         roles: on ? [...rule.roles, role] : rule.roles.filter((value) => value !== role),
       },
     })
@@ -89,7 +99,7 @@ const NotificationRules = () => {
                   checked={rule.in_app}
                   disabled={isPending}
                   onCheckedChange={(checked) =>
-                    save({ event: rule.event, payload: { in_app: checked === true } })
+                    void saveRule({ event: rule.event, change: { in_app: checked === true } })
                   }
                 />
                 <Label htmlFor={`${rule.event}-in-app`} className="font-normal">
@@ -107,7 +117,7 @@ const NotificationRules = () => {
                   checked={rule.email}
                   disabled={isPending || !rule.in_app}
                   onCheckedChange={(checked) =>
-                    save({ event: rule.event, payload: { email: checked === true } })
+                    void saveRule({ event: rule.event, change: { email: checked === true } })
                   }
                 />
                 <Label htmlFor={`${rule.event}-email`} className="font-normal">
@@ -125,7 +135,7 @@ const NotificationRules = () => {
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">Who hears it</Label>
                 <div className="flex flex-wrap gap-2">
-                  {AUDIENCE_ROLES.map((role) => (
+                  {NOTIFICATION_AUDIENCE_ROLES.map((role) => (
                     <Button
                       key={role}
                       type="button"

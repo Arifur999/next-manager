@@ -19,40 +19,18 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IProject } from "@/types/project.types"
+import { projectFormZodSchema, type IProjectFormValues } from "@/zod/project.validation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
-import { toast } from "sonner"
-import { z } from "zod"
 import { clientsListQuery } from "@/queries/crm.queries"
 import { queryKeys } from "@/lib/queryKeys"
 import { workflowStatusesListQuery } from "@/queries/work.queries"
 
-const projectFormSchema = z.object({
-  client_id: z.string().min(1, "Choose a client"),
-  name: z.string().min(1, "Name is required"),
-  code: z.string().min(1, "Code is required"),
-  // An id, not a word from a fixed list: the columns are the agency's now.
-  status_id: z.string().min(1, "Choose a status"),
-  start_date: z.string().optional(),
-  end_date: z.string().optional(),
-  contract_value_usd: z
-    .string()
-    .optional()
-    .refine(
-      (value) => !value || (Number.isFinite(Number(value)) && Number(value) >= 0),
-      "Contract value must be a number that is not negative",
-    ),
-  description: z.string().optional(),
-  notes: z.string().optional(),
-})
-
-type ProjectFormValues = z.infer<typeof projectFormSchema>
-
-const emptyValues: ProjectFormValues = {
+const emptyValues: IProjectFormValues = {
   client_id: "",
   name: "",
   code: "",
@@ -65,8 +43,6 @@ const emptyValues: ProjectFormValues = {
 }
 
 const ProjectForm = ({ project, onDone }: { project?: IProject | null; onDone: () => void }) => {
-  const queryClient = useQueryClient()
-  const router = useRouter()
   const isEdit = Boolean(project)
 
   const { data: clientsData } = useQuery(clientsListQuery())
@@ -76,23 +52,11 @@ const ProjectForm = ({ project, onDone }: { project?: IProject | null; onDone: (
   const { data: statusData } = useQuery(workflowStatusesListQuery("kind=project"))
   const statuses = statusData?.data ?? []
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: ProjectFormValues) => {
-      const payload = {
-        ...values,
-        contract_value_usd: values.contract_value_usd ? Number(values.contract_value_usd) : 0,
-        start_date: values.start_date || null,
-        end_date: values.end_date || null,
-      }
-      // The code is fixed after creation — the server rejects it on update, and
-      // sending it anyway would look like an edit that silently did nothing.
-      if (project) {
-        const { code: _code, ...rest } = payload
-        void _code
-        return updateProjectAction(project.id, rest)
-      }
-      return createProjectAction(payload)
-    },
+  const { run: saveProject, isPending } = useActionMutation({
+    action: (values: IProjectFormValues) =>
+      project ? updateProjectAction(project.id, values) : createProjectAction(values),
+    successMessage: isEdit ? "Project updated successfully" : "Project created successfully",
+    invalidateKeys: [queryKeys.projects.all, queryKeys.dashboard.all],
   })
 
   const form = useForm({
@@ -110,19 +74,7 @@ const ProjectForm = ({ project, onDone }: { project?: IProject | null; onDone: (
         }
       : emptyValues,
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        toast.error(result.message || `Failed to ${isEdit ? "update" : "create"} project`)
-        return
-      }
-
-      toast.success(result.message || `Project ${isEdit ? "updated" : "created"} successfully`)
-      onDone()
-
-      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
-      router.refresh()
+      if (await saveProject(value)) onDone()
     },
   })
 
@@ -138,7 +90,7 @@ const ProjectForm = ({ project, onDone }: { project?: IProject | null; onDone: (
       }}
       className="space-y-5"
     >
-      <form.Field name="client_id" validators={{ onChange: projectFormSchema.shape.client_id }}>
+      <form.Field name="client_id" validators={{ onChange: projectFormZodSchema.shape.client_id }}>
         {(field) => (
           <EntitySelect
             id={field.name}
@@ -162,13 +114,13 @@ const ProjectForm = ({ project, onDone }: { project?: IProject | null; onDone: (
       </form.Field>
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <form.Field name="name" validators={{ onChange: projectFormSchema.shape.name }}>
+        <form.Field name="name" validators={{ onChange: projectFormZodSchema.shape.name }}>
           {(field) => (
             <AppField field={field} label="Name" placeholder="e.g. Marketing site" disabled={isPending} />
           )}
         </form.Field>
 
-        <form.Field name="code" validators={{ onChange: projectFormSchema.shape.code }}>
+        <form.Field name="code" validators={{ onChange: projectFormZodSchema.shape.code }}>
           {(field) => (
             <AppField
               field={field}

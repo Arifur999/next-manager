@@ -1,0 +1,92 @@
+import { z } from "zod"
+import { toSafeExternalUrl } from "@/lib/safeUrl"
+
+export const credentialFormZodSchema = z.object({
+    label: z.string().min(1, "Label is required"),
+    client_id: z.string().optional(),
+    project_id: z.string().optional(),
+    url: z
+        .string()
+        .optional()
+        .refine((value) => !value || toSafeExternalUrl(value) !== null, "Enter a full URL, including https://"),
+    username: z.string().optional(),
+    password: z.string().min(1, "Password is required"),
+    notes: z.string().optional(),
+})
+
+export type ICredentialFormValues = z.infer<typeof credentialFormZodSchema>
+
+// What appears on invoices.
+export const organizationFormZodSchema = z.object({
+    name: z.string().min(1, "Name is required"),
+    legal_name: z.string().optional(),
+    email: z.email("Enter a valid email address").optional().or(z.literal("")),
+    phone: z.string().optional(),
+    website: z.string().optional(),
+    address: z.string().optional(),
+})
+
+export type IOrganizationFormValues = z.infer<typeof organizationFormZodSchema>
+
+export const conversationFormZodSchema = z
+    .object({
+        type: z.enum(["direct", "group"], { message: "Choose direct or group" }),
+        name: z.string().max(120, "That name is too long"),
+        member_ids: z.array(z.string()).min(1, "Choose who it is with"),
+    })
+    .refine((values) => values.type !== "direct" || values.member_ids.length === 1, {
+        message: "A direct conversation is between you and exactly one other person",
+        path: ["member_ids"],
+    })
+    .refine((values) => values.type !== "group" || values.name.trim() !== "", {
+        message: "Give the group a name",
+        path: ["name"],
+    })
+
+export type IConversationFormValues = z.infer<typeof conversationFormZodSchema>
+
+// Who a company's own notifications can go to. super_admin belongs to no company.
+export const NOTIFICATION_AUDIENCE_ROLES = ["admin", "sales", "project_manager", "operations"] as const
+
+export const messageFormZodSchema = z.object({
+    body: z
+        .string()
+        .trim()
+        .min(1, "An empty message is not a message")
+        .max(4000, "That message is too long to send"),
+})
+
+// Server schemas: the form values checked again on the server and turned into
+// the payloads the API's validation files expect.
+
+// Neither a client nor a project is an agency-internal credential, which the API takes as null.
+export const createCredentialServerZodSchema = credentialFormZodSchema.transform((values) => ({
+    label: values.label,
+    client_id: values.client_id || null,
+    project_id: values.project_id || null,
+    url: values.url,
+    username: values.username,
+    password: values.password,
+    notes: values.notes,
+}))
+
+// The form already holds the API's payload.
+export const updateOrganizationServerZodSchema = organizationFormZodSchema
+
+// A direct thread is named after the other person, so only a group sends a name.
+export const createConversationServerZodSchema = conversationFormZodSchema.transform((values) => ({
+    type: values.type,
+    name: values.type === "group" ? values.name.trim() : undefined,
+    member_ids: values.member_ids,
+}))
+
+// The form already holds the API's payload, trimmed.
+export const sendMessageServerZodSchema = messageFormZodSchema
+
+// One switch at a time: absent means "leave it alone". An empty role list is
+// the default audience again, not nobody.
+export const notificationRuleServerZodSchema = z.object({
+    in_app: z.boolean().optional(),
+    email: z.boolean().optional(),
+    roles: z.array(z.enum(NOTIFICATION_AUDIENCE_ROLES, { message: "Unknown role" })).optional(),
+})

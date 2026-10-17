@@ -18,35 +18,30 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt, formatRate } from "@/lib/currency"
 import { paymentFormZodSchema, type IPaymentFormValues } from "@/zod/billing.validation"
-import { toNumber } from "@/zod/formFields"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
-import { toast } from "sonner"
 import { clientsListQuery } from "@/queries/crm.queries"
 import { projectsListQuery } from "@/queries/project.queries"
 import { queryKeys } from "@/lib/queryKeys"
 import { accountsQuery, rateSettingsQuery } from "@/queries/finance.queries"
+import { todayIsoDate } from "@/lib/dates"
 
-const today = () => new Date().toISOString().slice(0, 10)
-
-const defaultValues: IPaymentFormValues = {
+const getDefaultValues = (): IPaymentFormValues => ({
   client_id: "",
   project_id: "",
-  date: today(),
+  date: todayIsoDate(),
   amount_usd: "",
   reporting_rate: "",
   account_id: "",
   reference: "",
   notes: "",
-}
+})
 
 const RecordPaymentModal = () => {
   const [open, setOpen] = useState(false)
-  const queryClient = useQueryClient()
-  const router = useRouter()
 
   // Only fetched once the dialog opens — three lists nobody needs until then.
   const { data: clientsData } = useQuery({ ...clientsListQuery(), enabled: open })
@@ -64,36 +59,26 @@ const RecordPaymentModal = () => {
   // by the server afterwards.
   const usdAccounts = accounts.filter((account) => account.currency === "USD" && account.is_active)
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IPaymentFormValues) =>
-      createPaymentAction({
-        ...values,
-        project_id: values.project_id || null,
-        amount_usd: toNumber(values.amount_usd),
-        reporting_rate: toNumber(values.reporting_rate),
-      }),
+  const { run: recordPayment, isPending } = useActionMutation({
+    action: createPaymentAction,
+    successMessage: "Payment recorded successfully",
+    // Balances, the dashboard and any invoice this settled all move.
+    invalidateKeys: [
+      queryKeys.payments.all,
+      queryKeys.accounts.all,
+      queryKeys.invoices.all,
+      queryKeys.dashboard.all,
+    ],
   })
 
   const form = useForm({
-    defaultValues,
+    defaultValues: getDefaultValues(),
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        toast.error(result.message || "Failed to record payment")
-        return
+      // A failure keeps the dialog open with what was typed.
+      if (await recordPayment(value)) {
+        setOpen(false)
+        form.reset()
       }
-
-      toast.success(result.message || "Payment recorded successfully")
-      setOpen(false)
-      form.reset()
-
-      // Balances, the dashboard and any invoice this settled all move.
-      void queryClient.invalidateQueries({ queryKey: queryKeys.payments.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
-      router.refresh()
     },
   })
 

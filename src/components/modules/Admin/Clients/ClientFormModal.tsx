@@ -27,14 +27,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IClient } from "@/types/crm.types"
 import { clientFormZodSchema, type IClientFormValues } from "@/zod/crm.validation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
-import { toast } from "sonner"
 import { queryKeys } from "@/lib/queryKeys"
 
 /**
@@ -62,13 +60,13 @@ const emptyValues: IClientFormValues = {
 }
 
 const ClientForm = ({ client, onDone }: { client?: IClient | null; onDone: () => void }) => {
-  const queryClient = useQueryClient()
-  const router = useRouter()
   const isEdit = Boolean(client)
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IClientFormValues) =>
+  const { run: saveClient, isPending } = useActionMutation({
+    action: (values: IClientFormValues) =>
       client ? updateClientAction(client.id, values) : createClientAction(values),
+    successMessage: isEdit ? "Client updated successfully" : "Client created successfully",
+    invalidateKeys: [queryKeys.clients.all],
   })
 
   const form = useForm({
@@ -84,18 +82,7 @@ const ClientForm = ({ client, onDone }: { client?: IClient | null; onDone: () =>
         }
       : emptyValues,
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        toast.error(result.message || `Failed to ${isEdit ? "update" : "create"} client`)
-        return
-      }
-
-      toast.success(result.message || `Client ${isEdit ? "updated" : "created"} successfully`)
-      onDone()
-
-      void queryClient.invalidateQueries({ queryKey: queryKeys.clients.all })
-      router.refresh()
+      if (await saveClient(value)) onDone()
     },
   })
 

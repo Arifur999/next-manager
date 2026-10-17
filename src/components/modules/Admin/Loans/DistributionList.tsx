@@ -1,30 +1,25 @@
 "use client"
 
 import EmptyState from "@/components/shared/state/EmptyState"
-import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import PanelState from "@/components/shared/state/PanelState"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
 import type { IShareholderDistribution } from "@/types/finance.types"
+import type { UseQueryResult } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { HandCoins, Trash2 } from "lucide-react"
 
-/**
- * Profit paid out to owners.
- *
- * Deliberately not an expense, and the card says so: an expense is a cost of
- * earning profit, this is profit already earned being handed over. Counting it
- * as a cost would let an agency reduce its own reported profit by paying
- * itself.
- */
+// Profit paid out to owners, never an expense: counting it as one would let an
+// agency shrink its own reported profit by paying itself.
 const DistributionList = ({
   distributions,
-  isLoading,
+  query,
   onDelete,
 }: {
   distributions: IShareholderDistribution[]
-  isLoading: boolean
-  onDelete: (id: string) => void
+  query: Pick<UseQueryResult, "isError" | "isLoading" | "isFetching" | "refetch">
+  onDelete: (distribution: IShareholderDistribution) => void
 }) => (
   <Card className="gap-0 overflow-hidden p-0">
     <CardHeader className="border-b px-5 py-4">
@@ -35,11 +30,12 @@ const DistributionList = ({
       </p>
     </CardHeader>
 
-    {isLoading && distributions.length === 0 ? (
-      <LoadingBlock />
-    ) : distributions.length === 0 ? (
-      <EmptyState icon={HandCoins}>Nothing paid out yet.</EmptyState>
-    ) : (
+    <PanelState
+      query={query}
+      errorMessage="Distributions did not load."
+      isEmpty={distributions.length === 0}
+      empty={<EmptyState icon={HandCoins}>Nothing paid out yet.</EmptyState>}
+    >
       <ul className="divide-y">
         {distributions.map((distribution) => (
           <li
@@ -60,7 +56,7 @@ const DistributionList = ({
             <Button
               size="icon"
               variant="ghost"
-              onClick={() => onDelete(distribution.id)}
+              onClick={() => onDelete(distribution)}
               aria-label={`Reverse the distribution to ${distribution.shareholder?.name}`}
               title="Reverse"
             >
@@ -69,7 +65,7 @@ const DistributionList = ({
           </li>
         ))}
       </ul>
-    )}
+    </PanelState>
   </Card>
 )
 

@@ -72,20 +72,25 @@ export interface ICashFlow {
     transfer_sources: string[];
 }
 
-export type KpiMetric =
-    | "utilization_pct"
-    | "realization_pct"
-    | "billable_hours"
-    | "revenue_usd"
-    | "gross_margin_pct"
-    | "deals_won"
-    | "deal_value_usd"
-    | "win_rate_pct"
-    | "pipeline_coverage"
-    | "on_time_delivery_pct"
-    | "project_margin_pct";
+export const KPI_METRICS = [
+    "utilization_pct",
+    "realization_pct",
+    "billable_hours",
+    "revenue_usd",
+    "gross_margin_pct",
+    "deals_won",
+    "deal_value_usd",
+    "win_rate_pct",
+    "pipeline_coverage",
+    "on_time_delivery_pct",
+    "project_margin_pct",
+] as const;
 
-export type KpiPeriod = "month" | "quarter" | "year";
+export type KpiMetric = (typeof KPI_METRICS)[number];
+
+export const KPI_PERIODS = ["month", "quarter", "year"] as const;
+
+export type KpiPeriod = (typeof KPI_PERIODS)[number];
 
 export interface IKpiTarget {
     id: string;

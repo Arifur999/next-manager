@@ -1,6 +1,8 @@
 "use client"
 
 import { createCompanyAction } from "@/app/(dashboardLayout)/platform/_action"
+import { planOptionLabel } from "@/components/modules/Platform/planLabel"
+import AppField from "@/components/shared/form/AppField"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -12,7 +14,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -21,10 +22,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { companyFormZodSchema, type ICompanyFormValues } from "@/zod/platform.validation"
+import { useForm, useStore } from "@tanstack/react-form"
+import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { plansQuery } from "@/queries/platform.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -41,55 +44,47 @@ import { queryKeys } from "@/lib/queryKeys"
  * change than this screen.
  */
 
+// A Select cannot hold "", which is what the form keeps for "let the API pick".
 const DEFAULT_PLAN = "__default__"
+
+const companyDefaults: ICompanyFormValues = {
+  name: "",
+  admin_name: "",
+  admin_email: "",
+  admin_password: "",
+  plan_id: "",
+  trial_days: "14",
+}
 
 const CreateCompanyModal = () => {
   const [open, setOpen] = useState(false)
-  const queryClient = useQueryClient()
-
-  const [name, setName] = useState("")
-  const [adminName, setAdminName] = useState("")
-  const [adminEmail, setAdminEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [planId, setPlanId] = useState(DEFAULT_PLAN)
-  const [trialDays, setTrialDays] = useState("14")
 
   const { data: plansData } = useQuery({ ...plansQuery(), enabled: open })
 
   const plans = plansData?.data ?? []
 
-  const { mutate: create, isPending } = useMutation({
-    mutationFn: () =>
-      createCompanyAction({
-        name: name.trim(),
-        admin_name: adminName.trim(),
-        admin_email: adminEmail.trim(),
-        admin_password: password,
-        ...(planId === DEFAULT_PLAN ? {} : { plan_id: planId }),
-        // Blank means no trial, which is the usual case for a company
-        // provisioned by hand - it has already agreed to pay.
-        ...(trialDays.trim() === "" ? {} : { trial_days: Number(trialDays) }),
-      }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        // "One address cannot admin two companies" is the server's wording and
-        // the only useful thing to say.
-        toast.error(result.message || "Could not create the company")
-        return
-      }
+  const form = useForm({
+    defaultValues: companyDefaults,
+    onSubmit: async ({ value, formApi }) => {
+      if (!(await createCompany(value))) return
 
-      toast.success(`${name} created. Send them the password out of band.`)
       setOpen(false)
-      setName("")
-      setAdminName("")
-      setAdminEmail("")
-      setPassword("")
-      void queryClient.invalidateQueries({ queryKey: queryKeys.platformCompanies.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.platformOverview.all })
+      // The plan and trial stay as chosen, for the next company sold the same way.
+      formApi.reset(
+        { ...companyDefaults, plan_id: value.plan_id, trial_days: value.trial_days },
+        { keepDefaultValues: true },
+      )
     },
   })
 
-  const ready = name.trim() && adminName.trim() && adminEmail.trim() && password.length >= 8
+  const companyName = useStore(form.store, (state) => state.values.name.trim())
+
+  const { run: createCompany, isPending } = useActionMutation({
+    action: createCompanyAction,
+    successMessage: `${companyName} created. Send them the password out of band.`,
+    invalidateKeys: [queryKeys.platformCompanies.all, queryKeys.platformOverview.all],
+    refresh: false,
+  })
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -112,89 +107,103 @@ const CreateCompanyModal = () => {
 
         <form
           className="space-y-5"
+          noValidate
           onSubmit={(event) => {
             event.preventDefault()
-            if (!ready) return
-            create()
+            event.stopPropagation()
+            void form.handleSubmit()
           }}
         >
-          <div className="space-y-1.5">
-            <Label htmlFor="company-name">Company name</Label>
-            <Input
-              id="company-name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Bright Pixel Agency"
-              disabled={isPending}
-            />
-          </div>
+          <form.Field name="name" validators={{ onChange: companyFormZodSchema.shape.name }}>
+            {(field) => (
+              <AppField
+                field={field}
+                label="Company name"
+                placeholder="Bright Pixel Agency"
+                disabled={isPending}
+              />
+            )}
+          </form.Field>
 
           <div className="grid gap-5 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="admin-name">Admin&apos;s name</Label>
-              <Input
-                id="admin-name"
-                value={adminName}
-                onChange={(event) => setAdminName(event.target.value)}
-                disabled={isPending}
-              />
-            </div>
+            <form.Field
+              name="admin_name"
+              validators={{ onChange: companyFormZodSchema.shape.admin_name }}
+            >
+              {(field) => <AppField field={field} label="Admin's name" disabled={isPending} />}
+            </form.Field>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="admin-email">Admin&apos;s email</Label>
-              <Input
-                id="admin-email"
-                type="email"
-                value={adminEmail}
-                onChange={(event) => setAdminEmail(event.target.value)}
-                disabled={isPending}
-              />
-            </div>
+            <form.Field
+              name="admin_email"
+              validators={{ onChange: companyFormZodSchema.shape.admin_email }}
+            >
+              {(field) => (
+                <AppField field={field} label="Admin's email" type="email" disabled={isPending} />
+              )}
+            </form.Field>
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="admin-password">Starting password</Label>
-            <Input
-              id="admin-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="At least 8 characters, with a letter and a number"
-              disabled={isPending}
-            />
+            <form.Field
+              name="admin_password"
+              validators={{ onChange: companyFormZodSchema.shape.admin_password }}
+            >
+              {(field) => (
+                <AppField
+                  field={field}
+                  label="Starting password"
+                  placeholder="At least 8 characters, with a letter and a number"
+                  disabled={isPending}
+                />
+              )}
+            </form.Field>
             <p className="text-xs text-muted-foreground">
               Not hidden, because you have to read it to pass it on.
             </p>
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="company-plan">Plan</Label>
-              <Select value={planId} onValueChange={setPlanId}>
-                <SelectTrigger id="company-plan" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={DEFAULT_PLAN}>Cheapest active plan</SelectItem>
-                  {plans.map((plan) => (
-                    <SelectItem key={plan.id} value={plan.id}>
-                      {plan.name} (${plan.price_usd}/mo)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <form.Field name="plan_id">
+              {(field) => (
+                <div className="space-y-1.5">
+                  <Label htmlFor="company-plan">Plan</Label>
+                  <Select
+                    value={field.state.value || DEFAULT_PLAN}
+                    onValueChange={(value) => field.handleChange(value === DEFAULT_PLAN ? "" : value)}
+                    disabled={isPending}
+                  >
+                    <SelectTrigger id="company-plan" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={DEFAULT_PLAN}>Cheapest active plan</SelectItem>
+                      {plans.map((plan) => (
+                        <SelectItem key={plan.id} value={plan.id}>
+                          {planOptionLabel(plan)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </form.Field>
 
             <div className="space-y-1.5">
-              <Label htmlFor="trial-days">Trial (days)</Label>
-              <Input
-                id="trial-days"
-                type="number"
-                value={trialDays}
-                onChange={(event) => setTrialDays(event.target.value)}
-                placeholder="none"
-                className="tabular-nums"
-                disabled={isPending}
-              />
+              <form.Field
+                name="trial_days"
+                validators={{ onChange: companyFormZodSchema.shape.trial_days }}
+              >
+                {(field) => (
+                  <AppField
+                    field={field}
+                    label="Trial (days)"
+                    type="number"
+                    placeholder="none"
+                    className="tabular-nums"
+                    disabled={isPending}
+                  />
+                )}
+              </form.Field>
               <p className="text-xs text-muted-foreground">
                 Leave empty to start them paying immediately.
               </p>
@@ -207,9 +216,20 @@ const CreateCompanyModal = () => {
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" disabled={isPending || !ready}>
-              {isPending ? "Creating..." : "Create company"}
-            </Button>
+            <form.Subscribe
+              selector={({ values }) =>
+                values.name.trim() !== "" &&
+                values.admin_name.trim() !== "" &&
+                values.admin_email.trim() !== "" &&
+                values.admin_password.length >= 8
+              }
+            >
+              {(isReady) => (
+                <Button type="submit" disabled={isPending || !isReady}>
+                  {isPending ? "Creating..." : "Create company"}
+                </Button>
+              )}
+            </form.Subscribe>
           </DialogFooter>
         </form>
       </DialogContent>

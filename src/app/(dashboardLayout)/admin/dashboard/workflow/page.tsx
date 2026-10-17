@@ -3,6 +3,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { workflowStatusesListQuery } from "@/queries/work.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Task Settings",
@@ -14,14 +15,11 @@ const TaskSettingsPage = async () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Task Settings</h1>
-        <p className="text-sm text-muted-foreground">
-          The columns on your task board. Call them what you like — what each one{" "}
-          <em>means</em> is chosen separately, and that is what completion dates and the
-          reports read.
-        </p>
-      </div>
+      <PageHeader title="Task Settings">
+        The columns on your task board. Call them what you like — what each one{" "}
+        <em>means</em> is chosen separately, and that is what completion dates and the
+        reports read.
+      </PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
         <WorkflowBoard kind="task" />

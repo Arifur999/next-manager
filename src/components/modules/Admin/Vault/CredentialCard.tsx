@@ -1,24 +1,13 @@
 "use client"
 
 import { toSafeExternalUrl } from "@/lib/safeUrl"
-import {
-  getAccessLogAction,
-  revealCredentialAction,
-} from "@/app/(dashboardLayout)/admin/dashboard/vault/_action"
-import { Badge } from "@/components/ui/badge"
+import { revealCredentialAction } from "@/app/(dashboardLayout)/admin/dashboard/vault/_action"
+import AccessLogDialog from "@/components/modules/Admin/Vault/AccessLogDialog"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import type { ICredential, ICredentialAccessEntry } from "@/types/workspace.types"
-import { useMutation } from "@tanstack/react-query"
-import { format } from "date-fns"
-import { Check, Copy, ExternalLink, Eye, EyeOff, History, User } from "lucide-react"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import type { ICredential } from "@/types/workspace.types"
+import { Check, Copy, ExternalLink, Eye, EyeOff } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
@@ -36,26 +25,18 @@ import { toast } from "sonner"
  */
 const AUTO_HIDE_MS = 2 * 60 * 1000
 
-const ACTION_LABEL: Record<string, string> = {
-  created: "added it",
-  updated: "changed it",
-  viewed: "opened it",
-  revealed: "revealed the password",
-  deleted: "deleted it",
-}
-
 const CredentialCard = ({ credential }: { credential: ICredential }) => {
   const [revealed, setRevealed] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
-  const [logOpen, setLogOpen] = useState(false)
-  const [log, setLog] = useState<ICredentialAccessEntry[]>([])
 
-  const { mutateAsync: reveal, isPending: isRevealing } = useMutation({
-    mutationFn: () => revealCredentialAction(credential.id),
-  })
-
-  const { mutateAsync: loadLog, isPending: isLoadingLog } = useMutation({
-    mutationFn: () => getAccessLogAction(credential.id),
+  const { run: reveal, isPending: isRevealing } = useActionMutation({
+    action: revealCredentialAction,
+    // The password appearing is the confirmation.
+    successMessage: false,
+    refresh: false,
+    onSuccess: (result) => {
+      if (result.success) setRevealed(result.data.password)
+    },
   })
 
   // A secret left on screen indefinitely is the thing this vault exists to
@@ -72,14 +53,7 @@ const CredentialCard = ({ credential }: { credential: ICredential }) => {
       return
     }
 
-    const result = await reveal()
-
-    if (!result.success) {
-      toast.error(result.message || "Failed to reveal credential")
-      return
-    }
-
-    setRevealed("data" in result ? result.data.password : null)
+    await reveal(credential.id)
   }
 
   const handleCopy = async () => {
@@ -96,136 +70,73 @@ const CredentialCard = ({ credential }: { credential: ICredential }) => {
     }
   }
 
-  const handleOpenLog = async () => {
-    setLogOpen(true)
-    const result = await loadLog()
-    if (result.success && "data" in result) {
-      setLog(result.data)
-    }
-  }
-
   const safeUrl = toSafeExternalUrl(credential.url)
 
   return (
-    <>
-      <Card className="gap-0 p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="truncate font-medium">{credential.label}</p>
-            <p className="truncate text-xs text-muted-foreground">
-              {credential.client?.name ?? credential.project?.name ?? "Agency-internal"}
-            </p>
-            {credential.url && !safeUrl && (
-              <p className="truncate text-xs text-muted-foreground">{credential.url}</p>
-            )}
-          </div>
-
-          {safeUrl && (
-            <Button asChild variant="ghost" size="icon" className="shrink-0">
-              <a href={safeUrl} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="size-4" />
-                <span className="sr-only">Open {credential.label}</span>
-              </a>
-            </Button>
+    <Card className="gap-0 p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate font-medium">{credential.label}</p>
+          <p className="truncate text-xs text-muted-foreground">
+            {credential.client?.name ?? credential.project?.name ?? "Agency-internal"}
+          </p>
+          {credential.url && !safeUrl && (
+            <p className="truncate text-xs text-muted-foreground">{credential.url}</p>
           )}
         </div>
 
-        <dl className="mt-4 space-y-2 text-sm">
-          <div className="flex items-center gap-2">
-            <dt className="w-20 shrink-0 text-xs text-muted-foreground">Username</dt>
-            <dd className="truncate font-mono text-xs">{credential.username || "—"}</dd>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <dt className="w-20 shrink-0 text-xs text-muted-foreground">Password</dt>
-            <dd className="min-w-0 flex-1 truncate font-mono text-xs">
-              {revealed ?? credential.password}
-            </dd>
-          </div>
-        </dl>
-
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => void handleReveal()}
-            disabled={isRevealing}
-          >
-            {revealed ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
-            {revealed ? "Hide" : isRevealing ? "Revealing..." : "Reveal"}
+        {safeUrl && (
+          <Button asChild variant="ghost" size="icon" className="shrink-0">
+            <a href={safeUrl} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="size-4" />
+              <span className="sr-only">Open {credential.label}</span>
+            </a>
           </Button>
+        )}
+      </div>
 
-          {revealed && (
-            <Button type="button" variant="outline" size="sm" onClick={() => void handleCopy()}>
-              {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-              {copied ? "Copied" : "Copy"}
-            </Button>
-          )}
-
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="ml-auto"
-            onClick={() => void handleOpenLog()}
-          >
-            <History className="size-3.5" />
-            Access log
-          </Button>
+      <dl className="mt-4 space-y-2 text-sm">
+        <div className="flex items-center gap-2">
+          <dt className="w-20 shrink-0 text-xs text-muted-foreground">Username</dt>
+          <dd className="truncate font-mono text-xs">{credential.username || "—"}</dd>
         </div>
+
+        <div className="flex items-center gap-2">
+          <dt className="w-20 shrink-0 text-xs text-muted-foreground">Password</dt>
+          <dd className="min-w-0 flex-1 truncate font-mono text-xs">
+            {revealed ?? credential.password}
+          </dd>
+        </div>
+      </dl>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => void handleReveal()}
+          disabled={isRevealing}
+        >
+          {revealed ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+          {revealed ? "Hide" : isRevealing ? "Revealing..." : "Reveal"}
+        </Button>
 
         {revealed && (
-          <p className="mt-3 text-xs text-muted-foreground">
-            This reveal was recorded. Hiding again in two minutes.
-          </p>
+          <Button type="button" variant="outline" size="sm" onClick={() => void handleCopy()}>
+            {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+            {copied ? "Copied" : "Copy"}
+          </Button>
         )}
-      </Card>
 
-      <Dialog open={logOpen} onOpenChange={setLogOpen}>
-        <DialogContent className="max-h-[80vh] overflow-hidden p-0">
-          <DialogHeader className="border-b px-6 py-5 pr-14">
-            <DialogTitle>Access log</DialogTitle>
-            <DialogDescription>
-              Who has touched {credential.label}, newest first. Append-only — nobody can edit this.
-            </DialogDescription>
-          </DialogHeader>
+        <AccessLogDialog credential={credential} />
+      </div>
 
-          <div className="max-h-[calc(80vh-6rem)] overflow-y-auto">
-            {isLoadingLog ? (
-              <p className="px-6 py-8 text-center text-sm text-muted-foreground">Loading...</p>
-            ) : log.length === 0 ? (
-              <p className="px-6 py-8 text-center text-sm text-muted-foreground">Nothing yet.</p>
-            ) : (
-              <ul className="divide-y">
-                {log.map((entry) => (
-                  <li key={entry.id} className="flex items-start gap-3 px-6 py-3">
-                    <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-muted">
-                      <User className="size-3.5 text-muted-foreground" aria-hidden="true" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm">
-                        <span className="font-medium">{entry.user?.full_name ?? "Someone"}</span>{" "}
-                        {ACTION_LABEL[entry.action] ?? entry.action}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(entry.created_at), "MMM dd, yyyy 'at' HH:mm")}
-                        {entry.ip ? ` · ${entry.ip}` : ""}
-                      </p>
-                    </div>
-                    {entry.action === "revealed" && (
-                      <Badge variant="outline" className="ml-auto shrink-0 text-xs">
-                        revealed
-                      </Badge>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+      {revealed && (
+        <p className="mt-3 text-xs text-muted-foreground">
+          This reveal was recorded. Hiding again in two minutes.
+        </p>
+      )}
+    </Card>
   )
 }
 

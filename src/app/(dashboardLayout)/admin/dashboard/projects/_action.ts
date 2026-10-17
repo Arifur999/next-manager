@@ -1,41 +1,22 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
-import { createProject, deleteProject, updateProject } from "@/services/project.services"
-import type { IProject } from "@/types/project.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+import { requireId, runAction, runValidatedAction } from "@/lib/runAction"
+import { assignProjectMember, createProject, removeProjectMember, updateProject } from "@/services/project.services"
+import {
+    assignProjectMemberServerZodSchema,
+    createProjectServerZodSchema,
+    updateProjectServerZodSchema,
+} from "@/zod/project.validation"
 
-export const createProjectAction = async (
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<IProject> | ApiErrorResponse> => {
-    try {
-        return await createProject(payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to create project") }
-    }
-}
+export const createProjectAction = async (values: unknown) =>
+    runValidatedAction(createProjectServerZodSchema, values, "Failed to create project", createProject)
 
-export const updateProjectAction = async (
-    id: string,
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<IProject> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid project id" }
+export const updateProjectAction = async (id: string, values: unknown) =>
+    requireId(id, "project") ??
+    runValidatedAction(updateProjectServerZodSchema, values, "Failed to update project", (payload) => updateProject(id, payload))
 
-    try {
-        return await updateProject(id, payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to update project") }
-    }
-}
+export const assignProjectMemberAction = async (values: unknown) =>
+    runValidatedAction(assignProjectMemberServerZodSchema, values, "Failed to assign", assignProjectMember)
 
-export const deleteProjectAction = async (
-    id: string,
-): Promise<ApiResponse<{ message: string }> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid project id" }
-
-    try {
-        return await deleteProject(id)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to delete project") }
-    }
-}
+export const removeProjectMemberAction = async (id: string) =>
+    requireId(id, "member") ?? runAction("Failed to remove", () => removeProjectMember(id))

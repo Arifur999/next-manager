@@ -1,10 +1,9 @@
 import DateCell from "@/components/shared/cell/DateCell";
 import StatusBadgeCell from "@/components/shared/cell/StatusBadgeCell";
 import { Badge } from "@/components/ui/badge";
+import { roleTitle } from "@/types/permission.types";
 import { type IUser } from "@/types/user.types";
 import { ColumnDef } from "@tanstack/react-table";
-
-const roleLabel = (role: string) => role.replace(/_/g, " ");
 
 export const teamColumns: ColumnDef<IUser>[] = [
   {
@@ -30,12 +29,10 @@ export const teamColumns: ColumnDef<IUser>[] = [
   {
     id: "role",
     // The label people read, so search, sort and export all use it too.
-    accessorFn: (user) => roleLabel(user.role),
+    accessorFn: (user) => roleTitle(user.role),
     header: "Role",
     cell: ({ row }) => (
-      <Badge variant="outline" className="capitalize">
-        {roleLabel(row.original.role)}
-      </Badge>
+      <Badge variant="outline">{roleTitle(row.original.role)}</Badge>
     ),
   },
   {

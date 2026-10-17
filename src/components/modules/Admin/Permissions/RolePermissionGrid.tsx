@@ -9,19 +9,11 @@ import { scopeAt } from "@/components/shared/permission/usePermissionGrid"
 import {
   ACTION_LABEL,
   MODULE_LABEL,
-  ROLE_LABEL,
-  titleise,
+  roleTitle,
   type IPermissionGrid,
-  type PermissionScope,
 } from "@/types/permission.types"
 
-/**
- * What everybody in one role starts with.
- *
- * This is the template, so a change here moves every person in that role who
- * has not been given an exception. The person tab is where one individual is
- * treated differently.
- */
+// One role's template: a change moves everybody in the role who has no exception.
 
 interface RolePermissionGridProps {
   grid: IPermissionGrid
@@ -41,7 +33,7 @@ const RolePermissionGrid = ({ grid, role, disabled, save }: RolePermissionGridPr
 
         return (
           <ScopeSelect
-            label={`${ROLE_LABEL[role] ?? titleise(role)}: ${ACTION_LABEL[action] ?? action} ${MODULE_LABEL[module] ?? module}`}
+            label={`${roleTitle(role)}: ${ACTION_LABEL[action] ?? action} ${MODULE_LABEL[module] ?? module}`}
             value={scope}
             disabled={disabled}
             onChange={(next) =>
@@ -51,9 +43,9 @@ const RolePermissionGrid = ({ grid, role, disabled, save }: RolePermissionGridPr
                     role,
                     module,
                     action,
-                    scope: next as PermissionScope,
+                    scope: next,
                   }),
-                note: `${ROLE_LABEL[role] ?? titleise(role)} — ${MODULE_LABEL[module] ?? module} ${action} saved`,
+                note: `${roleTitle(role)} — ${MODULE_LABEL[module] ?? module} ${action} saved`,
               })
             }
           />

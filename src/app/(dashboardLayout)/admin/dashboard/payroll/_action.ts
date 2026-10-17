@@ -1,63 +1,29 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
+import { requireId, runAction, runValidatedAction } from "@/lib/runAction"
+import { completePayroll, createPayrollRun, deletePayrollRun, setPayrollItems } from "@/services/people.services"
 import {
-    completePayroll,
-    createPayrollRun,
-    deletePayrollRun,
-    setPayrollItems,
-} from "@/services/people.services"
-import type { IPayrollRun } from "@/types/people.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+    completePayrollServerZodSchema,
+    createPayrollRunServerZodSchema,
+    setPayrollItemsServerZodSchema,
+} from "@/zod/people.validation"
 
-type Result = ApiResponse<IPayrollRun> | ApiErrorResponse
+// A second draft for a month that already has one is refused by name.
+export const createPayrollRunAction = async (values: unknown) =>
+    runValidatedAction(createPayrollRunServerZodSchema, values, "Could not open it", createPayrollRun)
 
-export const createPayrollRunAction = async (
-    payload: Record<string, unknown>,
-): Promise<Result> => {
-    try {
-        return await createPayrollRun(payload)
-    } catch (error: unknown) {
-        // "There is already a draft payroll run for that month" arrives here.
-        return { success: false, message: getActionErrorMessage(error, "Could not open it") }
-    }
-}
+export const setPayrollItemsAction = async (id: string, values: unknown) =>
+    requireId(id, "payroll") ??
+    runValidatedAction(setPayrollItemsServerZodSchema, values, "Could not save it", (payload) =>
+        setPayrollItems(id, payload),
+    )
 
-export const setPayrollItemsAction = async (
-    id: string,
-    payload: Record<string, unknown>,
-): Promise<Result> => {
-    if (!id) return { success: false, message: "Invalid payroll id" }
+export const completePayrollAction = async (id: string, values: unknown) =>
+    requireId(id, "payroll") ??
+    runValidatedAction(completePayrollServerZodSchema, values, "Could not pay it", (payload) =>
+        completePayroll(id, payload),
+    )
 
-    try {
-        return await setPayrollItems(id, payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not save it") }
-    }
-}
-
-export const completePayrollAction = async (
-    id: string,
-    payload: Record<string, unknown>,
-): Promise<Result> => {
-    if (!id) return { success: false, message: "Invalid payroll id" }
-
-    try {
-        return await completePayroll(id, payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not pay it") }
-    }
-}
-
-export const deletePayrollRunAction = async (
-    id: string,
-): Promise<ApiResponse<{ message: string }> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid payroll id" }
-
-    try {
-        return await deletePayrollRun(id)
-    } catch (error: unknown) {
-        // "That run has been paid — reverse the payouts it created" arrives here.
-        return { success: false, message: getActionErrorMessage(error, "Could not discard it") }
-    }
-}
+// A paid run is refused: its payouts are reversed where they live.
+export const deletePayrollRunAction = async (id: string) =>
+    requireId(id, "payroll") ?? runAction("Could not discard it", () => deletePayrollRun(id))

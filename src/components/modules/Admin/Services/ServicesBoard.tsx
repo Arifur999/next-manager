@@ -1,103 +1,57 @@
 "use client"
 
 import {
-  createServiceAction,
   deleteServiceAction,
-  updateServiceAction,
+  setServiceActiveAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/services/_action"
-import ServiceFormCard, {
-  NO_CATEGORY,
-  emptyService,
-  type ServiceDraft,
-} from "@/components/modules/Admin/Services/ServiceFormCard"
+import ServiceFormCard from "@/components/modules/Admin/Services/ServiceFormCard"
 import ServiceList from "@/components/modules/Admin/Services/ServiceList"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IService } from "@/types/catalog.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
-import { toast } from "sonner"
 import { serviceCategoriesQuery, servicesListQuery } from "@/queries/catalog.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
-/**
- * The catalogue: a form on the left, the list on the right.
- *
- * This component only holds the state the two halves share. The form and the
- * list are their own files, so neither grows the other.
- */
-/**
- * The catalogue.
- *
- * `canManage` decides whether this is a board somebody shapes or one they only
- * read. A project manager picks what a project delivers and needs to see what
- * is on offer; shaping the list is the seller's job, and the API refuses them
- * every write behind it — so offering the form would only be a form that fails.
- */
+// The catalogue: the form on the left, the list on the right. Without
+// `canManage` (a project manager only picks from it) the form is hidden, because
+// the API refuses that role every write.
 const ServicesBoard = ({ canManage = true }: { canManage?: boolean }) => {
-  const queryClient = useQueryClient()
-  const [draft, setDraft] = useState<ServiceDraft>(emptyService)
-  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editing, setEditing] = useState<IService | null>(null)
+  const [removing, setRemoving] = useState<IService | null>(null)
 
-  const { data, isLoading } = useQuery(servicesListQuery())
-  const { data: categoryData } = useQuery(serviceCategoriesQuery())
+  const serviceList = useQuery(servicesListQuery())
+  const categoryList = useQuery(serviceCategoriesQuery())
 
-  const services = data?.data ?? []
-  const categories = categoryData?.data ?? []
+  const services = serviceList.data?.data ?? []
+  const categories = categoryList.data?.data ?? []
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: queryKeys.services.all })
-  const reset = () => {
-    setDraft(emptyService)
-    setEditingId(null)
+  // No toast: the row's "not sold" badge is the confirmation.
+  const { run: toggleSold } = useActionMutation({
+    action: (service: IService) => setServiceActiveAction(service.id, { is_active: !service.is_active }),
+    successMessage: false,
+    invalidateKeys: [queryKeys.services.all],
+    refresh: false,
+  })
+
+  const { run: removeService, isPending: isRemoving } = useActionMutation({
+    action: deleteServiceAction,
+    successMessage: "Removed from the catalogue",
+    invalidateKeys: [queryKeys.services.all],
+    refresh: false,
+  })
+
+  // The dialog stays open on a refusal, so "turn it off instead" is read in place.
+  const confirmRemove = async () => {
+    if (!removing) return
+    const isRemoved = await removeService(removing.id)
+    if (!isRemoved) return
+
+    // Only the service being edited takes the form with it.
+    if (editing?.id === removing.id) setEditing(null)
+    setRemoving(null)
   }
-
-  const payload = () => ({
-    name: draft.name.trim(),
-    description: draft.description.trim(),
-    category_id: draft.category_id === NO_CATEGORY ? null : draft.category_id,
-    // An empty box means "type it each time", which is zero rather than a
-    // missing value the API would reject.
-    default_price_usd: draft.default_price_usd ? Number(draft.default_price_usd) : 0,
-  })
-
-  const { mutate: save, isPending } = useMutation({
-    mutationFn: () =>
-      editingId ? updateServiceAction(editingId, payload()) : createServiceAction(payload()),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not save it")
-        return
-      }
-      toast.success(editingId ? "Service updated" : "Added to the catalogue")
-      reset()
-      void refresh()
-    },
-  })
-
-  const { mutate: toggle } = useMutation({
-    mutationFn: (service: IService) =>
-      updateServiceAction(service.id, { is_active: !service.is_active }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not change it")
-        return
-      }
-      void refresh()
-    },
-  })
-
-  const { mutate: remove } = useMutation({
-    mutationFn: (service: IService) => deleteServiceAction(service.id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        // The server names what is riding on it and says to turn it off
-        // instead, which is more use than a shorter sentence.
-        toast.error(result.message || "Could not remove it")
-        return
-      }
-      toast.success("Removed from the catalogue")
-      if (editingId) reset()
-      void refresh()
-    },
-  })
 
   return (
     <div
@@ -108,34 +62,42 @@ const ServicesBoard = ({ canManage = true }: { canManage?: boolean }) => {
       }
     >
       {canManage && (
-      <ServiceFormCard
-        draft={draft}
-        categories={categories}
-        editing={Boolean(editingId)}
-        isPending={isPending}
-        onChange={setDraft}
-        onSubmit={save}
-        onCancel={reset}
-      />
+        // Keyed on the service, so choosing another one starts the form from its values.
+        <ServiceFormCard
+          key={editing?.id ?? "new"}
+          service={editing}
+          categories={categories}
+          onDone={() => setEditing(null)}
+        />
       )}
 
       <ServiceList
         services={services}
-        isLoading={isLoading}
-        onEdit={(service) => {
-          setEditingId(service.id)
-          setDraft({
-            name: service.name,
-            description: service.description,
-            category_id: service.category?.id ?? NO_CATEGORY,
-            default_price_usd: service.default_price_usd
-              ? String(service.default_price_usd)
-              : "",
-          })
-        }}
+        query={serviceList}
+        onEdit={setEditing}
         onEditable={canManage}
-        onToggle={toggle}
-        onDelete={remove}
+        onToggle={(service) => void toggleSold(service)}
+        onDelete={setRemoving}
+      />
+
+      <ConfirmDialog
+        open={removing !== null}
+        onOpenChange={(open) => {
+          if (!open) setRemoving(null)
+        }}
+        title="Remove this service?"
+        description={
+          <>
+            This takes <span className="font-medium text-foreground">{removing?.name}</span> off the
+            catalogue. A service on invoices, projects or packages cannot be removed: turn it off
+            instead, so their history survives.
+          </>
+        }
+        variant="destructive"
+        confirmLabel="Remove"
+        pendingLabel="Removing..."
+        isPending={isRemoving}
+        onConfirm={() => void confirmRemove()}
       />
     </div>
   )

@@ -1,24 +1,18 @@
 "use client"
 
+import ErrorState from "@/components/shared/state/ErrorState"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { useQuery } from "@tanstack/react-query"
 import { leaveBalanceQuery } from "@/queries/people.queries"
 
-/**
- * What is left of somebody's allowance this year.
- *
- * An uncapped type shows "no limit" rather than a number. `remaining` is null
- * for those, and rendering null as zero would say the opposite of what is true
- * — "tracked but not capped" and "you have none left" are opposite answers.
- *
- * Only approved days are counted, which is worth saying: a balance that moved
- * on pending requests would drop and jump back when one was turned down.
- */
+// What is left of each allowance this year, from approved days only. An uncapped
+// kind has a null `remaining` and reads "no limit": zero would mean none left.
 const LeaveBalanceCard = () => {
-  const { data } = useQuery(leaveBalanceQuery())
-  const balances = data?.data ?? []
+  const balanceList = useQuery(leaveBalanceQuery())
+  const balances = balanceList.data?.data ?? []
 
-  if (balances.length === 0) return null
+  // Nothing to show stays invisible; a failure is said out loud.
+  if (!balanceList.isError && balances.length === 0) return null
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
@@ -29,32 +23,40 @@ const LeaveBalanceCard = () => {
         </p>
       </CardHeader>
 
-      <ul className="divide-y">
-        {balances.map((balance) => (
-          <li
-            key={balance.leave_type.id}
-            className="flex items-center justify-between gap-3 px-5 py-3"
-          >
-            <div>
-              <p className="text-sm font-medium">{balance.leave_type.name}</p>
-              <p className="text-xs text-muted-foreground">
-                {balance.leave_type.is_paid ? "Paid" : "Unpaid"} · {balance.days_taken} taken
-              </p>
-            </div>
+      {balanceList.isError ? (
+        <ErrorState
+          message="Your allowance did not load."
+          onRetry={() => void balanceList.refetch()}
+          isRetrying={balanceList.isFetching}
+        />
+      ) : (
+        <ul className="divide-y">
+          {balances.map((balance) => (
+            <li
+              key={balance.leave_type.id}
+              className="flex items-center justify-between gap-3 px-5 py-3"
+            >
+              <div>
+                <p className="text-sm font-medium">{balance.leave_type.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {balance.leave_type.is_paid ? "Paid" : "Unpaid"} · {balance.days_taken} taken
+                </p>
+              </div>
 
-            <span className="text-sm tabular-nums">
-              {balance.remaining === null ? (
-                <span className="text-muted-foreground">no limit</span>
-              ) : (
-                <>
-                  {balance.remaining}
-                  <span className="text-muted-foreground"> of {balance.days_per_year} left</span>
-                </>
-              )}
-            </span>
-          </li>
-        ))}
-      </ul>
+              <span className="text-sm tabular-nums">
+                {balance.remaining === null ? (
+                  <span className="text-muted-foreground">no limit</span>
+                ) : (
+                  <>
+                    {balance.remaining}
+                    <span className="text-muted-foreground"> of {balance.days_per_year} left</span>
+                  </>
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </Card>
   )
 }

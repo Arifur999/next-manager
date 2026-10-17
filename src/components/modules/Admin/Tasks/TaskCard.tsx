@@ -1,14 +1,14 @@
 "use client"
 
-import { updateTaskAction } from "@/app/(dashboardLayout)/admin/dashboard/tasks/_action"
+import { moveTaskAction } from "@/app/(dashboardLayout)/admin/dashboard/tasks/_action"
 import { Checkbox } from "@/components/ui/checkbox"
-import type { ITask, IWorkflowStatus } from "@/types/work.types"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import type { ITask, IWorkflowStatus, TaskPriority } from "@/types/work.types"
 import { format, isBefore, startOfToday } from "date-fns"
 import { toast } from "sonner"
 import { queryKeys } from "@/lib/queryKeys"
 
-const PRIORITY_TONE: Record<string, string> = {
+const PRIORITY_TONE: Record<TaskPriority, string> = {
   urgent: "bg-destructive/12 text-destructive",
   high: "bg-chart-2/15 text-chart-2",
   medium: "bg-chart-3/15 text-chart-3",
@@ -16,10 +16,12 @@ const PRIORITY_TONE: Record<string, string> = {
 }
 
 const TaskCard = ({ task, statuses }: { task: ITask; statuses: IWorkflowStatus[] }) => {
-  const queryClient = useQueryClient()
-
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (status_id: string) => updateTaskAction(task.id, { status_id }),
+  // The ticked box and the card's new column are the confirmation.
+  const { run: moveTask, isPending } = useActionMutation({
+    action: (statusId: string) => moveTaskAction(task.id, { status_id: statusId }),
+    successMessage: false,
+    invalidateKeys: [queryKeys.tasks.all, queryKeys.dashboard.all],
+    refresh: false,
   })
 
   // Finished is a category, so a column called "Shipped" strikes the title
@@ -37,7 +39,7 @@ const TaskCard = ({ task, statuses }: { task: ITask; statuses: IWorkflowStatus[]
     statuses.find((status) => status.is_default && status.is_active) ??
     statuses.find((status) => status.category === "open" && status.is_active)
 
-  const toggleDone = async () => {
+  const toggleDone = () => {
     const next = isDone ? reopenTarget : closeTarget
 
     if (!next) {
@@ -51,15 +53,7 @@ const TaskCard = ({ task, statuses }: { task: ITask; statuses: IWorkflowStatus[]
       return
     }
 
-    const result = await mutateAsync(next.id)
-
-    if (!result.success) {
-      toast.error(result.message || "Failed to update task")
-      return
-    }
-
-    void queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
+    void moveTask(next.id)
   }
 
   return (
@@ -67,7 +61,7 @@ const TaskCard = ({ task, statuses }: { task: ITask; statuses: IWorkflowStatus[]
       <div className="flex items-start gap-2.5">
         <Checkbox
           checked={isDone}
-          onCheckedChange={() => void toggleDone()}
+          onCheckedChange={toggleDone}
           disabled={isPending}
           aria-label={isDone ? `Reopen ${task.title}` : `Mark ${task.title} done`}
           className="mt-0.5"
@@ -110,16 +104,5 @@ const TaskCard = ({ task, statuses }: { task: ITask; statuses: IWorkflowStatus[]
     </div>
   )
 }
-
-/**
- * Tasks, in four views over one query.
- *
- * Board, List, Overdue and My Tasks are sidebar entries pointing at this same
- * component with a different URL. Four pages would be four places to fix the
- * same bug, and the sidebar looks identical either way.
- *
- * Overdue is filtered on the SERVER, not here: the list is paginated, so
- * filtering whatever page arrived would hide late work rather than find it.
- */
 
 export default TaskCard

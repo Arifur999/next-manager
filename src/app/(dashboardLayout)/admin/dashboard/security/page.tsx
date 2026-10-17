@@ -3,6 +3,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { loginEventsListQuery } from "@/queries/workspace.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Security",
@@ -16,13 +17,10 @@ const SecurityPage = async () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Security</h1>
-        <p className="text-sm text-muted-foreground">
-          Who signed in, from where, and what was refused. Attempts on addresses that have
-          no account here are not shown — they belong to no company.
-        </p>
-      </div>
+      <PageHeader title="Security">
+        Who signed in, from where, and what was refused. Attempts on addresses that have
+        no account here are not shown — they belong to no company.
+      </PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
         <LoginHistory />

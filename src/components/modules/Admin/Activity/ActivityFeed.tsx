@@ -1,5 +1,7 @@
 "use client"
 
+import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -75,6 +77,7 @@ const ActivityFeed = () => {
   const filters = filterData?.data
   const total = feed.data?.pages[0]?.meta?.total ?? entries.length
   const grouped = groupByDay(entries)
+  const isFiltered = entityType !== ALL || action !== ALL
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
@@ -118,14 +121,16 @@ const ActivityFeed = () => {
         </div>
       </CardHeader>
 
-      {feed.isLoading && entries.length === 0 ? (
-        <div className="h-40 animate-pulse bg-muted/40" />
-      ) : entries.length === 0 ? (
-        <p className="flex flex-col items-center gap-2 px-6 py-12 text-center text-sm text-muted-foreground">
-          <History className="size-7" aria-hidden="true" />
-          Nothing matches those filters.
-        </p>
-      ) : (
+      <PanelState
+        query={feed}
+        errorMessage="The activity feed did not load."
+        isEmpty={entries.length === 0}
+        empty={
+          <EmptyState icon={History}>
+            {isFiltered ? "Nothing matches those filters." : "Nothing recorded yet."}
+          </EmptyState>
+        }
+      >
         <div>
           {grouped.map(([day, dayEntries]) => (
             <section key={day}>
@@ -180,7 +185,7 @@ const ActivityFeed = () => {
             </div>
           )}
         </div>
-      )}
+      </PanelState>
     </Card>
   )
 }

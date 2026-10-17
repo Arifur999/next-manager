@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { isoDate, optionalNonNegative, positiveAmount, toNumber } from "./formFields"
+import { activeStateServerZodSchema, isoDate, optionalNonNegative, positiveAmount, toNumber } from "./formFields"
 
 describe("positiveAmount", () => {
     const amount = positiveAmount("Amount")
@@ -44,5 +44,19 @@ describe("toNumber", () => {
         expect(toNumber("")).toBeUndefined()
         expect(toNumber("0")).toBe(0)
         expect(toNumber("12.5")).toBe(12.5)
+    })
+})
+
+describe("activeStateServerZodSchema", () => {
+    it("accepts a boolean", () => {
+        expect(activeStateServerZodSchema.parse({ is_active: false })).toEqual({ is_active: false })
+    })
+
+    it("rejects a string that only looks like one", () => {
+        expect(activeStateServerZodSchema.safeParse({ is_active: "false" }).success).toBe(false)
+    })
+
+    it("drops any other field", () => {
+        expect(activeStateServerZodSchema.parse({ is_active: true, share_pct: 100 })).toEqual({ is_active: true })
     })
 })

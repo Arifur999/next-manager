@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useMutation } from "@tanstack/react-query"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { changePasswordFormZodSchema, type IChangePasswordFormValues } from "@/zod/auth.validation"
+import { useForm } from "@tanstack/react-form"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
-import { toast } from "sonner"
 
 /**
  * Changing your own password.
@@ -23,41 +23,36 @@ import { toast } from "sonner"
 
 const RULES = "At least 8 characters, with a letter and a number."
 
+// The confirmation is the form's own check, so it is not part of the schema.
+type ChangePasswordValues = IChangePasswordFormValues & { confirm_password: string }
+
+const defaultValues: ChangePasswordValues = { old_password: "", new_password: "", confirm_password: "" }
+
 const ChangePasswordForm = () => {
   const router = useRouter()
-  const [oldPassword, setOldPassword] = useState("")
-  const [newPassword, setNewPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
 
-  const { mutate: submit, isPending } = useMutation({
-    mutationFn: () =>
-      changePasswordAction({ old_password: oldPassword, new_password: newPassword }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        // "Current password is incorrect" comes from the server and is the
-        // only useful thing to say here, so it is passed through.
-        toast.error(result.message || "Could not change your password")
-        return
-      }
+  // A refusal ("Current password is incorrect") is the server's own words.
+  const { run: changePassword, isPending } = useActionMutation({
+    action: changePasswordAction,
+    successMessage: "Password changed. Sign in again with the new one.",
+    refresh: false,
+  })
 
-      toast.success("Password changed. Sign in again with the new one.")
+  const form = useForm({
+    defaultValues,
+    onSubmit: async ({ value }) => {
+      const changed = await changePassword({
+        old_password: value.old_password,
+        new_password: value.new_password,
+      })
+      if (!changed) return
+
       router.replace("/login")
-      // The session is over on the server - the action cleared the cookies -
-      // but Next's client Router Cache still holds the RSC payload for the
-      // signed-in layout. Without this, going back or clicking another
-      // dashboard route renders the authenticated shell for a session that no
-      // longer exists. DashboardNavbar's sign-out does the same thing for the
-      // same reason.
+      // The action cleared the cookies, but the client Router Cache still holds the
+      // signed-in layout; without this, Back renders a shell for a dead session.
       router.refresh()
     },
   })
-
-  // Checked here as well as on the server: making somebody submit a form to be
-  // told they mistyped the confirmation is a round-trip for nothing.
-  const mismatch = confirmPassword.length > 0 && newPassword !== confirmPassword
-  const tooShort = newPassword.length > 0 && newPassword.length < 8
-  const ready =
-    oldPassword.length > 0 && newPassword.length >= 8 && newPassword === confirmPassword
 
   return (
     <Card className="gap-0 p-0">
@@ -71,63 +66,108 @@ const ChangePasswordForm = () => {
 
       <form
         className="max-w-md space-y-5 p-5"
+        noValidate
         onSubmit={(event) => {
           event.preventDefault()
-          if (!ready) return
-          submit()
+          event.stopPropagation()
+          void form.handleSubmit()
         }}
       >
-        <div className="space-y-1.5">
-          <Label htmlFor="old-password">Current password</Label>
-          <Input
-            id="old-password"
-            type="password"
-            autoComplete="current-password"
-            value={oldPassword}
-            onChange={(event) => setOldPassword(event.target.value)}
-            disabled={isPending}
-            required
-          />
-        </div>
+        <form.Field name="old_password">
+          {(field) => (
+            <div className="space-y-1.5">
+              <Label htmlFor="old-password">Current password</Label>
+              <Input
+                id="old-password"
+                type="password"
+                autoComplete="current-password"
+                value={field.state.value}
+                onChange={(event) => field.handleChange(event.target.value)}
+                onBlur={field.handleBlur}
+                disabled={isPending}
+                required
+              />
+            </div>
+          )}
+        </form.Field>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="new-password">New password</Label>
-          <Input
-            id="new-password"
-            type="password"
-            autoComplete="new-password"
-            value={newPassword}
-            onChange={(event) => setNewPassword(event.target.value)}
-            disabled={isPending}
-            required
-            aria-describedby="new-password-rules"
-          />
-          <p
-            id="new-password-rules"
-            className={`text-xs ${tooShort ? "text-destructive" : "text-muted-foreground"}`}
-          >
-            {RULES}
-          </p>
-        </div>
+        <form.Field
+          name="new_password"
+          validators={{ onChange: changePasswordFormZodSchema.shape.new_password }}
+        >
+          {(field) => {
+            // The rules line itself turns red, rather than a second message repeating it.
+            const breaksRules = field.state.meta.isTouched && field.state.meta.errors.length > 0
 
-        <div className="space-y-1.5">
-          <Label htmlFor="confirm-password">Confirm new password</Label>
-          <Input
-            id="confirm-password"
-            type="password"
-            autoComplete="new-password"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            disabled={isPending}
-            required
-            aria-invalid={mismatch}
-          />
-          {mismatch && <p className="text-xs text-destructive">These do not match.</p>}
-        </div>
+            return (
+              <div className="space-y-1.5">
+                <Label htmlFor="new-password">New password</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  autoComplete="new-password"
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  onBlur={field.handleBlur}
+                  disabled={isPending}
+                  required
+                  aria-invalid={breaksRules}
+                  aria-describedby="new-password-rules"
+                />
+                <p
+                  id="new-password-rules"
+                  className={`text-xs ${breaksRules ? "text-destructive" : "text-muted-foreground"}`}
+                >
+                  {RULES}
+                </p>
+              </div>
+            )
+          }}
+        </form.Field>
 
-        <Button type="submit" disabled={isPending || !ready}>
-          {isPending ? "Changing..." : "Change password"}
-        </Button>
+        {/* Checked here as well as on the server: making somebody submit a form to be
+            told they mistyped the confirmation is a round-trip for nothing. */}
+        <form.Subscribe selector={({ values }) => values.new_password}>
+          {(newPassword) => (
+            <form.Field name="confirm_password">
+              {(field) => {
+                const mismatch = field.state.value.length > 0 && field.state.value !== newPassword
+
+                return (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="confirm-password">Confirm new password</Label>
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      autoComplete="new-password"
+                      value={field.state.value}
+                      onChange={(event) => field.handleChange(event.target.value)}
+                      onBlur={field.handleBlur}
+                      disabled={isPending}
+                      required
+                      aria-invalid={mismatch}
+                    />
+                    {mismatch && <p className="text-xs text-destructive">These do not match.</p>}
+                  </div>
+                )
+              }}
+            </form.Field>
+          )}
+        </form.Subscribe>
+
+        <form.Subscribe
+          selector={({ values }) =>
+            values.old_password.length > 0 &&
+            changePasswordFormZodSchema.shape.new_password.safeParse(values.new_password).success &&
+            values.new_password === values.confirm_password
+          }
+        >
+          {(isReady) => (
+            <Button type="submit" disabled={isPending || !isReady}>
+              {isPending ? "Changing..." : "Change password"}
+            </Button>
+          )}
+        </form.Subscribe>
       </form>
     </Card>
   )

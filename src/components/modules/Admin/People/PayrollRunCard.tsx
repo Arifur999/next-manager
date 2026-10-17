@@ -1,5 +1,6 @@
 "use client"
 
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,24 +14,19 @@ import {
 } from "@/components/ui/select"
 import { formatBdt } from "@/lib/currency"
 import type { IPayrollRun } from "@/types/people.types"
+import { roleTitle } from "@/types/permission.types"
 import type { IAccount } from "@/types/finance.types"
+import type { IPayrollItemFormValues } from "@/zod/people.validation"
 import { format, parseISO } from "date-fns"
 import { Trash2 } from "lucide-react"
 import { useState } from "react"
 
-/**
- * One month of payroll.
- *
- * A draft is editable and a completed run is not, and the card looks different
- * enough that nobody has to check which they are on: paid rows show the payout
- * they produced rather than an input.
- *
- * Paying is behind an explicit account choice, because that is the moment money
- * leaves a real account and there is no undo on this screen — reversing means
- * reversing the payouts, where they live.
- */
+// One month of payroll: a draft has inputs, a paid run shows its payouts. Paying
+// waits for an account, for the typed figures to be saved and for a yes, since
+// money then leaves with no undo here.
 
 type Draft = Record<string, { gross: string; deductions: string }>
+type PayrollItem = IPayrollRun["items"][number]
 
 const PayrollRunCard = ({
   run,
@@ -38,40 +34,64 @@ const PayrollRunCard = ({
   onSave,
   onPay,
   onDiscard,
+  isBusy,
 }: {
   run: IPayrollRun
   accounts: IAccount[]
-  onSave: (items: unknown[]) => void
-  onPay: (accountId: string) => void
+  onSave: (items: IPayrollItemFormValues[]) => Promise<boolean>
+  onPay: (accountId: string) => Promise<boolean>
   onDiscard: () => void
+  /** A save or payment is in flight, so neither can be sent twice. */
+  isBusy: boolean
 }) => {
   const [draft, setDraft] = useState<Draft>({})
   const [accountId, setAccountId] = useState("")
+  const [isConfirmingPay, setIsConfirmingPay] = useState(false)
 
   const isDraft = run.status === "draft"
+  // Pay sends the figures the server holds, not the ones in the boxes.
+  const hasUnsavedFigures = Object.keys(draft).length > 0
 
   const valueOf = (itemId: string, field: "gross" | "deductions", stored: number) =>
     draft[itemId]?.[field] ?? (stored ? String(stored) : "")
 
-  const change = (itemId: string, field: "gross" | "deductions", value: string) =>
+  const change = (item: PayrollItem, field: "gross" | "deductions", value: string) =>
     setDraft({
       ...draft,
-      [itemId]: {
-        gross: draft[itemId]?.gross ?? "",
-        deductions: draft[itemId]?.deductions ?? "",
+      [item.id]: {
+        // The box not being edited keeps its saved figure; "" would save it as zero.
+        gross: valueOf(item.id, "gross", Number(item.gross_bdt)),
+        deductions: valueOf(item.id, "deductions", Number(item.deductions_bdt)),
         [field]: value,
       },
     })
 
+  const saveFigures = async () => {
+    const items = Object.entries(draft).map(([id, values]) => ({
+      id,
+      gross_bdt: values.gross,
+      deductions_bdt: values.deductions,
+    }))
+    if (await onSave(items)) setDraft({})
+  }
+
+  const pay = async () => {
+    if (await onPay(accountId)) setIsConfirmingPay(false)
+  }
+
+  const monthLabel = format(parseISO(run.period_start), "MMMM yyyy")
   const total = run.items.reduce((sum, item) => sum + Number(item.net_bdt), 0)
   const paidCount = run.items.filter((item) => item.payout_id).length
+  // The server skips lines at zero, so they are not payouts either.
+  const payoutCount = run.items.filter((item) => Number(item.net_bdt) > 0).length
+  const accountName = accounts.find((account) => account.id === accountId)?.name
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 border-b px-5 py-4">
         <div>
           <CardTitle className="flex items-center gap-2 text-base">
-            {format(parseISO(run.period_start), "MMMM yyyy")}
+            {monthLabel}
             <Badge variant={isDraft ? "outline" : "secondary"}>
               {isDraft ? "draft" : "paid"}
             </Badge>
@@ -113,8 +133,8 @@ const PayrollRunCard = ({
               <tr key={item.id}>
                 <td className="px-5 py-2.5">
                   <p>{item.user.full_name}</p>
-                  <p className="text-xs capitalize text-muted-foreground">
-                    {item.user.role.replace(/_/g, " ")}
+                  <p className="text-xs text-muted-foreground">
+                    {roleTitle(item.user.role)}
                   </p>
                 </td>
 
@@ -125,7 +145,7 @@ const PayrollRunCard = ({
                       min={0}
                       step="1"
                       value={valueOf(item.id, "gross", Number(item.gross_bdt))}
-                      onChange={(event) => change(item.id, "gross", event.target.value)}
+                      onChange={(event) => change(item, "gross", event.target.value)}
                       className="w-32"
                       aria-label={`Gross for ${item.user.full_name}`}
                     />
@@ -141,7 +161,7 @@ const PayrollRunCard = ({
                       min={0}
                       step="1"
                       value={valueOf(item.id, "deductions", Number(item.deductions_bdt))}
-                      onChange={(event) => change(item.id, "deductions", event.target.value)}
+                      onChange={(event) => change(item, "deductions", event.target.value)}
                       className="w-32"
                       aria-label={`Deductions for ${item.user.full_name}`}
                     />
@@ -168,19 +188,7 @@ const PayrollRunCard = ({
 
       {isDraft && (
         <div className="flex flex-wrap items-center gap-3 border-t px-5 py-4">
-          <Button
-            variant="outline"
-            onClick={() =>
-              onSave(
-                Object.entries(draft).map(([id, values]) => ({
-                  id,
-                  gross_bdt: Number(values.gross || 0),
-                  deductions_bdt: Number(values.deductions || 0),
-                }))
-              )
-            }
-            disabled={Object.keys(draft).length === 0}
-          >
+          <Button variant="outline" onClick={() => void saveFigures()} disabled={isBusy || !hasUnsavedFigures}>
             Save numbers
           </Button>
 
@@ -197,17 +205,36 @@ const PayrollRunCard = ({
             </SelectContent>
           </Select>
 
-          <Button disabled={!accountId || total <= 0} onClick={() => onPay(accountId)}>
+          <Button
+            disabled={isBusy || hasUnsavedFigures || !accountId || total <= 0}
+            onClick={() => setIsConfirmingPay(true)}
+          >
             Pay {formatBdt(total)}
           </Button>
 
           <p className="w-full text-xs text-muted-foreground">
-            Paying writes one team payout per person and moves the money out of that
-            account. It cannot be undone here — a mistake is corrected by reversing the
-            payouts where they live.
+            {hasUnsavedFigures
+              ? "Save the numbers first: paying sends the saved figures, not the ones being typed."
+              : "Paying writes one team payout per person and moves the money out of that account. It cannot be undone here — a mistake is corrected by reversing the payouts where they live."}
           </p>
         </div>
       )}
+
+      <ConfirmDialog
+        open={isConfirmingPay}
+        onOpenChange={setIsConfirmingPay}
+        title={`Pay ${monthLabel}?`}
+        description={
+          <>
+            <span className="font-medium text-foreground">{formatBdt(total)}</span> leaves {accountName} as{" "}
+            {payoutCount} team {payoutCount === 1 ? "payout" : "payouts"}. It cannot be undone here.
+          </>
+        }
+        confirmLabel={`Pay ${formatBdt(total)}`}
+        pendingLabel="Paying..."
+        isPending={isBusy}
+        onConfirm={() => void pay()}
+      />
     </Card>
   )
 }

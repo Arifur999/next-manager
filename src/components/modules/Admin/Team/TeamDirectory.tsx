@@ -1,33 +1,23 @@
 "use client"
 
 import EmptyState from "@/components/shared/state/EmptyState"
-import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { roleTitle } from "@/types/permission.types"
 import { useQuery } from "@tanstack/react-query"
 import { UsersRound } from "lucide-react"
 import { useState } from "react"
 import { usersListQuery } from "@/queries/people.queries"
 
-/**
- * Who works here, and how to reach them.
- *
- * Not the team management screen. That one creates, edits and deactivates
- * people; this one only reads — and the API backs that up by handing anybody
- * who is not running the team a narrower projection with no permissions and no
- * status on it. So there is nothing here to hide behind a role check, because
- * the sensitive fields never arrive.
- *
- * Filtering is done in the browser rather than by refetching: a directory is
- * one small list that is already loaded, and a round trip per keystroke would
- * make it feel slower than the paper one.
- */
+// Who works here and how to reach them, read-only: the API sends anybody not running
+// the team a narrower projection. Filtering is local, as the list is small and loaded.
 const TeamDirectory = () => {
   const [term, setTerm] = useState("")
 
-  const { data, isLoading } = useQuery(usersListQuery())
-  const people = data?.data ?? []
+  const peopleList = useQuery(usersListQuery())
+  const people = peopleList.data?.data ?? []
 
   const needle = term.trim().toLowerCase()
   const shown = needle
@@ -58,13 +48,16 @@ const TeamDirectory = () => {
         />
       </CardHeader>
 
-      {isLoading && people.length === 0 ? (
-        <LoadingBlock />
-      ) : shown.length === 0 ? (
-        <EmptyState icon={UsersRound}>
-          {needle ? "Nobody by that name." : "Nobody here yet."}
-        </EmptyState>
-      ) : (
+      <PanelState
+        query={peopleList}
+        errorMessage="The team directory did not load."
+        isEmpty={shown.length === 0}
+        empty={
+          <EmptyState icon={UsersRound}>
+            {needle ? "Nobody by that name." : "Nobody here yet."}
+          </EmptyState>
+        }
+      >
         <ul className="divide-y">
           {shown.map((person) => (
             <li
@@ -74,9 +67,7 @@ const TeamDirectory = () => {
               <div className="min-w-48 flex-1">
                 <p className="flex items-center gap-2 font-medium">
                   {person.full_name}
-                  <Badge variant="outline" className="capitalize">
-                    {person.role.replace(/_/g, " ")}
-                  </Badge>
+                  <Badge variant="outline">{roleTitle(person.role)}</Badge>
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {person.email}
@@ -89,7 +80,7 @@ const TeamDirectory = () => {
             </li>
           ))}
         </ul>
-      )}
+      </PanelState>
     </Card>
   )
 }

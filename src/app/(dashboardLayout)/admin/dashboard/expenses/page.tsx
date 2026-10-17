@@ -3,6 +3,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { expensesListQuery } from "@/queries/spending.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Expenses",
@@ -14,12 +15,9 @@ const ExpensesPage = async () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Expenses</h1>
-        <p className="text-sm text-muted-foreground">
-          What the agency spends, in BDT. Employee costs are tracked apart from operating costs.
-        </p>
-      </div>
+      <PageHeader title="Expenses">
+        What the agency spends, in BDT. Employee costs are tracked apart from operating costs.
+      </PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
         <ExpensesTable />

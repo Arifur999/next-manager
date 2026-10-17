@@ -15,17 +15,9 @@ import { format, isBefore, parseISO, startOfToday } from "date-fns"
 import { Undo2 } from "lucide-react"
 import { useState } from "react"
 
-/**
- * One loan's repayment schedule.
- *
- * The two columns are the whole point of this table. Repaying principal settles
- * a liability and costs nothing; the interest is the actual cost of borrowing,
- * and it is the only part that reaches profit and loss. Showing them merged
- * would hide the one number an owner needs.
- *
- * An overdue row is marked from its due date rather than from a stored flag —
- * nothing has to run for a date to pass.
- */
+// One loan's repayment schedule. Principal and interest stay in separate columns
+// because only the interest is a cost. Overdue comes from the due date, not a
+// stored flag, so nothing has to run for a date to pass.
 const LoanScheduleTable = ({
   instalments,
   accounts,
@@ -35,7 +27,7 @@ const LoanScheduleTable = ({
   instalments: ILoanInstalment[]
   accounts: IAccount[]
   onPay: (instalmentId: string, accountId: string) => void
-  onReverse: (instalmentId: string) => void
+  onReverse: (instalment: ILoanInstalment) => void
 }) => {
   const [accountId, setAccountId] = useState("")
   const today = startOfToday()
@@ -74,42 +66,42 @@ const LoanScheduleTable = ({
             </tr>
           </thead>
           <tbody className="divide-y">
-            {instalments.map((item) => {
-              const due = parseISO(item.due_date)
-              const overdue = !item.paid_at && isBefore(due, today)
+            {instalments.map((instalment) => {
+              const dueDate = parseISO(instalment.due_date)
+              const isOverdue = !instalment.paid_at && isBefore(dueDate, today)
 
               return (
-                <tr key={item.id}>
-                  <td className="px-5 py-2.5 text-muted-foreground">{item.seq}</td>
+                <tr key={instalment.id}>
+                  <td className="px-5 py-2.5 text-muted-foreground">{instalment.seq}</td>
                   <td className="whitespace-nowrap px-5 py-2.5">
-                    {format(due, "d MMM yyyy")}
-                    {overdue && (
+                    {format(dueDate, "d MMM yyyy")}
+                    {isOverdue && (
                       <Badge variant="destructive" className="ml-2 text-[10px]">
                         overdue
                       </Badge>
                     )}
                   </td>
                   <td className="px-5 py-2.5 text-right tabular-nums">
-                    {formatBdt(item.principal_bdt)}
+                    {formatBdt(instalment.principal_bdt)}
                   </td>
                   <td className="px-5 py-2.5 text-right tabular-nums">
-                    {formatBdt(item.interest_bdt)}
+                    {formatBdt(instalment.interest_bdt)}
                   </td>
                   <td className="px-5 py-2.5 text-right tabular-nums">
-                    {formatBdt(item.principal_bdt + item.interest_bdt)}
+                    {formatBdt(instalment.principal_bdt + instalment.interest_bdt)}
                   </td>
                   <td className="px-5 py-2.5 text-right">
-                    {item.paid_at ? (
+                    {instalment.paid_at ? (
                       <span className="inline-flex items-center gap-2">
                         <span className="text-xs text-muted-foreground">
-                          paid {format(parseISO(item.paid_at), "d MMM")}
-                          {item.paid_from_account ? ` · ${item.paid_from_account.name}` : ""}
+                          paid {format(parseISO(instalment.paid_at), "d MMM")}
+                          {instalment.paid_from_account ? ` · ${instalment.paid_from_account.name}` : ""}
                         </span>
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={() => onReverse(item.id)}
-                          aria-label={`Reverse instalment ${item.seq}`}
+                          onClick={() => onReverse(instalment)}
+                          aria-label={`Reverse instalment ${instalment.seq}`}
                           title="Reverse"
                         >
                           <Undo2 className="size-4" />
@@ -120,7 +112,7 @@ const LoanScheduleTable = ({
                         size="sm"
                         variant="outline"
                         disabled={!accountId}
-                        onClick={() => onPay(item.id, accountId)}
+                        onClick={() => onPay(instalment.id, accountId)}
                       >
                         Pay
                       </Button>

@@ -66,12 +66,13 @@ const SidebarNav = ({ role, onNavigate }: { role: UserRole; onNavigate?: () => v
     searchParams
   );
 
-  // Only admin can approve, so only admin is asked. Somebody waiting to join
-  // is invisible until an admin happens to open the team screen, and a person
-  // who cannot sign in is not going to chase it themselves.
-  const { data: pendingData } = useQuery({ ...usersListQuery("status=pending"), enabled: role === "admin", // Cheap and rarely changing. A minute is soon enough for somebody who is
-    // waiting on a human anyway.
-    staleTime: 60_000 });
+  // Only admin can approve, so only admin is asked: somebody waiting to join
+  // cannot sign in to chase it. A minute is soon enough for somebody waiting on a human.
+  const { data: pendingData } = useQuery({
+    ...usersListQuery("status=pending"),
+    enabled: role === "admin",
+    staleTime: 60_000,
+  });
 
   const pendingCount = pendingData?.data?.length ?? 0;
 

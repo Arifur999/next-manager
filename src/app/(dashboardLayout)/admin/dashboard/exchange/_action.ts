@@ -1,28 +1,11 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
+import { requireId, runAction, runValidatedAction } from "@/lib/runAction"
 import { createExchange, deleteExchange } from "@/services/finance.services"
-import type { IExchange } from "@/types/finance.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+import { createExchangeServerZodSchema } from "@/zod/finance.validation"
 
-export const createExchangeAction = async (
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<IExchange> | ApiErrorResponse> => {
-    try {
-        return await createExchange(payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to record exchange") }
-    }
-}
+export const createExchangeAction = async (values: unknown) =>
+    runValidatedAction(createExchangeServerZodSchema, values, "Failed to record exchange", createExchange)
 
-export const deleteExchangeAction = async (
-    id: string,
-): Promise<ApiResponse<{ message: string }> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid exchange id" }
-
-    try {
-        return await deleteExchange(id)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to delete exchange") }
-    }
-}
+export const deleteExchangeAction = async (id: string) =>
+    requireId(id, "exchange") ?? runAction("Failed to delete exchange", () => deleteExchange(id))

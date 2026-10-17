@@ -17,33 +17,17 @@ import {
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt } from "@/lib/currency"
+import { teamPayoutFormZodSchema, type ITeamPayoutFormValues } from "@/zod/spending.validation"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
-import { toast } from "sonner"
-import { z } from "zod"
 import { projectsListQuery } from "@/queries/project.queries"
 import { accountsQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
 import { usersListQuery } from "@/queries/people.queries"
-
-const payoutFormSchema = z.object({
-  user_id: z.string().min(1, "Choose a team member"),
-  project_id: z.string().optional(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date"),
-  amount_bdt: z
-    .string()
-    .min(1, "Amount is required")
-    .refine((value) => Number.isFinite(Number(value)), "Amount must be a number")
-    .refine((value) => Number(value) > 0, "Amount must be greater than zero"),
-  type: z.enum(["salary", "project_bonus", "commission", "reimbursement"]),
-  account_id: z.string().min(1, "Choose a BDT account"),
-  notes: z.string().optional(),
-})
-
-type PayoutFormValues = z.infer<typeof payoutFormSchema>
+import { todayIsoDate } from "@/lib/dates"
 
 const TYPES = [
   { value: "salary", label: "Salary" },
@@ -52,59 +36,42 @@ const TYPES = [
   { value: "reimbursement", label: "Reimbursement" },
 ] as const
 
-const today = () => new Date().toISOString().slice(0, 10)
-
-const defaultValues: PayoutFormValues = {
+const getDefaultValues = (): ITeamPayoutFormValues => ({
   user_id: "",
   project_id: "",
-  date: today(),
+  date: todayIsoDate(),
   amount_bdt: "",
   type: "salary",
   account_id: "",
   notes: "",
-}
+})
 
 const RecordPayoutModal = () => {
   const [open, setOpen] = useState(false)
-  const queryClient = useQueryClient()
-  const router = useRouter()
 
   const { data: usersData } = useQuery({ ...usersListQuery(), enabled: open })
   const { data: accountsData } = useQuery({ ...accountsQuery(), enabled: open })
   const { data: projectsData } = useQuery({ ...projectsListQuery(), enabled: open })
 
-  const users = ((usersData?.data ?? [])).filter((user) => user.status === "active")
+  const activeUsers = (usersData?.data ?? []).filter((user) => user.status === "active")
   const accounts = accountsData?.data ?? []
   const projects = projectsData?.data ?? []
   const bdtAccounts = accounts.filter((account) => account.currency === "BDT" && account.is_active)
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: PayoutFormValues) =>
-      createTeamPayoutAction({
-        ...values,
-        amount_bdt: Number(values.amount_bdt),
-        project_id: values.project_id || null,
-      }),
+  const { run: recordPayout, isPending } = useActionMutation({
+    action: createTeamPayoutAction,
+    successMessage: "Payout recorded successfully",
+    invalidateKeys: [queryKeys.payouts.all, queryKeys.accounts.all, queryKeys.dashboard.all],
   })
 
   const form = useForm({
-    defaultValues,
+    defaultValues: getDefaultValues(),
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        toast.error(result.message || "Failed to record payout")
-        return
+      // A failure keeps the dialog open with what was typed.
+      if (await recordPayout(value)) {
+        setOpen(false)
+        form.reset()
       }
-
-      toast.success(result.message || "Payout recorded successfully")
-      setOpen(false)
-      form.reset()
-
-      void queryClient.invalidateQueries({ queryKey: queryKeys.payouts.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
-      router.refresh()
     },
   })
 
@@ -150,7 +117,7 @@ const RecordPayoutModal = () => {
               }}
               className="space-y-5"
             >
-              <form.Field name="user_id" validators={{ onChange: payoutFormSchema.shape.user_id }}>
+              <form.Field name="user_id" validators={{ onChange: teamPayoutFormZodSchema.shape.user_id }}>
                 {(field) => (
                   <EntitySelect
                     id={field.name}
@@ -159,7 +126,7 @@ const RecordPayoutModal = () => {
                     onChange={field.handleChange}
                     disabled={isPending}
                     emptyMessage="Invite a team member first"
-                    options={users.map((user) => ({
+                    options={activeUsers.map((user) => ({
                       value: user.id,
                       label: user.full_name,
                       hint: user.role.replace(/_/g, " "),
@@ -180,7 +147,7 @@ const RecordPayoutModal = () => {
 
                 <form.Field
                   name="amount_bdt"
-                  validators={{ onChange: payoutFormSchema.shape.amount_bdt }}
+                  validators={{ onChange: teamPayoutFormZodSchema.shape.amount_bdt }}
                 >
                   {(field) => (
                     <AppField
@@ -200,7 +167,7 @@ const RecordPayoutModal = () => {
                     id={field.name}
                     label="Type"
                     value={field.state.value}
-                    onChange={(value) => field.handleChange(value as PayoutFormValues["type"])}
+                    onChange={(value) => field.handleChange(value as ITeamPayoutFormValues["type"])}
                     disabled={isPending}
                     options={TYPES.map((type) => ({ value: type.value, label: type.label }))}
                   />
@@ -229,7 +196,7 @@ const RecordPayoutModal = () => {
 
               <form.Field
                 name="account_id"
-                validators={{ onChange: payoutFormSchema.shape.account_id }}
+                validators={{ onChange: teamPayoutFormZodSchema.shape.account_id }}
               >
                 {(field) => (
                   <EntitySelect

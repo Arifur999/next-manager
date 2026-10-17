@@ -1,87 +1,35 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
+import { requireId, runAction, runValidatedAction } from "@/lib/runAction"
 import {
     createLoan,
     deleteLoan,
     payLoanInstalment,
     reverseLoanInstalment,
-    setLoanInstalments,
     updateLoan,
 } from "@/services/finance.services"
-import type { ILoan } from "@/types/finance.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+import { createLoanServerZodSchema, payInstalmentServerZodSchema } from "@/zod/finance.validation"
 
-type Result = ApiResponse<ILoan> | ApiErrorResponse
+// The API's refusals are specific ("already paid", "has repayments, close it
+// instead", a USD account named for a BDT loan), so they reach the toast as sent.
 
-export const createLoanAction = async (payload: Record<string, unknown>): Promise<Result> => {
-    try {
-        return await createLoan(payload)
-    } catch (error: unknown) {
-        // A loan paid into a USD account arrives here, naming both currencies.
-        return { success: false, message: getActionErrorMessage(error, "Could not record it") }
-    }
-}
+export const createLoanAction = async (values: unknown) =>
+    runValidatedAction(createLoanServerZodSchema, values, "Could not record it", createLoan)
 
-export const updateLoanAction = async (
-    id: string,
-    payload: Record<string, unknown>,
-): Promise<Result> => {
-    if (!id) return { success: false, message: "Invalid loan id" }
+// Closing is the only change a screen makes to a loan: settled is what the last
+// payment does on its own.
+export const closeLoanAction = async (id: string) =>
+    requireId(id, "loan") ?? runAction("Could not close it", () => updateLoan(id, { status: "closed" }))
 
-    try {
-        return await updateLoan(id, payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not update it") }
-    }
-}
+export const payLoanInstalmentAction = async (instalmentId: string, values: unknown) =>
+    requireId(instalmentId, "instalment") ??
+    runValidatedAction(payInstalmentServerZodSchema, values, "Could not pay it", (payload) =>
+        payLoanInstalment(instalmentId, payload),
+    )
 
-export const setLoanInstalmentsAction = async (
-    id: string,
-    payload: Record<string, unknown>,
-): Promise<Result> => {
-    if (!id) return { success: false, message: "Invalid loan id" }
+export const reverseLoanInstalmentAction = async (instalmentId: string) =>
+    requireId(instalmentId, "instalment") ??
+    runAction("Could not reverse it", () => reverseLoanInstalment(instalmentId))
 
-    try {
-        return await setLoanInstalments(id, payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not save it") }
-    }
-}
-
-export const payLoanInstalmentAction = async (
-    instalmentId: string,
-    payload: Record<string, unknown>,
-): Promise<Result> => {
-    if (!instalmentId) return { success: false, message: "Invalid instalment id" }
-
-    try {
-        return await payLoanInstalment(instalmentId, payload)
-    } catch (error: unknown) {
-        // "That instalment is already paid" arrives here.
-        return { success: false, message: getActionErrorMessage(error, "Could not pay it") }
-    }
-}
-
-export const reverseLoanInstalmentAction = async (instalmentId: string): Promise<Result> => {
-    if (!instalmentId) return { success: false, message: "Invalid instalment id" }
-
-    try {
-        return await reverseLoanInstalment(instalmentId)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not reverse it") }
-    }
-}
-
-export const deleteLoanAction = async (
-    id: string,
-): Promise<ApiResponse<{ message: string }> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid loan id" }
-
-    try {
-        return await deleteLoan(id)
-    } catch (error: unknown) {
-        // "This loan has repayments recorded. Close it instead" arrives here.
-        return { success: false, message: getActionErrorMessage(error, "Could not delete it") }
-    }
-}
+export const deleteLoanAction = async (id: string) =>
+    requireId(id, "loan") ?? runAction("Could not delete it", () => deleteLoan(id))

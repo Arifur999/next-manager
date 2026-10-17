@@ -7,272 +7,161 @@ import {
   deleteShareholderAction,
   updateShareholderAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/shareholders/_action"
+import DistributionFormCard from "@/components/modules/Admin/Loans/DistributionFormCard"
 import DistributionList from "@/components/modules/Admin/Loans/DistributionList"
+import ShareholderFormCard from "@/components/modules/Admin/Loans/ShareholderFormCard"
 import ShareholderList from "@/components/modules/Admin/Loans/ShareholderList"
-import { Button } from "@/components/ui/button"
-import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import type { IShareholder } from "@/types/finance.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { format } from "date-fns"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
+import type { IShareholder, IShareholderDistribution } from "@/types/finance.types"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { formatBdt } from "@/lib/currency"
+import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
-import { toast } from "sonner"
 import { accountsQuery, distributionsListQuery, shareholdersQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
-/**
- * Who owns the agency, and what has been paid to them.
- *
- * The two lists are their own components; this holds the forms and the wiring.
- * Share percentages are checked on the server against 100 across everybody
- * still active — the refusal names how much the others already hold, so the
- * message says what to do about it rather than only that it failed.
- */
+// Paying or reversing a distribution moves an account and writes the ledger.
+const SHAREHOLDER_KEYS = [
+  queryKeys.shareholders.all,
+  queryKeys.distributions.all,
+  queryKeys.accounts.all,
+  queryKeys.transactions.all,
+]
+
+// Who owns the agency and what has been paid to them: the queries and mutations
+// behind two forms and two lists. The server checks shares against 100% across
+// everybody still active, and its refusal says how much the others hold.
 const ShareholdersBoard = () => {
-  const queryClient = useQueryClient()
+  const [shareholderToDelete, setShareholderToDelete] = useState<IShareholder | null>(null)
+  const [distributionToReverse, setDistributionToReverse] = useState<IShareholderDistribution | null>(null)
 
-  const [name, setName] = useState("")
-  const [pct, setPct] = useState("")
-  const [shareholderId, setShareholderId] = useState("")
-  const [amount, setAmount] = useState("")
-  const [accountId, setAccountId] = useState("")
-  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"))
-
-  const { data, isLoading } = useQuery(shareholdersQuery())
-  const { data: distributionData, isLoading: loadingDistributions } = useQuery(distributionsListQuery())
+  const ownersQuery = useQuery(shareholdersQuery())
+  const distributionQuery = useQuery(distributionsListQuery())
   const { data: accountData } = useQuery(accountsQuery())
 
-  const shareholders = data?.data ?? []
-  const distributions = distributionData?.data ?? []
-  const accounts = ((accountData?.data ?? [])).filter(
+  const shareholders = ownersQuery.data?.data ?? []
+  const distributions = distributionQuery.data?.data ?? []
+  const accounts = (accountData?.data ?? []).filter(
     (account) => account.currency === "BDT" && account.is_active
   )
   // The server counts this across active holders; reading it back rather than
   // recomputing keeps one answer to "who owns the rest".
-  const unallocated =
-    typeof data?.meta?.unallocated_pct === "number" ? data.meta.unallocated_pct : null
+  const unallocated = ownersQuery.data?.meta?.unallocated_pct ?? null
 
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.shareholders.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.distributions.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all })
+  // The server's own message is the success toast for all of these, and its
+  // refusals ("Shares would total 120%. The others already hold 90%.") are
+  // the failure toast.
+  const { run: addShareholder, isPending: isAdding } = useActionMutation({
+    action: createShareholderAction,
+    invalidateKeys: SHAREHOLDER_KEYS,
+    refresh: false,
+  })
+
+  const { run: toggleShareholder } = useActionMutation({
+    action: (shareholder: IShareholder) =>
+      updateShareholderAction(shareholder.id, { is_active: !shareholder.is_active }),
+    invalidateKeys: SHAREHOLDER_KEYS,
+    refresh: false,
+  })
+
+  const { run: deleteShareholder, isPending: isDeleting } = useActionMutation({
+    action: deleteShareholderAction,
+    invalidateKeys: SHAREHOLDER_KEYS,
+    refresh: false,
+  })
+
+  const handleConfirmDelete = async () => {
+    if (shareholderToDelete && (await deleteShareholder(shareholderToDelete.id))) {
+      setShareholderToDelete(null)
+    }
   }
 
-  const settle =
-    (fallback: string, done?: () => void) =>
-    (result: { success: boolean; message?: string }) => {
-      if (!result.success) {
-        // "Shares would total 120%. The others already hold 90%." arrives here.
-        toast.error(result.message || fallback)
-        return
-      }
-      toast.success(result.message)
-      done?.()
-      refresh()
+  const { run: payDistribution, isPending: isPaying } = useActionMutation({
+    action: createDistributionAction,
+    invalidateKeys: SHAREHOLDER_KEYS,
+    refresh: false,
+  })
+
+  const { run: reverseDistribution, isPending: isReversing } = useActionMutation({
+    action: deleteDistributionAction,
+    invalidateKeys: SHAREHOLDER_KEYS,
+    refresh: false,
+  })
+
+  const handleConfirmReverse = async () => {
+    if (distributionToReverse && (await reverseDistribution(distributionToReverse.id))) {
+      setDistributionToReverse(null)
     }
-
-  const { mutate: add, isPending } = useMutation({
-    mutationFn: () =>
-      createShareholderAction({ name: name.trim(), share_pct: Number(pct || 0) }),
-    onSuccess: settle("Could not add them", () => {
-      setName("")
-      setPct("")
-    }),
-  })
-
-  const { mutate: toggle } = useMutation({
-    mutationFn: (shareholder: IShareholder) =>
-      updateShareholderAction(shareholder.id, { is_active: !shareholder.is_active }),
-    onSuccess: settle("Could not update them"),
-  })
-
-  const { mutate: remove } = useMutation({
-    mutationFn: (id: string) => deleteShareholderAction(id),
-    onSuccess: settle("Could not delete them"),
-  })
-
-  const { mutate: payOut, isPending: paying } = useMutation({
-    mutationFn: () =>
-      createDistributionAction({
-        shareholder_id: shareholderId,
-        date,
-        amount_bdt: Number(amount),
-        account_id: accountId,
-      }),
-    onSuccess: settle("Could not record it", () => setAmount("")),
-  })
-
-  const { mutate: reverse } = useMutation({
-    mutationFn: (id: string) => deleteDistributionAction(id),
-    onSuccess: settle("Could not reverse it"),
-  })
+  }
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
       <div className="space-y-4">
-        <Card className="h-fit">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Add a shareholder</CardTitle>
-          </CardHeader>
+        <ShareholderFormCard onSubmit={addShareholder} isPending={isAdding} />
 
-          <form
-            className="space-y-4 px-6 pb-6"
-            onSubmit={(event) => {
-              event.preventDefault()
-              if (!name.trim()) return
-              add()
-            }}
-          >
-            <div className="space-y-1.5">
-              <Label htmlFor="shareholder-name">Name</Label>
-              <Input
-                id="shareholder-name"
-                value={name}
-                maxLength={120}
-                onChange={(event) => setName(event.target.value)}
-                disabled={isPending}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="shareholder-pct">Share (%)</Label>
-              <Input
-                id="shareholder-pct"
-                type="number"
-                min={0}
-                max={100}
-                step="0.01"
-                value={pct}
-                placeholder="0"
-                onChange={(event) => setPct(event.target.value)}
-                disabled={isPending}
-              />
-              <p className="text-xs text-muted-foreground">
-                Everybody still active has to add up to 100% or less. Retiring somebody
-                frees their share for whoever takes it on.
-              </p>
-            </div>
-
-            <Button type="submit" disabled={isPending || !name.trim()} className="w-full">
-              Add
-            </Button>
-          </form>
-        </Card>
-
-        <Card className="h-fit">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Pay a distribution</CardTitle>
-          </CardHeader>
-
-          <form
-            className="space-y-4 px-6 pb-6"
-            onSubmit={(event) => {
-              event.preventDefault()
-              if (!shareholderId || !accountId || !Number(amount)) return
-              payOut()
-            }}
-          >
-            <div className="space-y-1.5">
-              <Label htmlFor="distribution-who">Who</Label>
-              <Select
-                value={shareholderId}
-                onValueChange={setShareholderId}
-                disabled={paying}
-              >
-                <SelectTrigger id="distribution-who" className="w-full">
-                  <SelectValue placeholder="Choose" />
-                </SelectTrigger>
-                <SelectContent>
-                  {shareholders
-                    .filter((shareholder) => shareholder.is_active)
-                    .map((shareholder) => (
-                      <SelectItem key={shareholder.id} value={shareholder.id}>
-                        {shareholder.name} ({shareholder.share_pct}%)
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="distribution-amount">Amount</Label>
-              <Input
-                id="distribution-amount"
-                type="number"
-                min={1}
-                step="1"
-                value={amount}
-                onChange={(event) => setAmount(event.target.value)}
-                disabled={paying}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="distribution-date">Date</Label>
-              <Input
-                id="distribution-date"
-                type="date"
-                value={date}
-                onChange={(event) => setDate(event.target.value)}
-                disabled={paying}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="distribution-account">Paid from</Label>
-              <Select value={accountId} onValueChange={setAccountId} disabled={paying}>
-                <SelectTrigger id="distribution-account" className="w-full">
-                  <SelectValue placeholder="Choose" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts.map((account) => (
-                    <SelectItem key={account.id} value={account.id}>
-                      {account.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button
-              type="submit"
-              disabled={paying || !shareholderId || !accountId || !Number(amount)}
-              className="w-full"
-            >
-              Pay it
-            </Button>
-
-            <p className="text-xs text-muted-foreground">
-              This moves money out of that account, but it is not a cost — your profit for
-              the month does not change because you paid yourself.
-            </p>
-          </form>
-        </Card>
+        <DistributionFormCard
+          shareholders={shareholders}
+          accounts={accounts}
+          onSubmit={payDistribution}
+          isPending={isPaying}
+        />
       </div>
 
       <div className="space-y-4">
         <ShareholderList
           shareholders={shareholders}
           unallocatedPct={unallocated}
-          isLoading={isLoading}
-          onToggle={(shareholder) => toggle(shareholder)}
-          onDelete={(id) => remove(id)}
+          query={ownersQuery}
+          onToggle={(shareholder) => void toggleShareholder(shareholder)}
+          onDelete={setShareholderToDelete}
         />
         <DistributionList
           distributions={distributions}
-          isLoading={loadingDistributions}
-          onDelete={(id) => reverse(id)}
+          query={distributionQuery}
+          onDelete={setDistributionToReverse}
         />
       </div>
+
+      <ConfirmDialog
+        open={shareholderToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setShareholderToDelete(null)
+        }}
+        title="Delete this shareholder?"
+        description={
+          <>
+            This removes <span className="font-medium text-foreground">{shareholderToDelete?.name}</span> and
+            frees their share. Somebody who has been paid a distribution cannot be deleted — retire
+            them instead, so the payments still say who they went to.
+          </>
+        }
+        variant="destructive"
+        confirmLabel="Delete"
+        pendingLabel="Deleting..."
+        isPending={isDeleting}
+        onConfirm={() => void handleConfirmDelete()}
+      />
+
+      <ConfirmDialog
+        open={distributionToReverse !== null}
+        onOpenChange={(open) => {
+          if (!open) setDistributionToReverse(null)
+        }}
+        title="Reverse this distribution?"
+        description={
+          <>
+            The {distributionToReverse ? formatBdt(distributionToReverse.amount_bdt) : ""} paid to{" "}
+            <span className="font-medium text-foreground">{distributionToReverse?.shareholder?.name}</span> goes
+            back into {distributionToReverse?.account?.name ?? "the account it came from"}, and the payment
+            leaves their total.
+          </>
+        }
+        variant="destructive"
+        confirmLabel="Reverse"
+        pendingLabel="Reversing..."
+        isPending={isReversing}
+        onConfirm={() => void handleConfirmReverse()}
+      />
     </div>
   )
 }

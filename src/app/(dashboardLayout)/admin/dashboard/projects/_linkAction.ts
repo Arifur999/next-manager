@@ -1,30 +1,13 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
+import { requireId, runAction, runValidatedAction } from "@/lib/runAction"
 import { createProjectLink, deleteProjectLink } from "@/services/project.services"
-import type { IProjectLink } from "@/types/project.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+import { createProjectLinkServerZodSchema } from "@/zod/project.validation"
 
-export const addProjectLinkAction = async (
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<IProjectLink> | ApiErrorResponse> => {
-    try {
-        return await createProjectLink(payload)
-    } catch (error: unknown) {
-        // "Only http and https links can be stored" and "Enter a full URL"
-        // both come from the server and say what to fix.
-        return { success: false, message: getActionErrorMessage(error, "Could not add the link") }
-    }
-}
+// "Only http and https links can be stored" and "Enter a full URL" come from
+// the server and say what to fix.
+export const addProjectLinkAction = async (values: unknown) =>
+    runValidatedAction(createProjectLinkServerZodSchema, values, "Could not add the link", createProjectLink)
 
-export const removeProjectLinkAction = async (
-    id: string,
-): Promise<ApiResponse<{ message: string }> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid link id" }
-
-    try {
-        return await deleteProjectLink(id)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not remove the link") }
-    }
-}
+export const removeProjectLinkAction = async (id: string) =>
+    requireId(id, "link") ?? runAction("Could not remove the link", () => deleteProjectLink(id))

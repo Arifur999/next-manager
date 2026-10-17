@@ -29,3 +29,10 @@ export const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date")
 /** "" and undefined both become undefined; anything else becomes a number. */
 export const toNumber = (value: string | undefined): number | undefined =>
     value === undefined || value === "" ? undefined : Number(value)
+
+// Retiring a record and bringing it back. What is already in use (a sold
+// service, a staffed department, a paid shareholder) is never deleted, so this
+// switch is how it leaves the lists.
+export const activeStateServerZodSchema = z.object({
+    is_active: z.boolean("is_active must be true or false"),
+})

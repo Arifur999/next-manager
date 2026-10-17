@@ -3,28 +3,32 @@
 import AddPersonModal from "@/components/modules/Admin/DuePayments/AddPersonModal"
 import RecordTransactionModal from "@/components/modules/Admin/DuePayments/RecordTransactionModal"
 import StatTile from "@/components/shared/StatTile"
+import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
 import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
-import { ArrowDownLeft, ArrowUpRight, Scale } from "lucide-react"
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Scale } from "lucide-react"
 import { duePeopleQuery, dueTransactionsListQuery } from "@/queries/spending.queries"
 
-/**
- * Informal lending, in and out.
- *
- * The sign convention is the thing to get right on screen: a POSITIVE balance
- * means the agency has taken more from that person than it has given back, so
- * the agency owes THEM. Showing a bare signed number would leave every reader
- * working that out from scratch, so each row says which way it points.
- */
+// Informal lending, in and out. A positive balance means the agency has taken
+// more from that person than it gave back, so the agency owes them.
+
+// Which way a balance points, in words: a signed number alone makes every
+// reader work the convention out again.
+const balanceDirection = (balanceBdt: number) => {
+  if (balanceBdt === 0) return "settled"
+  if (balanceBdt < 0) return "they owe you"
+  return "you owe them"
+}
 
 const DuePaymentsBoard = () => {
-  const { data: peopleData, isLoading } = useQuery(duePeopleQuery())
-  const { data: transactionsData } = useQuery(dueTransactionsListQuery())
+  const peopleQuery = useQuery(duePeopleQuery())
+  const transactionsQuery = useQuery(dueTransactionsListQuery())
 
-  const people = peopleData?.data ?? []
-  const transactions = transactionsData?.data ?? []
+  const people = peopleQuery.data?.data ?? []
+  const transactions = transactionsQuery.data?.data ?? []
 
   const owedByAgency = people
     .filter((person) => person.balance_bdt > 0)
@@ -32,6 +36,8 @@ const DuePaymentsBoard = () => {
   const owedToAgency = people
     .filter((person) => person.balance_bdt < 0)
     .reduce((running, person) => running + Math.abs(person.balance_bdt), 0)
+  // A dash, not a zero, when the balances did not arrive.
+  const balanceLabel = (amount: number) => (peopleQuery.isError ? "—" : formatBdt(amount))
 
   return (
     <div className="space-y-6">
@@ -39,14 +45,14 @@ const DuePaymentsBoard = () => {
         <div className="grid flex-1 gap-4 sm:grid-cols-2">
           <StatTile
             label="The agency owes"
-            value={formatBdt(owedByAgency)}
+            value={balanceLabel(owedByAgency)}
             hint="Taken from people and not yet given back"
             icon={<ArrowUpRight className="size-5" />}
             tone={4}
           />
           <StatTile
             label="Owed to the agency"
-            value={formatBdt(owedToAgency)}
+            value={balanceLabel(owedToAgency)}
             hint="Given out and not yet returned"
             icon={<ArrowDownLeft className="size-5" />}
             tone={3}
@@ -65,47 +71,42 @@ const DuePaymentsBoard = () => {
             <CardTitle className="text-base">Balance per person</CardTitle>
           </CardHeader>
 
-          {isLoading && people.length === 0 ? (
-            <div className="h-40 animate-pulse bg-muted/40" />
-          ) : people.length === 0 ? (
-            <p className="flex flex-col items-center gap-2 px-5 py-12 text-center text-sm text-muted-foreground">
-              <Scale className="size-7" aria-hidden="true" />
-              Nobody added yet.
-            </p>
-          ) : (
+          <PanelState
+            query={peopleQuery}
+            errorMessage="Balances did not load."
+            isEmpty={people.length === 0}
+            empty={
+              <EmptyState icon={Scale} hint="Add someone the agency lends to or borrows from.">
+                Nobody added yet.
+              </EmptyState>
+            }
+          >
             <ul className="divide-y">
-              {people.map((person) => {
-                const owesAgency = person.balance_bdt < 0
-                const settled = person.balance_bdt === 0
+              {people.map((person) => (
+                <li
+                  key={person.id}
+                  className="flex items-center justify-between gap-3 px-5 py-3.5"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{person.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {formatBdt(person.total_received_bdt)} in ·{" "}
+                      {formatBdt(person.total_payment_bdt)} out
+                    </p>
+                  </div>
 
-                return (
-                  <li
-                    key={person.id}
-                    className="flex items-center justify-between gap-3 px-5 py-3.5"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{person.name}</p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {formatBdt(person.total_received_bdt)} in ·{" "}
-                        {formatBdt(person.total_payment_bdt)} out
-                      </p>
-                    </div>
-
-                    <div className="shrink-0 text-right">
-                      <p className="text-sm font-medium tabular-nums">
-                        {formatBdt(Math.abs(person.balance_bdt))}
-                      </p>
-                      {/* Which way it points, in words — a signed number alone
-                          makes every reader work the convention out again. */}
-                      <p className="text-xs text-muted-foreground">
-                        {settled ? "settled" : owesAgency ? "they owe you" : "you owe them"}
-                      </p>
-                    </div>
-                  </li>
-                )
-              })}
+                  <div className="shrink-0 text-right">
+                    <p className="text-sm font-medium tabular-nums">
+                      {formatBdt(Math.abs(person.balance_bdt))}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {balanceDirection(person.balance_bdt)}
+                    </p>
+                  </div>
+                </li>
+              ))}
             </ul>
-          )}
+          </PanelState>
         </Card>
 
         <Card className="gap-0 overflow-hidden p-0">
@@ -113,11 +114,16 @@ const DuePaymentsBoard = () => {
             <CardTitle className="text-base">Recent transactions</CardTitle>
           </CardHeader>
 
-          {transactions.length === 0 ? (
-            <p className="px-5 py-12 text-center text-sm text-muted-foreground">
-              Nothing recorded yet.
-            </p>
-          ) : (
+          <PanelState
+            query={transactionsQuery}
+            errorMessage="Transactions did not load."
+            isEmpty={transactions.length === 0}
+            empty={
+              <EmptyState icon={ArrowLeftRight} hint="Money lent or borrowed shows here once it is recorded.">
+                Nothing recorded yet.
+              </EmptyState>
+            }
+          >
             <ul className="divide-y">
               {transactions.slice(0, 12).map((transaction) => (
                 <li
@@ -143,7 +149,7 @@ const DuePaymentsBoard = () => {
                 </li>
               ))}
             </ul>
-          )}
+          </PanelState>
         </Card>
       </div>
     </div>

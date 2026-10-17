@@ -1,14 +1,14 @@
 "use client"
 
 import EmptyState from "@/components/shared/state/EmptyState"
-import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import PanelState from "@/components/shared/state/PanelState"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import type { IMessage } from "@/types/workspace.types"
 import { format, parseISO } from "date-fns"
 import { MessageSquare, Send } from "lucide-react"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, type ComponentProps } from "react"
 
 /**
  * One conversation, read and written.
@@ -23,16 +23,16 @@ import { useEffect, useRef, useState } from "react"
  */
 const MessageThread = ({
   messages,
+  query,
   meId,
-  isLoading,
   isSending,
   onSend,
 }: {
   messages: IMessage[]
+  query: ComponentProps<typeof PanelState>["query"]
   meId: string | null
-  isLoading: boolean
   isSending: boolean
-  onSend: (body: string) => void
+  onSend: (body: string) => Promise<boolean>
 }) => {
   const [draft, setDraft] = useState("")
   const bottom = useRef<HTMLDivElement>(null)
@@ -44,12 +44,13 @@ const MessageThread = ({
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
-        {isLoading && messages.length === 0 ? (
-          <LoadingBlock />
-        ) : messages.length === 0 ? (
-          <EmptyState icon={MessageSquare}>Say something.</EmptyState>
-        ) : (
-          messages.map((message) => {
+        <PanelState
+          query={query}
+          errorMessage="This conversation did not load."
+          isEmpty={messages.length === 0}
+          empty={<EmptyState icon={MessageSquare}>Say something.</EmptyState>}
+        >
+          {messages.map((message) => {
             const mine = message.sender?.id === meId
 
             return (
@@ -75,19 +76,19 @@ const MessageThread = ({
                 </span>
               </div>
             )
-          })
-        )}
+          })}
+        </PanelState>
         <div ref={bottom} />
       </div>
 
       <form
         className="flex items-center gap-2 border-t p-3"
-        onSubmit={(event) => {
+        onSubmit={async (event) => {
           event.preventDefault()
           const body = draft.trim()
           if (!body) return
-          onSend(body)
-          setDraft("")
+          // Cleared only once it is stored, so a failed send keeps what was typed.
+          if (await onSend(body)) setDraft("")
         }}
       >
         <Input

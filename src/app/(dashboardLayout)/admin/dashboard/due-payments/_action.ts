@@ -1,42 +1,14 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
-import {
-    createDuePerson,
-    createDueTransaction,
-    deleteDueTransaction,
-} from "@/services/spending.services"
-import type { IDuePerson, IDueTransaction } from "@/types/spending.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+import { requireId, runAction, runValidatedAction } from "@/lib/runAction"
+import { createDuePerson, createDueTransaction, deleteDueTransaction } from "@/services/spending.services"
+import { createDuePersonServerZodSchema, createDueTransactionServerZodSchema } from "@/zod/spending.validation"
 
-export const createDuePersonAction = async (
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<IDuePerson> | ApiErrorResponse> => {
-    try {
-        return await createDuePerson(payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to add person") }
-    }
-}
+export const createDuePersonAction = async (values: unknown) =>
+    runValidatedAction(createDuePersonServerZodSchema, values, "Failed to add person", createDuePerson)
 
-export const createDueTransactionAction = async (
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<IDueTransaction> | ApiErrorResponse> => {
-    try {
-        return await createDueTransaction(payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to record transaction") }
-    }
-}
+export const createDueTransactionAction = async (values: unknown) =>
+    runValidatedAction(createDueTransactionServerZodSchema, values, "Failed to record transaction", createDueTransaction)
 
-export const deleteDueTransactionAction = async (
-    id: string,
-): Promise<ApiResponse<{ message: string }> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid transaction id" }
-
-    try {
-        return await deleteDueTransaction(id)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to delete transaction") }
-    }
-}
+export const deleteDueTransactionAction = async (id: string) =>
+    requireId(id, "transaction") ?? runAction("Failed to delete transaction", () => deleteDueTransaction(id))
