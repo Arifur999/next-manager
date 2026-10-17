@@ -71,9 +71,16 @@ check("a row per module", MODULES.every((m) => rowNames.includes(m)), `${rowName
 
 // 14 modules x 5 actions is 70 squares, but only 50 exist in the catalogue.
 // The other 20 must be dashes, not pickers offering a value the server refuses.
+// Of the 50, the ones the server never reads (enforced: false) are locked, so
+// the counts come from the catalogue rather than from this file.
 const pickers = (page.table.match(/data-slot="select-value"/g) ?? []).length;
 const dashes = (page.table.match(/not applicable/g) ?? []).length;
-check("a picker on every real square", pickers === 50, `${pickers}`);
+const locks = (page.table.match(/Admin only/g) ?? []).length;
+const squares = (await api("GET", "/permissions", undefined, cookie)).json.data?.catalogue?.squares ?? [];
+const enforced = squares.filter((square) => square.enforced).length;
+check("the catalogue has 50 squares", squares.length === 50, `${squares.length}`);
+check("a picker on every square the server enforces", pickers === enforced, `${pickers} of ${enforced}`);
+check("a lock on every square only the role decides", locks === squares.length - enforced, `${locks} of ${squares.length - enforced}`);
 check("and a dash on every square that is not", dashes === 20, `${dashes}`);
 check("no picker is blank before hydration", !/data-slot="select-value"[^>]*><\//.test(page.table));
 
