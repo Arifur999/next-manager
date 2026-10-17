@@ -28,14 +28,9 @@ const SHAREHOLDER_KEYS = [
   queryKeys.transactions.all,
 ]
 
-/**
- * Who owns the agency, and what has been paid to them.
- *
- * The two forms and the two lists are their own components; this holds the wiring.
- * Share percentages are checked on the server against 100 across everybody
- * still active — the refusal names how much the others already hold, so the
- * message says what to do about it rather than only that it failed.
- */
+// Who owns the agency and what has been paid to them: the queries and mutations
+// behind two forms and two lists. The server checks shares against 100% across
+// everybody still active, and its refusal says how much the others hold.
 const ShareholdersBoard = () => {
   const [shareholderToDelete, setShareholderToDelete] = useState<IShareholder | null>(null)
   const [distributionToReverse, setDistributionToReverse] = useState<IShareholderDistribution | null>(null)
@@ -46,7 +41,7 @@ const ShareholdersBoard = () => {
 
   const shareholders = ownersQuery.data?.data ?? []
   const distributions = distributionQuery.data?.data ?? []
-  const accounts = ((accountData?.data ?? [])).filter(
+  const accounts = (accountData?.data ?? []).filter(
     (account) => account.currency === "BDT" && account.is_active
   )
   // The server counts this across active holders; reading it back rather than

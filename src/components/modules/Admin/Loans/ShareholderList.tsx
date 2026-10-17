@@ -10,22 +10,15 @@ import type { IShareholder } from "@/types/finance.types"
 import type { UseQueryResult } from "@tanstack/react-query"
 import { PieChart, Power, Trash2 } from "lucide-react"
 
+// Said outright: "who owns the rest" is the question this page is opened with.
 const allocationNote = (unallocatedPct: number | null) => {
   if (unallocatedPct === null) return "Shares are checked against 100% across everybody still active."
   if (unallocatedPct > 0) return `${unallocatedPct}% of the business is not assigned to anybody.`
   return "Every percent of the business is assigned."
 }
 
-/**
- * Who owns the agency.
- *
- * Retiring somebody frees their share for whoever takes it on, which is why
- * there is a Power toggle here and a bin only for people with no distributions
- * — money already paid to somebody has to keep saying who it went to.
- *
- * What is left unallocated is stated rather than left to be worked out: "who
- * owns the rest" is the question this page is opened with.
- */
+// Who owns the agency. Only somebody never paid has a bin, since money paid out
+// has to keep saying who it went to; anyone else is retired, which frees their share.
 const ShareholderList = ({
   shareholders,
   unallocatedPct,

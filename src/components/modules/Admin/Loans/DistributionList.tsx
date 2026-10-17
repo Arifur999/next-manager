@@ -10,14 +10,8 @@ import type { UseQueryResult } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { HandCoins, Trash2 } from "lucide-react"
 
-/**
- * Profit paid out to owners.
- *
- * Deliberately not an expense, and the card says so: an expense is a cost of
- * earning profit, this is profit already earned being handed over. Counting it
- * as a cost would let an agency reduce its own reported profit by paying
- * itself.
- */
+// Profit paid out to owners, never an expense: counting it as one would let an
+// agency shrink its own reported profit by paying itself.
 const DistributionList = ({
   distributions,
   query,
