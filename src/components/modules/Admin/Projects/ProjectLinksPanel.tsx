@@ -10,9 +10,10 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useActionMutation } from "@/hooks/useActionMutation"
+import { projectLinkFormZodSchema, type IProjectLinkFormValues } from "@/zod/project.validation"
+import { useForm } from "@tanstack/react-form"
 import { useQuery } from "@tanstack/react-query"
 import { ExternalLink, FolderOpen, Trash2 } from "lucide-react"
-import { useState } from "react"
 import { projectLinksListQuery } from "@/queries/project.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -39,6 +40,8 @@ const hostOf = (url: string) => {
   }
 }
 
+const emptyLink: IProjectLinkFormValues = { label: "", url: "" }
+
 /** `canManage` is false for anybody the API refuses: the controls that change
  *  things come off rather than failing when pressed. */
 const ProjectLinksPanel = ({
@@ -48,9 +51,6 @@ const ProjectLinksPanel = ({
   projectId: string
   canManage?: boolean
 }) => {
-  const [label, setLabel] = useState("")
-  const [url, setUrl] = useState("")
-
   const { data, isLoading } = useQuery(projectLinksListQuery(`project_id=${projectId}`))
 
   const links = data?.data ?? []
@@ -69,12 +69,13 @@ const ProjectLinksPanel = ({
     refresh: false,
   })
 
-  const handleAdd = async () => {
-    if (await addLink({ project_id: projectId, label, url })) {
-      setLabel("")
-      setUrl("")
-    }
-  }
+  const form = useForm({
+    defaultValues: emptyLink,
+    validators: { onSubmit: projectLinkFormZodSchema },
+    onSubmit: async ({ value, formApi }) => {
+      if (await addLink({ project_id: projectId, ...value })) formApi.reset()
+    },
+  })
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
@@ -91,36 +92,50 @@ const ProjectLinksPanel = ({
         className="flex flex-wrap items-end gap-3 border-b px-5 py-4"
         onSubmit={(event) => {
           event.preventDefault()
-          if (!label.trim() || !url.trim()) return
-          void handleAdd()
+          event.stopPropagation()
+          void form.handleSubmit()
         }}
       >
-        <div className="min-w-40 flex-1 space-y-1.5">
-          <Label htmlFor="link-label">What it is</Label>
-          <Input
-            id="link-label"
-            value={label}
-            onChange={(event) => setLabel(event.target.value)}
-            placeholder="Brand folder"
-            disabled={isPending}
-          />
-        </div>
+        <form.Field name="label">
+          {(field) => (
+            <div className="min-w-40 flex-1 space-y-1.5">
+              <Label htmlFor="link-label">What it is</Label>
+              <Input
+                id="link-label"
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(event) => field.handleChange(event.target.value)}
+                placeholder="Brand folder"
+                disabled={isPending}
+              />
+            </div>
+          )}
+        </form.Field>
 
-        <div className="min-w-56 flex-1 space-y-1.5">
-          <Label htmlFor="link-url">Link</Label>
-          <Input
-            id="link-url"
-            type="url"
-            value={url}
-            onChange={(event) => setUrl(event.target.value)}
-            placeholder="https://drive.google.com/..."
-            disabled={isPending}
-          />
-        </div>
+        <form.Field name="url">
+          {(field) => (
+            <div className="min-w-56 flex-1 space-y-1.5">
+              <Label htmlFor="link-url">Link</Label>
+              <Input
+                id="link-url"
+                type="url"
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(event) => field.handleChange(event.target.value)}
+                placeholder="https://drive.google.com/..."
+                disabled={isPending}
+              />
+            </div>
+          )}
+        </form.Field>
 
-        <Button type="submit" disabled={isPending || !label.trim() || !url.trim()}>
-          Add
-        </Button>
+        <form.Subscribe selector={(state) => projectLinkFormZodSchema.safeParse(state.values).success}>
+          {(isComplete) => (
+            <Button type="submit" disabled={isPending || !isComplete}>
+              Add
+            </Button>
+          )}
+        </form.Subscribe>
       </form>
       )}
 
