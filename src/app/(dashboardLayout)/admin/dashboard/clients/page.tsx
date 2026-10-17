@@ -7,6 +7,8 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { clientsListQuery } from "@/queries/crm.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import ViewTabs from "@/components/shared/ViewTabs";
+import { CLIENT_VIEWS } from "@/lib/pageViews";
 
 export const metadata: Metadata = {
   title: "Clients",
@@ -30,6 +32,7 @@ const ClientsPage = async ({ searchParams }: { searchParams: Promise<SearchParam
   return (
     <div className="space-y-6">
       <ClientsHeading />
+      <ViewTabs label="Client views" tabs={CLIENT_VIEWS} />
 
       <QueryPrefetch prefetch={prefetch}>
         <ClientsTable canManage={canManage} canOpen={canOpen} />

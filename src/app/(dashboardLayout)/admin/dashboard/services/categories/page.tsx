@@ -4,9 +4,11 @@ import type { Metadata } from "next";
 import { serviceCategoriesQuery } from "@/queries/catalog.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import PageHeader from "@/components/shared/PageHeader";
+import ViewTabs from "@/components/shared/ViewTabs";
+import { SERVICE_VIEWS } from "@/lib/pageViews";
 
 export const metadata: Metadata = {
-  title: "Service categories",
+  title: "Categories · Services",
 };
 
 const CategoriesBoardPage = async () => {
@@ -17,9 +19,10 @@ const CategoriesBoardPage = async () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Categories">
+      <PageHeader title="Services">
         How the catalogue is grouped. Removing a category leaves its services in place, ungrouped — grouping is a tidying decision, not a thing to lose work over.
       </PageHeader>
+      <ViewTabs label="Catalogue" tabs={SERVICE_VIEWS} />
 
       <QueryPrefetch prefetch={prefetch}>
         <CategoriesBoard />

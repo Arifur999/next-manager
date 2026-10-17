@@ -5,9 +5,10 @@ import type { Metadata } from "next";
 import { clientRevenueQuery } from "@/queries/insights.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import PageHeader from "@/components/shared/PageHeader";
+import ReportViewTabs from "@/components/modules/Admin/Reports/ReportViewTabs";
 
 export const metadata: Metadata = {
-  title: "Client report",
+  title: "Clients · Reports",
 };
 
 const ClientsReportPage = async () => {
@@ -25,11 +26,12 @@ const ClientsReportPage = async () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={mine ? "Your clients" : "Clients"}>
+      <PageHeader title="Reports">
         {mine
           ? "What the clients you brought in have actually paid. Money received, not money invoiced — an unpaid invoice is a hope, and ranking clients by what they were billed would put your worst payer at the top."
           : "Who actually pays. Money received, not money invoiced — an unpaid invoice is a hope, and ranking clients by what they were billed would put your worst payer at the top."}
       </PageHeader>
+      <ReportViewTabs />
 
       <QueryPrefetch prefetch={prefetch}>
         <ClientsReport />

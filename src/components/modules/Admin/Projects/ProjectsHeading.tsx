@@ -3,8 +3,9 @@
 import PageHeader from "@/components/shared/PageHeader"
 import { useSearchParams } from "next/navigation"
 
-// Reads the view from the URL rather than from the page: the table filters in
-// place, without a server render, and the heading has to follow.
+// The title is the page, the same word as the sidebar; the view is the tab
+// below. Reads the view from the URL rather than from the page: the table
+// filters in place, without a server render, and the description follows.
 const ProjectsHeading = () => {
   const params = useSearchParams()
   const status = params.get("status")
@@ -16,7 +17,7 @@ const ProjectsHeading = () => {
     return "Work for clients. Payments, expenses and payouts can all be tied to one."
   }
 
-  return <PageHeader title={isMine ? "My projects" : (status ?? "Projects")}>{describe()}</PageHeader>
+  return <PageHeader title="Projects">{describe()}</PageHeader>
 }
 
 export default ProjectsHeading

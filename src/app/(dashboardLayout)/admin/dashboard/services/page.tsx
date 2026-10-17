@@ -5,6 +5,8 @@ import type { Metadata } from "next";
 import { serviceCategoriesQuery, servicesListQuery } from "@/queries/catalog.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import PageHeader from "@/components/shared/PageHeader";
+import ViewTabs from "@/components/shared/ViewTabs";
+import { SERVICE_VIEWS } from "@/lib/pageViews";
 
 export const metadata: Metadata = {
   title: "Services",
@@ -29,6 +31,7 @@ const ServicesPage = async () => {
         What the agency sells. Picked from when raising an invoice or opening a project,
         which is what makes &quot;what does SEO actually earn us&quot; answerable.
       </PageHeader>
+      <ViewTabs label="Catalogue" tabs={SERVICE_VIEWS} />
 
       <QueryPrefetch prefetch={prefetch}>
         <ServicesBoard canManage={canManage} />

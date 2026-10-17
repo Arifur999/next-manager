@@ -4,9 +4,11 @@ import type { Metadata } from "next";
 import { tasksListQuery } from "@/queries/work.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import PageHeader from "@/components/shared/PageHeader";
+import ViewTabs from "@/components/shared/ViewTabs";
+import { MY_TASK_VIEWS } from "@/lib/pageViews";
 
 export const metadata: Metadata = {
-  title: "My Tasks",
+  title: "Tasks",
 };
 
 // The same board, scoped to the signed-in person. The server narrows a member
@@ -16,24 +18,23 @@ export const metadata: Metadata = {
 // finished - each a filter off the URL rather than a page of its own.
 type MyTasksSearchParams = { due?: string; overdue?: string; completed?: string };
 
-const HEADINGS = {
-  overdue: { title: "Overdue", blurb: "Past their date and still open. Finishing one takes it off this list." },
-  today: { title: "Due today", blurb: "Everything you owe today." },
-  upcoming: { title: "Upcoming", blurb: "The next seven days — a week of work, not a backlog." },
-  completed: {
-    title: "Completed",
-    blurb: "Work you have finished. Read by what a status means, so renaming a column does not empty this.",
-  },
-  all: { title: "My tasks", blurb: "Work assigned to you." },
+// The title stays "Tasks", the sidebar's word; the tab says which view, and
+// this line says what the view is for.
+const BLURBS = {
+  overdue: "Past their date and still open. Finishing one takes it off this list.",
+  today: "Everything you owe today.",
+  upcoming: "The next seven days — a week of work, not a backlog.",
+  completed: "Work you have finished. Read by what a status means, so renaming a column does not empty this.",
+  all: "Work assigned to you.",
 };
 
-// The sidebar's links can combine; the first match names the page.
-const headingFor = (params: MyTasksSearchParams) => {
-  if (params.overdue === "true") return HEADINGS.overdue;
-  if (params.due === "today") return HEADINGS.today;
-  if (params.due === "upcoming") return HEADINGS.upcoming;
-  if (params.completed === "true") return HEADINGS.completed;
-  return HEADINGS.all;
+// Old links can combine filters; the first match describes the page.
+const blurbFor = (params: MyTasksSearchParams) => {
+  if (params.overdue === "true") return BLURBS.overdue;
+  if (params.due === "today") return BLURBS.today;
+  if (params.due === "upcoming") return BLURBS.upcoming;
+  if (params.completed === "true") return BLURBS.completed;
+  return BLURBS.all;
 };
 
 const MyTasksPage = async ({
@@ -56,11 +57,10 @@ const MyTasksPage = async ({
 
   const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(tasksListQuery(query));
 
-  const heading = headingFor(params);
-
   return (
     <div className="space-y-6">
-      <PageHeader title={heading.title}>{heading.blurb}</PageHeader>
+      <PageHeader title="Tasks">{blurbFor(params)}</PageHeader>
+      <ViewTabs label="Task views" tabs={MY_TASK_VIEWS} />
 
       <QueryPrefetch prefetch={prefetch}>
         <TaskBoard mineOnly />

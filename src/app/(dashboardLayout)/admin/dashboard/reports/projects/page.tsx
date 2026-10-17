@@ -4,9 +4,10 @@ import type { Metadata } from "next";
 import { projectProfitabilityQuery } from "@/queries/insights.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import PageHeader from "@/components/shared/PageHeader";
+import ReportViewTabs from "@/components/modules/Admin/Reports/ReportViewTabs";
 
 export const metadata: Metadata = {
-  title: "Project report",
+  title: "Projects · Reports",
 };
 
 const ProjectsReportPage = async () => {
@@ -17,9 +18,10 @@ const ProjectsReportPage = async () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Projects">
+      <PageHeader title="Reports">
         Which projects made money. Received minus spent, per project — unpaid work is not profit.
       </PageHeader>
+      <ReportViewTabs />
 
       <QueryPrefetch prefetch={prefetch}>
         <ProjectsReport />

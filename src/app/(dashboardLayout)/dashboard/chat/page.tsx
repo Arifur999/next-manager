@@ -6,6 +6,8 @@ import { Suspense } from "react";
 import { conversationsListQuery } from "@/queries/workspace.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import PageHeader from "@/components/shared/PageHeader";
+import ViewTabs from "@/components/shared/ViewTabs";
+import { CHAT_VIEWS } from "@/lib/pageViews";
 
 export const metadata: Metadata = {
   title: "Chat",
@@ -43,6 +45,7 @@ const ChatPage = async ({
         sent live, so a dropped connection makes this page stop updating on its own —
         it never loses anything.
       </PageHeader>
+      <ViewTabs label="Chat views" tabs={CHAT_VIEWS} />
 
       <QueryPrefetch prefetch={prefetch}>
         {/* The board reads its filter from the URL, which needs a Suspense

@@ -5,6 +5,9 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { tasksListQuery, workflowStatusesListQuery } from "@/queries/work.queries";
 import PageHeader from "@/components/shared/PageHeader";
+import ViewTabs from "@/components/shared/ViewTabs";
+import { taskViewsFor } from "@/lib/pageViews";
+import { toUserRole } from "@/types/user.types";
 
 export const metadata: Metadata = {
   title: "Tasks",
@@ -17,26 +20,22 @@ type TasksSearchParams = {
   client_owner?: string;
 };
 
-const HEADINGS = {
-  overdue: {
-    title: "Overdue tasks",
-    blurb: "Past their date and still unfinished. Finishing one takes it off this list.",
-  },
-  sales: {
-    title: "Sales tasks",
-    blurb:
-      "Everything happening inside the clients you brought in — whoever is doing it. Watching, not running: the work belongs to whoever the project manager gave it to.",
-  },
-  mine: { title: "My tasks", blurb: "Assigned to you." },
-  all: { title: "Tasks", blurb: "Everything in flight, in the order work moves through." },
+// The title stays "Tasks", the sidebar's word; the tab says which view, and
+// this line says what the view is for.
+const BLURBS = {
+  overdue: "Past their date and still unfinished. Finishing one takes it off this list.",
+  sales:
+    "Everything happening inside the clients you brought in — whoever is doing it. Watching, not running: the work belongs to whoever the project manager gave it to.",
+  mine: "Assigned to you.",
+  all: "Everything in flight, in the order work moves through.",
 };
 
-// The sidebar's links can combine; the first match names the page.
-const headingFor = (params: TasksSearchParams) => {
-  if (params.overdue === "true") return HEADINGS.overdue;
-  if (params.client_owner === "me") return HEADINGS.sales;
-  if (params.mine === "true") return HEADINGS.mine;
-  return HEADINGS.all;
+// Old links can combine filters; the first match describes the page.
+const blurbFor = (params: TasksSearchParams) => {
+  if (params.overdue === "true") return BLURBS.overdue;
+  if (params.client_owner === "me") return BLURBS.sales;
+  if (params.mine === "true") return BLURBS.mine;
+  return BLURBS.all;
 };
 
 const TasksPage = async ({
@@ -57,6 +56,7 @@ const TasksPage = async ({
     .join("&");
 
   const user = await getUserInfo();
+  const role = toUserRole(user?.role);
 
   const prefetch = (queryClient: QueryClient) => Promise.all([
     queryClient.prefetchQuery(tasksListQuery(query)),
@@ -72,11 +72,10 @@ const TasksPage = async ({
   // button that fails.
   const canManage = user?.role === "admin" || user?.role === "project_manager";
 
-  const heading = headingFor(params);
-
   return (
     <div className="space-y-6">
-      <PageHeader title={heading.title}>{heading.blurb}</PageHeader>
+      <PageHeader title="Tasks">{blurbFor(params)}</PageHeader>
+      {role && <ViewTabs label="Task views" tabs={taskViewsFor(role)} />}
 
       <QueryPrefetch prefetch={prefetch}>
         <TaskBoard canManage={canManage} />

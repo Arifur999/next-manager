@@ -1,4 +1,5 @@
 import ProjectsHeading from "@/components/modules/Admin/Projects/ProjectsHeading";
+import ProjectViewTabs from "@/components/modules/Admin/Projects/ProjectViewTabs";
 import ProjectsTable from "@/components/modules/Admin/Projects/ProjectsTable";
 import { PROJECTS_TABLE } from "@/components/modules/Admin/Projects/projectsTable.config";
 import { buildTableQueryString, type SearchParamsRecord } from "@/lib/table/urlState";
@@ -7,6 +8,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { projectsListQuery } from "@/queries/project.queries";
+import { workflowStatusesListQuery } from "@/queries/work.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
 
 export const metadata: Metadata = {
@@ -25,16 +27,21 @@ const ProjectsPage = async ({ searchParams }: { searchParams: Promise<SearchPara
   // view in the URL and the first paint never shows the wrong list.
   const queryString = buildTableQueryString(params, PROJECTS_TABLE);
 
-  const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(projectsListQuery(queryString));
+  // The statuses are the tabs and the table's filter, so both paint complete.
+  const prefetch = (queryClient: QueryClient) => Promise.all([
+    queryClient.prefetchQuery(projectsListQuery(queryString)),
+    queryClient.prefetchQuery(workflowStatusesListQuery("kind=project")),
+  ]);
 
   return (
     <div className="space-y-6">
       <ProjectsHeading />
 
       <QueryPrefetch prefetch={prefetch}>
-        {/* The table reads its filter from the URL, which needs a Suspense
-            boundary around useSearchParams. */}
+        {/* The tabs and the table read the view from the URL, which needs a
+            Suspense boundary around useSearchParams. */}
         <Suspense fallback={null}>
+          <ProjectViewTabs />
           <ProjectsTable canManage={canManage} />
         </Suspense>
       </QueryPrefetch>

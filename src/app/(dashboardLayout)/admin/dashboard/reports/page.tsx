@@ -4,9 +4,10 @@ import type { Metadata } from "next";
 import { monthlySeriesQuery, profitAndLossListQuery } from "@/queries/insights.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import PageHeader from "@/components/shared/PageHeader";
+import ReportViewTabs from "@/components/modules/Admin/Reports/ReportViewTabs";
 
 export const metadata: Metadata = {
-  title: "Business report",
+  title: "Business · Reports",
 };
 
 const BusinessReportPage = async () => {
@@ -18,10 +19,11 @@ const BusinessReportPage = async () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Business">
+      <PageHeader title="Reports">
         USD and BDT are reported side by side and never added — combining them would need
         a rate baked invisibly into the headline.
       </PageHeader>
+      <ReportViewTabs />
 
       <QueryPrefetch prefetch={prefetch}>
         <BusinessReport />

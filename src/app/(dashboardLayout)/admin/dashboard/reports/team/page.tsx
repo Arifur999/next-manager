@@ -4,9 +4,10 @@ import type { Metadata } from "next";
 import { kpiQuery } from "@/queries/insights.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import PageHeader from "@/components/shared/PageHeader";
+import ReportViewTabs from "@/components/modules/Admin/Reports/ReportViewTabs";
 
 export const metadata: Metadata = {
-  title: "Team report",
+  title: "Team · Reports",
 };
 
 const TeamReportPage = async () => {
@@ -17,9 +18,10 @@ const TeamReportPage = async () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Team">
+      <PageHeader title="Reports">
         What each team spent its time on, and what it cost. Role cannot answer this — your designers and developers are all operations.
       </PageHeader>
+      <ReportViewTabs />
 
       <QueryPrefetch prefetch={prefetch}>
         <TeamReport />

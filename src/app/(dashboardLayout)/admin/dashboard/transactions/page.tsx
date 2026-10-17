@@ -6,6 +6,8 @@ import type { Metadata } from "next";
 import { transactionsListQuery } from "@/queries/finance.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import PageHeader from "@/components/shared/PageHeader";
+import ViewTabs from "@/components/shared/ViewTabs";
+import { TRANSACTION_VIEWS } from "@/lib/pageViews";
 
 export const metadata: Metadata = {
   title: "Transactions",
@@ -25,6 +27,7 @@ const TransactionsPage = async ({ searchParams }: { searchParams: Promise<Search
         an exchange. Nothing is typed in here, which is why it can be trusted to agree
         with the records it summarises.
       </PageHeader>
+      <ViewTabs label="Transaction views" tabs={TRANSACTION_VIEWS} />
 
       <QueryPrefetch prefetch={prefetch}>
         <TransactionsBoard />
