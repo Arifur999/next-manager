@@ -89,6 +89,7 @@ const LoginHistory = () => {
             data={matchingEvents}
             columns={loginHistoryColumns}
             tableId="sign-ins"
+            exportFileName="sign-ins"
             search={{
               value: searchTerm,
               placeholder: "Search name, email or IP address...",
