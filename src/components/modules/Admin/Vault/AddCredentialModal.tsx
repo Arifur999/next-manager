@@ -16,11 +16,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { Eye, EyeOff, Plus } from "lucide-react"
 import { useCallback, useState } from "react"
-import { toast } from "sonner"
 import { credentialFormZodSchema, type ICredentialFormValues } from "@/zod/workspace.validation"
 import { clientsListQuery } from "@/queries/crm.queries"
 import { projectsListQuery } from "@/queries/project.queries"
@@ -39,7 +39,6 @@ const defaultValues: ICredentialFormValues = {
 const AddCredentialModal = () => {
   const [open, setOpen] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const queryClient = useQueryClient()
 
   const { data: clientsData } = useQuery({ ...clientsListQuery(), enabled: open })
   const { data: projectsData } = useQuery({ ...projectsListQuery(), enabled: open })
@@ -47,26 +46,21 @@ const AddCredentialModal = () => {
   const clients = clientsData?.data ?? []
   const projects = projectsData?.data ?? []
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: ICredentialFormValues) => createCredentialAction(values),
+  const { run: saveCredential, isPending } = useActionMutation({
+    action: createCredentialAction,
+    successMessage: "Credential created successfully",
+    invalidateKeys: [queryKeys.credentials.all],
+    refresh: false,
   })
 
   const form = useForm({
     defaultValues,
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
+      if (!(await saveCredential(value))) return
 
-      if (!result.success) {
-        toast.error(result.message || "Failed to save credential")
-        return
-      }
-
-      toast.success(result.message || "Credential saved")
       setOpen(false)
       form.reset()
       setShowPassword(false)
-
-      void queryClient.invalidateQueries({ queryKey: queryKeys.credentials.all })
     },
   })
 
