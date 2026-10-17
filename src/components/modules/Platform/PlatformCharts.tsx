@@ -1,6 +1,7 @@
 "use client"
 
 import ChartCard from "@/components/modules/Platform/ChartCard"
+import { topPlanRevenue } from "@/components/modules/Platform/revenueByPlan"
 import ErrorState from "@/components/shared/state/ErrorState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { formatUsd } from "@/lib/currency"
@@ -60,11 +61,11 @@ const ChartTooltip = ({
 }
 
 const PlatformCharts = () => {
-  const { data, isLoading, isError, isFetching, refetch } = useQuery(platformTrendQuery())
+  const { data, isPending, isError, isFetching, refetch } = useQuery(platformTrendQuery())
 
   const trend = data?.data
 
-  if (isLoading && !trend) {
+  if (isPending) {
     return <LoadingBlock height="h-64" rounded />
   }
 
@@ -81,8 +82,10 @@ const PlatformCharts = () => {
 
   const signups = trend.signups.map((row) => ({
     ...row,
-    label: format(parse(row.month, "yyyy-MM", new Date()), "MMM yy"),
+    label: format(parse(row.month, "yyyy-MM", new Date()), "MMM yyyy"),
   }))
+
+  const revenueByPlan = topPlanRevenue(trend.revenue_by_plan)
 
   const mrr = trend.mrr.map((row) => ({
     ...row,
@@ -131,17 +134,17 @@ const PlatformCharts = () => {
 
       <ChartCard
         title="Revenue by plan"
-        note="What each tier brings in today, across the companies paying for it."
+        note="What each plan brings in today from the companies paying for it. The top five, then the rest."
         empty="Nobody is paying yet."
         columns={["Plan", "Companies", "Monthly"]}
-        rows={trend.revenue_by_plan.map((row) => ({
-          key: row.name,
+        rows={revenueByPlan.map((row) => ({
+          key: row.key,
           cells: [row.name, String(row.companies), formatUsd(row.mrr_usd)],
         }))}
       >
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
-            data={trend.revenue_by_plan}
+            data={revenueByPlan}
             layout="vertical"
             margin={{ top: 4, right: 16, bottom: 0, left: 8 }}
           >
@@ -156,7 +159,7 @@ const PlatformCharts = () => {
             <YAxis
               type="category"
               dataKey="name"
-              width={80}
+              width={112}
               tickLine={false}
               axisLine={false}
               className="fill-muted-foreground text-xs"
@@ -177,7 +180,7 @@ const PlatformCharts = () => {
               ? `Recorded nightly since ${format(parseISO(trend.snapshots_since), "d MMM yyyy")}.`
               : "Recorded nightly from today onward."
           }
-          empty="This one builds up from today. It cannot be filled in backwards — subscriptions keep no history, so a line drawn from sign-up dates could never show anybody leaving."
+          empty="This chart fills in from today. Subscriptions keep no history, so it cannot be drawn backwards."
           columns={["Date", "Monthly revenue", "Paying"]}
           rows={mrr.map((row) => ({
             key: row.date,

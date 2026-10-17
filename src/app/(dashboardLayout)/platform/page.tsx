@@ -1,35 +1,29 @@
 import PlatformCharts from "@/components/modules/Platform/PlatformCharts";
 import PlatformOverview from "@/components/modules/Platform/PlatformOverview";
-import { getUserInfo } from "@/services/auth.services";
-import type { Metadata } from "next";
 import PageHeader from "@/components/shared/PageHeader";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import { platformOverviewQuery, platformTrendQuery } from "@/queries/platform.queries";
+import type { QueryClient } from "@tanstack/react-query";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Platform",
+  title: "Overview",
 };
 
-/**
- * Where a super admin lands.
- *
- * Was a page of tabs; each area is now its own route, so the sidebar can name
- * them and a link to one can be sent to somebody. This keeps only what belongs
- * on a dashboard: how the business is doing, and what needs doing today.
- */
-const PlatformPage = async () => {
-  const user = await getUserInfo();
+// Fetched before the first paint, so the tiles and lists arrive at their real height.
+const prefetch = (queryClient: QueryClient) =>
+  Promise.all([queryClient.prefetchQuery(platformOverviewQuery()), queryClient.prefetchQuery(platformTrendQuery())]);
 
-  return (
-    <div className="space-y-6">
-      <PageHeader title="Dashboard">
-        Signed in as {user?.full_name ?? "super admin"}. This account belongs to no
-        company and cannot read any company&apos;s money — only how big it is and what it
-        pays.
-      </PageHeader>
+// Where the platform owner lands: how the business is doing and what needs doing this week.
+const PlatformPage = () => (
+  <div className="space-y-6">
+    <PageHeader title="Overview">How the platform is doing and what needs doing this week.</PageHeader>
 
+    <QueryPrefetch prefetch={prefetch}>
       <PlatformOverview />
       <PlatformCharts />
-    </div>
-  );
-};
+    </QueryPrefetch>
+  </div>
+);
 
 export default PlatformPage;

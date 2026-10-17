@@ -1,42 +1,31 @@
 "use client"
 
+import AttentionTile from "@/components/modules/Platform/AttentionTile"
+import { companiesMatching } from "@/components/modules/Platform/companyLinks"
+import LapsingList from "@/components/modules/Platform/LapsingList"
+import StandingBadge from "@/components/modules/Platform/StandingBadge"
+import TileLink from "@/components/modules/Platform/TileLink"
 import MetricTile, { count, usd } from "@/components/shared/kpi/MetricTile"
 import ErrorState from "@/components/shared/state/ErrorState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
-import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { useQuery } from "@tanstack/react-query"
-import { differenceInCalendarDays, format, parseISO } from "date-fns"
-import { CalendarClock } from "lucide-react"
 import { platformOverviewQuery } from "@/queries/platform.queries"
+import { useQuery } from "@tanstack/react-query"
+import { format, parseISO } from "date-fns"
+import Link from "next/link"
 
 /**
- * How the platform business is doing: the two numbers that answer it, then the
- * one list an operator acts on rather than reads, what lapses this week.
+ * How the platform business is doing: the numbers that answer it, each opening
+ * the list behind it, then what lapses this week and who signed up last.
  *
  * Nothing here is a company's own money; the API does not return it.
  */
-
-const daysLeft = (iso: string | null) =>
-  iso === null ? null : differenceInCalendarDays(parseISO(iso), new Date())
-
-const urgency = (days: number | null): "destructive" | "outline" =>
-  days !== null && days <= 2 ? "destructive" : "outline"
-
-const daysLeftLabel = (days: number | null) => {
-  if (days === null) return "no date"
-  if (days <= 0) return "today"
-  return `${days} ${days === 1 ? "day" : "days"}`
-}
-
 const PlatformOverview = () => {
-  const { data, isLoading, isError, isFetching, refetch } = useQuery(platformOverviewQuery())
+  const { data, isPending, isError, isFetching, refetch } = useQuery(platformOverviewQuery())
 
   const overview = data?.data
 
-  if (isLoading && !overview) {
-    return <LoadingBlock height="h-48" rounded />
-  }
+  if (isPending) return <LoadingBlock height="h-48" rounded />
 
   if (isError || !overview) {
     return (
@@ -55,78 +44,31 @@ const PlatformOverview = () => {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 lg:grid-cols-3">
-        <MetricTile
-          label="Monthly revenue"
-          metric={{ value: overview.mrr_usd }}
-          format={usd}
-          size="lead"
-          tone={1}
-          hint={`Across ${paying} paying ${paying === 1 ? "company" : "companies"}. Counts past due — money owed is still owed.`}
-        />
+        <TileLink href="/platform/finance" label="Monthly revenue: open the financial report">
+          <MetricTile
+            label="Monthly revenue"
+            metric={{ value: overview.mrr_usd }}
+            format={usd}
+            size="lead"
+            tone={1}
+            hint={`From ${paying} paying ${paying === 1 ? "company" : "companies"}, past due included.`}
+          />
+        </TileLink>
 
-        <MetricTile
-          label="Companies"
-          metric={{ value: companies.total }}
-          format={count}
-          tone={3}
-          hint={`${companies.trialing} on trial · ${companies.active} active`}
-        />
+        <TileLink href="/platform/customers" label="Companies: open the companies list">
+          <MetricTile
+            label="Companies"
+            metric={{ value: companies.total }}
+            format={count}
+            tone={3}
+            hint={`${companies.trialing} on trial · ${companies.active} paying`}
+          />
+        </TileLink>
 
-        <MetricTile
-          label="Needs attention"
-          metric={{ value: companies.past_due + companies.suspended + companies.unprovisioned }}
-          format={count}
-          tone={2}
-          hint={
-            // Spelled out rather than summarised: these three mean different
-            // things and are fixed in different ways.
-            `${companies.past_due} past due · ${companies.suspended} suspended · ${companies.unprovisioned} never set up`
-          }
-        />
+        <AttentionTile companies={companies} />
       </div>
 
-      <Card className="gap-0 overflow-hidden p-0">
-        <CardHeader className="border-b px-5 py-4">
-          <CardTitle className="text-base">Lapsing within a week</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Trials ending and periods running out. This is the list to work through, not
-            the one to read.
-          </p>
-        </CardHeader>
-
-        {endingSoon.length === 0 ? (
-          <p className="flex flex-col items-center gap-2 px-6 py-10 text-center text-sm text-muted-foreground">
-            <CalendarClock className="size-7" aria-hidden="true" />
-            Nothing lapses in the next seven days.
-          </p>
-        ) : (
-          <ul className="divide-y">
-            {endingSoon.map((row) => {
-              const days = daysLeft(row.ends_at)
-
-              return (
-                <li
-                  key={row.organization.id}
-                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{row.organization.name}</p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {row.organization.email || "no contact email"} · {row.plan} ·{" "}
-                      {row.status === "trialing" ? "trial" : "period"} ends{" "}
-                      {row.ends_at ? format(parseISO(row.ends_at), "d MMM") : "—"}
-                    </p>
-                  </div>
-
-                  <Badge variant={urgency(days)} className="shrink-0 tabular-nums">
-                    {daysLeftLabel(days)}
-                  </Badge>
-                </li>
-              )
-            })}
-          </ul>
-        )}
-      </Card>
+      <LapsingList rows={endingSoon} />
 
       <Card className="gap-0 overflow-hidden p-0">
         <CardHeader className="border-b px-5 py-4">
@@ -135,24 +77,26 @@ const PlatformOverview = () => {
         </CardHeader>
 
         {newest.length === 0 ? (
-          <p className="px-6 py-10 text-center text-sm text-muted-foreground">
-            Nobody has signed up yet.
-          </p>
+          <p className="px-6 py-10 text-center text-sm text-muted-foreground">Nobody has signed up yet.</p>
         ) : (
           <ul className="divide-y">
             {newest.map((row) => (
-              <li key={row.id} className="flex items-center justify-between gap-3 px-5 py-3.5">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{row.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {format(parseISO(row.created_at), "d MMM yyyy")} · {row.seats}{" "}
-                    {row.seats === 1 ? "person" : "people"}
-                  </p>
-                </div>
+              <li key={row.id}>
+                <Link
+                  href={companiesMatching(row.name)}
+                  className="flex items-center justify-between gap-3 px-5 py-3.5 outline-none hover:bg-muted/40 focus-visible:bg-muted/40"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{row.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {format(parseISO(row.created_at), "d MMM yyyy")} · {row.seats}{" "}
+                      {row.seats === 1 ? "person" : "people"}
+                      {row.plan && ` · ${row.plan}`}
+                    </p>
+                  </div>
 
-                <Badge variant={row.status ? "secondary" : "outline"} className="shrink-0">
-                  {row.plan ?? "not set up"}
-                </Badge>
+                  <StandingBadge status={row.status} />
+                </Link>
               </li>
             ))}
           </ul>
