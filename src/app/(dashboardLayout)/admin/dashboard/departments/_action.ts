@@ -1,45 +1,27 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
+import { requireId, runAction, runValidatedAction } from "@/lib/runAction"
 import { createDepartment, deleteDepartment, updateDepartment } from "@/services/people.services"
-import type { IDepartment } from "@/types/people.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+import { activeStateServerZodSchema, departmentServerZodSchema } from "@/zod/people.validation"
 
-export const createDepartmentAction = async (
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<IDepartment> | ApiErrorResponse> => {
-    try {
-        return await createDepartment(payload)
-    } catch (error: unknown) {
-        // "\"Design\" already exists" arrives here — the server matches names
-        // case-insensitively, so Design and design are one team, not two.
-        return { success: false, message: getActionErrorMessage(error, "Could not create it") }
-    }
-}
+// Names are unique case-insensitively, so "design" is refused while "Design"
+// exists, and the server's message says so.
+export const createDepartmentAction = async (values: unknown) =>
+    runValidatedAction(departmentServerZodSchema, values, "Could not create it", createDepartment)
 
-export const updateDepartmentAction = async (
-    id: string,
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<IDepartment> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid department id" }
+export const updateDepartmentAction = async (id: string, values: unknown) =>
+    requireId(id, "department") ??
+    runValidatedAction(departmentServerZodSchema, values, "Could not update it", (payload) =>
+        updateDepartment(id, payload),
+    )
 
-    try {
-        return await updateDepartment(id, payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not update it") }
-    }
-}
+export const setDepartmentActiveAction = async (id: string, values: unknown) =>
+    requireId(id, "department") ??
+    runValidatedAction(activeStateServerZodSchema, values, "Could not update it", (payload) =>
+        updateDepartment(id, payload),
+    )
 
-export const deleteDepartmentAction = async (
-    id: string,
-): Promise<ApiResponse<{ message: string }> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid department id" }
-
-    try {
-        return await deleteDepartment(id)
-    } catch (error: unknown) {
-        // "4 people are in Design. Move them first, or turn it off instead of
-        // deleting it." arrives here and already says what to do.
-        return { success: false, message: getActionErrorMessage(error, "Could not delete it") }
-    }
-}
+// A department with people in it is refused with "move them first, or turn it
+// off instead", which is shown as it is.
+export const deleteDepartmentAction = async (id: string) =>
+    requireId(id, "department") ?? runAction("Could not delete it", () => deleteDepartment(id))

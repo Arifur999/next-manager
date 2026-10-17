@@ -3,6 +3,7 @@
 import {
   createDepartmentAction,
   deleteDepartmentAction,
+  setDepartmentActiveAction,
   updateDepartmentAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/departments/_action"
 import { Badge } from "@/components/ui/badge"
@@ -52,8 +53,8 @@ const DepartmentsBoard = () => {
   const { mutate: save, isPending } = useMutation({
     mutationFn: () =>
       editingId
-        ? updateDepartmentAction(editingId, { name: name.trim(), description: description.trim() })
-        : createDepartmentAction({ name: name.trim(), description: description.trim() }),
+        ? updateDepartmentAction(editingId, { name, description })
+        : createDepartmentAction({ name, description }),
     onSuccess: (result) => {
       if (!result.success) {
         toast.error(result.message || "Could not save it")
@@ -67,7 +68,7 @@ const DepartmentsBoard = () => {
 
   const { mutate: toggle } = useMutation({
     mutationFn: (department: IDepartment) =>
-      updateDepartmentAction(department.id, { is_active: !department.is_active }),
+      setDepartmentActiveAction(department.id, { is_active: !department.is_active }),
     onSuccess: (result) => {
       if (!result.success) {
         toast.error(result.message || "Could not change it")
