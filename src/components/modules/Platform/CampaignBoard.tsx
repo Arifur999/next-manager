@@ -30,8 +30,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IAnnouncement } from "@/types/platform.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import type { IAnnouncementFormValues } from "@/zod/platform.validation"
+import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { Eye, Mail, Megaphone, Send, Trash2, X } from "lucide-react"
 import { useState } from "react"
@@ -72,7 +74,6 @@ const AUDIENCE_HINT: Record<Audience, string> = {
 const emptyDraft = { title: "", body: "", audience: "all" as Audience, send_email: false }
 
 const CampaignBoard = () => {
-  const queryClient = useQueryClient()
   const [draft, setDraft] = useState(emptyDraft)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [confirming, setConfirming] = useState<IAnnouncement | null>(null)
@@ -83,65 +84,52 @@ const CampaignBoard = () => {
   const drafts = announcements.filter((row) => !row.published_at)
   const sent = announcements.filter((row) => row.published_at)
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: queryKeys.platformAnnouncements.all })
-
   const reset = () => {
     setDraft(emptyDraft)
     setEditingId(null)
   }
 
-  const { mutate: save, isPending: isSaving } = useMutation({
-    mutationFn: () =>
-      editingId
-        ? updateAnnouncementAction(editingId, draft)
-        : createAnnouncementAction(draft),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not save the draft")
-        return
-      }
-      toast.success(editingId ? "Draft updated" : "Saved as a draft — nobody sees it yet")
-      reset()
-      void refresh()
-    },
+  const { run: saveDraft, isPending: isSaving } = useActionMutation({
+    action: (values: IAnnouncementFormValues) =>
+      editingId ? updateAnnouncementAction(editingId, values) : createAnnouncementAction(values),
+    successMessage: editingId ? "Draft updated" : "Saved as a draft — nobody sees it yet",
+    invalidateKeys: [queryKeys.platformAnnouncements.all],
+    refresh: false,
   })
 
-  const { mutate: publish, isPending: isPublishing } = useMutation({
-    mutationFn: (id: string) => publishAnnouncementAction(id),
+  const { run: publish, isPending: isPublishing } = useActionMutation({
+    action: publishAnnouncementAction,
+    // The server phrases its message against what actually happened to the
+    // email; a failed send gets the reason rather than a success tick.
+    successMessage: false,
+    invalidateKeys: [queryKeys.platformAnnouncements.all],
+    refresh: false,
     onSuccess: (result) => {
-      setConfirming(null)
+      if (!result.success) return
 
-      if (!result.success) {
-        toast.error(result.message || "Could not publish")
-        return
-      }
-
-      const email = "data" in result ? result.data?.email : null
-
-      // The server already phrases this against what actually happened; a
-      // failed send gets the reason rather than a success tick.
+      const email = result.data.email
       if (email && email.delivered < email.attempted) {
         toast.warning(result.message, { description: email.reason ?? undefined })
       } else {
         toast.success(result.message)
       }
-
-      void refresh()
     },
   })
 
-  const { mutate: remove } = useMutation({
-    mutationFn: (id: string) => deleteAnnouncementAction(id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not remove it")
-        return
-      }
-      toast.success("Removed — it leaves everyone's notifications too")
-      if (editingId) reset()
-      void refresh()
-    },
+  const { run: removeAnnouncement } = useActionMutation({
+    action: deleteAnnouncementAction,
+    successMessage: "Removed — it leaves everyone's notifications too",
+    invalidateKeys: [queryKeys.platformAnnouncements.all],
+    refresh: false,
   })
+
+  const handleSave = async () => {
+    if (await saveDraft(draft)) reset()
+  }
+
+  const handleRemove = async (id: string) => {
+    if ((await removeAnnouncement(id)) && editingId) reset()
+  }
 
   const canSave = draft.title.trim().length > 0 && draft.body.trim().length > 0
 
@@ -233,7 +221,7 @@ const CampaignBoard = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button onClick={() => save()} disabled={!canSave || isSaving} className="flex-1">
+            <Button onClick={() => void handleSave()} disabled={!canSave || isSaving} className="flex-1">
               {editingId ? "Save changes" : "Save as draft"}
             </Button>
             {editingId && (
@@ -300,7 +288,7 @@ const CampaignBoard = () => {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => remove(row.id)}
+                      onClick={() => void handleRemove(row.id)}
                       aria-label={`Delete draft ${row.title}`}
                     >
                       <Trash2 className="size-4" />
@@ -357,7 +345,7 @@ const CampaignBoard = () => {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => remove(row.id)}
+                      onClick={() => void handleRemove(row.id)}
                       aria-label={`Withdraw ${row.title}`}
                     >
                       <Trash2 className="size-4" />
@@ -384,7 +372,7 @@ const CampaignBoard = () => {
             <AlertDialogCancel>Not yet</AlertDialogCancel>
             <AlertDialogAction
               disabled={isPublishing}
-              onClick={() => confirming && publish(confirming.id)}
+              onClick={() => confirming && void publish(confirming.id)}
             >
               Publish
             </AlertDialogAction>
