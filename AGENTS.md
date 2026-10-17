@@ -32,7 +32,9 @@ Next.js 16.3 (App Router, `src/proxy.ts` instead of middleware), React 19.2, Typ
 - Layering: `component -> _action.ts -> "use server" service -> server-only httpClient`. The browser never sees the API base URL or a token.
 - `src/services/<domain>.services.ts` and `src/types/<domain>.types.ts`: one file per domain (crm, project, work, billing, finance, spending, people, catalog, workspace, insights, platform).
 - `src/queries/<domain>.queries.ts`: one `queryOptions` (or `infiniteQueryOptions`) per read; keys from `src/lib/queryKeys.ts`.
-- `src/lib`: `authUtils.ts` (route table), `logger.ts`, `apiFailure.ts`, `queryString.ts`, `currency.ts`, `runAction.ts`, `paging.ts`. `src/env.ts` is the only reader of server env.
+- `src/lib`: `authUtils.ts` (route table), `logger.ts`, `apiFailure.ts`, `queryString.ts`, `currency.ts`, `dates.ts`, `runAction.ts`, `paging.ts`. `src/env.ts` is the only reader of server env.
+- Tables: one `DataTable` (`src/components/shared/table`) on TanStack Table. In memory by default (sort, column filters, search, paging, CSV export, column visibility remembered per `tableId`); lists that grow are server-paged with `useServerDataTable(CONFIG)`, which keeps page, size, search and filters in the URL. The CONFIG lives at module scope beside the table and the page prefetches with `buildTableQueryString(searchParams, CONFIG)`, so both build the same query key. Pure helpers in `src/lib/table` (`csv`, `filterFns`, `filterOptions`, `pageWindow`, `urlState`, `queryProps`), all tested.
+- Shared UI: `PageHeader` for every page heading, `ConfirmDialog` for anything destructive, `PanelState` / `ErrorState` for non-table lists.
 - Landing page: `src/app/(commonLayout)/(marketing)`, sections in `src/components/modules/Home/<Section>/`, copy in `src/data/home/*.ts`, site facts in `src/data/site.ts`. Design records in `design/` (brief, direction, content, motion, qa).
 - Tokens: `src/app/globals.css` (primitives, then semantic light and dark, then `@theme inline`).
 
@@ -44,7 +46,8 @@ Next.js 16.3 (App Router, `src/proxy.ts` instead of middleware), React 19.2, Typ
 - Token refresh happens in `src/proxy.ts` only. An API outage is an error, not a sign-out (`getUserInfo` returns null only for 401 and 403).
 - Redirects after sign-in go through `safeRedirect`. Why: `?redirect=//evil.example` used to leave the site.
 - Query keys come only from `queryKeys` through `src/queries`; an inline `queryKey: [` is a lint error.
-- USD and BDT are never added together; format money with `lib/currency.ts`.
+- USD and BDT are never added together; format money with `lib/currency.ts` (negative amounts get a typographic minus so the sign never wraps away from the figure).
+- Calendar days from the API (`"2026-09-01"`) are parsed with `toDate` from `lib/dates.ts`, never `new Date()`, which reads them as midnight UTC and shows the previous day west of Greenwich.
 - Colours, radius, type and motion come from tokens in `globals.css`; no hex in `src` outside it (the OG image uses rgb values mirrored from tokens). Every new colour pair gets a line in `scripts/check-contrast.ts`.
 - The landing page shows only real proof: no logos, ratings, testimonials or invented numbers. Prices come only from `GET /api/v1/public/plans`; when it fails, the pricing section, its nav link and any trial promise disappear.
 - One primary CTA label everywhere, from `getPrimaryCta(trialDays)`. Guarded by `src/data/home/content.test.ts`.
@@ -60,7 +63,9 @@ Next.js 16.3 (App Router, `src/proxy.ts` instead of middleware), React 19.2, Typ
 
 - Server Components by default; `"use client"` only on the leaf that needs it.
 - Forms: TanStack Form with a form zod schema and a server zod schema; pass `autoComplete`.
-- New dashboard lists get a skeleton, an error with Retry (`ErrorState`, `PanelState`) and a first-use empty state.
+- New dashboard lists get a skeleton, an error with Retry (`ErrorState`, `PanelState`) and a first-use empty state. Tables get all three from `DataTable` with `{...toTableQueryProps(query)}`.
+- Writes go through `useActionMutation` (toast, invalidate, refresh, stable `run`); `successMessage: false` where the screen already shows the result.
+- Check UI changes in the browser against the local API. The TanStack Query devtools (development only) can force any query into its error or loading state.
 - Commit as Conventional Commits with a behaviour-focused subject.
 
 ## Don't
