@@ -32,7 +32,7 @@ const MessageThread = ({
   meId: string | null
   isLoading: boolean
   isSending: boolean
-  onSend: (body: string) => void
+  onSend: (body: string) => Promise<boolean>
 }) => {
   const [draft, setDraft] = useState("")
   const bottom = useRef<HTMLDivElement>(null)
@@ -82,12 +82,12 @@ const MessageThread = ({
 
       <form
         className="flex items-center gap-2 border-t p-3"
-        onSubmit={(event) => {
+        onSubmit={async (event) => {
           event.preventDefault()
           const body = draft.trim()
           if (!body) return
-          onSend(body)
-          setDraft("")
+          // Cleared only once it is stored, so a failed send keeps what was typed.
+          if (await onSend(body)) setDraft("")
         }}
       >
         <Input

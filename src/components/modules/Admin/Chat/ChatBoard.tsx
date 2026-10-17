@@ -152,7 +152,7 @@ const ChatBoard = ({ meId }: { meId: string | null }) => {
               meId={meId}
               isLoading={loadingMessages}
               isSending={sending}
-              onSend={(body) => void sendChatMessage(body)}
+              onSend={sendChatMessage}
             />
           </>
         ) : (
