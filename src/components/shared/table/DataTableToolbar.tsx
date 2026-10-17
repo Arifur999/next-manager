@@ -1,17 +1,18 @@
 "use client";
 
+import type { Table } from "@tanstack/react-table";
 import DataTableSearch from "./DataTableSearch";
+import DataTableViewOptions from "./DataTableViewOptions";
 import type { DataTableSearchConfig } from "./dataTable.types";
 
-interface DataTableToolbarProps {
+interface DataTableToolbarProps<TData> {
+  table: Table<TData>;
   search?: DataTableSearchConfig;
   toolbarAction?: React.ReactNode;
   isLoading?: boolean;
 }
 
-const DataTableToolbar = ({ search, toolbarAction, isLoading }: DataTableToolbarProps) => {
-  if (!search && !toolbarAction) return null;
-
+const DataTableToolbar = <TData,>({ table, search, toolbarAction, isLoading }: DataTableToolbarProps<TData>) => {
   return (
     <div className="mb-4 flex flex-wrap items-start gap-3">
       {search && (
@@ -25,7 +26,10 @@ const DataTableToolbar = ({ search, toolbarAction, isLoading }: DataTableToolbar
         />
       )}
 
-      {toolbarAction && <div className="ml-auto shrink-0">{toolbarAction}</div>}
+      <div className="ml-auto flex shrink-0 items-center gap-2">
+        <DataTableViewOptions table={table} />
+        {toolbarAction}
+      </div>
     </div>
   );
 };

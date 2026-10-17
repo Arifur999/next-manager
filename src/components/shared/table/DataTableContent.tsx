@@ -1,10 +1,9 @@
 "use client";
 
 import ErrorState from "@/components/shared/state/ErrorState";
-import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { flexRender, type Header, type Table as TanStackTable } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import DataTableColumnHeader from "./DataTableColumnHeader";
 import DataTableSkeleton from "./DataTableSkeleton";
 
 interface DataTableContentProps<TData> {
@@ -16,26 +15,11 @@ interface DataTableContentProps<TData> {
   onRetry?: () => void;
 }
 
-const SortIcon = ({ direction }: { direction: false | "asc" | "desc" }) => {
-  if (direction === "asc") return <ArrowUp className="ml-1 h-4 w-4" />;
-  if (direction === "desc") return <ArrowDown className="ml-1 h-4 w-4" />;
-  return <ArrowUpDown className="ml-1 h-4 w-4 opacity-50" />;
-};
-
+// A plain-string header gets the sort and hide menu; a custom one renders as written.
 const renderHeader = <TData,>(header: Header<TData, unknown>) => {
-  const content = flexRender(header.column.columnDef.header, header.getContext());
-  if (!header.column.getCanSort()) return content;
-
-  return (
-    <Button
-      variant="ghost"
-      className="h-auto cursor-pointer p-0 font-semibold hover:bg-transparent hover:text-inherit focus-visible:ring-0"
-      onClick={header.column.getToggleSortingHandler()}
-    >
-      {content}
-      <SortIcon direction={header.column.getIsSorted()} />
-    </Button>
-  );
+  const content = header.column.columnDef.header;
+  if (typeof content === "string") return <DataTableColumnHeader column={header.column} title={content} />;
+  return flexRender(content, header.getContext());
 };
 
 const DataTableContent = <TData,>({

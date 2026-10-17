@@ -12,5 +12,6 @@ export const createActionsColumn = <TData,>(actions: DataTableActions<TData>): C
   id: ACTIONS_COLUMN_ID,
   header: "Actions",
   enableSorting: false,
+  enableHiding: false,
   cell: ({ row }) => <DataTableRowActions row={row.original} actions={actions} />,
 });

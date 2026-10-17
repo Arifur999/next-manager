@@ -38,7 +38,7 @@ const DataTable = <TData,>(props: DataTableProps<TData>) => {
 
   return (
     <div>
-      <DataTableToolbar search={searchFromFirstPage} toolbarAction={toolbarAction} isLoading={isLoading} />
+      <DataTableToolbar table={table} search={searchFromFirstPage} toolbarAction={toolbarAction} isLoading={isLoading} />
 
       <div className="font-condensed relative overflow-hidden rounded-lg border">
         {/* Rows stay on screen during a refetch; only this bar says it is running. */}
