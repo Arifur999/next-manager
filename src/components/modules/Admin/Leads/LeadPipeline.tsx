@@ -5,6 +5,7 @@ import CreateLeadModal from "@/components/modules/Admin/Leads/CreateLeadModal"
 import LeadCard from "@/components/modules/Admin/Leads/LeadCard"
 import StatTile from "@/components/shared/StatTile"
 import ErrorState from "@/components/shared/state/ErrorState"
+import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatUsd } from "@/lib/currency"
 import type { LeadStage } from "@/types/crm.types"
@@ -74,7 +75,9 @@ const LeadPipeline = () => {
       {isFirstLoad && (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {OPEN_STAGES.map((column) => (
-            <Card key={column.stage} className="h-48 animate-pulse bg-muted/40" />
+            <Card key={column.stage} className="overflow-hidden p-0">
+              <LoadingBlock height="h-48" />
+            </Card>
           ))}
         </div>
       )}
