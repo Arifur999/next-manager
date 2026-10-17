@@ -5,10 +5,11 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { ICapacityRow } from "@/types/work.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import type { ICapacityFormValues } from "@/zod/people.validation"
+import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
-import { toast } from "sonner"
 import { capacitiesQuery } from "@/queries/work.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -27,7 +28,6 @@ import { queryKeys } from "@/lib/queryKeys"
  */
 
 const CapacityRow = ({ row }: { row: ICapacityRow }) => {
-  const queryClient = useQueryClient()
   const [hours, setHours] = useState(String(row.weekly_hours))
   const [rate, setRate] = useState(
     // 0 means unset, so the field starts empty rather than showing a zero
@@ -35,18 +35,12 @@ const CapacityRow = ({ row }: { row: ICapacityRow }) => {
     row.standard_rate_usd > 0 ? String(row.standard_rate_usd) : "",
   )
 
-  const { mutate: save, isPending } = useMutation({
-    mutationFn: () => setCapacityAction(row.user.id, { weekly_hours: hours, standard_rate_usd: rate }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Failed to save")
-        return
-      }
-      toast.success(`${row.user.full_name} updated`)
-      void queryClient.invalidateQueries({ queryKey: queryKeys.capacities.all })
-      // Every utilization and realization figure divides by this.
-      void queryClient.invalidateQueries({ queryKey: queryKeys.kpi.all })
-    },
+  const { run: saveCapacity, isPending } = useActionMutation({
+    action: (values: ICapacityFormValues) => setCapacityAction(row.user.id, values),
+    successMessage: `${row.user.full_name} updated`,
+    // Every utilization and realization figure divides by this.
+    invalidateKeys: [queryKeys.capacities.all, queryKeys.kpi.all],
+    refresh: false,
   })
 
   const dirty =
@@ -95,7 +89,12 @@ const CapacityRow = ({ row }: { row: ICapacityRow }) => {
           />
         </label>
 
-        <Button type="button" size="sm" disabled={isPending || !dirty} onClick={() => save()}>
+        <Button
+          type="button"
+          size="sm"
+          disabled={isPending || !dirty}
+          onClick={() => void saveCapacity({ weekly_hours: hours, standard_rate_usd: rate })}
+        >
           Save
         </Button>
       </div>
