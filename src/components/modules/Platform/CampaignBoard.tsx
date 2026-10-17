@@ -9,6 +9,7 @@ import AnnouncementDrafts from "@/components/modules/Platform/AnnouncementDrafts
 import PublishAnnouncementDialog from "@/components/modules/Platform/PublishAnnouncementDialog"
 import RemoveAnnouncementDialog from "@/components/modules/Platform/RemoveAnnouncementDialog"
 import SentAnnouncements from "@/components/modules/Platform/SentAnnouncements"
+import ErrorState from "@/components/shared/state/ErrorState"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IAnnouncement } from "@/types/platform.types"
 import type { IAnnouncementFormValues } from "@/zod/platform.validation"
@@ -40,9 +41,9 @@ const CampaignBoard = () => {
   const [confirming, setConfirming] = useState<IAnnouncement | null>(null)
   const [removing, setRemoving] = useState<IAnnouncement | null>(null)
 
-  const { data, isLoading } = useQuery(announcementsQuery())
+  const announcementsList = useQuery(announcementsQuery())
 
-  const announcements = data?.data ?? []
+  const announcements = announcementsList.data?.data ?? []
   const drafts = announcements.filter((row) => !row.published_at)
   const sent = announcements.filter((row) => row.published_at)
 
@@ -83,17 +84,30 @@ const CampaignBoard = () => {
         onStopEditing={reset}
       />
 
-      {/* -------------------------------------------------------------- list */}
-      <div className="space-y-4">
-        <AnnouncementDrafts
-          drafts={drafts}
-          onEdit={handleEdit}
-          onPublish={setConfirming}
-          onRemove={setRemoving}
+      {announcementsList.isError ? (
+        // Both lists read this one request, so one failure stands in for both.
+        <ErrorState
+          className="h-fit rounded-xl border border-dashed"
+          message="The announcements did not load."
+          onRetry={() => void announcementsList.refetch()}
+          isRetrying={announcementsList.isFetching}
         />
+      ) : (
+        <div className="space-y-4">
+          <AnnouncementDrafts
+            drafts={drafts}
+            onEdit={handleEdit}
+            onPublish={setConfirming}
+            onRemove={setRemoving}
+          />
 
-        <SentAnnouncements sent={sent} isLoading={isLoading} onRemove={setRemoving} />
-      </div>
+          <SentAnnouncements
+            sent={sent}
+            isLoading={announcementsList.isLoading}
+            onRemove={setRemoving}
+          />
+        </div>
+      )}
 
       <PublishAnnouncementDialog announcement={confirming} onClose={() => setConfirming(null)} />
 
