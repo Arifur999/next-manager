@@ -79,13 +79,13 @@ const UsageBar = ({
 const SubscriptionPanel = () => {
   const { data, isLoading, isError, isFetching, refetch } = useQuery(mySubscriptionQuery())
 
-  const result = data?.data
+  const standing = data?.data
 
-  if (isLoading && !result) {
+  if (isLoading && !standing) {
     return <div className="h-40 animate-pulse rounded-xl bg-muted/40" />
   }
 
-  if (isError || !result) {
+  if (isError || !standing) {
     return (
       <ErrorState
         className="rounded-xl border border-dashed"
@@ -96,7 +96,7 @@ const SubscriptionPanel = () => {
     )
   }
 
-  const { subscription, usage } = result
+  const { subscription, usage } = standing
 
   return (
     <Card className="gap-0 p-0">
