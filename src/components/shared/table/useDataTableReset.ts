@@ -24,8 +24,8 @@ export const useDataTableReset = <TData,>(
     : table.getState().columnFilters.length > 0;
 
   const reset = () => {
-    if (isServerFiltered) filters?.onClearAll?.();
-    else table.resetColumnFilters();
+    if (filters?.onClearAll) return filters.onClearAll();
+    table.resetColumnFilters();
     if (hasSearch) search?.onDebouncedChange?.("");
   };
 

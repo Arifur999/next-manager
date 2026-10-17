@@ -49,6 +49,7 @@ export interface DataTableFiltersConfig {
   // filters its rows in memory.
   values?: DataTableFilterValues;
   onFilterChange?: (filterId: string, value: DataTableFilterValue | undefined) => void;
+  // Clears the caller's search as well as its filters, in one step.
   onClearAll?: () => void;
 }
 

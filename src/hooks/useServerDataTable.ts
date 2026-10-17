@@ -33,15 +33,17 @@ export const useServerDataTable = <TData,>(config: ServerDataTableConfig) => {
 
   // pushState, not router.push: the URL changes with no navigation and no
   // scroll jump; Next keeps useSearchParams in step, and the query key follows.
+  // It starts from the live URL, not this render's searchParams, which Next
+  // updates later in a transition: two quick updates must compose, not undo each other.
   const updateParams = useCallback(
     (update: (params: URLSearchParams) => void, { resetPage = false } = {}) => {
-      const params = new URLSearchParams(searchParams.toString())
+      const params = new URLSearchParams(window.location.search)
       update(params)
       if (resetPage) params.delete("page")
       const query = params.toString()
       window.history.pushState(null, "", query ? `${pathname}?${query}` : pathname)
     },
-    [pathname, searchParams],
+    [pathname],
   )
 
   const { page, limit } = readPaging(searchParams, defaultLimit)
@@ -69,8 +71,15 @@ export const useServerDataTable = <TData,>(config: ServerDataTableConfig) => {
     if (filter) updateParams((params) => writeFilterValue(params, filter, value), { resetPage: true })
   }
 
+  // Search and filters in one URL update, so Reset is one step back, not two.
   const onClearAll = () =>
-    updateParams((params) => filters.flatMap(filterParamKeys).forEach((key) => params.delete(key)), { resetPage: true })
+    updateParams(
+      (params) => {
+        filters.flatMap(filterParamKeys).forEach((key) => params.delete(key))
+        params.delete(searchKey)
+      },
+      { resetPage: true },
+    )
 
   const dataTableProps: Pick<DataTableProps<TData>, "pagination" | "search" | "filters"> = {
     pagination: { state: paginationState, onPaginationChange },
