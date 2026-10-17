@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IPlan } from "@/types/platform.types"
+import type { IPlanLimitsFormValues } from "@/zod/platform.validation"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { toast } from "sonner"
@@ -28,26 +30,18 @@ import { queryKeys } from "@/lib/queryKeys"
 const limitLabel = (value: number | null) => (value === null ? "unlimited" : String(value))
 
 const PlanRow = ({ plan }: { plan: IPlan }) => {
-  const queryClient = useQueryClient()
   const [price, setPrice] = useState(String(plan.price_usd))
   const [seats, setSeats] = useState(plan.max_seats === null ? "" : String(plan.max_seats))
   const [projects, setProjects] = useState(
     plan.max_projects === null ? "" : String(plan.max_projects),
   )
 
-  const { mutate: save, isPending } = useMutation({
-    mutationFn: () =>
-      updatePlanAction(plan.id, { price_usd: price, max_seats: seats, max_projects: projects }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not update the plan")
-        return
-      }
-      toast.success(`${plan.name} updated`)
-      void queryClient.invalidateQueries({ queryKey: queryKeys.platformPlans.all })
-      // Company rows show their plan's limits, so they are stale now too.
-      void queryClient.invalidateQueries({ queryKey: queryKeys.platformCompanies.all })
-    },
+  const { run: savePlan, isPending } = useActionMutation({
+    action: (values: IPlanLimitsFormValues) => updatePlanAction(plan.id, values),
+    successMessage: `${plan.name} updated`,
+    // Company rows show their plan's limits, so they are stale now too.
+    invalidateKeys: [queryKeys.platformPlans.all, queryKeys.platformCompanies.all],
+    refresh: false,
   })
 
   const dirty =
@@ -117,7 +111,12 @@ const PlanRow = ({ plan }: { plan: IPlan }) => {
           />
         </label>
 
-        <Button type="button" size="sm" disabled={isPending || !dirty} onClick={() => save()}>
+        <Button
+          type="button"
+          size="sm"
+          disabled={isPending || !dirty}
+          onClick={() => void savePlan({ price_usd: price, max_seats: seats, max_projects: projects })}
+        >
           Save
         </Button>
       </div>
