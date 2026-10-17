@@ -21,6 +21,14 @@ import { duePeopleQuery, dueTransactionsListQuery } from "@/queries/spending.que
  * working that out from scratch, so each row says which way it points.
  */
 
+// Which way a balance points, in words: a signed number alone makes every
+// reader work the convention out again.
+const balanceDirection = (balanceBdt: number) => {
+  if (balanceBdt === 0) return "settled"
+  if (balanceBdt < 0) return "they owe you"
+  return "you owe them"
+}
+
 const DuePaymentsBoard = () => {
   const peopleQuery = useQuery(duePeopleQuery())
   const transactionsQuery = useQuery(dueTransactionsListQuery())
@@ -80,36 +88,29 @@ const DuePaymentsBoard = () => {
             }
           >
             <ul className="divide-y">
-              {people.map((person) => {
-                const owesAgency = person.balance_bdt < 0
-                const settled = person.balance_bdt === 0
+              {people.map((person) => (
+                <li
+                  key={person.id}
+                  className="flex items-center justify-between gap-3 px-5 py-3.5"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{person.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {formatBdt(person.total_received_bdt)} in ·{" "}
+                      {formatBdt(person.total_payment_bdt)} out
+                    </p>
+                  </div>
 
-                return (
-                  <li
-                    key={person.id}
-                    className="flex items-center justify-between gap-3 px-5 py-3.5"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{person.name}</p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {formatBdt(person.total_received_bdt)} in ·{" "}
-                        {formatBdt(person.total_payment_bdt)} out
-                      </p>
-                    </div>
-
-                    <div className="shrink-0 text-right">
-                      <p className="text-sm font-medium tabular-nums">
-                        {formatBdt(Math.abs(person.balance_bdt))}
-                      </p>
-                      {/* Which way it points, in words — a signed number alone
-                          makes every reader work the convention out again. */}
-                      <p className="text-xs text-muted-foreground">
-                        {settled ? "settled" : owesAgency ? "they owe you" : "you owe them"}
-                      </p>
-                    </div>
-                  </li>
-                )
-              })}
+                  <div className="shrink-0 text-right">
+                    <p className="text-sm font-medium tabular-nums">
+                      {formatBdt(Math.abs(person.balance_bdt))}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {balanceDirection(person.balance_bdt)}
+                    </p>
+                  </div>
+                </li>
+              ))}
             </ul>
           </PanelState>
         </Card>
