@@ -11,10 +11,10 @@ import ServiceFormCard, {
   type ServiceDraft,
 } from "@/components/modules/Admin/Services/ServiceFormCard"
 import ServiceList from "@/components/modules/Admin/Services/ServiceList"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IService } from "@/types/catalog.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
-import { toast } from "sonner"
 import { serviceCategoriesQuery, servicesListQuery } from "@/queries/catalog.queries"
 import { queryKeys } from "@/lib/queryKeys"
 import { NO_CATEGORY } from "@/zod/catalog.validation"
@@ -34,7 +34,6 @@ import { NO_CATEGORY } from "@/zod/catalog.validation"
  * every write behind it — so offering the form would only be a form that fails.
  */
 const ServicesBoard = ({ canManage = true }: { canManage?: boolean }) => {
-  const queryClient = useQueryClient()
   const [draft, setDraft] = useState<ServiceDraft>(emptyService)
   const [editingId, setEditingId] = useState<string | null>(null)
 
@@ -44,52 +43,40 @@ const ServicesBoard = ({ canManage = true }: { canManage?: boolean }) => {
   const services = data?.data ?? []
   const categories = categoryData?.data ?? []
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: queryKeys.services.all })
   const reset = () => {
     setDraft(emptyService)
     setEditingId(null)
   }
 
-  const { mutate: save, isPending } = useMutation({
-    mutationFn: () =>
-      editingId ? updateServiceAction(editingId, draft) : createServiceAction(draft),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not save it")
-        return
-      }
-      toast.success(editingId ? "Service updated" : "Added to the catalogue")
-      reset()
-      void refresh()
-    },
+  const { run: saveService, isPending } = useActionMutation({
+    action: (values: ServiceDraft) =>
+      editingId ? updateServiceAction(editingId, values) : createServiceAction(values),
+    successMessage: editingId ? "Service updated" : "Added to the catalogue",
+    invalidateKeys: [queryKeys.services.all],
+    refresh: false,
   })
 
-  const { mutate: toggle } = useMutation({
-    mutationFn: (service: IService) =>
-      setServiceActiveAction(service.id, { is_active: !service.is_active }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not change it")
-        return
-      }
-      void refresh()
-    },
+  // No toast: the row's "not sold" badge is the confirmation.
+  const { run: toggleSold } = useActionMutation({
+    action: (service: IService) => setServiceActiveAction(service.id, { is_active: !service.is_active }),
+    successMessage: false,
+    invalidateKeys: [queryKeys.services.all],
+    refresh: false,
   })
 
-  const { mutate: remove } = useMutation({
-    mutationFn: (service: IService) => deleteServiceAction(service.id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        // The server names what is riding on it and says to turn it off
-        // instead, which is more use than a shorter sentence.
-        toast.error(result.message || "Could not remove it")
-        return
-      }
-      toast.success("Removed from the catalogue")
+  const { run: removeService } = useActionMutation({
+    action: (service: IService) => deleteServiceAction(service.id),
+    successMessage: "Removed from the catalogue",
+    invalidateKeys: [queryKeys.services.all],
+    refresh: false,
+    onSuccess: () => {
       if (editingId) reset()
-      void refresh()
     },
   })
+
+  const handleSave = async () => {
+    if (await saveService(draft)) reset()
+  }
 
   return (
     <div
@@ -106,7 +93,7 @@ const ServicesBoard = ({ canManage = true }: { canManage?: boolean }) => {
         editing={Boolean(editingId)}
         isPending={isPending}
         onChange={setDraft}
-        onSubmit={save}
+        onSubmit={() => void handleSave()}
         onCancel={reset}
       />
       )}
@@ -126,8 +113,8 @@ const ServicesBoard = ({ canManage = true }: { canManage?: boolean }) => {
           })
         }}
         onEditable={canManage}
-        onToggle={toggle}
-        onDelete={remove}
+        onToggle={(service) => void toggleSold(service)}
+        onDelete={(service) => void removeService(service)}
       />
     </div>
   )
