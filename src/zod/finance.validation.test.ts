@@ -7,7 +7,6 @@ import {
     createShareholderServerZodSchema,
     payInstalmentServerZodSchema,
     setDefaultRateServerZodSchema,
-    shareholderStatusServerZodSchema,
 } from "./finance.validation"
 
 describe("createAccountServerZodSchema", () => {
@@ -165,17 +164,6 @@ describe("createShareholderServerZodSchema", () => {
 
     it("requires a name", () => {
         expect(createShareholderServerZodSchema.safeParse({ name: "", share_pct: "10" }).success).toBe(false)
-    })
-})
-
-describe("shareholderStatusServerZodSchema", () => {
-    it("accepts only a true or false is_active", () => {
-        expect(shareholderStatusServerZodSchema.parse({ is_active: false })).toEqual({ is_active: false })
-        expect(shareholderStatusServerZodSchema.safeParse({ is_active: "no" }).success).toBe(false)
-    })
-
-    it("drops any other field", () => {
-        expect(shareholderStatusServerZodSchema.parse({ is_active: true, share_pct: 100 })).toEqual({ is_active: true })
     })
 })
 

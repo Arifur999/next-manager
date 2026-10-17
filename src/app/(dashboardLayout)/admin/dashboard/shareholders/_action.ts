@@ -8,11 +8,8 @@ import {
     deleteShareholder,
     updateShareholder,
 } from "@/services/finance.services"
-import {
-    createDistributionServerZodSchema,
-    createShareholderServerZodSchema,
-    shareholderStatusServerZodSchema,
-} from "@/zod/finance.validation"
+import { createDistributionServerZodSchema, createShareholderServerZodSchema } from "@/zod/finance.validation"
+import { activeStateServerZodSchema } from "@/zod/formFields"
 
 // The API's refusals already say what to do ("Shares would total 120%. The
 // others already hold 90%.", "has distributions recorded"), so they reach the
@@ -21,9 +18,10 @@ import {
 export const createShareholderAction = async (values: unknown) =>
     runValidatedAction(createShareholderServerZodSchema, values, "Could not add them", createShareholder)
 
+// Retiring and bringing back is the one change a screen makes to a shareholder.
 export const updateShareholderAction = async (id: string, values: unknown) =>
     requireId(id, "shareholder") ??
-    runValidatedAction(shareholderStatusServerZodSchema, values, "Could not update them", (payload) =>
+    runValidatedAction(activeStateServerZodSchema, values, "Could not update them", (payload) =>
         updateShareholder(id, payload),
     )
 

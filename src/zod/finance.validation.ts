@@ -108,11 +108,6 @@ export const createShareholderServerZodSchema = shareholderFormZodSchema.transfo
     share_pct: toNumber(values.share_pct) ?? 0,
 }))
 
-// Retiring and bringing back is the one change a screen makes to a shareholder.
-export const shareholderStatusServerZodSchema = z.object({
-    is_active: z.boolean(),
-})
-
 export const distributionFormZodSchema = z.object({
     shareholder_id: z.string().min(1, "Choose who it is paid to"),
     date: isoDate,
