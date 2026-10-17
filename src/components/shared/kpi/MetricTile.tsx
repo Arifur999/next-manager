@@ -19,13 +19,24 @@ import { CircleHelp, TrendingDown, TrendingUp } from "lucide-react"
  *      forced-colors mode.
  */
 
-type Tone = 1 | 2 | 3
+/** A colour that says something about the figure: good, bad, or worth a look. */
+type FigureTone = "positive" | "negative" | "caution"
 
-const ACCENTS: Record<Tone, string> = {
-    1: "text-chart-1",
-    2: "text-chart-2",
-    3: "text-chart-3",
+/**
+ * Series hues from the first design. A figure no longer takes them: "Churn
+ * 0.0%" in orange read as a warning on a perfect month. Still accepted so
+ * callers compile until the module pass drops them.
+ */
+type SeriesTone = 1 | 2 | 3
+
+const FIGURE_TONES: Record<FigureTone, string> = {
+    positive: "text-success",
+    negative: "text-destructive",
+    caution: "text-warning-subtle-foreground",
 }
+
+const figureToneClass = (tone: FigureTone | SeriesTone | undefined) =>
+    typeof tone === "string" ? FIGURE_TONES[tone] : "text-foreground"
 
 type Props = {
     label: string
@@ -36,7 +47,8 @@ type Props = {
     hint?: string
     /** The decision-critical tile on a screen gets the bigger type. */
     size?: "default" | "lead"
-    tone?: Tone
+    /** Foreground unless the colour is the message, such as a negative net. */
+    tone?: FigureTone | SeriesTone
     /** True when the target is a ceiling, so "under" is the good direction. */
     lowerIsBetter?: boolean
 }
@@ -57,7 +69,7 @@ const MetricTile = ({
     format = (value) => value.toLocaleString(),
     hint,
     size = "default",
-    tone = 1,
+    tone,
     lowerIsBetter = false,
 }: Props) => {
     const attainment = isAttainment(metric) ? metric : null
@@ -85,7 +97,7 @@ const MetricTile = ({
                         className={cn(
                             "mt-2 font-semibold tracking-tight tabular-nums",
                             size === "lead" ? "text-4xl" : "text-2xl",
-                            ACCENTS[tone],
+                            figureToneClass(tone),
                         )}
                     >
                         {format(metric.value)}

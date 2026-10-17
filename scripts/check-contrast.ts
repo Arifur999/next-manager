@@ -68,6 +68,9 @@ const PAIRS: Array<[string, string, number]> = [
   ["--primary", "--background", 3],
   ["--destructive", "--background", 4.5],
   ["--destructive", "--card", 4.5],
+  // MetricTile figures that carry a verdict (large text, so 3:1 would do).
+  ["--success", "--card", 4.5],
+  ["--warning-subtle-foreground", "--card", 4.5],
   ["--ring", "--background", 3],
   ["--chart-1", "--card", 3],
   ["--chart-2", "--card", 3],
