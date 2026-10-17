@@ -268,6 +268,7 @@ const WithdrawalsBoard = () => {
         data={withdrawals}
         columns={withdrawalsColumns}
         tableId="withdrawals"
+        exportFileName="withdrawals"
         isLoading={isPending}
         isFetching={isFetching}
         emptyMessage="No withdrawals recorded yet."
