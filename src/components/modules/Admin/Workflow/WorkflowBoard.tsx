@@ -18,12 +18,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { StatusCategory } from "@/types/common.types"
 import type { IWorkflowStatusChange } from "@/zod/work.validation"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { ArrowDown, ArrowUp, Plus, Power, Star, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { workflowStatusesListQuery } from "@/queries/work.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -57,53 +57,39 @@ const CATEGORIES: Array<{ value: StatusCategory; label: string; blurb: string }>
 ]
 
 const WorkflowBoard = ({ kind }: { kind: "task" | "project" }) => {
-  const queryClient = useQueryClient()
   const [name, setName] = useState("")
   const [category, setCategory] = useState<StatusCategory>("open")
 
   const { data, isLoading } = useQuery(workflowStatusesListQuery(`kind=${kind}`))
 
   const statuses = data?.data ?? []
-  const refresh = () => queryClient.invalidateQueries({ queryKey: queryKeys.workflowStatuses.all })
 
-  const { mutate: add, isPending: isAdding } = useMutation({
-    mutationFn: () => createWorkflowStatusAction({ kind, name, category }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not add it")
-        return
-      }
-      toast.success("Added to the end of the board")
-      setName("")
-      void refresh()
-    },
+  const { run: add, isPending: isAdding } = useActionMutation({
+    action: createWorkflowStatusAction,
+    successMessage: "Added to the end of the board",
+    invalidateKeys: [queryKeys.workflowStatuses.all],
+    refresh: false,
   })
 
-  const { mutate: change } = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: IWorkflowStatusChange }) =>
+  // A move, a new default or a column switched off shows on the board itself.
+  const { run: change } = useActionMutation({
+    action: ({ id, payload }: { id: string; payload: IWorkflowStatusChange }) =>
       updateWorkflowStatusAction(id, payload),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not change it")
-        return
-      }
-      void refresh()
-    },
+    successMessage: false,
+    invalidateKeys: [queryKeys.workflowStatuses.all],
+    refresh: false,
   })
 
-  const { mutate: remove } = useMutation({
-    mutationFn: (id: string) => deleteWorkflowStatusAction(id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        // "4 tasks are on In QA. Move them first, or turn it off instead of
-        // deleting it." — the server already says what to do.
-        toast.error(result.message || "Could not remove it")
-        return
-      }
-      toast.success("Removed from the board")
-      void refresh()
-    },
+  const { run: remove } = useActionMutation({
+    action: deleteWorkflowStatusAction,
+    successMessage: "Removed from the board",
+    invalidateKeys: [queryKeys.workflowStatuses.all],
+    refresh: false,
   })
+
+  const handleAdd = async () => {
+    if (await add({ kind, name, category })) setName("")
+  }
 
   // Swapping two sort_orders rather than renumbering the board: fewer writes,
   // and the rest of the columns keep the positions somebody chose.
@@ -112,8 +98,8 @@ const WorkflowBoard = ({ kind }: { kind: "task" | "project" }) => {
     const neighbour = statuses[index + direction]
     if (!current || !neighbour) return
 
-    change({ id: current.id, payload: { sort_order: neighbour.sort_order } })
-    change({ id: neighbour.id, payload: { sort_order: current.sort_order } })
+    void change({ id: current.id, payload: { sort_order: neighbour.sort_order } })
+    void change({ id: neighbour.id, payload: { sort_order: current.sort_order } })
   }
 
   return (
@@ -128,7 +114,7 @@ const WorkflowBoard = ({ kind }: { kind: "task" | "project" }) => {
           onSubmit={(event) => {
             event.preventDefault()
             if (!name.trim()) return
-            add()
+            void handleAdd()
           }}
         >
           <div className="space-y-1.5">
@@ -248,7 +234,7 @@ const WorkflowBoard = ({ kind }: { kind: "task" | "project" }) => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => change({ id: status.id, payload: { is_default: true } })}
+                        onClick={() => void change({ id: status.id, payload: { is_default: true } })}
                       >
                         Start here
                       </Button>
@@ -258,7 +244,7 @@ const WorkflowBoard = ({ kind }: { kind: "task" | "project" }) => {
                       size="icon"
                       variant="ghost"
                       onClick={() =>
-                        change({ id: status.id, payload: { is_active: !status.is_active } })
+                        void change({ id: status.id, payload: { is_active: !status.is_active } })
                       }
                       aria-label={
                         status.is_active ? `Turn off ${status.name}` : `Turn on ${status.name}`
@@ -271,7 +257,7 @@ const WorkflowBoard = ({ kind }: { kind: "task" | "project" }) => {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => remove(status.id)}
+                      onClick={() => void remove(status.id)}
                       aria-label={`Delete ${status.name}`}
                     >
                       <Trash2 className="size-4" />
