@@ -21,10 +21,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { plansQuery } from "@/queries/platform.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -45,7 +45,6 @@ const DEFAULT_PLAN = "__default__"
 
 const CreateCompanyModal = () => {
   const [open, setOpen] = useState(false)
-  const queryClient = useQueryClient()
 
   const [name, setName] = useState("")
   const [adminName, setAdminName] = useState("")
@@ -58,34 +57,30 @@ const CreateCompanyModal = () => {
 
   const plans = plansData?.data ?? []
 
-  const { mutate: create, isPending } = useMutation({
-    mutationFn: () =>
-      createCompanyAction({
-        name,
-        admin_name: adminName,
-        admin_email: adminEmail,
-        admin_password: password,
-        plan_id: planId === DEFAULT_PLAN ? "" : planId,
-        trial_days: trialDays,
-      }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        // "One address cannot admin two companies" is the server's wording and
-        // the only useful thing to say.
-        toast.error(result.message || "Could not create the company")
-        return
-      }
-
-      toast.success(`${name} created. Send them the password out of band.`)
-      setOpen(false)
-      setName("")
-      setAdminName("")
-      setAdminEmail("")
-      setPassword("")
-      void queryClient.invalidateQueries({ queryKey: queryKeys.platformCompanies.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.platformOverview.all })
-    },
+  const { run: createCompany, isPending } = useActionMutation({
+    action: createCompanyAction,
+    successMessage: `${name} created. Send them the password out of band.`,
+    invalidateKeys: [queryKeys.platformCompanies.all, queryKeys.platformOverview.all],
+    refresh: false,
   })
+
+  const handleCreate = async () => {
+    const created = await createCompany({
+      name,
+      admin_name: adminName,
+      admin_email: adminEmail,
+      admin_password: password,
+      plan_id: planId === DEFAULT_PLAN ? "" : planId,
+      trial_days: trialDays,
+    })
+    if (!created) return
+
+    setOpen(false)
+    setName("")
+    setAdminName("")
+    setAdminEmail("")
+    setPassword("")
+  }
 
   const ready = name.trim() && adminName.trim() && adminEmail.trim() && password.length >= 8
 
@@ -113,7 +108,7 @@ const CreateCompanyModal = () => {
           onSubmit={(event) => {
             event.preventDefault()
             if (!ready) return
-            create()
+            void handleCreate()
           }}
         >
           <div className="space-y-1.5">
