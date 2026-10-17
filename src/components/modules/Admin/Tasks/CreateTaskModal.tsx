@@ -16,12 +16,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { taskFormZodSchema, type ITaskFormValues } from "@/zod/work.validation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useCallback, useState } from "react"
-import { toast } from "sonner"
 import { projectsListQuery } from "@/queries/project.queries"
 import { workflowStatusesListQuery } from "@/queries/work.queries"
 import { queryKeys } from "@/lib/queryKeys"
@@ -29,7 +29,6 @@ import { usersListQuery } from "@/queries/people.queries"
 
 const CreateTaskModal = () => {
   const [open, setOpen] = useState(false)
-  const queryClient = useQueryClient()
 
   const { data: projectsData } = useQuery({ ...projectsListQuery(), enabled: open })
   const { data: usersData } = useQuery({ ...usersListQuery(), enabled: open })
@@ -41,8 +40,11 @@ const CreateTaskModal = () => {
   const { data: statusData } = useQuery(workflowStatusesListQuery("kind=task"))
   const statuses = statusData?.data ?? []
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: ITaskFormValues) => createTaskAction(values),
+  const { run: createTask, isPending } = useActionMutation({
+    action: createTaskAction,
+    successMessage: "Task created",
+    invalidateKeys: [queryKeys.tasks.all, queryKeys.dashboard.all],
+    refresh: false,
   })
 
   const defaultValues: ITaskFormValues = {
@@ -57,19 +59,10 @@ const CreateTaskModal = () => {
   const form = useForm({
     defaultValues,
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        toast.error(result.message || "Failed to create task")
-        return
+      if (await createTask(value)) {
+        setOpen(false)
+        form.reset()
       }
-
-      toast.success("Task created")
-      setOpen(false)
-      form.reset()
-
-      void queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all })
-      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
     },
   })
 
