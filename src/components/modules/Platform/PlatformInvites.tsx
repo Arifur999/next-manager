@@ -7,6 +7,8 @@ import {
 } from "@/app/(dashboardLayout)/platform/_teamAction"
 import InviteLinkPanel from "@/components/modules/Platform/InviteLinkPanel"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
+import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -54,9 +56,9 @@ const PlatformInvites = () => {
   const [mailed, setMailed] = useState<{ delivered: boolean; reason: string | null } | null>(null)
   const [revoking, setRevoking] = useState<IPlatformInvite | null>(null)
 
-  const { data, isLoading } = useQuery(platformInvitesQuery())
+  const invitesList = useQuery(platformInvitesQuery())
 
-  const invites = data?.data ?? []
+  const invites = invitesList.data?.data ?? []
 
   const { run: sendInvite, isPending } = useActionMutation({
     action: invitePlatformAdminAction,
@@ -192,13 +194,12 @@ const PlatformInvites = () => {
           <CardTitle className="text-base">Invites</CardTitle>
         </CardHeader>
 
-        {isLoading && invites.length === 0 ? (
-          <div className="h-24 animate-pulse bg-muted/40" />
-        ) : invites.length === 0 ? (
-          <p className="px-6 py-10 text-center text-sm text-muted-foreground">
-            No invites sent yet.
-          </p>
-        ) : (
+        <PanelState
+          query={invitesList}
+          errorMessage="The invites did not load."
+          isEmpty={invites.length === 0}
+          empty={<EmptyState icon={MailPlus}>No invites sent yet.</EmptyState>}
+        >
           <ul className="divide-y">
             {invites.map((invite) => {
               const state = statusOf(invite)
@@ -240,7 +241,7 @@ const PlatformInvites = () => {
               )
             })}
           </ul>
-        )}
+        </PanelState>
       </Card>
 
       <ConfirmDialog
