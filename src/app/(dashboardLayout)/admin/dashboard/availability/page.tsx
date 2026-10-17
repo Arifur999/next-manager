@@ -4,6 +4,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { workloadQuery } from "@/queries/work.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Availability",
@@ -15,14 +16,11 @@ const AvailabilityPage = async () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Availability</h1>
-        <p className="text-sm text-muted-foreground">
-          Who has room. The same figures as Workload read from the other end — one
-          subtraction, shown twice, so the two screens cannot disagree about somebody&apos;s
-          week.
-        </p>
-      </div>
+      <PageHeader title="Availability">
+        Who has room. The same figures as Workload read from the other end — one
+        subtraction, shown twice, so the two screens cannot disagree about somebody&apos;s
+        week.
+      </PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
         <WorkloadBoard mode="free" />

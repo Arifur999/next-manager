@@ -4,6 +4,7 @@ import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { tasksListQuery, workflowStatusesListQuery } from "@/queries/work.queries";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Tasks",
@@ -51,26 +52,15 @@ const TasksPage = async ({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {params.overdue === "true"
-            ? "Overdue tasks"
-            : salesView
-              ? "Sales tasks"
-              : params.mine === "true"
-                ? "My tasks"
-                : "Tasks"}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {params.overdue === "true"
-            ? "Past their date and still unfinished. Finishing one takes it off this list."
-            : salesView
-              ? "Everything happening inside the clients you brought in — whoever is doing it. Watching, not running: the work belongs to whoever the project manager gave it to."
-              : params.mine === "true"
-                ? "Assigned to you."
-                : "Everything in flight, in the order work moves through."}
-        </p>
-      </div>
+      <PageHeader title={params.overdue === "true" ? "Overdue tasks" : salesView ? "Sales tasks" : params.mine === "true" ? "My tasks" : "Tasks"}>
+        {params.overdue === "true"
+          ? "Past their date and still unfinished. Finishing one takes it off this list."
+          : salesView
+            ? "Everything happening inside the clients you brought in — whoever is doing it. Watching, not running: the work belongs to whoever the project manager gave it to."
+            : params.mine === "true"
+              ? "Assigned to you."
+              : "Everything in flight, in the order work moves through."}
+      </PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
         <TaskBoard canManage={canManage} />
