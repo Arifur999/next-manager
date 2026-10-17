@@ -389,9 +389,10 @@ for (const path of [
 // bounce — including the personal area, whose numbers would otherwise be
 // computed against an empty organization and render as a wall of zeros.
 // These live in the BACKEND .env, since that is what seeds the account. To
-// include these checks:
+// include these checks, point dotenv at it:
 //
-//   export $(grep -E "^SUPER_ADMIN_(EMAIL|PASSWORD)=" ../naxified_backend/.env | xargs)
+//   PowerShell: $env:DOTENV_CONFIG_PATH = "../next-manager-backend/.env"; npm run test:routing
+//   bash:       DOTENV_CONFIG_PATH=../next-manager-backend/.env npm run test:routing
 //
 // Skipped rather than failed when absent - a missing local credential is not a
 // broken build.
