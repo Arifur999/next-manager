@@ -106,8 +106,9 @@ export const useDataTable = <TData,>({
       setColumnFilters(updater);
       resetToFirstPage();
     },
-    onGlobalFilterChange: (value: string) => {
-      setGlobalFilter(value);
+    // TanStack passes undefined when it resets the filter.
+    onGlobalFilterChange: (value: string | undefined) => {
+      setGlobalFilter(value ?? "");
       resetToFirstPage();
     },
     globalFilterFn: "includesString",
