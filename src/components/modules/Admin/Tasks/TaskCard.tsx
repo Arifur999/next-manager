@@ -1,6 +1,6 @@
 "use client"
 
-import { updateTaskAction } from "@/app/(dashboardLayout)/admin/dashboard/tasks/_action"
+import { moveTaskAction } from "@/app/(dashboardLayout)/admin/dashboard/tasks/_action"
 import { Checkbox } from "@/components/ui/checkbox"
 import type { ITask, IWorkflowStatus } from "@/types/work.types"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -19,7 +19,7 @@ const TaskCard = ({ task, statuses }: { task: ITask; statuses: IWorkflowStatus[]
   const queryClient = useQueryClient()
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (status_id: string) => updateTaskAction(task.id, { status_id }),
+    mutationFn: (status_id: string) => moveTaskAction(task.id, { status_id }),
   })
 
   // Finished is a category, so a column called "Shipped" strikes the title

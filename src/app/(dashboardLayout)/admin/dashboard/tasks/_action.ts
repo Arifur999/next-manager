@@ -1,29 +1,12 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
+import { requireId, runValidatedAction } from "@/lib/runAction"
 import { createTask, updateTask } from "@/services/work.services"
-import type { ITask } from "@/types/work.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+import { createTaskServerZodSchema, moveTaskServerZodSchema } from "@/zod/work.validation"
 
-export const createTaskAction = async (
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<ITask> | ApiErrorResponse> => {
-    try {
-        return await createTask(payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to create task") }
-    }
-}
+export const createTaskAction = async (values: unknown) =>
+    runValidatedAction(createTaskServerZodSchema, values, "Failed to create task", createTask)
 
-export const updateTaskAction = async (
-    id: string,
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<ITask> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid task id" }
-
-    try {
-        return await updateTask(id, payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to update task") }
-    }
-}
+export const moveTaskAction = async (id: string, values: unknown) =>
+    requireId(id, "task") ??
+    runValidatedAction(moveTaskServerZodSchema, values, "Failed to update task", (payload) => updateTask(id, payload))

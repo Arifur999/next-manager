@@ -42,12 +42,7 @@ const CreateTaskModal = () => {
   const statuses = statusData?.data ?? []
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: ITaskFormValues) =>
-      createTaskAction({
-        ...values,
-        assignee_id: values.assignee_id || null,
-        due_date: values.due_date || null,
-      }),
+    mutationFn: (values: ITaskFormValues) => createTaskAction(values),
   })
 
   const defaultValues: ITaskFormValues = {
@@ -62,13 +57,7 @@ const CreateTaskModal = () => {
   const form = useForm({
     defaultValues,
     onSubmit: async ({ value }) => {
-      // An empty string is not a missing value to the API, it is an invalid
-      // id - and the form starts with one. Dropping it means "put it on the
-      // board default", which is what leaving the picker alone means.
-      const result = await mutateAsync({
-        ...value,
-        status_id: value.status_id || undefined,
-      })
+      const result = await mutateAsync(value)
 
       if (!result.success) {
         toast.error(result.message || "Failed to create task")
