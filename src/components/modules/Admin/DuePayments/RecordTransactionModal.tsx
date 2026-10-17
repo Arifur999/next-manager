@@ -49,8 +49,7 @@ const RecordTransactionModal = ({ people }: { people: IDuePerson[] }) => {
   )
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IDueTransactionFormValues) =>
-      createDueTransactionAction({ ...values, amount_bdt: Number(values.amount_bdt) }),
+    mutationFn: (values: IDueTransactionFormValues) => createDueTransactionAction(values),
   })
 
   // Annotated rather than `satisfies`: the latter narrows `direction` to the

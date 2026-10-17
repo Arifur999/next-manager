@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
+    createDuePersonServerZodSchema,
+    createDueTransactionServerZodSchema,
     createExpenseCategoryServerZodSchema,
     createExpenseServerZodSchema,
     createOwnerWithdrawalServerZodSchema,
@@ -122,5 +124,56 @@ describe("createOwnerWithdrawalServerZodSchema", () => {
         expect(
             createOwnerWithdrawalServerZodSchema.safeParse({ ...withdrawal, account_id: "" }).error?.issues[0]?.message,
         ).toBe("Choose a BDT account")
+    })
+})
+
+describe("createDuePersonServerZodSchema", () => {
+    it("passes a name and a phone through", () => {
+        expect(createDuePersonServerZodSchema.parse({ name: "Karim", phone: "01700000000" })).toEqual({
+            name: "Karim",
+            phone: "01700000000",
+        })
+    })
+
+    it("requires a name", () => {
+        expect(createDuePersonServerZodSchema.safeParse({ name: "", phone: "" }).error?.issues[0]?.message).toBe(
+            "Name is required",
+        )
+    })
+})
+
+describe("createDueTransactionServerZodSchema", () => {
+    const transaction = {
+        due_person_id: "d1",
+        date: "2026-10-12",
+        direction: "received",
+        amount_bdt: "5000",
+        account_id: "bdt-1",
+        notes: "",
+    }
+
+    it("builds the API payload with a numeric amount", () => {
+        expect(createDueTransactionServerZodSchema.parse(transaction)).toEqual({
+            due_person_id: "d1",
+            date: "2026-10-12",
+            direction: "received",
+            amount_bdt: 5000,
+            account_id: "bdt-1",
+            notes: "",
+        })
+    })
+
+    it("rejects a direction other than received or payment", () => {
+        expect(createDueTransactionServerZodSchema.safeParse({ ...transaction, direction: "loan" }).success).toBe(false)
+    })
+
+    it("requires a person", () => {
+        expect(
+            createDueTransactionServerZodSchema.safeParse({ ...transaction, due_person_id: "" }).error?.issues[0]?.message,
+        ).toBe("Choose a person")
+    })
+
+    it("rejects a zero amount", () => {
+        expect(createDueTransactionServerZodSchema.safeParse({ ...transaction, amount_bdt: "0" }).success).toBe(false)
     })
 })

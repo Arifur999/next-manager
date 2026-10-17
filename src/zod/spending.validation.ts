@@ -96,3 +96,17 @@ export const createOwnerWithdrawalServerZodSchema = ownerWithdrawalFormZodSchema
     account_id: values.account_id,
     notes: values.notes,
 }))
+
+export const createDuePersonServerZodSchema = duePersonFormZodSchema.transform((values) => ({
+    name: values.name,
+    phone: values.phone,
+}))
+
+export const createDueTransactionServerZodSchema = dueTransactionFormZodSchema.transform((values) => ({
+    due_person_id: values.due_person_id,
+    date: values.date,
+    direction: values.direction,
+    amount_bdt: Number(values.amount_bdt),
+    account_id: values.account_id,
+    notes: values.notes,
+}))
