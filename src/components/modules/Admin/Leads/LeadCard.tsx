@@ -1,6 +1,6 @@
 "use client"
 
-import { convertLeadAction, updateLeadAction } from "@/app/(dashboardLayout)/admin/dashboard/leads/_action"
+import { convertLeadAction, moveLeadAction } from "@/app/(dashboardLayout)/admin/dashboard/leads/_action"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -24,7 +24,7 @@ const LeadCard = ({ lead }: { lead: ILead }) => {
   const router = useRouter()
 
   const { mutateAsync: move, isPending: isMoving } = useMutation({
-    mutationFn: (stage: LeadStage) => updateLeadAction(lead.id, { stage }),
+    mutationFn: (stage: LeadStage) => moveLeadAction(lead.id, { stage }),
   })
 
   const { mutateAsync: convert, isPending: isConverting } = useMutation({

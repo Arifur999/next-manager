@@ -1,6 +1,6 @@
 import { LEAD_STAGES } from "@/types/crm.types"
 import { z } from "zod"
-import { optionalNonNegative } from "./formFields"
+import { optionalNonNegative, toNumber } from "./formFields"
 
 export const clientFormZodSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -59,3 +59,19 @@ export const createClientLinkServerZodSchema = clientLinkFormZodSchema
         label: values.label,
         url: values.url,
     }))
+
+export const createLeadServerZodSchema = leadFormZodSchema.transform((values) => ({
+    name: values.name,
+    company: values.company,
+    email: values.email,
+    phone: values.phone,
+    // The API models "nobody said" as null, not as an empty string.
+    source_id: values.source_id || null,
+    stage: values.stage,
+    estimated_value_usd: toNumber(values.estimated_value_usd) ?? 0,
+}))
+
+// Moving a card to another column changes its stage and nothing else.
+export const moveLeadServerZodSchema = z.object({
+    stage: z.enum(LEAD_STAGES, { message: "Choose a valid stage" }),
+})

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest"
-import { clientServerZodSchema, createClientLinkServerZodSchema } from "./crm.validation"
+import {
+    clientServerZodSchema,
+    createClientLinkServerZodSchema,
+    createLeadServerZodSchema,
+    moveLeadServerZodSchema,
+} from "./crm.validation"
 
 const validClient = {
     name: "Acme Corp",
@@ -53,5 +58,50 @@ describe("createClientLinkServerZodSchema", () => {
 
     it("requires the client it belongs to", () => {
         expect(createClientLinkServerZodSchema.safeParse({ ...validLink, client_id: "" }).success).toBe(false)
+    })
+})
+
+describe("createLeadServerZodSchema", () => {
+    const validLead = {
+        name: "Jane Doe",
+        company: "Doe Studio",
+        email: "",
+        phone: "",
+        source_id: "s1",
+        stage: "contacted",
+        estimated_value_usd: "1500.50",
+    }
+
+    it("builds the API payload with the estimate as a number", () => {
+        expect(createLeadServerZodSchema.parse(validLead)).toEqual({ ...validLead, estimated_value_usd: 1500.5 })
+    })
+
+    it("sends a blank source as null and a blank estimate as zero", () => {
+        const payload = createLeadServerZodSchema.parse({ ...validLead, source_id: "", estimated_value_usd: "" })
+        expect(payload.source_id).toBeNull()
+        expect(payload.estimated_value_usd).toBe(0)
+    })
+
+    it("rejects a negative estimate", () => {
+        expect(createLeadServerZodSchema.safeParse({ ...validLead, estimated_value_usd: "-1" }).error?.issues[0]?.message).toBe(
+            "Estimated value must be a number that is not negative",
+        )
+    })
+
+    it("rejects a blank name and a stage the pipeline does not have", () => {
+        expect(createLeadServerZodSchema.safeParse({ ...validLead, name: "" }).success).toBe(false)
+        expect(createLeadServerZodSchema.safeParse({ ...validLead, stage: "archived" }).success).toBe(false)
+    })
+})
+
+describe("moveLeadServerZodSchema", () => {
+    it("sends the stage and nothing else", () => {
+        expect(moveLeadServerZodSchema.parse({ stage: "won", name: "Renamed" })).toEqual({ stage: "won" })
+    })
+
+    it("rejects a stage the pipeline does not have", () => {
+        expect(moveLeadServerZodSchema.safeParse({ stage: "archived" }).error?.issues[0]?.message).toBe(
+            "Choose a valid stage",
+        )
     })
 })

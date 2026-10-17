@@ -40,14 +40,7 @@ const CreateLeadModal = () => {
   )
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: ILeadFormValues) =>
-      createLeadAction({
-        ...values,
-        estimated_value_usd: values.estimated_value_usd ? Number(values.estimated_value_usd) : 0,
-        // An empty pick means "nobody said", which the API models as null
-        // rather than as an empty string.
-        source_id: values.source_id || null,
-      }),
+    mutationFn: (values: ILeadFormValues) => createLeadAction(values),
   })
 
   const defaultValues: ILeadFormValues = {
