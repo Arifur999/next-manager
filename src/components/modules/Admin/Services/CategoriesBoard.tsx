@@ -11,13 +11,16 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IServiceCategory } from "@/types/catalog.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { FolderTree, Power, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { serviceCategoriesQuery } from "@/queries/catalog.queries"
 import { queryKeys } from "@/lib/queryKeys"
+
+// The catalogue shows each service's category, so it moves with these.
+const CATEGORY_KEYS = [queryKeys.serviceCategories.all, queryKeys.services.all]
 
 /**
  * How the catalogue is grouped.
@@ -28,55 +31,38 @@ import { queryKeys } from "@/lib/queryKeys"
  * out by hand would make tidying harder than leaving it wrong.
  */
 const CategoriesBoard = () => {
-  const queryClient = useQueryClient()
   const [name, setName] = useState("")
 
   const { data, isLoading } = useQuery(serviceCategoriesQuery())
 
   const categories = data?.data ?? []
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.serviceCategories.all })
-    // The catalogue shows each service's category, so it moves with this.
-    void queryClient.invalidateQueries({ queryKey: queryKeys.services.all })
-  }
 
-  const { mutate: add, isPending } = useMutation({
-    mutationFn: () => createCategoryAction({ name }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not add it")
-        return
-      }
-      setName("")
-      refresh()
-    },
+  // No toast when adding or switching: the list shows the change.
+  const { run: addCategory, isPending } = useActionMutation({
+    action: createCategoryAction,
+    successMessage: false,
+    invalidateKeys: CATEGORY_KEYS,
+    refresh: false,
   })
 
-  const { mutate: toggle } = useMutation({
-    mutationFn: (category: IServiceCategory) =>
+  const { run: toggleActive } = useActionMutation({
+    action: (category: IServiceCategory) =>
       setCategoryActiveAction(category.id, { is_active: !category.is_active }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not change it")
-        return
-      }
-      refresh()
-    },
+    successMessage: false,
+    invalidateKeys: CATEGORY_KEYS,
+    refresh: false,
   })
 
-  const { mutate: remove } = useMutation({
-    mutationFn: (id: string) => deleteCategoryAction(id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not remove it")
-        return
-      }
-      // The server says how many were left ungrouped, which is the part
-      // somebody needs to know.
-      toast.success(result.message)
-      refresh()
-    },
+  // No successMessage: the server says how many services were left ungrouped.
+  const { run: removeCategory } = useActionMutation({
+    action: deleteCategoryAction,
+    invalidateKeys: CATEGORY_KEYS,
+    refresh: false,
   })
+
+  const handleAdd = async () => {
+    if (await addCategory({ name })) setName("")
+  }
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
@@ -94,7 +80,7 @@ const CategoriesBoard = () => {
           onSubmit={(event) => {
             event.preventDefault()
             if (!name.trim()) return
-            add()
+            void handleAdd()
           }}
         >
           <Input
@@ -140,7 +126,7 @@ const CategoriesBoard = () => {
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={() => toggle(category)}
+                  onClick={() => void toggleActive(category)}
                   aria-label={
                     category.is_active ? `Turn off ${category.name}` : `Turn on ${category.name}`
                   }
@@ -151,7 +137,7 @@ const CategoriesBoard = () => {
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={() => remove(category.id)}
+                  onClick={() => void removeCategory(category.id)}
                   aria-label={`Delete ${category.name}`}
                 >
                   <Trash2 className="size-4" />
