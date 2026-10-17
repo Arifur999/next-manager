@@ -16,8 +16,6 @@ import { MoreHorizontal } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { queryKeys } from "@/lib/queryKeys"
 
-// Only the open stages get a column. Won and lost are outcomes, not places work
-// sits, and giving them columns would make the board grow forever.
 const LeadCard = ({ lead }: { lead: ILead }) => {
   const router = useRouter()
 
@@ -61,6 +59,7 @@ const LeadCard = ({ lead }: { lead: ILead }) => {
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="end">
+            {/* Won and lost are offered too: closing a deal moves the card off the board. */}
             {LEAD_STAGES.filter((stage) => stage !== lead.stage).map((stage) => (
               <DropdownMenuItem key={stage} onClick={() => void moveLead(stage)}>
                 Move to {stage}

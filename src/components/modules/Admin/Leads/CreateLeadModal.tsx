@@ -25,8 +25,6 @@ import { useCallback, useState } from "react"
 import { leadSourcesQuery } from "@/queries/crm.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
-// Only the open stages get a column. Won and lost are outcomes, not places work
-// sits, and giving them columns would make the board grow forever.
 const CreateLeadModal = () => {
   const [open, setOpen] = useState(false)
 
