@@ -13,7 +13,7 @@ import ClientLinksPanel from "@/components/modules/Admin/Clients/ClientLinksPane
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { formatUsd } from "@/lib/currency"
 import { useQuery } from "@tanstack/react-query"
-import { KeyRound } from "lucide-react"
+import { FolderKanban, KeyRound } from "lucide-react"
 import Link from "next/link"
 import { clientDetailQuery, clientFinancialsQuery } from "@/queries/crm.queries"
 import { credentialsListQuery } from "@/queries/workspace.queries"
@@ -101,9 +101,7 @@ const ClientDetail = ({
         <TabsContent value="projects" className="mt-4">
           <Card className="gap-0 overflow-hidden p-0">
             {client.projects.length === 0 ? (
-              <p className="px-5 py-12 text-center text-sm text-muted-foreground">
-                No projects for this client yet.
-              </p>
+              <EmptyState icon={FolderKanban}>No projects for this client yet.</EmptyState>
             ) : (
               <ul className="divide-y">
                 {client.projects.map((project) => (
