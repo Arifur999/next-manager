@@ -43,8 +43,7 @@ const FinanceFigures = ({ finance }: { finance: IPlatformFinance }) => (
         format={usd}
         size="lead"
         tone={finance.net_usd >= 0 ? 3 : 2}
-        // Not prorated: a window longer than a month still subtracts its costs from one month of revenue.
-        hint={`${usd(finance.mrr_usd)} recurring less ${usd(finance.expenses_usd)} spent in this window.`}
+        hint={`${usd(finance.mrr_usd)} recurring less ${usd(finance.expenses_usd)} spent in this window, not prorated.`}
       />
     </div>
 

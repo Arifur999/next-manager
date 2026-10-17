@@ -196,7 +196,7 @@ const PlatformExpenses = ({ range }: { range: string }) => {
             <>
               <span className="font-medium text-foreground">{removing.description}</span>,{" "}
               {usd(removing.amount_usd)}, comes off this window&apos;s costs. The removal is
-              recorded in admin activity.
+              recorded in the activity log.
             </>
           )
         }
