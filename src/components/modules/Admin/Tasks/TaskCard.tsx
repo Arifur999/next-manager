@@ -5,6 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import TaskLink from "@/components/modules/Admin/Tasks/TaskLink"
 import TaskPriorityBadge from "@/components/modules/Admin/Tasks/TaskPriorityBadge"
+import TaskStatusMenu from "@/components/modules/Admin/Tasks/TaskStatusMenu"
 import { isTaskOverdue } from "@/components/modules/Admin/Tasks/taskDue"
 import { formatDayShort } from "@/lib/dates"
 import { cn } from "@/lib/utils"
@@ -20,7 +21,7 @@ type TaskCardProps = {
 }
 
 const TaskCard = ({ task, statuses, canEdit }: TaskCardProps) => {
-  // The ticked box and the card's new column are the confirmation.
+  // The ticked box, or the card in its new column, is the confirmation.
   const { run: moveTask, isPending } = useActionMutation({
     action: (statusId: string) => moveTaskAction(task.id, { status_id: statusId }),
     successMessage: false,
@@ -96,6 +97,10 @@ const TaskCard = ({ task, statuses, canEdit }: TaskCardProps) => {
             )}
           </div>
         </div>
+
+        {canEdit && (
+          <TaskStatusMenu task={task} statuses={statuses} onMove={(statusId) => void moveTask(statusId)} disabled={isPending} />
+        )}
       </div>
     </div>
   )
