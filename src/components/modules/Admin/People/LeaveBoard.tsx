@@ -22,12 +22,13 @@ import {
 } from "@/components/ui/select"
 import type { LeaveStatus } from "@/types/people.types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { differenceInCalendarDays, format, parseISO } from "date-fns"
+import { format, parseISO } from "date-fns"
 import { CalendarOff } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 import { leaveRequestsListQuery, leaveTypesQuery } from "@/queries/people.queries"
 import { queryKeys } from "@/lib/queryKeys"
+import { suggestedLeaveDays } from "@/zod/people.validation"
 
 /**
  * Asking to be away, and deciding.
@@ -64,23 +65,13 @@ const LeaveBoard = ({ canDecide }: { canDecide: boolean }) => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.leaveBalance.all })
   }
 
-  // Counted from the dates as a starting point only. What actually counts as a
-  // working day is the agency's business, so the number stays editable and is
-  // what gets stored.
-  const suggestedDays =
-    from && to ? Math.max(1, differenceInCalendarDays(parseISO(to), parseISO(from)) + 1) : 1
+  const suggestedDays = suggestedLeaveDays(from, to)
 
   const [days, setDays] = useState("")
 
   const { mutate: ask, isPending } = useMutation({
     mutationFn: () =>
-      requestLeaveAction({
-        leave_type_id: typeId,
-        from_date: from,
-        to_date: to,
-        days: Number(days || suggestedDays),
-        reason: reason.trim(),
-      }),
+      requestLeaveAction({ leave_type_id: typeId, from_date: from, to_date: to, days, reason }),
     onSuccess: (result) => {
       if (!result.success) {
         toast.error(result.message || "Could not send it")

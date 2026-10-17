@@ -1,4 +1,4 @@
-import { endOfMonth, format, parseISO } from "date-fns"
+import { differenceInCalendarDays, endOfMonth, format, parseISO } from "date-fns"
 import { z } from "zod"
 import { isoDate, optionalNonNegative, positiveAmount, toNumber } from "./formFields"
 
@@ -124,3 +124,34 @@ export const recordAttendanceServerZodSchema = attendanceFormZodSchema.transform
     check_in: values.check_in || undefined,
     check_out: values.check_out || undefined,
 }))
+
+/**
+ * Calendar days from the first day to the last, inclusive. Only a starting
+ * point: weekends and half days are the agency's call, so the requester can
+ * change it and their number is the one stored.
+ */
+export const suggestedLeaveDays = (fromDate: string, toDate: string) =>
+    fromDate && toDate ? Math.max(1, differenceInCalendarDays(parseISO(toDate), parseISO(fromDate)) + 1) : 1
+
+export const leaveRequestFormZodSchema = z.object({
+    leave_type_id: z.string().min(1, "Choose a kind"),
+    from_date: isoDate,
+    to_date: isoDate,
+    days: z.string().refine((value) => value === "" || Number(value) > 0, "Days must be a number greater than zero"),
+    reason: z.string().trim().max(300, "Keep the reason under 300 characters"),
+})
+
+export type ILeaveRequestFormValues = z.infer<typeof leaveRequestFormZodSchema>
+
+export const requestLeaveServerZodSchema = leaveRequestFormZodSchema.transform((values) => ({
+    leave_type_id: values.leave_type_id,
+    from_date: values.from_date,
+    to_date: values.to_date,
+    // Blank takes the count suggested from the dates.
+    days: toNumber(values.days) ?? suggestedLeaveDays(values.from_date, values.to_date),
+    reason: values.reason,
+}))
+
+export const leaveDecisionServerZodSchema = z.object({
+    approve: z.boolean("Say whether it is approved"),
+})

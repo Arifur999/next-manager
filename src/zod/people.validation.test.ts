@@ -6,9 +6,12 @@ import {
     createInviteServerZodSchema,
     createPayrollRunServerZodSchema,
     departmentServerZodSchema,
+    leaveDecisionServerZodSchema,
     leaveTypeServerZodSchema,
     recordAttendanceServerZodSchema,
+    requestLeaveServerZodSchema,
     setPayrollItemsServerZodSchema,
+    suggestedLeaveDays,
 } from "./people.validation"
 
 describe("departmentServerZodSchema", () => {
@@ -169,5 +172,60 @@ describe("recordAttendanceServerZodSchema", () => {
     it("requires somebody to record it for", () => {
         const result = recordAttendanceServerZodSchema.safeParse({ ...day, user_id: "" })
         expect(result.error?.issues[0]?.message).toBe("Choose somebody")
+    })
+})
+
+describe("suggestedLeaveDays", () => {
+    it("counts both the first and the last day", () => {
+        expect(suggestedLeaveDays("2026-10-12", "2026-10-14")).toBe(3)
+    })
+
+    it("never suggests less than a day", () => {
+        expect(suggestedLeaveDays("2026-10-14", "2026-10-12")).toBe(1)
+        expect(suggestedLeaveDays("", "")).toBe(1)
+    })
+})
+
+describe("requestLeaveServerZodSchema", () => {
+    const request = {
+        leave_type_id: "t1",
+        from_date: "2026-10-12",
+        to_date: "2026-10-14",
+        days: "2.5",
+        reason: " Family visit ",
+    }
+
+    it("sends the days typed and the reason trimmed", () => {
+        expect(requestLeaveServerZodSchema.parse(request)).toEqual({
+            leave_type_id: "t1",
+            from_date: "2026-10-12",
+            to_date: "2026-10-14",
+            days: 2.5,
+            reason: "Family visit",
+        })
+    })
+
+    it("counts the days from the dates when the box is blank", () => {
+        expect(requestLeaveServerZodSchema.parse({ ...request, days: "" }).days).toBe(3)
+    })
+
+    it("refuses leave of zero days", () => {
+        const result = requestLeaveServerZodSchema.safeParse({ ...request, days: "0" })
+        expect(result.error?.issues[0]?.message).toBe("Days must be a number greater than zero")
+    })
+
+    it("requires a kind of leave", () => {
+        const result = requestLeaveServerZodSchema.safeParse({ ...request, leave_type_id: "" })
+        expect(result.error?.issues[0]?.message).toBe("Choose a kind")
+    })
+})
+
+describe("leaveDecisionServerZodSchema", () => {
+    it("accepts a yes or a no", () => {
+        expect(leaveDecisionServerZodSchema.parse({ approve: false })).toEqual({ approve: false })
+    })
+
+    it("refuses an answer that is not a boolean", () => {
+        expect(leaveDecisionServerZodSchema.safeParse({ approve: "yes" }).success).toBe(false)
     })
 })
