@@ -21,34 +21,20 @@ import {
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt } from "@/lib/currency"
+import { ownerWithdrawalFormZodSchema, type IOwnerWithdrawalFormValues } from "@/zod/spending.validation"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { PiggyBank, Plus, ShieldAlert } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
-import { z } from "zod"
 import { accountsQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
 import { ownerWithdrawalsListQuery } from "@/queries/spending.queries"
 
-const withdrawalFormSchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date"),
-  amount_bdt: z
-    .string()
-    .min(1, "Amount is required")
-    .refine((value) => Number.isFinite(Number(value)), "Amount must be a number")
-    .refine((value) => Number(value) > 0, "Amount must be greater than zero"),
-  type: z.enum(["personal", "reinvestment"]),
-  account_id: z.string().min(1, "Choose a BDT account"),
-  notes: z.string().optional(),
-})
-
-type WithdrawalFormValues = z.infer<typeof withdrawalFormSchema>
-
 const today = () => new Date().toISOString().slice(0, 10)
 
-const defaultValues: WithdrawalFormValues = {
+const defaultValues: IOwnerWithdrawalFormValues = {
   date: today(),
   amount_bdt: "",
   type: "personal",
@@ -67,7 +53,7 @@ const RecordWithdrawalModal = () => {
   const bdtAccounts = accounts.filter((account) => account.currency === "BDT" && account.is_active)
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: WithdrawalFormValues) =>
+    mutationFn: (values: IOwnerWithdrawalFormValues) =>
       createWithdrawalAction({ ...values, amount_bdt: Number(values.amount_bdt) }),
   })
 
@@ -142,7 +128,7 @@ const RecordWithdrawalModal = () => {
 
                 <form.Field
                   name="amount_bdt"
-                  validators={{ onChange: withdrawalFormSchema.shape.amount_bdt }}
+                  validators={{ onChange: ownerWithdrawalFormZodSchema.shape.amount_bdt }}
                 >
                   {(field) => (
                     <AppField
@@ -162,7 +148,7 @@ const RecordWithdrawalModal = () => {
                     id={field.name}
                     label="Type"
                     value={field.state.value}
-                    onChange={(value) => field.handleChange(value as WithdrawalFormValues["type"])}
+                    onChange={(value) => field.handleChange(value as IOwnerWithdrawalFormValues["type"])}
                     disabled={isPending}
                     description="Reinvestment goes back into the business; personal does not."
                     options={[
@@ -175,7 +161,7 @@ const RecordWithdrawalModal = () => {
 
               <form.Field
                 name="account_id"
-                validators={{ onChange: withdrawalFormSchema.shape.account_id }}
+                validators={{ onChange: ownerWithdrawalFormZodSchema.shape.account_id }}
               >
                 {(field) => (
                   <EntitySelect

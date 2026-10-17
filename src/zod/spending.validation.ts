@@ -33,6 +33,16 @@ export const teamPayoutFormZodSchema = z.object({
 
 export type ITeamPayoutFormValues = z.infer<typeof teamPayoutFormZodSchema>
 
+export const ownerWithdrawalFormZodSchema = z.object({
+    date: isoDate,
+    amount_bdt: positiveAmount("Amount"),
+    type: z.enum(["personal", "reinvestment"]),
+    account_id: z.string().min(1, "Choose a BDT account"),
+    notes: z.string().optional(),
+})
+
+export type IOwnerWithdrawalFormValues = z.infer<typeof ownerWithdrawalFormZodSchema>
+
 // Server schemas: the form's string values, checked again on the server and
 // turned into the payload the API's request schema expects.
 export const createExpenseServerZodSchema = expenseFormZodSchema.transform((values) => ({
