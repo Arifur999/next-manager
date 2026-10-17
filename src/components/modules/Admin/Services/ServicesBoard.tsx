@@ -1,15 +1,10 @@
 "use client"
 
 import {
-  createServiceAction,
   deleteServiceAction,
   setServiceActiveAction,
-  updateServiceAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/services/_action"
-import ServiceFormCard, {
-  emptyService,
-  type ServiceDraft,
-} from "@/components/modules/Admin/Services/ServiceFormCard"
+import ServiceFormCard from "@/components/modules/Admin/Services/ServiceFormCard"
 import ServiceList from "@/components/modules/Admin/Services/ServiceList"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IService } from "@/types/catalog.types"
@@ -17,7 +12,6 @@ import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { serviceCategoriesQuery, servicesListQuery } from "@/queries/catalog.queries"
 import { queryKeys } from "@/lib/queryKeys"
-import { NO_CATEGORY } from "@/zod/catalog.validation"
 
 /**
  * The catalogue: a form on the left, the list on the right.
@@ -34,27 +28,13 @@ import { NO_CATEGORY } from "@/zod/catalog.validation"
  * every write behind it — so offering the form would only be a form that fails.
  */
 const ServicesBoard = ({ canManage = true }: { canManage?: boolean }) => {
-  const [draft, setDraft] = useState<ServiceDraft>(emptyService)
-  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editing, setEditing] = useState<IService | null>(null)
 
   const { data, isLoading } = useQuery(servicesListQuery())
   const { data: categoryData } = useQuery(serviceCategoriesQuery())
 
   const services = data?.data ?? []
   const categories = categoryData?.data ?? []
-
-  const reset = () => {
-    setDraft(emptyService)
-    setEditingId(null)
-  }
-
-  const { run: saveService, isPending } = useActionMutation({
-    action: (values: ServiceDraft) =>
-      editingId ? updateServiceAction(editingId, values) : createServiceAction(values),
-    successMessage: editingId ? "Service updated" : "Added to the catalogue",
-    invalidateKeys: [queryKeys.services.all],
-    refresh: false,
-  })
 
   // No toast: the row's "not sold" badge is the confirmation.
   const { run: toggleSold } = useActionMutation({
@@ -71,13 +51,9 @@ const ServicesBoard = ({ canManage = true }: { canManage?: boolean }) => {
     refresh: false,
   })
 
-  const handleSave = async () => {
-    if (await saveService(draft)) reset()
-  }
-
   // Only the service being edited takes the form with it.
   const handleDelete = async (service: IService) => {
-    if ((await removeService(service.id)) && editingId === service.id) reset()
+    if ((await removeService(service.id)) && editing?.id === service.id) setEditing(null)
   }
 
   return (
@@ -89,31 +65,19 @@ const ServicesBoard = ({ canManage = true }: { canManage?: boolean }) => {
       }
     >
       {canManage && (
-      <ServiceFormCard
-        draft={draft}
-        categories={categories}
-        editing={Boolean(editingId)}
-        isPending={isPending}
-        onChange={setDraft}
-        onSubmit={() => void handleSave()}
-        onCancel={reset}
-      />
+        // Keyed on the service, so choosing another one starts the form from its values.
+        <ServiceFormCard
+          key={editing?.id ?? "new"}
+          service={editing}
+          categories={categories}
+          onDone={() => setEditing(null)}
+        />
       )}
 
       <ServiceList
         services={services}
         isLoading={isLoading}
-        onEdit={(service) => {
-          setEditingId(service.id)
-          setDraft({
-            name: service.name,
-            description: service.description,
-            category_id: service.category?.id ?? NO_CATEGORY,
-            default_price_usd: service.default_price_usd
-              ? String(service.default_price_usd)
-              : "",
-          })
-        }}
+        onEdit={setEditing}
         onEditable={canManage}
         onToggle={(service) => void toggleSold(service)}
         onDelete={(service) => void handleDelete(service)}
