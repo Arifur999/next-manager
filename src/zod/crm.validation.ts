@@ -2,6 +2,10 @@ import { CLIENT_STATUSES, LEAD_STAGES } from "@/types/crm.types"
 import { z } from "zod"
 import { optionalNonNegative, toNumber } from "./formFields"
 
+// Each form schema models what the inputs hold; its server schema checks the
+// same values again on the server and builds the API payload. The API drops
+// unknown keys without a word, so a misnamed field would be lost, not refused.
+
 export const clientFormZodSchema = z.object({
     name: z.string().min(1, "Name is required"),
     company: z.string().optional(),
@@ -14,6 +18,17 @@ export const clientFormZodSchema = z.object({
 
 export type IClientFormValues = z.infer<typeof clientFormZodSchema>
 
+// Create and edit send the same fields.
+export const clientServerZodSchema = clientFormZodSchema.transform((values) => ({
+    name: values.name,
+    company: values.company,
+    email: values.email,
+    phone: values.phone,
+    country: values.country,
+    status: values.status,
+    notes: values.notes,
+}))
+
 // Whether the URL is a full http(s) one is the server's call; its message
 // says what to fix.
 export const clientLinkFormZodSchema = z.object({
@@ -22,6 +37,14 @@ export const clientLinkFormZodSchema = z.object({
 })
 
 export type IClientLinkFormValues = z.infer<typeof clientLinkFormZodSchema>
+
+export const createClientLinkServerZodSchema = clientLinkFormZodSchema
+    .extend({ client_id: z.string().min(1, "Invalid client id") })
+    .transform((values) => ({
+        client_id: values.client_id,
+        label: values.label,
+        url: values.url,
+    }))
 
 export const leadFormZodSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -36,29 +59,6 @@ export const leadFormZodSchema = z.object({
 })
 
 export type ILeadFormValues = z.infer<typeof leadFormZodSchema>
-
-// Server schemas: the form's values checked again on the server and keyed as
-// the API's request schema expects. The API drops unknown keys without a word,
-// so a misnamed field would be lost, not refused.
-
-// Create and edit send the same fields.
-export const clientServerZodSchema = clientFormZodSchema.transform((values) => ({
-    name: values.name,
-    company: values.company,
-    email: values.email,
-    phone: values.phone,
-    country: values.country,
-    status: values.status,
-    notes: values.notes,
-}))
-
-export const createClientLinkServerZodSchema = clientLinkFormZodSchema
-    .extend({ client_id: z.string().min(1, "Invalid client id") })
-    .transform((values) => ({
-        client_id: values.client_id,
-        label: values.label,
-        url: values.url,
-    }))
 
 export const createLeadServerZodSchema = leadFormZodSchema.transform((values) => ({
     name: values.name,
