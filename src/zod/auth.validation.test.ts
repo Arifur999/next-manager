@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { newPassword, updateProfileServerZodSchema } from "./auth.validation"
+import { changePasswordServerZodSchema, newPassword, updateProfileServerZodSchema } from "./auth.validation"
 
 describe("newPassword", () => {
   it("accepts eight characters with a letter and a number", () => {
@@ -31,5 +31,20 @@ describe("updateProfileServerZodSchema", () => {
       full_name: "Rina",
       phone: "",
     })
+  })
+})
+
+describe("changePasswordServerZodSchema", () => {
+  it("sends the old and the new password", () => {
+    expect(changePasswordServerZodSchema.parse({ old_password: "old", new_password: "newpass12" })).toEqual({
+      old_password: "old",
+      new_password: "newpass12",
+    })
+  })
+
+  it("refuses a missing current password and a weak new one", () => {
+    const missing = changePasswordServerZodSchema.safeParse({ old_password: "", new_password: "newpass12" })
+    expect(missing.error?.issues[0]?.message).toBe("Current password is required")
+    expect(changePasswordServerZodSchema.safeParse({ old_password: "old", new_password: "short" }).success).toBe(false)
   })
 })

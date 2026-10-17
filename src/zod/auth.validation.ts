@@ -67,3 +67,6 @@ export type IResetPasswordFormValues = z.infer<typeof resetPasswordFormZodSchema
 // Server schemas: the form values checked again on the server. The API's
 // updateMe schema is strict, so a key outside it would be refused, not dropped.
 export const updateProfileServerZodSchema = profileFormZodSchema
+
+// The confirmation field is the form's own check and never leaves the browser.
+export const changePasswordServerZodSchema = changePasswordFormZodSchema
