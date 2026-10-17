@@ -10,6 +10,12 @@ import type { IShareholder } from "@/types/finance.types"
 import type { UseQueryResult } from "@tanstack/react-query"
 import { PieChart, Power, Trash2 } from "lucide-react"
 
+const allocationNote = (unallocatedPct: number | null) => {
+  if (unallocatedPct === null) return "Shares are checked against 100% across everybody still active."
+  if (unallocatedPct > 0) return `${unallocatedPct}% of the business is not assigned to anybody.`
+  return "Every percent of the business is assigned."
+}
+
 /**
  * Who owns the agency.
  *
@@ -37,11 +43,7 @@ const ShareholderList = ({
     <CardHeader className="border-b px-5 py-4">
       <CardTitle className="text-base">Shareholders</CardTitle>
       <p className="text-sm text-muted-foreground">
-        {unallocatedPct === null
-          ? "Shares are checked against 100% across everybody still active."
-          : unallocatedPct > 0
-            ? `${unallocatedPct}% of the business is not assigned to anybody.`
-            : "Every percent of the business is assigned."}
+        {allocationNote(unallocatedPct)}
       </p>
     </CardHeader>
 
