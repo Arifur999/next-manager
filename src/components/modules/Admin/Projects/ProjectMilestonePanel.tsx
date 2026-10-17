@@ -9,6 +9,8 @@ import {
 } from "@/app/(dashboardLayout)/admin/dashboard/projects/_milestoneAction"
 import { dayOf, statusOf } from "@/components/modules/Admin/Projects/milestoneStatus"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
+import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -61,9 +63,9 @@ const ProjectMilestonePanel = ({
 }) => {
   const [milestoneToDelete, setMilestoneToDelete] = useState<IMilestone | null>(null)
 
-  const { data, isLoading } = useQuery(milestonesListQuery(`project_id=${projectId}`))
+  const milestonesQuery = useQuery(milestonesListQuery(`project_id=${projectId}`))
 
-  const milestones = data?.data ?? []
+  const milestones = milestonesQuery.data?.data ?? []
 
   const { run: addMilestone, isPending: isCreating } = useActionMutation({
     action: createMilestoneAction,
@@ -93,19 +95,17 @@ const ProjectMilestonePanel = ({
 
   const delivered = milestones.filter((milestone) => milestone.submitted_at)
   const onTime = delivered.filter((milestone) => !statusOf(milestone).late)
+  // A fraction, not a percentage: "2 of 3" is honest about how few it is
+  // computed from; "67%" is not.
+  const deliverySummary =
+    delivered.length === 0 ? "Nothing delivered yet." : `${onTime.length} of ${delivered.length} delivered on time`
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
         <div>
           <CardTitle className="text-base">Milestones</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            {delivered.length === 0
-              ? "Nothing delivered yet."
-              : /* Stated as a fraction, not a percentage. "2 of 3" is honest
-                   about how few it is computed from; "67%" is not. */
-                `${onTime.length} of ${delivered.length} delivered on time`}
-          </p>
+          {milestonesQuery.isSuccess && <p className="text-sm text-muted-foreground">{deliverySummary}</p>}
         </div>
       </CardHeader>
 
@@ -161,14 +161,16 @@ const ProjectMilestonePanel = ({
       </form>
       )}
 
-      {isLoading && milestones.length === 0 ? (
-        <div className="h-32 animate-pulse bg-muted/40" />
-      ) : milestones.length === 0 ? (
-        <p className="flex flex-col items-center gap-2 px-6 py-12 text-center text-sm text-muted-foreground">
-          <CalendarCheck className="size-7" aria-hidden="true" />
-          No milestones yet. Without a dated promise there is nothing to be on time for.
-        </p>
-      ) : (
+      <PanelState
+        query={milestonesQuery}
+        errorMessage="The milestones did not load."
+        isEmpty={milestones.length === 0}
+        empty={
+          <EmptyState icon={CalendarCheck}>
+            No milestones yet. Without a dated promise there is nothing to be on time for.
+          </EmptyState>
+        }
+      >
         <ul className="divide-y">
           {milestones.map((milestone) => {
             const state = statusOf(milestone)
@@ -248,7 +250,7 @@ const ProjectMilestonePanel = ({
             )
           })}
         </ul>
-      )}
+      </PanelState>
 
       <ConfirmDialog
         open={milestoneToDelete !== null}
