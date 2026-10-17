@@ -14,14 +14,17 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import type { ILeaveType } from "@/types/people.types"
+import { leaveTypeFormZodSchema, type ILeaveTypeFormValues } from "@/zod/people.validation"
+import { useForm } from "@tanstack/react-form"
 import { useQuery } from "@tanstack/react-query"
 import { CalendarOff, Power } from "lucide-react"
-import { useState } from "react"
 import { leaveTypesQuery } from "@/queries/people.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
 // A renamed or retired kind changes what the balance card can offer.
 const LEAVE_TYPE_KEYS = [queryKeys.leaveTypes.all, queryKeys.leaveBalance.all]
+
+const newLeaveType: ILeaveTypeFormValues = { name: "", days_per_year: "", is_paid: true }
 
 /**
  * The kinds of leave an agency gives.
@@ -38,10 +41,6 @@ const LEAVE_TYPE_KEYS = [queryKeys.leaveTypes.all, queryKeys.leaveBalance.all]
  * not having the feature.
  */
 const LeaveTypeBoard = () => {
-  const [name, setName] = useState("")
-  const [days, setDays] = useState("")
-  const [isPaid, setIsPaid] = useState(true)
-
   const { data, isLoading } = useQuery(leaveTypesQuery())
   const types = data?.data ?? []
 
@@ -59,13 +58,13 @@ const LeaveTypeBoard = () => {
     refresh: false,
   })
 
-  const handleAdd = async () => {
-    if (await addLeaveType({ name, days_per_year: days, is_paid: isPaid })) {
-      setName("")
-      setDays("")
-      setIsPaid(true)
-    }
-  }
+  const form = useForm({
+    defaultValues: newLeaveType,
+    validators: { onSubmit: leaveTypeFormZodSchema },
+    onSubmit: async ({ value, formApi }) => {
+      if (await addLeaveType(value)) formApi.reset()
+    },
+  })
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
@@ -78,59 +77,76 @@ const LeaveTypeBoard = () => {
           className="space-y-4 px-6 pb-6"
           onSubmit={(event) => {
             event.preventDefault()
-            if (!name.trim()) return
-            void handleAdd()
+            void form.handleSubmit()
           }}
         >
-          <div className="space-y-1.5">
-            <Label htmlFor="leave-type-name">Name</Label>
-            <Input
-              id="leave-type-name"
-              value={name}
-              maxLength={60}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Study leave"
-              disabled={isPending}
-            />
-          </div>
+          <form.Field name="name">
+            {(field) => (
+              <div className="space-y-1.5">
+                <Label htmlFor="leave-type-name">Name</Label>
+                <Input
+                  id="leave-type-name"
+                  value={field.state.value}
+                  maxLength={60}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  placeholder="Study leave"
+                  disabled={isPending}
+                />
+              </div>
+            )}
+          </form.Field>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="leave-type-days">Days a year</Label>
-            <Input
-              id="leave-type-days"
-              type="number"
-              min={0}
-              max={365}
-              step="1"
-              value={days}
-              placeholder="0"
-              onChange={(event) => setDays(event.target.value)}
-              disabled={isPending}
-            />
-            <p className="text-xs text-muted-foreground">
-              Leave it at zero for a kind you want recorded but not capped — that reads as
-              &ldquo;no limit&rdquo;, not as nothing left.
-            </p>
-          </div>
+          <form.Field name="days_per_year">
+            {(field) => (
+              <div className="space-y-1.5">
+                <Label htmlFor="leave-type-days">Days a year</Label>
+                <Input
+                  id="leave-type-days"
+                  type="number"
+                  min={0}
+                  max={365}
+                  step="1"
+                  value={field.state.value}
+                  placeholder="0"
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  disabled={isPending}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Leave it at zero for a kind you want recorded but not capped — that reads as
+                  &ldquo;no limit&rdquo;, not as nothing left.
+                </p>
+              </div>
+            )}
+          </form.Field>
 
-          <div className="flex items-start gap-2.5">
-            <Checkbox
-              id="leave-type-paid"
-              checked={isPaid}
-              onCheckedChange={(checked) => setIsPaid(checked === true)}
-              disabled={isPending}
-            />
-            <div className="grid gap-1 leading-none">
-              <Label htmlFor="leave-type-paid">Paid</Label>
-              <p className="text-xs text-muted-foreground">
-                Unpaid leave is still worth recording — it explains an absence.
-              </p>
-            </div>
-          </div>
+          <form.Field name="is_paid">
+            {(field) => (
+              <div className="flex items-start gap-2.5">
+                <Checkbox
+                  id="leave-type-paid"
+                  checked={field.state.value}
+                  onCheckedChange={(checked) => field.handleChange(checked === true)}
+                  disabled={isPending}
+                />
+                <div className="grid gap-1 leading-none">
+                  <Label htmlFor="leave-type-paid">Paid</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Unpaid leave is still worth recording — it explains an absence.
+                  </p>
+                </div>
+              </div>
+            )}
+          </form.Field>
 
-          <Button type="submit" disabled={isPending || !name.trim()} className="w-full">
-            Add
-          </Button>
+          <form.Subscribe selector={(state) => state.values.name.trim() === ""}>
+            {(isNameBlank) => (
+              <Button type="submit" disabled={isPending || isNameBlank} className="w-full">
+                Add
+              </Button>
+            )}
+          </form.Subscribe>
         </form>
       </Card>
 
