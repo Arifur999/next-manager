@@ -14,9 +14,8 @@ import { accountsQuery } from "@/queries/finance.queries"
 
 const sumBalances = (accounts: IAccount[]) => accounts.reduce((running, account) => running + account.balance, 0)
 
-// Declared at module scope, not inside the board: a component created during
-// render is remounted every time the parent re-renders, losing any state inside
-// it — and React Compiler flags the pattern for exactly that reason.
+// At module scope: a component declared during render remounts, losing its
+// state, every time the board re-renders.
 const CurrencyColumn = ({
   title,
   accounts,
@@ -66,13 +65,8 @@ const CurrencyColumn = ({
   </Card>
 )
 
-/**
- * Accounts, grouped by currency.
- *
- * Grouped rather than listed flat because the two currencies are genuinely
- * separate pots — a single list with a mixed total would invite exactly the
- * addition this app refuses to do anywhere else.
- */
+// Accounts grouped by currency, because a flat list with one total would add
+// USD to BDT, which this app never does.
 const AccountsBoard = () => {
   const { data, isLoading, isError, isFetching, refetch } = useQuery(accountsQuery())
 
