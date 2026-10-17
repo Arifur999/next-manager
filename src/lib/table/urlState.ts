@@ -1,4 +1,5 @@
 import type { DataTableFilterConfig, DataTableFilterValue, DataTableFilterValues } from "@/components/shared/table/dataTable.types"
+import { isCalendarDay } from "@/lib/dates"
 
 // What a page's `searchParams` prop resolves to, and what the browser has.
 export type SearchParamsRecord = Record<string, string | string[] | undefined>
@@ -65,7 +66,10 @@ export const readFilterValues = (source: ParamsSource, configs: DataTableFilterC
     else if (config.type === "multi-select") values[config.id] = readAll(source, config.id)
     else {
       const { fromKey, toKey } = rangeKeys(config)
-      const range = { from: readAll(source, fromKey)[0], to: readAll(source, toKey)[0] }
+      // A bound that is not a real day is ignored, as the API ignores it: a
+      // hand-edited ?from=x must not take the page down.
+      const readDay = (key: string) => readAll(source, key).find(isCalendarDay)
+      const range = { from: readDay(fromKey), to: readDay(toKey) }
       values[config.id] = range.from || range.to ? range : undefined
     }
   }

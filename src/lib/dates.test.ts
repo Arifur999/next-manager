@@ -1,6 +1,6 @@
 import { format } from "date-fns"
 import { afterEach, describe, expect, it } from "vitest"
-import { toDate } from "./dates"
+import { isCalendarDay, toDate } from "./dates"
 
 const originalTimeZone = process.env.TZ
 
@@ -23,5 +23,19 @@ describe("toDate", () => {
   it("passes a Date through", () => {
     const date = new Date("2026-01-02T03:04:05Z")
     expect(toDate(date)).toBe(date)
+  })
+})
+
+describe("isCalendarDay", () => {
+  it("accepts a real day", () => {
+    expect(isCalendarDay("2026-02-28")).toBe(true)
+    expect(isCalendarDay("2028-02-29")).toBe(true)
+  })
+
+  it("rejects text, impossible days and other formats", () => {
+    expect(isCalendarDay("x")).toBe(false)
+    expect(isCalendarDay("2026-13-01")).toBe(false)
+    expect(isCalendarDay("2026-02-31")).toBe(false)
+    expect(isCalendarDay("17/10/2026")).toBe(false)
   })
 })

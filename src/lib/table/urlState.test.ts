@@ -47,6 +47,12 @@ describe("readFilterValues", () => {
     })
   })
 
+  // Regression: ?from=x crashed the date-range chip, which formats each bound.
+  it("ignores range bounds that are not real days", () => {
+    expect(readFilterValues(new URLSearchParams("from=x&to=2026-13-01"), FILTERS).date).toBeUndefined()
+    expect(readFilterValues(new URLSearchParams("from=x&to=2026-02-01"), FILTERS).date).toEqual({ from: undefined, to: "2026-02-01" })
+  })
+
   it("leaves a range with neither end undefined", () => {
     expect(readFilterValues(new URLSearchParams(""), FILTERS).date).toBeUndefined()
   })
