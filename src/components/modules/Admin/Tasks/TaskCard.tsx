@@ -2,8 +2,8 @@
 
 import { moveTaskAction } from "@/app/(dashboardLayout)/admin/dashboard/tasks/_action"
 import { Checkbox } from "@/components/ui/checkbox"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { ITask, IWorkflowStatus } from "@/types/work.types"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { format, isBefore, startOfToday } from "date-fns"
 import { toast } from "sonner"
 import { queryKeys } from "@/lib/queryKeys"
@@ -16,10 +16,12 @@ const PRIORITY_TONE: Record<string, string> = {
 }
 
 const TaskCard = ({ task, statuses }: { task: ITask; statuses: IWorkflowStatus[] }) => {
-  const queryClient = useQueryClient()
-
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (status_id: string) => moveTaskAction(task.id, { status_id }),
+  // The ticked box and the card's new column are the confirmation.
+  const { run: moveTask, isPending } = useActionMutation({
+    action: (statusId: string) => moveTaskAction(task.id, { status_id: statusId }),
+    successMessage: false,
+    invalidateKeys: [queryKeys.tasks.all, queryKeys.dashboard.all],
+    refresh: false,
   })
 
   // Finished is a category, so a column called "Shipped" strikes the title
@@ -37,7 +39,7 @@ const TaskCard = ({ task, statuses }: { task: ITask; statuses: IWorkflowStatus[]
     statuses.find((status) => status.is_default && status.is_active) ??
     statuses.find((status) => status.category === "open" && status.is_active)
 
-  const toggleDone = async () => {
+  const toggleDone = () => {
     const next = isDone ? reopenTarget : closeTarget
 
     if (!next) {
@@ -51,15 +53,7 @@ const TaskCard = ({ task, statuses }: { task: ITask; statuses: IWorkflowStatus[]
       return
     }
 
-    const result = await mutateAsync(next.id)
-
-    if (!result.success) {
-      toast.error(result.message || "Failed to update task")
-      return
-    }
-
-    void queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all })
+    void moveTask(next.id)
   }
 
   return (
@@ -67,7 +61,7 @@ const TaskCard = ({ task, statuses }: { task: ITask; statuses: IWorkflowStatus[]
       <div className="flex items-start gap-2.5">
         <Checkbox
           checked={isDone}
-          onCheckedChange={() => void toggleDone()}
+          onCheckedChange={toggleDone}
           disabled={isPending}
           aria-label={isDone ? `Reopen ${task.title}` : `Mark ${task.title} done`}
           className="mt-0.5"
