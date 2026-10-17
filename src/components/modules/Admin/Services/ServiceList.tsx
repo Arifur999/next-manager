@@ -12,13 +12,7 @@ import type { IService } from "@/types/catalog.types"
 import { Package, Power, Trash2 } from "lucide-react"
 import type { ComponentProps } from "react"
 
-/**
- * Everything on the catalogue.
- *
- * Each row says what is riding on it, because that is what decides whether it
- * can be deleted — and seeing "on 4 invoices" beforehand is better than finding
- * out by being refused.
- */
+// Each row says what it is on, because that decides whether it can be deleted.
 const ServiceList = ({
   services,
   query,

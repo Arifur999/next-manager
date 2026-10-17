@@ -14,20 +14,9 @@ import { useState } from "react"
 import { serviceCategoriesQuery, servicesListQuery } from "@/queries/catalog.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
-/**
- * The catalogue: a form on the left, the list on the right.
- *
- * This component only holds the state the two halves share. The form and the
- * list are their own files, so neither grows the other.
- */
-/**
- * The catalogue.
- *
- * `canManage` decides whether this is a board somebody shapes or one they only
- * read. A project manager picks what a project delivers and needs to see what
- * is on offer; shaping the list is the seller's job, and the API refuses them
- * every write behind it — so offering the form would only be a form that fails.
- */
+// The catalogue: the form on the left, the list on the right. Without
+// `canManage` (a project manager only picks from it) the form is hidden, because
+// the API refuses that role every write.
 const ServicesBoard = ({ canManage = true }: { canManage?: boolean }) => {
   const [editing, setEditing] = useState<IService | null>(null)
   const [removing, setRemoving] = useState<IService | null>(null)

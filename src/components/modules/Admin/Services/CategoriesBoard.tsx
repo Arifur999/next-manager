@@ -23,14 +23,8 @@ import { queryKeys } from "@/lib/queryKeys"
 // The catalogue shows each service's category, so it moves with these.
 const CATEGORY_KEYS = [queryKeys.serviceCategories.all, queryKeys.services.all]
 
-/**
- * How the catalogue is grouped.
- *
- * Deleting one here behaves differently from every other list in the product,
- * and the screen says so: the services survive and become ungrouped. Grouping
- * is a tidying decision, and refusing it until somebody has moved every service
- * out by hand would make tidying harder than leaving it wrong.
- */
+// How the catalogue is grouped. Unlike every other list, removing a category is
+// never refused: its services stay, ungrouped, because tidying should not cost work.
 const CategoriesBoard = () => {
   const [name, setName] = useState("")
   const [removing, setRemoving] = useState<IServiceCategory | null>(null)

@@ -17,14 +17,8 @@ import { useState } from "react"
 import { serviceTemplatesQuery } from "@/queries/catalog.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
-/**
- * Named bundles, so a repeat offer is one pick rather than five.
- *
- * The total shown against a package is worked out from today's service prices
- * and labelled as an estimate — it is not stored, because what a bundle costs
- * is whatever its lines are actually sold at. Storing a second total would give
- * two answers to what the client owes.
- */
+// Named bundles, so a repeat offer is one pick. A package's total is an estimate
+// from today's prices and never stored: a second total would be a second answer to what is owed.
 const TemplatesBoard = () => {
   const [removing, setRemoving] = useState<IServiceTemplate | null>(null)
 

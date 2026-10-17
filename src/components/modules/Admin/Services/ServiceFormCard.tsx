@@ -22,14 +22,8 @@ import { NO_CATEGORY, serviceFormZodSchema, type IServiceFormValues } from "@/zo
 import { useForm } from "@tanstack/react-form"
 import { Plus, X } from "lucide-react"
 
-/**
- * Adding or editing one thing the agency sells.
- *
- * The price says out loud that it is a starting point. Somebody who thinks this
- * is "the price" will eventually change it and expect old invoices to follow,
- * and they do not — every line keeps its own copy from the moment it is
- * written.
- */
+// Adding or editing a service. The price is labelled a starting point because
+// every invoice line keeps its own copy, so changing it never restates one sent.
 
 const emptyService: IServiceFormValues = {
   name: "",
@@ -167,8 +161,6 @@ const ServiceFormCard = ({
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                {/* Said here rather than discovered later: this fills the invoice line
-                    in, and the line keeps its own copy from then on. */}
                 A starting point. Every invoice keeps the price it was written with, so
                 changing this never alters one already sent. Leave it empty to type the
                 number each time.

@@ -11,17 +11,8 @@ import { FolderKanban, Users } from "lucide-react"
 import Link from "next/link"
 import { serviceDetailQuery } from "@/queries/catalog.queries"
 
-/**
- * One service, and where it is actually being sold.
- *
- * The catalogue row on its own answers nothing somebody opens this for. The
- * question is who bought it and what it is running on — so the clients and the
- * projects are the page, and the price is a line in the header.
- *
- * What the service has EARNED is deliberately absent. Which clients bought it
- * is a sales fact; what it brought in is an income one, and that belongs on the
- * admin's revenue-by-service report.
- */
+// One service and where it is sold: who bought it and which projects run on it.
+// What it earned is left out on purpose; that is income, on the admin's revenue report.
 const ServiceDetail = ({ serviceId }: { serviceId: string }) => {
   const serviceQuery = useQuery(serviceDetailQuery(serviceId))
 
