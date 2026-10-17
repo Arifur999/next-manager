@@ -49,3 +49,13 @@ export const exchangeFormZodSchema = exchangeFormFields.refine(
 )
 
 export type IExchangeFormValues = z.infer<typeof exchangeFormZodSchema>
+
+export const createExchangeServerZodSchema = exchangeFormZodSchema.transform((values) => ({
+    date: values.date,
+    from_account_id: values.from_account_id,
+    to_account_id: values.to_account_id,
+    amount_usd: Number(values.amount_usd),
+    rate: Number(values.rate),
+    fee_usd: toNumber(values.fee_usd) ?? 0,
+    notes: values.notes,
+}))

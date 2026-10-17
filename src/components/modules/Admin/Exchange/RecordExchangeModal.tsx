@@ -18,7 +18,6 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt, formatRate, formatUsd } from "@/lib/currency"
 import { exchangeFormFields, exchangeFormZodSchema, type IExchangeFormValues } from "@/zod/finance.validation"
-import { toNumber } from "@/zod/formFields"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ArrowLeftRight } from "lucide-react"
@@ -55,13 +54,7 @@ const RecordExchangeModal = () => {
   const bdtAccounts = accounts.filter((a) => a.currency === "BDT" && a.is_active)
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IExchangeFormValues) =>
-      createExchangeAction({
-        ...values,
-        amount_usd: toNumber(values.amount_usd),
-        rate: toNumber(values.rate),
-        fee_usd: toNumber(values.fee_usd) ?? 0,
-      }),
+    mutationFn: (values: IExchangeFormValues) => createExchangeAction(values),
   })
 
   const form = useForm({
