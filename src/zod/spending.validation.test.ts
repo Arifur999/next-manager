@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
     createExpenseCategoryServerZodSchema,
     createExpenseServerZodSchema,
+    createOwnerWithdrawalServerZodSchema,
     createTeamPayoutServerZodSchema,
 } from "./spending.validation"
 
@@ -93,5 +94,33 @@ describe("createTeamPayoutServerZodSchema", () => {
             "Choose a team member",
             "Choose a BDT account",
         ])
+    })
+})
+
+describe("createOwnerWithdrawalServerZodSchema", () => {
+    const withdrawal = { date: "2026-10-12", amount_bdt: "20000", type: "personal", account_id: "bdt-1", notes: "" }
+
+    it("builds the API payload with a numeric amount", () => {
+        expect(createOwnerWithdrawalServerZodSchema.parse(withdrawal)).toEqual({
+            date: "2026-10-12",
+            amount_bdt: 20000,
+            type: "personal",
+            account_id: "bdt-1",
+            notes: "",
+        })
+    })
+
+    it("accepts money put back into the business", () => {
+        expect(createOwnerWithdrawalServerZodSchema.parse({ ...withdrawal, type: "reinvestment" }).type).toBe("reinvestment")
+    })
+
+    it("rejects a negative amount", () => {
+        expect(createOwnerWithdrawalServerZodSchema.safeParse({ ...withdrawal, amount_bdt: "-1" }).success).toBe(false)
+    })
+
+    it("requires a BDT account", () => {
+        expect(
+            createOwnerWithdrawalServerZodSchema.safeParse({ ...withdrawal, account_id: "" }).error?.issues[0]?.message,
+        ).toBe("Choose a BDT account")
     })
 })

@@ -53,8 +53,7 @@ const RecordWithdrawalModal = () => {
   const bdtAccounts = accounts.filter((account) => account.currency === "BDT" && account.is_active)
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IOwnerWithdrawalFormValues) =>
-      createWithdrawalAction({ ...values, amount_bdt: Number(values.amount_bdt) }),
+    mutationFn: (values: IOwnerWithdrawalFormValues) => createWithdrawalAction(values),
   })
 
   const form = useForm({

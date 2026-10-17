@@ -70,3 +70,11 @@ export const createTeamPayoutServerZodSchema = teamPayoutFormZodSchema.transform
     account_id: values.account_id,
     notes: values.notes,
 }))
+
+export const createOwnerWithdrawalServerZodSchema = ownerWithdrawalFormZodSchema.transform((values) => ({
+    date: values.date,
+    amount_bdt: Number(values.amount_bdt),
+    type: values.type,
+    account_id: values.account_id,
+    notes: values.notes,
+}))

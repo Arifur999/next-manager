@@ -1,30 +1,11 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
+import { requireId, runAction, runValidatedAction } from "@/lib/runAction"
 import { createOwnerWithdrawal, deleteOwnerWithdrawal } from "@/services/spending.services"
-import type { IOwnerWithdrawal } from "@/types/spending.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+import { createOwnerWithdrawalServerZodSchema } from "@/zod/spending.validation"
 
-export const createWithdrawalAction = async (
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<IOwnerWithdrawal> | ApiErrorResponse> => {
-    try {
-        return await createOwnerWithdrawal(payload)
-    } catch (error: unknown) {
-        // A non-owner gets the server's 403 message here rather than a blank
-        // screen — the route is owner-only and that is worth saying plainly.
-        return { success: false, message: getActionErrorMessage(error, "Failed to record withdrawal") }
-    }
-}
+export const createWithdrawalAction = async (values: unknown) =>
+    runValidatedAction(createOwnerWithdrawalServerZodSchema, values, "Failed to record withdrawal", createOwnerWithdrawal)
 
-export const deleteWithdrawalAction = async (
-    id: string,
-): Promise<ApiResponse<{ message: string }> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid withdrawal id" }
-
-    try {
-        return await deleteOwnerWithdrawal(id)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to delete withdrawal") }
-    }
-}
+export const deleteWithdrawalAction = async (id: string) =>
+    requireId(id, "withdrawal") ?? runAction("Failed to delete withdrawal", () => deleteOwnerWithdrawal(id))
