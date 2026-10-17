@@ -29,7 +29,7 @@ export const toDepartmentId = (value: string | undefined) =>
 
 export const createUserFormZodSchema = z.object({
   full_name: z.string().min(1, "Full name is required"),
-  email: z.string().min(1, "Email is required").email("Enter a valid email address"),
+  email: z.string().min(1, "Email is required").pipe(z.email("Enter a valid email address")),
   phone: z.string().optional(),
   password: z
     .string()

@@ -38,6 +38,11 @@ describe("createUserServerZodSchema", () => {
     const result = createUserServerZodSchema.safeParse({ ...newMember, email: "rahim@" })
     expect(result.error?.issues[0]?.message).toBe("Enter a valid email address")
   })
+
+  it("asks for an email when the box is blank", () => {
+    const result = createUserServerZodSchema.safeParse({ ...newMember, email: "" })
+    expect(result.error?.issues.map((issue) => issue.message)).toEqual(["Email is required"])
+  })
 })
 
 describe("updateUserServerZodSchema", () => {
