@@ -2,6 +2,7 @@
 
 import { publishAnnouncementAction } from "@/app/(dashboardLayout)/platform/_campaignAction"
 import { AUDIENCE_LABEL, audienceReach } from "@/components/modules/Platform/announcementAudience"
+import { companiesText } from "@/components/modules/Platform/companiesText"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { queryKeys } from "@/lib/queryKeys"
@@ -14,8 +15,6 @@ type PublishAnnouncementDialogProps = {
   announcement: IAnnouncement | null
   onClose: () => void
 }
-
-const companiesText = (count: number) => `${count} ${count === 1 ? "company" : "companies"}`
 
 // The one step that cannot be undone, so it says how many companies it reaches before it sends.
 const PublishAnnouncementDialog = ({ announcement, onClose }: PublishAnnouncementDialogProps) => {

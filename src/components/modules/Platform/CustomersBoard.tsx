@@ -4,6 +4,7 @@ import AddCompanyMenu from "@/components/modules/Platform/AddCompanyMenu"
 import CompanySubscriptionSheet, {
   type ICompanySheetTarget,
 } from "@/components/modules/Platform/CompanySubscriptionSheet"
+import { companiesText } from "@/components/modules/Platform/companiesText"
 import { COMPANIES_TABLE, onlyPaying, PAYING_COMPANIES_TABLE } from "@/components/modules/Platform/companiesTable.config"
 import { isQuietSince } from "@/components/modules/Platform/customerActivity"
 import { customersColumns } from "@/components/modules/Platform/customersColumns"
@@ -36,7 +37,7 @@ const CustomerCount = ({ companies, total }: { companies: ICompanyRow[] | undefi
 
   return (
     <>
-      {count} {count === 1 ? "company" : "companies"}
+      {companiesText(count)}
       {quiet > 0 && <span className="text-foreground"> · {quiet} on this page quiet for a month or more</span>}
     </>
   )

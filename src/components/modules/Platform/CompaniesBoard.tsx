@@ -4,6 +4,7 @@ import CompanySubscriptionSheet, {
   type ICompanySheetTarget,
 } from "@/components/modules/Platform/CompanySubscriptionSheet"
 import { companiesColumns } from "@/components/modules/Platform/companiesColumns"
+import { companiesText } from "@/components/modules/Platform/companiesText"
 import { COMPANIES_TABLE } from "@/components/modules/Platform/companiesTable.config"
 import DataTable from "@/components/shared/table/DataTable"
 import { Card, CardHeader } from "@/components/ui/card"
@@ -33,11 +34,10 @@ const CompanyCount = ({ companies, total }: { companies: ICompanyRow[] | undefin
 
   const count = total ?? companies.length
   const atLimit = companies.filter(isAtLimit).length
-  const noun = count === 1 ? "company" : "companies"
-  if (atLimit === 0) return <>{count} {noun}, none on this page at a plan limit.</>
+  if (atLimit === 0) return <>{companiesText(count)}, none on this page at a plan limit.</>
   return (
     <>
-      {count} {noun} · {atLimit} on this page at a plan limit
+      {companiesText(count)} · {atLimit} on this page at a plan limit
     </>
   )
 }

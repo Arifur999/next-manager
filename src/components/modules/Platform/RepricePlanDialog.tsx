@@ -1,5 +1,6 @@
 "use client"
 
+import { companiesText } from "@/components/modules/Platform/companiesText"
 import { monthlyPrice } from "@/components/modules/Platform/planLabel"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { companiesListQuery } from "@/queries/platform.queries"
@@ -14,8 +15,6 @@ type RepricePlanDialogProps = {
   isPending: boolean
   onConfirm: () => void
 }
-
-const companiesText = (count: number) => `${count} ${count === 1 ? "company" : "companies"}`
 
 // A tier's price is what every company on it pays, so the confirm step says how many that is.
 const RepricePlanDialog = ({ plan, newPrice, open, onOpenChange, isPending, onConfirm }: RepricePlanDialogProps) => {

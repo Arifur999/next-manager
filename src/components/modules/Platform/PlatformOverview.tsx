@@ -1,6 +1,7 @@
 "use client"
 
 import AttentionTile from "@/components/modules/Platform/AttentionTile"
+import { companiesText } from "@/components/modules/Platform/companiesText"
 import { companiesMatching } from "@/components/modules/Platform/companyLinks"
 import LapsingList from "@/components/modules/Platform/LapsingList"
 import StandingBadge from "@/components/modules/Platform/StandingBadge"
@@ -51,7 +52,7 @@ const PlatformOverview = () => {
             format={usd}
             size="lead"
             tone={1}
-            hint={`From ${paying} paying ${paying === 1 ? "company" : "companies"}, past due included.`}
+            hint={`From ${companiesText(paying)} paying, past due included.`}
           />
         </TileLink>
 
