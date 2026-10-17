@@ -37,8 +37,9 @@ import { queryKeys } from "@/lib/queryKeys"
  * too. It is the moment access actually changes.
  */
 
-// Grouped in the order permissions are handed out, not alphabetically.
-const AREAS = ["Companies", "Plans", "Finance", "Team", "Customers"] as const
+// Read off the permission list, in the order permissions are handed out, so a
+// new area cannot be left out of the editor.
+const AREAS = [...new Set(PLATFORM_PERMISSIONS.map((permission) => PLATFORM_PERMISSION_INFO[permission].area))]
 
 const byArea = (area: string) =>
   PLATFORM_PERMISSIONS.filter((permission) => PLATFORM_PERMISSION_INFO[permission].area === area)
