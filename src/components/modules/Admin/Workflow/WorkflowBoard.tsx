@@ -43,13 +43,18 @@ const WorkflowBoard = ({ kind }: { kind: "task" | "project" }) => {
   const statuses = statusesQuery.data?.data ?? []
 
   // A move, a new default or a column switched off shows on the board itself.
-  const { run: change } = useActionMutation({
+  const { run: change, isPending: isChanging } = useActionMutation({
     action: ({ id, payload }: { id: string; payload: IWorkflowStatusChange }) =>
       updateWorkflowStatusAction(id, payload),
     successMessage: false,
     invalidateKeys: [queryKeys.workflowStatuses.all],
     refresh: false,
   })
+
+  // A move swaps the positions shown on screen, so a second one before the
+  // board has refetched would swap stale positions and can leave two columns
+  // sharing a slot.
+  const isReordering = isChanging || statusesQuery.isFetching
 
   const { run: remove, isPending: isRemoving } = useActionMutation({
     action: deleteWorkflowStatusAction,
@@ -134,7 +139,7 @@ const WorkflowBoard = ({ kind }: { kind: "task" | "project" }) => {
                     <Button
                       size="icon"
                       variant="ghost"
-                      disabled={index === 0}
+                      disabled={index === 0 || isReordering}
                       onClick={() => move(index, -1)}
                       aria-label={`Move ${status.name} earlier`}
                     >
@@ -143,7 +148,7 @@ const WorkflowBoard = ({ kind }: { kind: "task" | "project" }) => {
                     <Button
                       size="icon"
                       variant="ghost"
-                      disabled={index === statuses.length - 1}
+                      disabled={index === statuses.length - 1 || isReordering}
                       onClick={() => move(index, 1)}
                       aria-label={`Move ${status.name} later`}
                     >
