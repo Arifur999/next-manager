@@ -9,49 +9,35 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { formatUsd } from "@/lib/currency"
 import { LEAD_STAGES, type ILead, type LeadStage } from "@/types/crm.types"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { MoreHorizontal } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { toast } from "sonner"
 import { queryKeys } from "@/lib/queryKeys"
 
 // Only the open stages get a column. Won and lost are outcomes, not places work
 // sits, and giving them columns would make the board grow forever.
 const LeadCard = ({ lead }: { lead: ILead }) => {
-  const queryClient = useQueryClient()
   const router = useRouter()
 
-  const { mutateAsync: move, isPending: isMoving } = useMutation({
-    mutationFn: (stage: LeadStage) => moveLeadAction(lead.id, { stage }),
+  // The card landing in its new column is the confirmation.
+  const { run: moveLead, isPending: isMoving } = useActionMutation({
+    action: (stage: LeadStage) => moveLeadAction(lead.id, { stage }),
+    successMessage: false,
+    invalidateKeys: [queryKeys.leads.all],
+    refresh: false,
   })
 
-  const { mutateAsync: convert, isPending: isConverting } = useMutation({
-    mutationFn: () => convertLeadAction(lead.id),
+  const { run: convertLead, isPending: isConverting } = useActionMutation({
+    action: convertLeadAction,
+    successMessage: "Converted to a client",
+    invalidateKeys: [queryKeys.leads.all, queryKeys.clients.all],
+    refresh: false,
   })
-
-  const handleMove = async (stage: LeadStage) => {
-    const result = await move(stage)
-    if (!result.success) {
-      toast.error(result.message || "Failed to move lead")
-      return
-    }
-    void queryClient.invalidateQueries({ queryKey: queryKeys.leads.all })
-  }
 
   const handleConvert = async () => {
-    const result = await convert()
-
-    if (!result.success) {
-      toast.error(result.message || "Failed to convert lead")
-      return
-    }
-
-    toast.success("Converted to a client")
-    void queryClient.invalidateQueries({ queryKey: queryKeys.leads.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.clients.all })
-    router.push("/admin/dashboard/clients")
+    if (await convertLead(lead.id)) router.push("/admin/dashboard/clients")
   }
 
   const busy = isMoving || isConverting
@@ -76,7 +62,7 @@ const LeadCard = ({ lead }: { lead: ILead }) => {
 
           <DropdownMenuContent align="end">
             {LEAD_STAGES.filter((stage) => stage !== lead.stage).map((stage) => (
-              <DropdownMenuItem key={stage} onClick={() => void handleMove(stage)}>
+              <DropdownMenuItem key={stage} onClick={() => void moveLead(stage)}>
                 Move to {stage}
               </DropdownMenuItem>
             ))}
