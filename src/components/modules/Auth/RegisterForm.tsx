@@ -2,8 +2,8 @@
 
 import { registerAction } from "@/app/(commonLayout)/(auth)/register/_action"
 import AppField from "@/components/shared/form/AppField"
+import PasswordField from "@/components/modules/Auth/PasswordField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -14,11 +14,10 @@ import {
 import { registerFormZodSchema, type IRegisterFormValues } from "@/zod/auth.validation"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { Eye, EyeOff } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { focusFirstInvalid } from "@/lib/focusFirstInvalid"
-import { useRef, useState } from "react"
+import { useRef } from "react"
 
 /**
  * Creating a company.
@@ -43,7 +42,6 @@ const defaultValues: IRegisterFormValues = {
 
 const RegisterForm = () => {
   const router = useRouter()
-  const [showPassword, setShowPassword] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
 
   const { run: createWorkspace, isPending } = useActionMutation({
@@ -154,26 +152,7 @@ const RegisterForm = () => {
               validators={{ onChange: registerFormZodSchema.shape.password }}
             >
               {(field) => (
-                <div className="relative">
-                  <AppField
-                    field={field}
-                    label="Password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    placeholder="At least 8 characters, with a letter and a number"
-                    disabled={isPending}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-7"
-                    onClick={() => setShowPassword((shown) => !shown)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? <EyeOff aria-hidden="true" className="size-4" /> : <Eye aria-hidden="true" className="size-4" />}
-                  </Button>
-                </div>
+                <PasswordField field={field} label="Password" disabled={isPending} />
               )}
             </form.Field>
 

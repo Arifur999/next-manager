@@ -3,6 +3,7 @@
 import { acceptAgencyInviteAction } from "@/app/(commonLayout)/(auth)/agency-join/[token]/_action"
 import type { AgencyInvite } from "@/app/(commonLayout)/(auth)/agency-join/[token]/page"
 import AppField from "@/components/shared/form/AppField"
+import PasswordField from "@/components/modules/Auth/PasswordField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,7 +17,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { CircleCheck, Eye, EyeOff, LinkIcon } from "lucide-react"
+import { CircleCheck, LinkIcon } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 import { agencyJoinFormZodSchema, type IAgencyJoinFormValues } from "@/zod/auth.validation"
@@ -40,7 +41,6 @@ const AgencyJoinForm = ({
   token: string
   invite: AgencyInvite | null
 }) => {
-  const [showPassword, setShowPassword] = useState(false)
   const [opened, setOpened] = useState<string | null>(null)
 
   // Fixed when the deal was agreed with a named agency: that is the name on the
@@ -190,25 +190,7 @@ const AgencyJoinForm = ({
 
             <form.Field name="password" validators={{ onChange: agencyJoinFormZodSchema.shape.password }}>
               {(field) => (
-                <div className="relative">
-                  <AppField
-                    field={field}
-                    label="Choose a password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="At least 8 characters, with a letter and a number"
-                    disabled={isPending}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-7"
-                    onClick={() => setShowPassword((shown) => !shown)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? <EyeOff aria-hidden="true" className="size-4" /> : <Eye aria-hidden="true" className="size-4" />}
-                  </Button>
-                </div>
+                <PasswordField field={field} label="Choose a password" disabled={isPending} />
               )}
             </form.Field>
 

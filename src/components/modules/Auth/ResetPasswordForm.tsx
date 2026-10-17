@@ -1,7 +1,7 @@
 "use client"
 
 import { resetPasswordAction } from "@/app/(commonLayout)/(auth)/reset-password/_action"
-import AppField from "@/components/shared/form/AppField"
+import PasswordField from "@/components/modules/Auth/PasswordField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label"
 import { resetPasswordFormZodSchema, type IResetPasswordFormValues } from "@/zod/auth.validation"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { Eye, EyeOff, LinkIcon } from "lucide-react"
+import { LinkIcon } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { focusFirstInvalid } from "@/lib/focusFirstInvalid"
@@ -38,7 +38,6 @@ const ResetPasswordForm = () => {
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get("token") ?? ""
-  const [showPassword, setShowPassword] = useState(false)
   const [confirm, setConfirm] = useState("")
   const formRef = useRef<HTMLFormElement>(null)
 
@@ -115,26 +114,7 @@ const ResetPasswordForm = () => {
               validators={{ onChange: resetPasswordFormZodSchema.shape.new_password }}
             >
               {(field) => (
-                <div className="relative">
-                  <AppField
-                    field={field}
-                    label="New password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    placeholder="At least 8 characters, with a letter and a number"
-                    disabled={isPending}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-7"
-                    onClick={() => setShowPassword((shown) => !shown)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? <EyeOff aria-hidden="true" className="size-4" /> : <Eye aria-hidden="true" className="size-4" />}
-                  </Button>
-                </div>
+                <PasswordField field={field} label="New password" disabled={isPending} />
               )}
             </form.Field>
 
