@@ -65,6 +65,10 @@ export const getCredentialAccessLog = async (id: string) =>
 export const getConversations = async (queryString?: string) =>
     httpClient.get<IConversation[]>("/chat", { params: toParams(queryString) })
 
+/** Messages from others, across every open conversation, since you last read each. */
+export const getChatUnreadCount = async () =>
+    httpClient.get<{ unread_count: number }>("/chat/unread")
+
 export const createConversation = async (payload: Record<string, unknown>) =>
     httpClient.post<{ id: string }>("/chat", payload)
 

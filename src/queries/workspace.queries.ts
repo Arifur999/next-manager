@@ -4,7 +4,7 @@ import { FEED_PAGE_SIZE, nextPageOf } from "@/lib/paging"
 import { queryKeys } from "@/lib/queryKeys"
 import { buildQueryString, type QueryRecord } from "@/lib/queryString"
 import { getPermissionGrid } from "@/services/permission.services"
-import { getActivity, getActivityFilters, getConversations, getCredentials, getLoginEvents, getMessages, getNotificationRules, getNotifications, getOrganization, getUnreadCount } from "@/services/workspace.services"
+import { getActivity, getActivityFilters, getChatUnreadCount, getConversations, getCredentials, getLoginEvents, getMessages, getNotificationRules, getNotifications, getOrganization, getUnreadCount } from "@/services/workspace.services"
 
 // The audit feed pages with page + limit; growing one limit stopped at the API's cap of 200.
 export const activityFeedQuery = (filters: QueryRecord) =>
@@ -17,6 +17,11 @@ export const activityFeedQuery = (filters: QueryRecord) =>
 
 export const activityFiltersQuery = () =>
   queryOptions({ queryKey: queryKeys.activityFilters.list(), queryFn: () => getActivityFilters() })
+
+// Under the conversations root, so every invalidation the chat board already
+// makes (a message read, sent or arriving) refreshes the sidebar badge too.
+export const chatUnreadQuery = () =>
+  queryOptions({ queryKey: queryKeys.conversations.count("unread"), queryFn: () => getChatUnreadCount() })
 
 export const conversationsListQuery = (queryString = "") =>
   queryOptions({ queryKey: queryKeys.conversations.list(queryString), queryFn: () => getConversations(queryString) })
