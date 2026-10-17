@@ -7,22 +7,23 @@ import {
 } from "@/app/(dashboardLayout)/platform/_teamAction"
 import InviteLinkPanel from "@/components/modules/Platform/InviteLinkPanel"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
+import AppField from "@/components/shared/form/AppField"
 import EmptyState from "@/components/shared/state/EmptyState"
 import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import {
   PLATFORM_PERMISSIONS,
   PLATFORM_PERMISSION_INFO,
   type IPlatformInvite,
-  type PlatformPermission,
 } from "@/types/platform.types"
 import { useActionMutation } from "@/hooks/useActionMutation"
+import { platformInviteFormZodSchema, type IPlatformInviteFormValues } from "@/zod/platform.validation"
+import { useForm } from "@tanstack/react-form"
 import { useQuery } from "@tanstack/react-query"
 import { format, isPast, parseISO } from "date-fns"
 import { MailPlus, Trash2 } from "lucide-react"
@@ -49,9 +50,9 @@ const statusOf = (invite: IPlatformInvite) => {
   return { label: "waiting", tone: "default" as const }
 }
 
+const inviteDefaults: IPlatformInviteFormValues = { email: "", permissions: [] }
+
 const PlatformInvites = () => {
-  const [email, setEmail] = useState("")
-  const [permissions, setPermissions] = useState<string[]>([])
   const [freshLink, setFreshLink] = useState<string | null>(null)
   const [mailed, setMailed] = useState<{ delivered: boolean; reason: string | null } | null>(null)
   const [revoking, setRevoking] = useState<IPlatformInvite | null>(null)
@@ -89,17 +90,12 @@ const PlatformInvites = () => {
     if (revoking && (await revokeInvite(revoking.id))) setRevoking(null)
   }
 
-  const handleInvite = async () => {
-    if (!(await sendInvite({ email, permissions }))) return
-
-    setEmail("")
-    setPermissions([])
-  }
-
-  const toggle = (permission: PlatformPermission, on: boolean) =>
-    setPermissions((current) =>
-      on ? [...current, permission] : current.filter((value) => value !== permission),
-    )
+  const form = useForm({
+    defaultValues: inviteDefaults,
+    onSubmit: async ({ value, formApi }) => {
+      if (await sendInvite(value)) formApi.reset()
+    },
+  })
 
   return (
     <div className="space-y-6">
@@ -119,23 +115,25 @@ const PlatformInvites = () => {
 
         <form
           className="space-y-5 p-5"
+          noValidate
           onSubmit={(event) => {
             event.preventDefault()
-            if (!email.trim() || permissions.length === 0) return
-            void handleInvite()
+            event.stopPropagation()
+            void form.handleSubmit()
           }}
         >
-          <div className="max-w-md space-y-1.5">
-            <Label htmlFor="operator-email">Their email</Label>
-            <Input
-              id="operator-email"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="colleague@example.com"
-              disabled={isPending}
-            />
-          </div>
+          <form.Field name="email" validators={{ onChange: platformInviteFormZodSchema.shape.email }}>
+            {(field) => (
+              <AppField
+                field={field}
+                label="Their email"
+                type="email"
+                placeholder="colleague@example.com"
+                className="max-w-md"
+                disabled={isPending}
+              />
+            )}
+          </form.Field>
 
           <div className="space-y-2">
             <Label>What they may do</Label>
@@ -147,33 +145,50 @@ const PlatformInvites = () => {
               do, an operator can suspend any customer you have.
             </p>
 
-            <div className="grid gap-2 pt-1 sm:grid-cols-2">
-              {PLATFORM_PERMISSIONS.map((permission) => {
-                const info = PLATFORM_PERMISSION_INFO[permission]
+            <form.Field name="permissions">
+              {(field) => (
+                <div className="grid gap-2 pt-1 sm:grid-cols-2">
+                  {PLATFORM_PERMISSIONS.map((permission) => {
+                    const info = PLATFORM_PERMISSION_INFO[permission]
+                    const granted = field.state.value
 
-                return (
-                  <div key={permission} className="flex items-start gap-2.5">
-                    <Checkbox
-                      id={`invite-${permission}`}
-                      className="mt-0.5"
-                      checked={permissions.includes(permission)}
-                      onCheckedChange={(checked) => toggle(permission, checked === true)}
-                      disabled={isPending}
-                    />
-                    <Label htmlFor={`invite-${permission}`} className="font-normal">
-                      {info.label}
-                      <span className="block text-xs text-muted-foreground">{info.area}</span>
-                    </Label>
-                  </div>
-                )
-              })}
-            </div>
+                    return (
+                      <div key={permission} className="flex items-start gap-2.5">
+                        <Checkbox
+                          id={`invite-${permission}`}
+                          className="mt-0.5"
+                          checked={granted.includes(permission)}
+                          onCheckedChange={(checked) =>
+                            field.handleChange(
+                              checked === true
+                                ? [...granted, permission]
+                                : granted.filter((value) => value !== permission),
+                            )
+                          }
+                          disabled={isPending}
+                        />
+                        <Label htmlFor={`invite-${permission}`} className="font-normal">
+                          {info.label}
+                          <span className="block text-xs text-muted-foreground">{info.area}</span>
+                        </Label>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </form.Field>
           </div>
 
-          <Button type="submit" disabled={isPending || !email.trim() || permissions.length === 0}>
-            <MailPlus className="size-4" />
-            {isPending ? "Sending..." : "Send invite"}
-          </Button>
+          <form.Subscribe
+            selector={({ values }) => values.email.trim() !== "" && values.permissions.length > 0}
+          >
+            {(isReady) => (
+              <Button type="submit" disabled={isPending || !isReady}>
+                <MailPlus className="size-4" />
+                {isPending ? "Sending..." : "Send invite"}
+              </Button>
+            )}
+          </form.Subscribe>
         </form>
 
         {freshLink && (
