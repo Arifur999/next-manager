@@ -11,14 +11,10 @@ import { CalendarClock } from "lucide-react"
 import { platformOverviewQuery } from "@/queries/platform.queries"
 
 /**
- * How the platform business is doing.
+ * How the platform business is doing: the two numbers that answer it, then the
+ * one list an operator acts on rather than reads, what lapses this week.
  *
- * The console listed companies and plans and nothing that answers "how are we
- * doing" — so this leads with the two numbers that do, and then with the one
- * list an operator acts on rather than reads: what lapses this week.
- *
- * Nothing here is a company's own money. The API does not return it, so this
- * screen could not show it if it tried.
+ * Nothing here is a company's own money; the API does not return it.
  */
 
 const daysLeft = (iso: string | null) =>

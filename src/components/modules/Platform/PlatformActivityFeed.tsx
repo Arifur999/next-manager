@@ -20,12 +20,8 @@ import { useState } from "react"
 import { platformActivityFeedQuery } from "@/queries/platform.queries"
 
 /**
- * What the platform team has been doing.
- *
- * Every entry here is an action taken against a paying customer — suspending
- * one, moving it between plans, changing what a colleague may do. Nothing
- * recorded any of it before, which was survivable with one operator and is
- * not with a team.
+ * What the platform team has been doing: every entry is an action taken
+ * against a paying customer, or a change to what a colleague may do.
  *
  * Read-only all the way down: there is no delete button because there is no
  * delete endpoint, because a history somebody can edit answers nothing.

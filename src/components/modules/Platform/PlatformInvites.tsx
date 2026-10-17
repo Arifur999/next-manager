@@ -138,9 +138,7 @@ const PlatformInvites = () => {
           <div className="space-y-2">
             <Label>What they may do</Label>
             <p className="text-xs text-muted-foreground">
-              {/* This used to grant everything when nothing was ticked, which is
-                  what an untouched form looks like. Now at least one is required
-                  and the server refuses the rest. */}
+              {/* An empty list means full access, so an untouched form must not be sendable. */}
               Pick at least one. Choosing now is better than narrowing later — until you
               do, an operator can suspend any customer you have.
             </p>
