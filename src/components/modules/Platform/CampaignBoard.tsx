@@ -64,10 +64,24 @@ const AUDIENCE_HINT: Record<Audience, string> = {
 
 const emptyDraft = { title: "", body: "", audience: "all" as Audience, send_email: false }
 
+const RemovalNote = ({ announcement }: { announcement: IAnnouncement }) => {
+  const title = <span className="font-medium text-foreground">{announcement.title}</span>
+
+  if (!announcement.published_at) return <>{title} has not gone to anybody, so nothing else changes.</>
+
+  return (
+    <>
+      {title} leaves everyone&apos;s notifications.
+      {announcement.send_email && " The email that went with it cannot be recalled."}
+    </>
+  )
+}
+
 const CampaignBoard = () => {
   const [draft, setDraft] = useState(emptyDraft)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [confirming, setConfirming] = useState<IAnnouncement | null>(null)
+  const [removing, setRemoving] = useState<IAnnouncement | null>(null)
 
   const { data, isLoading } = useQuery(announcementsQuery())
 
@@ -107,7 +121,7 @@ const CampaignBoard = () => {
     },
   })
 
-  const { run: removeAnnouncement } = useActionMutation({
+  const { run: removeAnnouncement, isPending: isRemoving } = useActionMutation({
     action: deleteAnnouncementAction,
     successMessage: "Removed — it leaves everyone's notifications too",
     invalidateKeys: [queryKeys.platformAnnouncements.all],
@@ -123,9 +137,14 @@ const CampaignBoard = () => {
     if (confirming && (await publish(confirming.id))) setConfirming(null)
   }
 
-  const handleRemove = async (id: string) => {
-    if ((await removeAnnouncement(id)) && id === editingId) reset()
+  const handleRemove = async () => {
+    if (!removing || !(await removeAnnouncement(removing.id))) return
+
+    if (removing.id === editingId) reset()
+    setRemoving(null)
   }
+
+  const isWithdrawal = Boolean(removing?.published_at)
 
   const canSave = draft.title.trim().length > 0 && draft.body.trim().length > 0
 
@@ -284,7 +303,7 @@ const CampaignBoard = () => {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => void handleRemove(row.id)}
+                      onClick={() => setRemoving(row)}
                       aria-label={`Delete draft ${row.title}`}
                     >
                       <Trash2 className="size-4" />
@@ -341,7 +360,7 @@ const CampaignBoard = () => {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => void handleRemove(row.id)}
+                      onClick={() => setRemoving(row)}
                       aria-label={`Withdraw ${row.title}`}
                     >
                       <Trash2 className="size-4" />
@@ -371,6 +390,20 @@ const CampaignBoard = () => {
         pendingLabel="Publishing..."
         isPending={isPublishing}
         onConfirm={() => void handlePublish()}
+      />
+
+      <ConfirmDialog
+        open={Boolean(removing)}
+        onOpenChange={(open) => {
+          if (!open) setRemoving(null)
+        }}
+        title={isWithdrawal ? "Withdraw this announcement?" : "Delete this draft?"}
+        description={removing && <RemovalNote announcement={removing} />}
+        variant="destructive"
+        confirmLabel={isWithdrawal ? "Withdraw" : "Delete"}
+        pendingLabel={isWithdrawal ? "Withdrawing..." : "Deleting..."}
+        isPending={isRemoving}
+        onConfirm={() => void handleRemove()}
       />
     </div>
   )
