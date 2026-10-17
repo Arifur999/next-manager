@@ -4,7 +4,10 @@ import MonthGrid from "@/components/shared/calendar/MonthGrid"
 import { STATUS_TONE } from "@/components/shared/status/statusTone"
 import { cn } from "@/lib/utils"
 import type { ITask } from "@/types/work.types"
-import { isBefore, parseISO, startOfToday } from "date-fns"
+import { isTaskOverdue } from "@/components/modules/Admin/Tasks/taskDue"
+import { toDate } from "@/lib/dates"
+import { plural } from "@/lib/text"
+import { startOfToday } from "date-fns"
 
 /**
  * Tasks by the day they are due.
@@ -27,16 +30,10 @@ const TaskCalendar = ({ tasks }: { tasks: ITask[] }) => {
     <div className="space-y-3">
       <MonthGrid
         items={tasks}
-        dateOf={(task) => (task.due_date ? parseISO(task.due_date) : null)}
+        dateOf={(task) => (task.due_date ? toDate(task.due_date) : null)}
         emptyLabel="Nothing is due this month."
         renderItem={(task) => {
-          // Overdue is read from the date, not from a stored flag: nothing has
-          // to run for a day to pass.
-          const overdue =
-            task.due_date &&
-            task.status?.category !== "done" &&
-            task.status?.category !== "cancelled" &&
-            isBefore(parseISO(task.due_date), today)
+          const overdue = isTaskOverdue(task, today)
 
           return (
             <div
@@ -45,7 +42,7 @@ const TaskCalendar = ({ tasks }: { tasks: ITask[] }) => {
                 "truncate rounded px-1.5 py-0.5 text-[11px]",
                 overdue
                   ? "bg-destructive/12 text-destructive"
-                  : STATUS_TONE[task.status?.category ?? "open"]
+                  : STATUS_TONE[task.status.category]
               )}
             >
               {task.title}
@@ -56,9 +53,8 @@ const TaskCalendar = ({ tasks }: { tasks: ITask[] }) => {
 
       {undated > 0 && (
         <p className="text-xs text-muted-foreground">
-          {undated} {undated === 1 ? "task has" : "tasks have"} no due date and{" "}
-          {undated === 1 ? "is" : "are"} not on the calendar. A task without a date has not
-          been promised for a day.
+          {plural(undated, "task has", "tasks have")} no due date, so {undated === 1 ? "it is" : "they are"}{" "}
+          not on the calendar. A task without a date has not been promised for a day.
         </p>
       )}
     </div>

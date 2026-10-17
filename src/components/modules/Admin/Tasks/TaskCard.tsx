@@ -4,8 +4,9 @@ import { moveTaskAction } from "@/app/(dashboardLayout)/admin/dashboard/tasks/_a
 import { Checkbox } from "@/components/ui/checkbox"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import TaskPriorityBadge from "@/components/modules/Admin/Tasks/TaskPriorityBadge"
+import { isTaskOverdue } from "@/components/modules/Admin/Tasks/taskDue"
+import { formatDayShort } from "@/lib/dates"
 import type { ITask, IWorkflowStatus } from "@/types/work.types"
-import { format, isBefore, startOfToday } from "date-fns"
 import { toast } from "sonner"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -22,8 +23,7 @@ const TaskCard = ({ task, statuses }: { task: ITask; statuses: IWorkflowStatus[]
   // through exactly like the "Done" it replaced.
   const isDone = task.status.category === "done"
 
-  const overdue =
-    task.due_date && !isDone ? isBefore(new Date(task.due_date), startOfToday()) : false
+  const overdue = isTaskOverdue(task)
 
   // Ticking the box has to land on a real column, and which one depends on
   // the board rather than on a word: the first finished status to close it,
@@ -85,7 +85,7 @@ const TaskCard = ({ task, statuses }: { task: ITask; statuses: IWorkflowStatus[]
                 }`}
               >
                 {overdue ? "overdue · " : "due "}
-                {format(new Date(task.due_date), "MMM dd")}
+                {formatDayShort(task.due_date)}
               </span>
             )}
           </div>
