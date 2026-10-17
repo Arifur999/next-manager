@@ -5,15 +5,15 @@ import {
   updateInvoiceAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/invoices/_action"
 import { useActionMutation } from "@/hooks/useActionMutation"
+import { todayIsoDate } from "@/lib/dates"
 import { queryKeys } from "@/lib/queryKeys"
 import type { IInvoice } from "@/types/billing.types"
 import type { IInvoiceFormValues } from "@/zod/billing.validation"
 import { useForm } from "@tanstack/react-form"
-import { addDays, format } from "date-fns"
+import { addDays } from "date-fns"
 
-// The user's own calendar days. toISOString() is UTC, which in Dhaka is still
-// yesterday until 6am.
-const inDays = (days: number) => format(addDays(new Date(), days), "yyyy-MM-dd")
+// The user's own calendar day, so a Dhaka morning is not still yesterday.
+const inDays = (days: number) => todayIsoDate(addDays(new Date(), days))
 
 const blankValues = (): IInvoiceFormValues => ({
   client_id: "",

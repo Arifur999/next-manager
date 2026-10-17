@@ -5,6 +5,8 @@ import ReportEmpty from "@/components/modules/Admin/Reports/ReportEmpty"
 import PanelState from "@/components/shared/state/PanelState"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt, formatMoney } from "@/lib/currency"
+import { plural } from "@/lib/text"
+import { cn } from "@/lib/utils"
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 import { expensesListQuery } from "@/queries/spending.queries"
@@ -99,7 +101,15 @@ const FinanceReport = () => {
               return (
                 <div key={currency}>
                   <p className="text-xs text-muted-foreground">{currency}</p>
-                  <p className="mt-1 text-lg font-semibold tabular-nums">{formatMoney(totals.net, currency)}</p>
+                  {/* The one figure where colour is the message: did more come in than went out. */}
+                  <p
+                    className={cn(
+                      "mt-1 text-lg font-semibold tabular-nums",
+                      totals.net >= 0 ? "text-success" : "text-destructive",
+                    )}
+                  >
+                    {formatMoney(totals.net, currency)}
+                  </p>
                   <p className="text-xs text-muted-foreground tabular-nums">
                     {formatMoney(totals.in, currency)} in · {formatMoney(totals.out, currency)} out
                   </p>
@@ -143,7 +153,7 @@ const FinanceReport = () => {
               <ShareRow
                 key={group.name}
                 label={group.name}
-                sub={`${group.count} entr${group.count === 1 ? "y" : "ies"}${group.type === "employee" ? " · employee cost" : ""}`}
+                sub={`${plural(group.count, "entry", "entries")}${group.type === "employee" ? " · employee cost" : ""}`}
                 value={formatBdt(group.total)}
                 share={(group.total / topCategory) * 100}
               />
