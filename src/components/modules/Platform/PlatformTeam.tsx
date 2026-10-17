@@ -10,7 +10,7 @@ import EmptyState from "@/components/shared/state/EmptyState"
 import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import {
@@ -30,14 +30,9 @@ import { queryKeys } from "@/lib/queryKeys"
 /**
  * Who is on the platform team and what each of them may do.
  *
- * The thing this screen must not get wrong: **an empty permission list means
- * full access, not none.** That is the hatch in requirePermission which stops
- * the first operator locking themselves out, and the opposite reading is the
- * obvious one — so the row says it in words rather than showing seven unticked
- * boxes and letting somebody conclude the person has nothing.
- *
- * Ticking the first box is therefore a *narrowing*, and the screen says that
- * too. It is the moment access actually changes.
+ * An empty permission list means full access, not none: that is the hatch in
+ * requirePermission which stops the first operator locking themselves out. The
+ * row says so in words, and ticking the first box is what narrows access.
  */
 
 // Read off the permission list, in the order permissions are handed out, so a
@@ -50,7 +45,9 @@ const byArea = (area: string) =>
 // Every change to the team is written to the activity feed, so both refetch.
 const TEAM_KEYS = [queryKeys.platformAdmins.all, queryKeys.platformActivity.all]
 
-const AdminRow = ({ admin, canRemove }: { admin: IPlatformAdmin; canRemove: boolean }) => {
+type AdminRowProps = { admin: IPlatformAdmin; canRemove: boolean; isYou: boolean }
+
+const AdminRow = ({ admin, canRemove, isYou }: AdminRowProps) => {
   const [draft, setDraft] = useState<string[]>(admin.permissions)
   const [editing, setEditing] = useState(false)
   const [isConfirmingRemoval, setIsConfirmingRemoval] = useState(false)
@@ -90,6 +87,8 @@ const AdminRow = ({ admin, canRemove }: { admin: IPlatformAdmin; canRemove: bool
     )
 
   const hasFullAccess = admin.permissions.length === 0
+  // Narrowing your own full access from here could leave nobody able to manage the team.
+  const isOwnFullAccess = isYou && hasFullAccess
   const busy = isPending || isApproving || isRemoving
 
   return (
@@ -98,6 +97,7 @@ const AdminRow = ({ admin, canRemove }: { admin: IPlatformAdmin; canRemove: bool
         <div className="min-w-0">
           <p className="truncate text-sm font-medium">
             {admin.full_name}
+            {isYou && <span className="ml-1.5 text-xs font-normal text-muted-foreground">(you)</span>}
             {admin.status === "pending" && (
               <Badge variant="outline" className="ml-2 text-[10px]">
                 waiting for approval
@@ -112,9 +112,7 @@ const AdminRow = ({ admin, canRemove }: { admin: IPlatformAdmin; canRemove: bool
             {hasFullAccess ? (
               // Said in words. Seven unticked boxes read as "has nothing",
               // which is the opposite of what an empty list means.
-              <span className="font-medium text-foreground">
-                Full access — every part of the console
-              </span>
+              <span className="font-medium text-foreground">Full access to every part of the console</span>
             ) : (
               <span className="text-muted-foreground">
                 {admin.permissions.length} of {PLATFORM_PERMISSIONS.length} areas
@@ -134,18 +132,24 @@ const AdminRow = ({ admin, canRemove }: { admin: IPlatformAdmin; canRemove: bool
               Approve
             </Button>
           )}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={busy}
-            onClick={() => {
-              setDraft(admin.permissions)
-              setEditing((open) => !open)
-            }}
-          >
-            {editing ? "Cancel" : "Change access"}
-          </Button>
+          {isOwnFullAccess ? (
+            <span className="max-w-56 text-right text-xs text-muted-foreground">
+              Your own full access is not changed here, so the team always keeps someone who can manage it.
+            </span>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={busy}
+              onClick={() => {
+                setDraft(admin.permissions)
+                setEditing((open) => !open)
+              }}
+            >
+              {editing ? "Cancel" : "Change access"}
+            </Button>
+          )}
           {canRemove && (
             <Button
               type="button"
@@ -163,9 +167,8 @@ const AdminRow = ({ admin, canRemove }: { admin: IPlatformAdmin; canRemove: bool
       {editing && (
         <div className="mt-4 space-y-4 rounded-lg border bg-muted/30 p-4">
           <p className="text-xs text-muted-foreground">
-            Leave every box unticked for full access. Ticking the first one{" "}
-            <span className="font-medium text-foreground">narrows</span> what they can
-            reach — that is the moment their access actually changes.
+            Leave every box unticked for full access. Ticking any box{" "}
+            <span className="font-medium text-foreground">narrows</span> what they can reach to the ticked areas.
           </p>
 
           {AREAS.map((area) => (
@@ -216,7 +219,7 @@ const AdminRow = ({ admin, canRemove }: { admin: IPlatformAdmin; canRemove: bool
         open={isConfirmingRemoval}
         onOpenChange={setIsConfirmingRemoval}
         title={`Remove ${admin.full_name} from the platform team?`}
-        description="They lose access to this console straight away. What they did stays in admin activity."
+        description="They lose access to this console straight away. What they did stays in the activity log."
         variant="destructive"
         confirmLabel="Remove"
         pendingLabel="Removing..."
@@ -227,7 +230,7 @@ const AdminRow = ({ admin, canRemove }: { admin: IPlatformAdmin; canRemove: bool
   )
 }
 
-const PlatformTeam = () => {
+const PlatformTeam = ({ currentUserId }: { currentUserId: string | undefined }) => {
   const team = useQuery(platformAdminsQuery())
 
   const admins = team.data?.data ?? []
@@ -235,17 +238,6 @@ const PlatformTeam = () => {
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
-      <CardHeader className="border-b px-5 py-4">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <ShieldCheck className="size-4" aria-hidden="true" />
-          Platform team
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Everyone who can reach this console. Each of them can see every customer, so
-          this is the shortest list you should be able to keep it.
-        </p>
-      </CardHeader>
-
       <PanelState
         query={team}
         errorMessage="The platform team did not load."
@@ -260,6 +252,7 @@ const PlatformTeam = () => {
               // The server refuses removing the last active operator anyway;
               // hiding the button means nobody clicks it to find out.
               canRemove={!(admin.status === "active" && activeCount <= 1)}
+              isYou={admin.id === currentUserId}
             />
           ))}
         </ul>
