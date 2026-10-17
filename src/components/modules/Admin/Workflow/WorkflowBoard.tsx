@@ -1,36 +1,21 @@
 "use client"
 
 import {
-  createWorkflowStatusAction,
   deleteWorkflowStatusAction,
   updateWorkflowStatusAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/workflow/_action"
+import NewStatusForm from "@/components/modules/Admin/Workflow/NewStatusForm"
 import { STATUS_CATEGORIES } from "@/components/modules/Admin/Workflow/statusCategories"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { STATUS_TONE } from "@/components/shared/status/statusTone"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { useActionMutation } from "@/hooks/useActionMutation"
-import type { StatusCategory } from "@/types/common.types"
 import type { IWorkflowStatus } from "@/types/work.types"
-import {
-  workflowStatusFormZodSchema,
-  type IWorkflowStatusChange,
-  type IWorkflowStatusFormValues,
-} from "@/zod/work.validation"
-import { useForm } from "@tanstack/react-form"
+import type { IWorkflowStatusChange } from "@/zod/work.validation"
 import { useQuery } from "@tanstack/react-query"
-import { ArrowDown, ArrowUp, Plus, Power, Star, Trash2 } from "lucide-react"
+import { ArrowDown, ArrowUp, Power, Star, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { workflowStatusesListQuery } from "@/queries/work.queries"
 import { queryKeys } from "@/lib/queryKeys"
@@ -48,21 +33,12 @@ import { queryKeys } from "@/lib/queryKeys"
  * somebody edited its label.
  */
 
-const emptyColumn: IWorkflowStatusFormValues = { name: "", category: "open" }
-
 const WorkflowBoard = ({ kind }: { kind: "task" | "project" }) => {
   const [statusToDelete, setStatusToDelete] = useState<IWorkflowStatus | null>(null)
 
   const { data, isLoading } = useQuery(workflowStatusesListQuery(`kind=${kind}`))
 
   const statuses = data?.data ?? []
-
-  const { run: add, isPending: isAdding } = useActionMutation({
-    action: createWorkflowStatusAction,
-    successMessage: "Added to the end of the board",
-    invalidateKeys: [queryKeys.workflowStatuses.all],
-    refresh: false,
-  })
 
   // A move, a new default or a column switched off shows on the board itself.
   const { run: change } = useActionMutation({
@@ -84,15 +60,6 @@ const WorkflowBoard = ({ kind }: { kind: "task" | "project" }) => {
     if (statusToDelete && (await remove(statusToDelete.id))) setStatusToDelete(null)
   }
 
-  const form = useForm({
-    defaultValues: emptyColumn,
-    validators: { onSubmit: workflowStatusFormZodSchema },
-    onSubmit: async ({ value, formApi }) => {
-      // Only the name clears, so several columns of one meaning can be added in a row.
-      if (await add({ kind, ...value })) formApi.setFieldValue("name", "")
-    },
-  })
-
   // Swapping two sort_orders rather than renumbering the board: fewer writes,
   // and the rest of the columns keep the positions somebody chose.
   const move = (index: number, direction: -1 | 1) => {
@@ -106,78 +73,7 @@ const WorkflowBoard = ({ kind }: { kind: "task" | "project" }) => {
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
-      <Card className="h-fit">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">New column</CardTitle>
-        </CardHeader>
-
-        <form
-          className="space-y-4 px-6 pb-6"
-          onSubmit={(event) => {
-            event.preventDefault()
-            event.stopPropagation()
-            void form.handleSubmit()
-          }}
-        >
-          <form.Field name="name">
-            {(field) => (
-              <div className="space-y-1.5">
-                <Label htmlFor="status-name">Name</Label>
-                <Input
-                  id="status-name"
-                  value={field.state.value}
-                  maxLength={40}
-                  onBlur={field.handleBlur}
-                  onChange={(event) => field.handleChange(event.target.value)}
-                  placeholder={kind === "task" ? "In QA" : "Awaiting sign-off"}
-                  disabled={isAdding}
-                />
-              </div>
-            )}
-          </form.Field>
-
-          <form.Field name="category">
-            {(field) => (
-              <div className="space-y-1.5">
-                <Label htmlFor="status-category">What it means</Label>
-                <Select
-                  value={field.state.value}
-                  onValueChange={(value) => field.handleChange(value as StatusCategory)}
-                >
-                  <SelectTrigger id="status-category" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_CATEGORIES.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  {STATUS_CATEGORIES.find((option) => option.value === field.state.value)?.blurb}
-                </p>
-              </div>
-            )}
-          </form.Field>
-
-          <form.Subscribe selector={(state) => workflowStatusFormZodSchema.safeParse(state.values).success}>
-            {(isComplete) => (
-              <Button type="submit" disabled={isAdding || !isComplete} className="w-full">
-                <Plus className="size-4" />
-                Add
-              </Button>
-            )}
-          </form.Subscribe>
-
-          <p className="text-xs text-muted-foreground">
-            The name is yours to change later. What it means is what the reports and the
-            completion dates read, so that is asked for up front rather than guessed from
-            the name.
-          </p>
-        </form>
-      </Card>
+      <NewStatusForm kind={kind} />
 
       <Card className="gap-0 overflow-hidden p-0">
         <CardHeader className="border-b px-5 py-4">
