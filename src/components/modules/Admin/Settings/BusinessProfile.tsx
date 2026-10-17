@@ -5,9 +5,9 @@ import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import type { IOrganization } from "@/types/workspace.types"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { toast } from "sonner"
+import { useQuery } from "@tanstack/react-query"
 import { organizationFormZodSchema, type IOrganizationFormValues } from "@/zod/workspace.validation"
 import { organizationQuery } from "@/queries/workspace.queries"
 import { queryKeys } from "@/lib/queryKeys"
@@ -24,10 +24,11 @@ import { queryKeys } from "@/lib/queryKeys"
  */
 
 const OrganizationForm = ({ organization }: { organization: IOrganization }) => {
-  const queryClient = useQueryClient()
-
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IOrganizationFormValues) => updateOrganizationAction(values),
+  const { run: saveOrganization, isPending } = useActionMutation({
+    action: updateOrganizationAction,
+    successMessage: "Business information updated",
+    invalidateKeys: [queryKeys.organization.all],
+    refresh: false,
   })
 
   const defaultValues: IOrganizationFormValues = {
@@ -42,15 +43,7 @@ const OrganizationForm = ({ organization }: { organization: IOrganization }) => 
   const form = useForm({
     defaultValues,
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      if (!result.success) {
-        toast.error(result.message || "Failed to update the profile")
-        return
-      }
-
-      toast.success("Business information updated")
-      void queryClient.invalidateQueries({ queryKey: queryKeys.organization.all })
+      await saveOrganization(value)
     },
   })
 
