@@ -1,16 +1,19 @@
 "use client"
 
+import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { STATUS_TONE } from "@/components/shared/status/statusTone"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
+import { ListChecks } from "lucide-react"
 import { tasksListQuery } from "@/queries/work.queries"
 
 const ProjectTasksPanel = ({ projectId }: { projectId: string }) => {
-  const { data: tasksData } = useQuery(tasksListQuery(`project_id=${projectId}`))
+  const tasksQuery = useQuery(tasksListQuery(`project_id=${projectId}`))
 
-  const tasks = tasksData?.data ?? []
+  const tasks = tasksQuery.data?.data ?? []
 
   // By category: a renamed "Done" still counts as finished, and so does a
   // second finished status the agency added.
@@ -21,16 +24,17 @@ const ProjectTasksPanel = ({ projectId }: { projectId: string }) => {
     <Card className="gap-0 overflow-hidden p-0">
       <CardHeader className="border-b px-5 py-4">
         <CardTitle className="text-base">
-          {doneCount} of {tasks.length} done
+          {tasksQuery.isSuccess ? `${doneCount} of ${tasks.length} done` : "Tasks"}
         </CardTitle>
         <Progress value={progress} className="mt-2 h-1.5" />
       </CardHeader>
 
-      {tasks.length === 0 ? (
-        <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-          No tasks on this project yet.
-        </p>
-      ) : (
+      <PanelState
+        query={tasksQuery}
+        errorMessage="The tasks did not load."
+        isEmpty={tasks.length === 0}
+        empty={<EmptyState icon={ListChecks}>No tasks on this project yet.</EmptyState>}
+      >
         <ul className="divide-y">
           {tasks.map((task) => (
             <li key={task.id} className="flex items-center justify-between gap-3 px-5 py-3">
@@ -51,7 +55,7 @@ const ProjectTasksPanel = ({ projectId }: { projectId: string }) => {
             </li>
           ))}
         </ul>
-      )}
+      </PanelState>
     </Card>
   )
 }
