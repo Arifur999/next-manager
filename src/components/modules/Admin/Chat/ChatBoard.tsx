@@ -19,6 +19,7 @@ import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { conversationsListQuery, messagesQuery } from "@/queries/workspace.queries"
 import { queryKeys } from "@/lib/queryKeys"
+import type { IConversationFormValues } from "@/zod/workspace.validation"
 
 /**
  * Chat.
@@ -90,7 +91,7 @@ const ChatBoard = ({ meId }: { meId: string | null }) => {
   })
 
   const { mutate: start, isPending: starting } = useMutation({
-    mutationFn: (payload: Record<string, unknown>) => createConversationAction(payload),
+    mutationFn: (values: IConversationFormValues) => createConversationAction(values),
     onSuccess: (result) => {
       if (!result.success) {
         toast.error(result.message || "Could not start it")

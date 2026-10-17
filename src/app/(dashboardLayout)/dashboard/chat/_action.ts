@@ -1,61 +1,26 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
+import { requireId, runAction, runValidatedAction } from "@/lib/runAction"
 import {
     createConversation,
     markConversationRead,
     sendMessage,
     setConversationArchived,
 } from "@/services/workspace.services"
-import type { IMessage } from "@/types/workspace.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+import { createConversationServerZodSchema, sendMessageServerZodSchema } from "@/zod/workspace.validation"
 
-type Simple = ApiResponse<{ message: string }> | ApiErrorResponse
+// "Somebody on that list is not on your team" arrives here: the server checks
+// every id against this agency before writing a single row.
+export const createConversationAction = async (values: unknown) =>
+    runValidatedAction(createConversationServerZodSchema, values, "Could not start it", createConversation)
 
-export const createConversationAction = async (
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<{ id: string }> | ApiErrorResponse> => {
-    try {
-        return await createConversation(payload)
-    } catch (error: unknown) {
-        // "Somebody on that list is not on your team" arrives here — the server
-        // checks every id against this agency before writing a single row.
-        return { success: false, message: getActionErrorMessage(error, "Could not start it") }
-    }
-}
+export const sendMessageAction = async (id: string, values: unknown) =>
+    requireId(id, "conversation") ??
+    runValidatedAction(sendMessageServerZodSchema, values, "Could not send it", (payload) => sendMessage(id, payload))
 
-export const sendMessageAction = async (
-    id: string,
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<IMessage> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid conversation id" }
+export const markConversationReadAction = async (id: string) =>
+    requireId(id, "conversation") ?? runAction("Could not mark it read", () => markConversationRead(id))
 
-    try {
-        return await sendMessage(id, payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not send it") }
-    }
-}
-
-export const markConversationReadAction = async (id: string): Promise<Simple> => {
-    if (!id) return { success: false, message: "Invalid conversation id" }
-
-    try {
-        return await markConversationRead(id)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not mark it read") }
-    }
-}
-
-export const setConversationArchivedAction = async (
-    id: string,
-    archived: boolean,
-): Promise<Simple> => {
-    if (!id) return { success: false, message: "Invalid conversation id" }
-
-    try {
-        return await setConversationArchived(id, archived)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not archive it") }
-    }
-}
+export const setConversationArchivedAction = async (id: string, archived: boolean) =>
+    requireId(id, "conversation") ??
+    runAction("Could not archive it", () => setConversationArchived(id, archived))

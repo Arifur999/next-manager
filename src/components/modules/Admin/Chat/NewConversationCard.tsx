@@ -13,6 +13,7 @@ import {
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { usersListQuery } from "@/queries/people.queries"
+import type { IConversationFormValues } from "@/zod/workspace.validation"
 
 /**
  * Starting a conversation.
@@ -28,7 +29,7 @@ const NewConversationCard = ({
   isPending,
 }: {
   meId: string | null
-  onCreate: (payload: Record<string, unknown>) => void
+  onCreate: (values: IConversationFormValues) => void
   isPending: boolean
 }) => {
   const [type, setType] = useState<"direct" | "group">("direct")
@@ -46,11 +47,7 @@ const NewConversationCard = ({
     )
 
   const submit = () => {
-    onCreate({
-      type,
-      ...(type === "group" ? { name: name.trim() } : {}),
-      member_ids: selected,
-    })
+    onCreate({ type, name, member_ids: selected })
     setName("")
     setSelected([])
   }

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest"
-import { createCredentialServerZodSchema, credentialFormZodSchema } from "./workspace.validation"
+import {
+    createConversationServerZodSchema,
+    createCredentialServerZodSchema,
+    credentialFormZodSchema,
+    sendMessageServerZodSchema,
+} from "./workspace.validation"
 
 describe("credentialFormZodSchema", () => {
     const valid = { label: "Acme cPanel", password: "s3cret" }
@@ -52,5 +57,44 @@ describe("createCredentialServerZodSchema", () => {
 
     it("refuses a link that is not http or https", () => {
         expect(createCredentialServerZodSchema.safeParse({ ...valid, url: "data:text/html,hi" }).success).toBe(false)
+    })
+})
+
+describe("createConversationServerZodSchema", () => {
+    it("sends a direct thread without a name", () => {
+        expect(createConversationServerZodSchema.parse({ type: "direct", name: "ignored", member_ids: ["u1"] })).toEqual({
+            type: "direct",
+            name: undefined,
+            member_ids: ["u1"],
+        })
+    })
+
+    it("trims a group's name", () => {
+        const payload = createConversationServerZodSchema.parse({ type: "group", name: " Studio ", member_ids: ["u1", "u2"] })
+        expect(payload).toEqual({ type: "group", name: "Studio", member_ids: ["u1", "u2"] })
+    })
+
+    it("refuses a direct thread with more than one other person", () => {
+        const result = createConversationServerZodSchema.safeParse({ type: "direct", name: "", member_ids: ["u1", "u2"] })
+        expect(result.error?.issues[0]?.message).toBe("A direct conversation is between you and exactly one other person")
+    })
+
+    it("refuses a group without a name or without anybody in it", () => {
+        const unnamed = createConversationServerZodSchema.safeParse({ type: "group", name: " ", member_ids: ["u1"] })
+        expect(unnamed.error?.issues[0]?.message).toBe("Give the group a name")
+        expect(createConversationServerZodSchema.safeParse({ type: "group", name: "Studio", member_ids: [] }).success).toBe(
+            false,
+        )
+    })
+})
+
+describe("sendMessageServerZodSchema", () => {
+    it("trims the message", () => {
+        expect(sendMessageServerZodSchema.parse({ body: "  On my way  " })).toEqual({ body: "On my way" })
+    })
+
+    it("refuses an empty or overlong message", () => {
+        expect(sendMessageServerZodSchema.safeParse({ body: "   " }).success).toBe(false)
+        expect(sendMessageServerZodSchema.safeParse({ body: "x".repeat(4001) }).success).toBe(false)
     })
 })
