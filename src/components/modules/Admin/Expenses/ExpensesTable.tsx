@@ -6,6 +6,7 @@ import StatTile from "@/components/shared/StatTile"
 import DataTable from "@/components/shared/table/DataTable"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
+import { optionsFromValues } from "@/lib/table/filterOptions"
 import { toTableQueryProps } from "@/lib/table/queryProps"
 import type { IExpense } from "@/types/spending.types"
 import { useQuery } from "@tanstack/react-query"
@@ -91,6 +92,17 @@ const ExpensesTable = () => {
         columns={expensesColumns}
         tableId="expenses"
         exportFileName="expenses"
+        filters={{
+          configs: [
+            {
+              id: "category",
+              type: "multi-select",
+              label: "Category",
+              options: optionsFromValues(expenses.map((expense) => expense.category?.name)),
+            },
+            { id: "date", type: "date-range", label: "Date" },
+          ],
+        }}
         {...toTableQueryProps(expensesQuery)}
         emptyMessage="No expenses recorded yet."
         toolbarAction={<RecordExpenseModal />}

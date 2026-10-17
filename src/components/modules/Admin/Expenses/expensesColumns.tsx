@@ -13,9 +13,9 @@ export const expensesColumns: ColumnDef<IExpense>[] = [
   },
   {
     id: "category",
+    accessorFn: (expense) => expense.category?.name ?? "",
     header: "Category",
     enableSorting: false,
-    meta: { exportValue: (expense) => expense.category?.name },
     cell: ({ row }) => (
       <div className="flex items-center gap-2">
         <Badge variant="outline">{row.original.category?.name ?? "N/A"}</Badge>
