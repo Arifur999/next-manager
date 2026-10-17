@@ -87,6 +87,7 @@ const CustomersBoard = ({ defaultFilter }: { defaultFilter?: SubscriptionStatus 
           data={companies ?? []}
           columns={customersColumns}
           tableId="customers"
+          exportFileName="customers"
           search={{ value: search, placeholder: "Company or the person you sold to", onDebouncedChange: setSearch }}
           filters={{
             configs: [STANDING_FILTER],

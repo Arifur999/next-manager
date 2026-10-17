@@ -1,4 +1,5 @@
 import { isQuietSince } from "@/components/modules/Platform/customerActivity"
+import { planOptionLabel } from "@/components/modules/Platform/planLabel"
 import RelativeTime from "@/components/shared/RelativeTime"
 import { Badge } from "@/components/ui/badge"
 import { formatUsd } from "@/lib/currency"
@@ -43,6 +44,9 @@ export const customersColumns: ColumnDef<ICompanyRow>[] = [
     accessorFn: (company) => company.admin?.full_name,
     header: "Who you sold to",
     enableSorting: false,
+    meta: {
+      exportValue: (company) => (company.admin ? `${company.admin.full_name} (${company.admin.email})` : "no admin account"),
+    },
     cell: ({ row }) => {
       const { admin } = row.original
       // Real, and worth seeing: a company whose admin was removed has nobody
@@ -67,6 +71,7 @@ export const customersColumns: ColumnDef<ICompanyRow>[] = [
     accessorFn: (company) => company.subscription?.plan.name,
     header: "Plan",
     enableSorting: false,
+    meta: { exportValue: (company) => (company.subscription ? planOptionLabel(company.subscription.plan) : "not set up") },
     cell: ({ row }) => {
       const { subscription } = row.original
       if (!subscription) return <span className="text-xs text-muted-foreground">not set up</span>
@@ -83,6 +88,7 @@ export const customersColumns: ColumnDef<ICompanyRow>[] = [
     id: "seats",
     accessorFn: (company) => company.usage.seats_used,
     header: "Seats",
+    meta: { exportValue: (company) => `${company.usage.seats_used} of ${company.usage.seats_limit ?? "unlimited"}` },
     cell: ({ row }) => {
       const { seats_used, seats_limit } = row.original.usage
       const seatsFull = seats_limit !== null && seats_used >= seats_limit
@@ -110,6 +116,7 @@ export const customersColumns: ColumnDef<ICompanyRow>[] = [
     // "" sorts a company that was never used as the quietest of all.
     accessorFn: (company) => company.last_active_at ?? "",
     header: "Last used",
+    meta: { exportValue: (company) => company.last_active_at ?? "never used" },
     cell: ({ row }) => {
       const lastActiveAt = row.original.last_active_at
       const isQuiet = isQuietSince(lastActiveAt)
@@ -131,6 +138,9 @@ export const customersColumns: ColumnDef<ICompanyRow>[] = [
     accessorFn: (company) => company.subscription?.status,
     header: "Standing",
     enableSorting: false,
+    meta: {
+      exportValue: (company) => (company.subscription ? STATUS_LABEL[company.subscription.status] : "unprovisioned"),
+    },
     cell: ({ row }) => {
       const { subscription } = row.original
       if (!subscription) return <Badge variant="outline">unprovisioned</Badge>
