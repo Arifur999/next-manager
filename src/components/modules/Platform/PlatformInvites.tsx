@@ -31,6 +31,7 @@ import { useState } from "react"
 import { toast } from "sonner"
 import { platformInvitesQuery } from "@/queries/platform.queries"
 import { queryKeys } from "@/lib/queryKeys"
+import type { IInviteMail } from "@/types/common.types"
 
 /**
  * Inviting somebody onto the platform team.
@@ -54,7 +55,7 @@ const inviteDefaults: IPlatformInviteFormValues = { email: "", permissions: [] }
 
 const PlatformInvites = () => {
   const [freshLink, setFreshLink] = useState<string | null>(null)
-  const [mailed, setMailed] = useState<{ delivered: boolean; reason: string | null } | null>(null)
+  const [mailed, setMailed] = useState<IInviteMail | null>(null)
   const [revoking, setRevoking] = useState<IPlatformInvite | null>(null)
 
   const invitesList = useQuery(platformInvitesQuery())

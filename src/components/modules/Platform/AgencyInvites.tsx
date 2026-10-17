@@ -26,6 +26,7 @@ import { useState } from "react"
 import { toast } from "sonner"
 import { plansQuery } from "@/queries/platform.queries"
 import { queryKeys } from "@/lib/queryKeys"
+import type { IInviteMail } from "@/types/common.types"
 
 /**
  * Bringing an agency on.
@@ -46,7 +47,7 @@ const inviteDefaults: IAgencyInviteFormValues = { email: "", company_name: "", p
 
 const AgencyInvites = () => {
   const [freshLink, setFreshLink] = useState<string | null>(null)
-  const [mailed, setMailed] = useState<{ delivered: boolean; reason: string | null } | null>(null)
+  const [mailed, setMailed] = useState<IInviteMail | null>(null)
 
   const { data: planData } = useQuery(plansQuery())
 

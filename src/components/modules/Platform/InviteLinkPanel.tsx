@@ -5,8 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Check, Copy, TriangleAlert } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
-
-type InviteMail = { delivered: boolean; reason: string | null }
+import type { IInviteMail } from "@/types/common.types"
 
 /**
  * The link from an invite just sent, shown once.
@@ -21,7 +20,7 @@ const InviteLinkPanel = ({
   onDone,
 }: {
   link: string
-  mail: InviteMail | null
+  mail: IInviteMail | null
   onDone: () => void
 }) => {
   const [copied, setCopied] = useState(false)
