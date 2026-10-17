@@ -3,7 +3,7 @@
 import { UNREACHABLE_MESSAGE } from "@/lib/actionError"
 import { useMutation, useQueryClient, type QueryKey } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
-import { useCallback, useLayoutEffect, useRef } from "react"
+import { useCallback, useLayoutEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 
 interface ActionOutcome {
@@ -30,9 +30,12 @@ export const useActionMutation = <TVariables, TResult extends ActionOutcome>(
     const queryClient = useQueryClient()
     const router = useRouter()
     const latest = useRef(options)
-    const { mutateAsync, isPending } = useMutation({
+    const { mutateAsync } = useMutation({
         mutationFn: (variables: TVariables) => latest.current.action(variables),
     })
+    // Pending for the whole of run(), refetches included: a button that came back
+    // while the lists were still refetching could send the action twice.
+    const [isPending, setIsPending] = useState(false)
 
     useLayoutEffect(() => {
         latest.current = options
@@ -41,26 +44,31 @@ export const useActionMutation = <TVariables, TResult extends ActionOutcome>(
     const run = useCallback(
         async (variables: TVariables): Promise<boolean> => {
             const { successMessage, invalidateKeys = [], refresh = true, onSuccess } = latest.current
+            setIsPending(true)
 
-            let result: TResult
             try {
-                result = await mutateAsync(variables)
-            } catch {
-                // Only the server action transport itself can throw (offline, deploy in flight).
-                toast.error(UNREACHABLE_MESSAGE)
-                return false
-            }
+                let result: TResult
+                try {
+                    result = await mutateAsync(variables)
+                } catch {
+                    // Only the server action transport itself can throw (offline, deploy in flight).
+                    toast.error(UNREACHABLE_MESSAGE)
+                    return false
+                }
 
-            if (!result.success) {
-                toast.error(result.message || "Something went wrong")
-                return false
-            }
+                if (!result.success) {
+                    toast.error(result.message || "Something went wrong")
+                    return false
+                }
 
-            if (successMessage !== false) toast.success(successMessage ?? result.message ?? "Saved")
-            await Promise.all(invalidateKeys.map((queryKey) => queryClient.invalidateQueries({ queryKey })))
-            onSuccess?.(result)
-            if (refresh) router.refresh()
-            return true
+                if (successMessage !== false) toast.success(successMessage ?? result.message ?? "Saved")
+                await Promise.all(invalidateKeys.map((queryKey) => queryClient.invalidateQueries({ queryKey })))
+                onSuccess?.(result)
+                if (refresh) router.refresh()
+                return true
+            } finally {
+                setIsPending(false)
+            }
         },
         [mutateAsync, queryClient, router],
     )
