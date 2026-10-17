@@ -1,21 +1,20 @@
 "use client"
 
 import ProjectBaselineCard from "@/components/modules/Admin/Projects/ProjectBaselineCard"
+import ProjectFinanceTiles from "@/components/modules/Admin/Projects/ProjectFinanceTiles"
 import ProjectMilestonePanel from "@/components/modules/Admin/Projects/ProjectMilestonePanel"
 import ProjectTeamPanel from "@/components/modules/Admin/Projects/ProjectTeamPanel"
-import StatTile from "@/components/shared/StatTile"
 import { STATUS_TONE } from "@/components/shared/status/statusTone"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { formatBdt, formatPercent, formatUsd } from "@/lib/currency"
 import type { ITask } from "@/types/work.types"
 import type { IProject } from "@/types/project.types"
 import ProjectLinksPanel from "@/components/modules/Admin/Projects/ProjectLinksPanel"
 import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
-import { ArrowDownLeft, KeyRound, Receipt, TrendingUp } from "lucide-react"
+import { KeyRound } from "lucide-react"
 import Link from "next/link"
 import { projectDetailQuery, projectFinancialsQuery } from "@/queries/project.queries"
 import { tasksListQuery } from "@/queries/work.queries"
@@ -94,44 +93,7 @@ const ProjectDetail = ({
 
       {/* Undefined for anybody who may not see it, because the query never
           ran - not because a flag is checked in two places. */}
-      {canSeeMoney && finance && (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatTile
-            label="Contract value"
-            value={formatUsd(finance.contract_value_usd)}
-            hint={`${formatUsd(finance.invoiced_usd)} invoiced`}
-            tone={2}
-          />
-          <StatTile
-            label="Received"
-            value={formatUsd(finance.received_usd)}
-            secondary={`${formatBdt(finance.received_bdt)} at recorded rates`}
-            hint={`${formatUsd(finance.outstanding_usd)} still owed`}
-            icon={<ArrowDownLeft className="size-5" />}
-            tone={1}
-          />
-          <StatTile
-            label="Cost"
-            value={formatBdt(finance.total_cost_bdt)}
-            secondary={`${formatBdt(finance.team_cost_bdt)} team · ${formatBdt(finance.expense_bdt)} expenses`}
-            icon={<Receipt className="size-5" />}
-            tone={4}
-          />
-          <StatTile
-            label="Profit"
-            value={formatBdt(finance.profit_bdt)}
-            // Money received minus money spent — not contract value minus cost,
-            // because unpaid work is not profit.
-            hint={
-              finance.received_bdt > 0
-                ? `${formatPercent((finance.profit_bdt / finance.received_bdt) * 100)} margin on what has been paid`
-                : "Nothing received yet"
-            }
-            icon={<TrendingUp className="size-5" />}
-            tone={3}
-          />
-        </div>
-      )}
+      {canSeeMoney && finance && <ProjectFinanceTiles finance={finance} />}
 
       <Tabs defaultValue="tasks">
         <TabsList>
