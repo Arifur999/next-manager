@@ -9,10 +9,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { useQuery } from "@tanstack/react-query"
 import { ExternalLink, FolderOpen, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { projectLinksListQuery } from "@/queries/project.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -48,7 +48,6 @@ const ProjectLinksPanel = ({
   projectId: string
   canManage?: boolean
 }) => {
-  const queryClient = useQueryClient()
   const [label, setLabel] = useState("")
   const [url, setUrl] = useState("")
 
@@ -56,35 +55,26 @@ const ProjectLinksPanel = ({
 
   const links = data?.data ?? []
 
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.projectLinks.all })
-  }
+  const { run: addLink, isPending } = useActionMutation({
+    action: addProjectLinkAction,
+    successMessage: "Link added",
+    invalidateKeys: [queryKeys.projectLinks.all],
+    refresh: false,
+  })
 
-  const { mutate: add, isPending } = useMutation({
-    mutationFn: () => addProjectLinkAction({ project_id: projectId, label, url }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        // "Only http and https links can be stored" arrives here.
-        toast.error(result.message || "Could not add the link")
-        return
-      }
-      toast.success("Link added")
+  const { run: removeLink, isPending: isRemoving } = useActionMutation({
+    action: removeProjectLinkAction,
+    successMessage: false,
+    invalidateKeys: [queryKeys.projectLinks.all],
+    refresh: false,
+  })
+
+  const handleAdd = async () => {
+    if (await addLink({ project_id: projectId, label, url })) {
       setLabel("")
       setUrl("")
-      refresh()
-    },
-  })
-
-  const { mutate: remove, isPending: isRemoving } = useMutation({
-    mutationFn: (id: string) => removeProjectLinkAction(id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not remove the link")
-        return
-      }
-      refresh()
-    },
-  })
+    }
+  }
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
@@ -102,7 +92,7 @@ const ProjectLinksPanel = ({
         onSubmit={(event) => {
           event.preventDefault()
           if (!label.trim() || !url.trim()) return
-          add()
+          void handleAdd()
         }}
       >
         <div className="min-w-40 flex-1 space-y-1.5">
@@ -176,7 +166,7 @@ const ProjectLinksPanel = ({
                   variant="outline"
                   size="sm"
                   disabled={isRemoving}
-                  onClick={() => remove(link.id)}
+                  onClick={() => void removeLink(link.id)}
                 >
                   <Trash2 className="size-3.5" />
                   <span className="sr-only">Remove {link.label}</span>
