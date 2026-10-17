@@ -11,12 +11,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IDepartment } from "@/types/people.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { Network, Plus, Power, Trash2, X } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
-import { toast } from "sonner"
 import { departmentsQuery } from "@/queries/people.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -34,7 +34,6 @@ import { queryKeys } from "@/lib/queryKeys"
  */
 
 const DepartmentsBoard = () => {
-  const queryClient = useQueryClient()
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -42,7 +41,6 @@ const DepartmentsBoard = () => {
   const { data, isLoading } = useQuery(departmentsQuery())
 
   const departments = data?.data ?? []
-  const refresh = () => queryClient.invalidateQueries({ queryKey: queryKeys.departments.all })
 
   const reset = () => {
     setName("")
@@ -50,49 +48,36 @@ const DepartmentsBoard = () => {
     setEditingId(null)
   }
 
-  const { mutate: save, isPending } = useMutation({
-    mutationFn: () =>
-      editingId
-        ? updateDepartmentAction(editingId, { name, description })
-        : createDepartmentAction({ name, description }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not save it")
-        return
-      }
-      toast.success(editingId ? "Department updated" : "Department added")
-      reset()
-      void refresh()
-    },
+  const { run: saveDepartment, isPending } = useActionMutation({
+    action: (values: { name: string; description: string }) =>
+      editingId ? updateDepartmentAction(editingId, values) : createDepartmentAction(values),
+    successMessage: editingId ? "Department updated" : "Department added",
+    invalidateKeys: [queryKeys.departments.all],
+    refresh: false,
   })
 
-  const { mutate: toggle } = useMutation({
-    mutationFn: (department: IDepartment) =>
+  // No toast: the "off" badge appearing is the confirmation.
+  const { run: toggleActive } = useActionMutation({
+    action: (department: IDepartment) =>
       setDepartmentActiveAction(department.id, { is_active: !department.is_active }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not change it")
-        return
-      }
-      void refresh()
+    successMessage: false,
+    invalidateKeys: [queryKeys.departments.all],
+    refresh: false,
+  })
+
+  const { run: removeDepartment } = useActionMutation({
+    action: deleteDepartmentAction,
+    successMessage: "Department deleted",
+    invalidateKeys: [queryKeys.departments.all],
+    refresh: false,
+    onSuccess: () => {
+      if (editingId) reset()
     },
   })
 
-  const { mutate: remove } = useMutation({
-    mutationFn: (id: string) => deleteDepartmentAction(id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        // "4 people are in Design. Move them first, or turn it off instead of
-        // deleting it." — the server already says what to do, so it is shown
-        // rather than replaced with a shorter, useless sentence.
-        toast.error(result.message || "Could not delete it")
-        return
-      }
-      toast.success("Department deleted")
-      if (editingId) reset()
-      void refresh()
-    },
-  })
+  const handleSave = async () => {
+    if (await saveDepartment({ name, description })) reset()
+  }
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
@@ -109,7 +94,7 @@ const DepartmentsBoard = () => {
           onSubmit={(event) => {
             event.preventDefault()
             if (!name.trim()) return
-            save()
+            void handleSave()
           }}
         >
           <div className="space-y-1.5">
@@ -214,7 +199,7 @@ const DepartmentsBoard = () => {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => toggle(department)}
+                      onClick={() => void toggleActive(department)}
                       aria-label={
                         department.is_active
                           ? `Turn off ${department.name}`
@@ -228,7 +213,7 @@ const DepartmentsBoard = () => {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => remove(department.id)}
+                      onClick={() => void removeDepartment(department.id)}
                       aria-label={`Delete ${department.name}`}
                     >
                       <Trash2 className="size-4" />
