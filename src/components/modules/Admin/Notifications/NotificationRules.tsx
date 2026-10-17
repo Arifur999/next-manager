@@ -2,6 +2,7 @@
 
 import { site } from "@/data/site"
 import { setNotificationRuleAction } from "@/app/(dashboardLayout)/admin/dashboard/notifications/_action"
+import ErrorState from "@/components/shared/state/ErrorState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -34,9 +35,9 @@ const roleLabel = (role: string) => role.replace(/_/g, " ")
 type RuleChange = { in_app?: boolean; email?: boolean; roles?: string[] }
 
 const NotificationRules = () => {
-  const { data, isLoading } = useQuery(notificationRulesQuery())
+  const { data, isLoading, isFetching, refetch } = useQuery(notificationRulesQuery())
 
-  const rules = data?.data ?? []
+  const rules = data?.data
 
   const { run: saveRule, isPending } = useActionMutation({
     action: ({ event, change }: { event: string; change: RuleChange }) =>
@@ -47,8 +48,20 @@ const NotificationRules = () => {
     refresh: false,
   })
 
-  if (isLoading && rules.length === 0) {
+  if (isLoading) {
     return <div className="h-64 animate-pulse rounded-xl bg-muted/40" />
+  }
+
+  // Only when nothing ever arrived: a failed refetch after a toggle keeps the switches.
+  if (!rules) {
+    return (
+      <ErrorState
+        className="rounded-xl border border-dashed"
+        message="The notification settings did not load."
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+      />
+    )
   }
 
   const toggleRole = (rule: INotificationRule, role: string, on: boolean) =>
