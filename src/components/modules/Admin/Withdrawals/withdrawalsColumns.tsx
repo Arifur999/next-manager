@@ -1,6 +1,7 @@
-import DateCell from "@/components/shared/cell/DateCell"
 import { Badge } from "@/components/ui/badge"
 import { formatBdt } from "@/lib/currency"
+import { formatDay } from "@/lib/dates"
+import { sentenceCase } from "@/lib/text"
 import type { IOwnerWithdrawal } from "@/types/spending.types"
 import { ColumnDef } from "@tanstack/react-table"
 
@@ -9,17 +10,13 @@ export const withdrawalsColumns: ColumnDef<IOwnerWithdrawal>[] = [
     id: "date",
     accessorKey: "date",
     header: "Date",
-    cell: ({ row }) => <DateCell date={row.original.date} formatString="MMM dd, yyyy" />,
+    cell: ({ row }) => <span className="whitespace-nowrap">{formatDay(row.original.date)}</span>,
   },
   {
     id: "type",
     accessorKey: "type",
     header: "Type",
-    cell: ({ row }) => (
-      <Badge variant="outline" className="capitalize">
-        {row.original.type}
-      </Badge>
-    ),
+    cell: ({ row }) => <Badge variant="outline">{sentenceCase(row.original.type)}</Badge>,
   },
   {
     id: "amount_bdt",
@@ -43,6 +40,7 @@ export const withdrawalsColumns: ColumnDef<IOwnerWithdrawal>[] = [
     accessorKey: "notes",
     header: "Notes",
     enableSorting: false,
+    meta: { priority: "low" },
     cell: ({ row }) => (
       <span className="text-sm text-muted-foreground">{row.original.notes || "—"}</span>
     ),

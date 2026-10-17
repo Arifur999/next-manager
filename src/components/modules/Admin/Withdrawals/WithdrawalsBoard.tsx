@@ -1,12 +1,18 @@
 "use client"
 
+import { deleteWithdrawalAction } from "@/app/(dashboardLayout)/admin/dashboard/withdrawals/_action"
+import DeleteMoneyRecordDialog from "@/components/modules/Admin/Money/DeleteMoneyRecordDialog"
+import { withdrawalReversal } from "@/components/modules/Admin/Money/reversalCopy"
 import RecordWithdrawalModal from "@/components/modules/Admin/Withdrawals/RecordWithdrawalModal"
 import { withdrawalsColumns } from "@/components/modules/Admin/Withdrawals/withdrawalsColumns"
 import StatTile from "@/components/shared/StatTile"
 import ErrorState from "@/components/shared/state/ErrorState"
 import DataTable from "@/components/shared/table/DataTable"
 import { Card } from "@/components/ui/card"
+import { useRowActionModalState } from "@/hooks/useRowActionModalState"
 import { formatBdt } from "@/lib/currency"
+import { queryKeys } from "@/lib/queryKeys"
+import type { IOwnerWithdrawal } from "@/types/spending.types"
 import { useQuery } from "@tanstack/react-query"
 import { PiggyBank } from "lucide-react"
 import { ownerWithdrawalsListQuery } from "@/queries/spending.queries"
@@ -17,6 +23,16 @@ const WithdrawalsBoard = () => {
   const { data, isPending, isFetching, isError, refetch } = useQuery({ ...ownerWithdrawalsListQuery(), retry: 1 })
 
   const withdrawals = data?.data ?? []
+
+  const {
+    editingItem,
+    deletingItem,
+    isEditModalOpen,
+    isDeleteDialogOpen,
+    onEditOpenChange,
+    onDeleteOpenChange,
+    tableActions,
+  } = useRowActionModalState<IOwnerWithdrawal>({ enableView: false })
 
   const personalBdt = withdrawals
     .filter((withdrawal) => withdrawal.type === "personal")
@@ -84,6 +100,20 @@ const WithdrawalsBoard = () => {
         isFetching={isFetching}
         emptyMessage="No withdrawals recorded yet."
         toolbarAction={<RecordWithdrawalModal />}
+        actions={tableActions}
+      />
+
+      <RecordWithdrawalModal withdrawal={editingItem} open={isEditModalOpen} onOpenChange={onEditOpenChange} />
+
+      <DeleteMoneyRecordDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={onDeleteOpenChange}
+        recordId={deletingItem?.id}
+        title="Delete this withdrawal?"
+        description={deletingItem ? withdrawalReversal(deletingItem) : ""}
+        action={deleteWithdrawalAction}
+        successMessage="Withdrawal deleted"
+        invalidateKeys={[queryKeys.withdrawals.all]}
       />
     </div>
   )
