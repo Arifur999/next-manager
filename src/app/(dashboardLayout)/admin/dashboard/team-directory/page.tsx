@@ -3,6 +3,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { usersListQuery } from "@/queries/people.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Team Directory",
@@ -14,13 +15,10 @@ const TeamDirectoryPage = async () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Team</h1>
-        <p className="text-sm text-muted-foreground">
-          Who works here and how to reach them. Adding, editing and deactivating people
-          happens under Users, which is the admin&apos;s screen — this one only reads.
-        </p>
-      </div>
+      <PageHeader title="Team">
+        Who works here and how to reach them. Adding, editing and deactivating people
+        happens under Users, which is the admin&apos;s screen — this one only reads.
+      </PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
         <TeamDirectory />

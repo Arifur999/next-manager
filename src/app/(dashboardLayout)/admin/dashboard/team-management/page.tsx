@@ -9,6 +9,7 @@ import type { Metadata } from "next";
 import { assignmentOverviewQuery } from "@/queries/project.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import { departmentsQuery, usersListQuery } from "@/queries/people.queries";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Team",
@@ -26,12 +27,9 @@ const TeamManagementPage = async () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Team</h1>
-        <p className="text-sm text-muted-foreground">
-          Who is in the agency, what they may reach, and what they are working on.
-        </p>
-      </div>
+      <PageHeader title="Team">
+        Who is in the agency, what they may reach, and what they are working on.
+      </PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
         <Tabs defaultValue="members">

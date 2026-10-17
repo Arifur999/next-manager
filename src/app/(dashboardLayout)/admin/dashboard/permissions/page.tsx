@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { usersListQuery } from "@/queries/people.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import { permissionGridQuery } from "@/queries/workspace.queries";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Roles & Permissions",
@@ -21,15 +22,12 @@ const PermissionsPage = async () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Roles &amp; Permissions</h1>
-        <p className="text-sm text-muted-foreground">
-          Module, action, and how far it reaches. Role decides what somebody can open at
-          all; this narrows it further and can never widen it — so operations given
-          &ldquo;Accounts&rdquo; here still cannot open the accounts page. Nothing set here
-          reaches another company.
-        </p>
-      </div>
+      <PageHeader title={<>Roles &amp; Permissions</>}>
+        Module, action, and how far it reaches. Role decides what somebody can open at
+        all; this narrows it further and can never widen it — so operations given
+        &ldquo;Accounts&rdquo; here still cannot open the accounts page. Nothing set here
+        reaches another company.
+      </PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
         <PermissionsBoard />

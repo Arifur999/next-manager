@@ -4,6 +4,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { serviceCategoriesQuery, servicesListQuery } from "@/queries/catalog.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Services",
@@ -24,13 +25,10 @@ const ServicesPage = async () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Services</h1>
-        <p className="text-sm text-muted-foreground">
-          What the agency sells. Picked from when raising an invoice or opening a project,
-          which is what makes &quot;what does SEO actually earn us&quot; answerable.
-        </p>
-      </div>
+      <PageHeader title="Services">
+        What the agency sells. Picked from when raising an invoice or opening a project,
+        which is what makes &quot;what does SEO actually earn us&quot; answerable.
+      </PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
         <ServicesBoard canManage={canManage} />
