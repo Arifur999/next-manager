@@ -1,262 +1,74 @@
 "use client";
 
-import Loader from "@/components/shared/Loader";
-import ErrorState from "@/components/shared/state/ErrorState";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { pageCountOf, type PaginationMeta } from "@/types/api.types";
-import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  PaginationState,
-  SortingState,
-  useReactTable,
-} from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ArrowUpDown, MoreHorizontal } from "lucide-react";
-import { useEffect, useState } from "react";
+import DataTableContent from "./DataTableContent";
 import DataTablePagination from "./DataTablePagination";
-import DataTableSearch from "./DataTableSearch";
+import DataTableToolbar from "./DataTableToolbar";
+import { useDataTableReset } from "./useDataTableReset";
+import type { DataTableProps } from "./dataTable.types";
+import { DEFAULT_PAGE_SIZE, useDataTable } from "./useDataTable";
 
-interface DataTableActions<TData> {
-  onView?: (data: TData) => void;
-  onEdit?: (data: TData) => void;
-  onDelete?: (data: TData) => void;
-}
+const DataTable = <TData,>(props: DataTableProps<TData>) => {
+  const {
+    toolbarAction,
+    exportFileName,
+    emptyMessage,
+    isLoading = false,
+    isFetching = false,
+    isError = false,
+    onRetry,
+    pagination,
+    search,
+    filters,
+    meta,
+  } = props;
+  const table = useDataTable(props);
+  const isRefreshing = isFetching && !isLoading;
 
-interface DataTableProps<TData> {
-  data: TData[];
-  columns: ColumnDef<TData>[];
-  actions?: DataTableActions<TData>;
-  toolbarAction?: React.ReactNode;
-  emptyMessage?: string;
-  isLoading?: boolean;
-  /** The list request failed: show the error and Retry instead of the empty message. */
-  isError?: boolean;
-  onRetry?: () => void;
-  // Presence of these two switches the table into server-driven mode.
-  sorting?: {
-    state: SortingState;
-    onSortingChange: (state: SortingState) => void;
-  };
-  pagination?: {
-    state: PaginationState;
-    onPaginationChange: (state: PaginationState) => void;
-  };
-  search?: {
-    initialValue?: string;
-    placeholder?: string;
-    debounceMs?: number;
-    onDebouncedChange: (value: string) => void;
-  };
-  meta?: PaginationMeta;
-}
+  const totalRows = pagination ? (meta?.total ?? 0) : table.getPrePaginationRowModel().rows.length;
+  // Lists that fit on one page at the smallest size never show the pager.
+  const showPagination = !isLoading && !isError && totalRows > DEFAULT_PAGE_SIZE;
 
-const DataTable = <TData,>({
-  data = [] as TData[],
-  columns,
-  actions,
-  toolbarAction,
-  emptyMessage,
-  isLoading,
-  isError = false,
-  onRetry,
-  sorting,
-  pagination,
-  search,
-  meta,
-}: DataTableProps<TData>) => {
-  const [hasHydrated, setHasHydrated] = useState(false);
-
-  useEffect(() => {
-    setHasHydrated(true);
-  }, []);
-
-  // The server render must not include the overlay, or the markup it produces
-  // and the markup React expects on the client disagree.
-  // A retry in flight is shown on the Retry button, not as an overlay on the error.
-  const showLoadingOverlay = Boolean(isLoading) && hasHydrated && !isError;
-
-  // The actions column is appended here rather than declared per feature, so
-  // every table in the app has the same row menu in the same place.
-  const tableColumns: ColumnDef<TData>[] = actions
-    ? [
-        ...columns,
-        {
-          id: "actions",
-          header: "Actions",
-          enableSorting: false,
-          cell: ({ row }) => {
-            const rowData = row.original;
-
-            return (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="h-8 w-8 p-0">
-                    <span className="sr-only">Open menu</span>
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-
-                <DropdownMenuContent align="end">
-                  {actions.onView && (
-                    <DropdownMenuItem onClick={() => actions.onView?.(rowData)}>View</DropdownMenuItem>
-                  )}
-                  {actions.onEdit && (
-                    <DropdownMenuItem onClick={() => actions.onEdit?.(rowData)}>Edit</DropdownMenuItem>
-                  )}
-                  {actions.onDelete && (
-                    <DropdownMenuItem onClick={() => actions.onDelete?.(rowData)}>Delete</DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            );
-          },
-        },
-      ]
-    : columns;
-
-  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table is intentionally used here and React Compiler already skips memoization for this hook.
-  const table = useReactTable({
-    data,
-    columns: tableColumns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    manualSorting: !!sorting,
-    manualPagination: !!pagination,
-    pageCount: pagination ? Math.max(pageCountOf(meta) ?? 0, 0) : undefined,
-    state: {
-      ...(sorting ? { sorting: sorting.state } : {}),
-      ...(pagination ? { pagination: pagination.state } : {}),
+  // A new search starts again from page 1. Server-driven tables reset the page themselves.
+  const searchFromFirstPage = search && {
+    ...search,
+    onDebouncedChange: (value: string) => {
+      if (!pagination) table.setPageIndex(0);
+      search.onDebouncedChange(value);
     },
-    // TanStack hands back either the next state or an updater function.
-    // Resolve it here so callers only ever deal with a plain value.
-    onSortingChange: sorting
-      ? (updater) => {
-          const next = typeof updater === "function" ? updater(sorting.state) : updater;
-          sorting.onSortingChange(next);
-        }
-      : undefined,
-    onPaginationChange: pagination
-      ? (updater) => {
-          const next = typeof updater === "function" ? updater(pagination.state) : updater;
-          pagination.onPaginationChange(next);
-        }
-      : undefined,
-  });
+  };
+  const { canReset, reset } = useDataTableReset(table, searchFromFirstPage, filters);
 
   return (
-    <div className="relative">
-      {showLoadingOverlay && (
-        // Sits over the rows instead of replacing them, so the table doesn't
-        // collapse to a spinner and jump the page around on every refetch.
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 backdrop-blur-sm">
-          <div className="flex items-center gap-2">
-            <Loader size={32} />
-            <span className="text-sm text-muted-foreground">Loading...</span>
-          </div>
-        </div>
-      )}
+    <div>
+      <DataTableToolbar
+        table={table}
+        search={searchFromFirstPage}
+        filters={filters}
+        canReset={canReset}
+        onReset={reset}
+        toolbarAction={toolbarAction}
+        exportFileName={exportFileName}
+      />
 
-      {(search || toolbarAction) && (
-        <div className="mb-4 flex flex-wrap items-start gap-3">
-          {search && (
-            <DataTableSearch
-              key={search.initialValue ?? ""}
-              initialValue={search.initialValue}
-              placeholder={search.placeholder}
-              debounceMs={search.debounceMs}
-              onDebouncedChange={search.onDebouncedChange}
-              isLoading={isLoading}
-            />
-          )}
+      <div className="font-condensed relative overflow-hidden rounded-lg border">
+        {/* Rows stay on screen during a refetch; only this bar says it is running. */}
+        {isRefreshing && !isError && (
+          <div className="absolute inset-x-0 top-0 z-10 h-0.5 animate-pulse bg-primary" role="progressbar" aria-label="Refreshing" />
+        )}
 
-          {toolbarAction && <div className="ml-auto shrink-0">{toolbarAction}</div>}
-        </div>
-      )}
+        <DataTableContent
+          table={table}
+          emptyMessage={emptyMessage}
+          isLoading={isLoading}
+          isError={isError}
+          isRetrying={isFetching}
+          onRetry={onRetry}
+          canReset={canReset}
+          onReset={reset}
+        />
 
-      <div className="font-condensed rounded-lg border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id}>
-                {hg.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder ? null : header.column.getCanSort() ? (
-                      <Button
-                        variant="ghost"
-                        className="h-auto cursor-pointer p-0 font-semibold hover:bg-transparent hover:text-inherit focus-visible:ring-0"
-                        onClick={header.column.getToggleSortingHandler()}
-                      >
-                        {flexRender(header.column.columnDef.header, header.getContext())}
-
-                        {header.column.getIsSorted() === "asc" ? (
-                          <ArrowUp className="ml-1 h-4 w-4" />
-                        ) : header.column.getIsSorted() === "desc" ? (
-                          <ArrowDown className="ml-1 h-4 w-4" />
-                        ) : (
-                          <ArrowUpDown className="ml-1 h-4 w-4 opacity-50" />
-                        )}
-                      </Button>
-                    ) : (
-                      flexRender(header.column.columnDef.header, header.getContext())
-                    )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-
-          <TableBody>
-            {isError ? (
-              <TableRow>
-                <TableCell colSpan={tableColumns.length} className="p-0">
-                  <ErrorState onRetry={onRetry} isRetrying={Boolean(isLoading)} />
-                </TableCell>
-              </TableRow>
-            ) : table.getRowModel()?.rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={tableColumns.length} className="h-24 text-center">
-                  {emptyMessage || "No data available."}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-
-        {pagination && (
-          <DataTablePagination
-            table={table}
-            totalPages={pageCountOf(meta)}
-            totalRows={meta?.total}
-            isLoading={isLoading}
-          />
+        {showPagination && (
+          <DataTablePagination table={table} totalRows={totalRows} />
         )}
       </div>
     </div>

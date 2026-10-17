@@ -23,6 +23,7 @@ export const projectsColumns: ColumnDef<IProject>[] = [
   {
     id: "client",
     header: "Client",
+    meta: { exportValue: (project) => project.client?.name },
     enableSorting: false,
     cell: ({ row }) => (
       <span className="text-sm">{row.original.client?.name ?? "N/A"}</span>
@@ -32,6 +33,7 @@ export const projectsColumns: ColumnDef<IProject>[] = [
     id: "status",
     accessorKey: "status",
     header: "Status",
+    meta: { exportValue: (project) => project.status.name },
     cell: ({ row }) => (
       <span
         className={`rounded-md px-2 py-0.5 text-xs font-medium capitalize ${
@@ -53,6 +55,7 @@ export const projectsColumns: ColumnDef<IProject>[] = [
   {
     id: "tasks",
     header: "Work",
+    meta: { exportValue: (project) => project._count?.tasks ?? 0 },
     enableSorting: false,
     cell: ({ row }) => (
       <div className="flex items-center gap-1.5">

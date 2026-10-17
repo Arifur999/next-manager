@@ -13,6 +13,7 @@ export const expensesColumns: ColumnDef<IExpense>[] = [
   },
   {
     id: "category",
+    accessorFn: (expense) => expense.category?.name ?? "",
     header: "Category",
     enableSorting: false,
     cell: ({ row }) => (
@@ -52,6 +53,7 @@ export const expensesColumns: ColumnDef<IExpense>[] = [
     id: "account",
     header: "Paid from",
     enableSorting: false,
+    meta: { exportValue: (expense) => expense.account?.name },
     cell: ({ row }) => (
       <span className="text-sm text-muted-foreground">{row.original.account?.name ?? "N/A"}</span>
     ),

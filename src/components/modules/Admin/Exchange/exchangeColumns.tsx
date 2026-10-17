@@ -15,6 +15,7 @@ export const exchangeColumns: ColumnDef<IExchange>[] = [
   {
     id: "route",
     header: "From → To",
+    meta: { exportValue: (exchange) => `${exchange.from_account?.name ?? ""} → ${exchange.to_account?.name ?? ""}` },
     enableSorting: false,
     cell: ({ row }) => (
       <div className="flex items-center gap-2 text-sm">
@@ -35,6 +36,7 @@ export const exchangeColumns: ColumnDef<IExchange>[] = [
   {
     id: "fee_usd",
     header: "Fee",
+    meta: { exportValue: (exchange) => exchange.fee_usd },
     enableSorting: false,
     cell: ({ row }) =>
       row.original.fee_usd > 0 ? (
@@ -56,6 +58,7 @@ export const exchangeColumns: ColumnDef<IExchange>[] = [
   {
     id: "amount_bdt",
     header: "Received",
+    meta: { exportValue: (exchange) => exchange.amount_bdt },
     enableSorting: false,
     cell: ({ row }) => (
       // Full weight, unlike the reporting column on payments: this BDT is

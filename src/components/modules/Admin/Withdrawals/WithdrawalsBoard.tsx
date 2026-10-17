@@ -218,7 +218,7 @@ const RecordWithdrawalModal = () => {
 }
 
 const WithdrawalsBoard = () => {
-  const { data, isLoading, isFetching, error } = useQuery({ ...ownerWithdrawalsListQuery(), // The route is owner-only, so anyone else gets a 403. One retry is enough
+  const { data, isPending, isFetching, error } = useQuery({ ...ownerWithdrawalsListQuery(), // The route is owner-only, so anyone else gets a 403. One retry is enough
     // to rule out a blip without hammering a wall that will not move.
     retry: 1 })
 
@@ -267,7 +267,10 @@ const WithdrawalsBoard = () => {
       <DataTable
         data={withdrawals}
         columns={withdrawalsColumns}
-        isLoading={isLoading || isFetching}
+        tableId="withdrawals"
+        exportFileName="withdrawals"
+        isLoading={isPending}
+        isFetching={isFetching}
         emptyMessage="No withdrawals recorded yet."
         toolbarAction={<RecordWithdrawalModal />}
       />

@@ -17,12 +17,8 @@ import {
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt, formatRate, formatUsd } from "@/lib/currency"
-import {
-  exchangeFormFields,
-  exchangeFormZodSchema,
-  toNumber,
-  type IExchangeFormValues,
-} from "@/zod/agencio.validation"
+import { exchangeFormFields, exchangeFormZodSchema, type IExchangeFormValues } from "@/zod/finance.validation"
+import { toNumber } from "@/zod/formFields"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ArrowLeftRight } from "lucide-react"

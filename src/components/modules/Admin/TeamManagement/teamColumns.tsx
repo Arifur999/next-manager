@@ -31,6 +31,7 @@ export const teamColumns: ColumnDef<IUser>[] = [
     id: "role",
     accessorKey: "role",
     header: "Role",
+    meta: { exportValue: (user) => roleLabel(user.role) },
     cell: ({ row }) => (
       <Badge variant="outline" className="capitalize">
         {roleLabel(row.original.role)}
@@ -40,6 +41,7 @@ export const teamColumns: ColumnDef<IUser>[] = [
   {
     id: "department",
     header: "Department",
+    meta: { exportValue: (user) => user.department?.name },
     enableSorting: false,
     cell: ({ row }) =>
       // Said out loud rather than left blank. An empty cell reads as data
@@ -53,6 +55,7 @@ export const teamColumns: ColumnDef<IUser>[] = [
   {
     id: "status",
     header: "Status",
+    meta: { exportValue: (user) => user.status },
     enableSorting: false,
     cell: ({ row }) => (
       <StatusBadgeCell status={row.original.status} />

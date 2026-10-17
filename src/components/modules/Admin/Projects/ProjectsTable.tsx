@@ -4,6 +4,7 @@ import ProjectFormModal from "@/components/modules/Admin/Projects/ProjectFormMod
 import { projectsColumns } from "@/components/modules/Admin/Projects/projectsColumns"
 import DataTable from "@/components/shared/table/DataTable"
 import { useRowActionModalState } from "@/hooks/useRowActionModalState"
+import { toTableQueryProps } from "@/lib/table/queryProps"
 import type { IProject } from "@/types/project.types"
 import { useQuery } from "@tanstack/react-query"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -51,18 +52,18 @@ const ProjectsTable = ({ canManage = true }: { canManage?: boolean }) => {
     .filter(Boolean)
     .join("&")
 
-  const { data, isLoading, isFetching, isError, refetch } = useQuery(projectsListQuery(query))
+  const projectsQuery = useQuery(projectsListQuery(query))
 
-  const projects = data?.data ?? []
+  const projects = projectsQuery.data?.data ?? []
 
   return (
     <>
       <DataTable
         data={projects}
         columns={projectsColumns}
-        isLoading={isLoading || isFetching}
-        isError={isError}
-        onRetry={() => refetch()}
+        tableId="projects"
+        exportFileName="projects"
+        {...toTableQueryProps(projectsQuery)}
         emptyMessage="No projects yet."
         toolbarAction={canManage ? <ProjectFormModal /> : undefined}
         search={{
