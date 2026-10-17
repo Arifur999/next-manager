@@ -4,13 +4,13 @@ import {
   approveTimeAction,
   unapproveTimeAction,
 } from "@/app/(dashboardLayout)/dashboard/timesheet/_action"
+import { groupByPerson } from "@/components/modules/Admin/Time/groupByPerson"
 import StatTile from "@/components/shared/StatTile"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useActionMutation } from "@/hooks/useActionMutation"
-import type { ITimeEntry } from "@/types/work.types"
 import { useQuery } from "@tanstack/react-query"
 import { addDays, format, startOfWeek } from "date-fns"
 import { ChevronLeft, ChevronRight, Clock, Undo2, UserCheck } from "lucide-react"
@@ -35,39 +35,6 @@ const iso = (date: Date) => format(date, "yyyy-MM-dd")
 
 const weekStart = (offset: number) =>
   startOfWeek(addDays(new Date(), offset * 7), { weekStartsOn: 1 })
-
-type Group = {
-  userId: string
-  name: string
-  entries: ITimeEntry[]
-  hours: number
-}
-
-const groupByPerson = (entries: ITimeEntry[]): Group[] => {
-  const groups = new Map<string, Group>()
-
-  for (const entry of entries) {
-    const userId = entry.user?.id ?? entry.user_id
-    const existing = groups.get(userId)
-
-    if (existing) {
-      existing.entries.push(entry)
-      existing.hours += entry.hours
-      continue
-    }
-
-    groups.set(userId, {
-      userId,
-      name: entry.user?.full_name ?? "Unknown",
-      entries: [entry],
-      hours: entry.hours,
-    })
-  }
-
-  // Biggest week first: the person with 46 logged hours is the one worth
-  // looking at before the person with 4.
-  return [...groups.values()].sort((a, b) => b.hours - a.hours)
-}
 
 const ApprovalQueue = ({ viewerId }: { viewerId: string }) => {
   const [offset, setOffset] = useState(0)
