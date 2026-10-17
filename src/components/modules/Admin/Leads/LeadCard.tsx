@@ -1,6 +1,5 @@
 "use client"
 
-import { ALL_STAGES } from "@/components/modules/Admin/Leads/stages"
 import { convertLeadAction, updateLeadAction } from "@/app/(dashboardLayout)/admin/dashboard/leads/_action"
 import { Button } from "@/components/ui/button"
 import {
@@ -11,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { formatUsd } from "@/lib/currency"
-import type { ILead, LeadStage } from "@/types/crm.types"
+import { LEAD_STAGES, type ILead, type LeadStage } from "@/types/crm.types"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { MoreHorizontal } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -76,7 +75,7 @@ const LeadCard = ({ lead }: { lead: ILead }) => {
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="end">
-            {ALL_STAGES.filter((stage) => stage !== lead.stage).map((stage) => (
+            {LEAD_STAGES.filter((stage) => stage !== lead.stage).map((stage) => (
               <DropdownMenuItem key={stage} onClick={() => void handleMove(stage)}>
                 Move to {stage}
               </DropdownMenuItem>

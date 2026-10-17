@@ -1,6 +1,5 @@
 "use client"
 
-import { ALL_STAGES } from "@/components/modules/Admin/Leads/stages"
 import { createLeadAction } from "@/app/(dashboardLayout)/admin/dashboard/leads/_action"
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
@@ -16,7 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import type { LeadStage } from "@/types/crm.types"
+import { LEAD_STAGES, type LeadStage } from "@/types/crm.types"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
@@ -34,7 +33,7 @@ const leadFormSchema = z.object({
   // An id now, not typed text - see LeadSource on the server for why. Empty
   // string means nobody said, which is a real answer.
   source_id: z.string().optional(),
-  stage: z.enum(["new", "contacted", "proposal", "negotiating", "won", "lost"]),
+  stage: z.enum(LEAD_STAGES),
   estimated_value_usd: z
     .string()
     .optional()
@@ -183,7 +182,7 @@ const CreateLeadModal = () => {
                   value={field.state.value}
                   onChange={(value) => field.handleChange(value as LeadStage)}
                   disabled={isPending}
-                  options={ALL_STAGES.map((stage) => ({
+                  options={LEAD_STAGES.map((stage) => ({
                     value: stage,
                     label: stage.charAt(0).toUpperCase() + stage.slice(1),
                   }))}

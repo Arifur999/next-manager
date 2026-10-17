@@ -2,7 +2,10 @@ export const CLIENT_STATUSES = ["active", "inactive", "archived"] as const;
 
 export type ClientStatus = (typeof CLIENT_STATUSES)[number];
 
-export type LeadStage = "new" | "contacted" | "proposal" | "negotiating" | "won" | "lost";
+/** In pipeline order. The last two end a deal rather than hold one. */
+export const LEAD_STAGES = ["new", "contacted", "proposal", "negotiating", "won", "lost"] as const;
+
+export type LeadStage = (typeof LEAD_STAGES)[number];
 
 export interface IClient {
     id: string;
