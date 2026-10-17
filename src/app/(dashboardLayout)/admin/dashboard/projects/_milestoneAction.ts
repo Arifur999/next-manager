@@ -8,11 +8,22 @@ import {
     reopenMilestone,
     setProjectBaseline,
     submitMilestone,
+    updateMilestone,
 } from "@/services/project.services"
-import { createMilestoneServerZodSchema, setBaselineServerZodSchema } from "@/zod/project.validation"
+import {
+    createMilestoneServerZodSchema,
+    setBaselineServerZodSchema,
+    updateMilestoneServerZodSchema,
+} from "@/zod/project.validation"
 
 export const createMilestoneAction = async (values: unknown) =>
     runValidatedAction(createMilestoneServerZodSchema, values, "Failed to add the milestone", createMilestone)
+
+export const updateMilestoneAction = async (id: string, values: unknown) =>
+    requireId(id, "milestone") ??
+    runValidatedAction(updateMilestoneServerZodSchema, values, "Failed to change the milestone", (payload) =>
+        updateMilestone(id, payload),
+    )
 
 export const submitMilestoneAction = async (id: string) =>
     requireId(id, "milestone") ?? runAction("Failed to submit", () => submitMilestone(id))

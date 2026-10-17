@@ -26,24 +26,24 @@ describe("statusOf", () => {
   })
 
   it("is due while the date is still ahead", () => {
-    expect(statusOf(milestone({}))).toEqual({ label: "due", late: false, tone: "outline" })
+    expect(statusOf(milestone({}))).toEqual({ label: "due", late: false, category: "open" })
   })
 
   it("is still due, not overdue, during the due day itself", () => {
     vi.setSystemTime(new Date("2026-10-10T15:00:00Z"))
-    expect(statusOf(milestone({}))).toEqual({ label: "due", late: false, tone: "outline" })
+    expect(statusOf(milestone({}))).toEqual({ label: "due", late: false, category: "open" })
   })
 
   it("is overdue once the due day has passed without a submission", () => {
     vi.setSystemTime(new Date("2026-10-12T09:00:00Z"))
-    expect(statusOf(milestone({}))).toEqual({ label: "overdue", late: true, tone: "destructive" })
+    expect(statusOf(milestone({}))).toEqual({ label: "overdue", late: true, category: "blocked" })
   })
 
   it("counts a submission late in the evening of the due day as on time", () => {
     expect(statusOf(milestone({ submitted_at: "2026-10-10T22:45:00.000Z" }))).toEqual({
       label: "submitted",
       late: false,
-      tone: "outline",
+      category: "active",
     })
   })
 
@@ -51,7 +51,7 @@ describe("statusOf", () => {
     expect(statusOf(milestone({ submitted_at: "2026-10-11T08:00:00.000Z" }))).toEqual({
       label: "submitted, late",
       late: true,
-      tone: "destructive",
+      category: "blocked",
     })
   })
 
@@ -60,6 +60,6 @@ describe("statusOf", () => {
     const acceptedOnTime = milestone({ submitted_at: "2026-10-09T08:00:00.000Z", accepted_at: "2026-10-14T08:00:00.000Z" })
 
     expect(statusOf(acceptedLate).label).toBe("accepted, late")
-    expect(statusOf(acceptedOnTime)).toEqual({ label: "accepted", late: false, tone: "secondary" })
+    expect(statusOf(acceptedOnTime)).toEqual({ label: "accepted", late: false, category: "done" })
   })
 })

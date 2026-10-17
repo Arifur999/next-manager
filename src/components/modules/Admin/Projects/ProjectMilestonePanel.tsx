@@ -6,6 +6,7 @@ import {
   deleteMilestoneAction,
   reopenMilestoneAction,
   submitMilestoneAction,
+  updateMilestoneAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/projects/_milestoneAction"
 import MilestoneRow from "@/components/modules/Admin/Projects/MilestoneRow"
 import { statusOf } from "@/components/modules/Admin/Projects/milestoneStatus"
@@ -61,6 +62,7 @@ const ProjectMilestonePanel = ({
   canManage?: boolean
 }) => {
   const [milestoneToDelete, setMilestoneToDelete] = useState<IMilestone | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   const milestonesQuery = useQuery(milestonesListQuery(`project_id=${projectId}`))
 
@@ -77,6 +79,12 @@ const ProjectMilestonePanel = ({
   const { run: accept, isPending: isAccepting } = useMilestoneChange(acceptMilestoneAction)
   const { run: reopen, isPending: isReopening } = useMilestoneChange(reopenMilestoneAction)
   const { run: remove, isPending: isRemoving } = useMilestoneChange(deleteMilestoneAction)
+  const { run: update, isPending: isUpdating } = useActionMutation({
+    action: ({ id, values }: { id: string; values: IMilestoneFormValues }) => updateMilestoneAction(id, values),
+    successMessage: "Milestone updated",
+    invalidateKeys: [queryKeys.milestones.all],
+    refresh: false,
+  })
 
   const form = useForm({
     defaultValues: emptyMilestone,
@@ -90,7 +98,7 @@ const ProjectMilestonePanel = ({
     if (milestoneToDelete && (await remove(milestoneToDelete.id))) setMilestoneToDelete(null)
   }
 
-  const isBusy = isSubmitting || isAccepting || isReopening || isRemoving
+  const isBusy = isSubmitting || isAccepting || isReopening || isRemoving || isUpdating
 
   const delivered = milestones.filter((milestone) => milestone.submitted_at)
   const onTime = delivered.filter((milestone) => !statusOf(milestone).late)
@@ -181,6 +189,9 @@ const ProjectMilestonePanel = ({
               onAccept={(id) => void accept(id)}
               onReopen={(id) => void reopen(id)}
               onDelete={setMilestoneToDelete}
+              isEditing={editingId === milestone.id}
+              onEditingChange={(isEditing) => setEditingId(isEditing ? milestone.id : null)}
+              onSave={(values) => update({ id: milestone.id, values })}
             />
           ))}
         </ul>

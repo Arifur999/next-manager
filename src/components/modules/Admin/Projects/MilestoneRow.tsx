@@ -1,9 +1,11 @@
-import { dayOf, statusOf } from "@/components/modules/Admin/Projects/milestoneStatus"
-import { Badge } from "@/components/ui/badge"
+import EditMilestoneForm from "@/components/modules/Admin/Projects/EditMilestoneForm"
+import { statusOf } from "@/components/modules/Admin/Projects/milestoneStatus"
+import StatusBadge from "@/components/shared/status/StatusBadge"
 import { Button } from "@/components/ui/button"
+import { formatDay, formatDayShort } from "@/lib/dates"
 import type { IMilestone } from "@/types/project.types"
-import { format } from "date-fns"
-import { Trash2, Undo2 } from "lucide-react"
+import type { IMilestoneFormValues } from "@/zod/project.validation"
+import { Pencil, Trash2, Undo2 } from "lucide-react"
 
 type MilestoneRowProps = {
   milestone: IMilestone
@@ -13,9 +15,36 @@ type MilestoneRowProps = {
   onAccept: (id: string) => void
   onReopen: (id: string) => void
   onDelete: (milestone: IMilestone) => void
+  isEditing: boolean
+  onEditingChange: (isEditing: boolean) => void
+  onSave: (values: IMilestoneFormValues) => Promise<boolean>
 }
 
-const MilestoneRow = ({ milestone, canManage, isBusy, onSubmit, onAccept, onReopen, onDelete }: MilestoneRowProps) => {
+const MilestoneRow = ({
+  milestone,
+  canManage,
+  isBusy,
+  onSubmit,
+  onAccept,
+  onReopen,
+  onDelete,
+  isEditing,
+  onEditingChange,
+  onSave,
+}: MilestoneRowProps) => {
+  if (isEditing) {
+    return (
+      <li className="px-5 py-3.5">
+        <EditMilestoneForm
+          milestone={milestone}
+          isPending={isBusy}
+          onSave={onSave}
+          onDone={() => onEditingChange(false)}
+        />
+      </li>
+    )
+  }
+
   const state = statusOf(milestone)
 
   return (
@@ -23,15 +52,13 @@ const MilestoneRow = ({ milestone, canManage, isBusy, onSubmit, onAccept, onReop
       <div className="min-w-0">
         <p className="truncate text-sm font-medium">{milestone.title}</p>
         <p className="truncate text-xs text-muted-foreground">
-          Due {format(dayOf(milestone.due_date), "dd MMM yyyy")}
-          {milestone.submitted_at ? ` · submitted ${format(dayOf(milestone.submitted_at), "dd MMM")}` : ""}
+          Due {formatDay(milestone.due_date.slice(0, 10))}
+          {milestone.submitted_at ? ` · submitted ${formatDayShort(milestone.submitted_at.slice(0, 10))}` : ""}
         </p>
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
-        <Badge variant={state.tone} className="text-xs">
-          {state.label}
-        </Badge>
+        <StatusBadge category={state.category} label={state.label} />
 
         {/* Offered to everybody: delivering is the operations role's job, and
             the API lets anyone on the project submit. */}
@@ -58,6 +85,13 @@ const MilestoneRow = ({ milestone, canManage, isBusy, onSubmit, onAccept, onReop
           >
             <Undo2 className="size-3.5" />
             <span className="sr-only">Reopen {milestone.title}</span>
+          </Button>
+        )}
+
+        {canManage && (
+          <Button type="button" size="sm" variant="outline" disabled={isBusy} onClick={() => onEditingChange(true)}>
+            <Pencil className="size-3.5" />
+            <span className="sr-only">Edit {milestone.title}</span>
           </Button>
         )}
 

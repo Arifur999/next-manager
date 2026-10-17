@@ -5,6 +5,8 @@ import {
     createProjectLinkServerZodSchema,
     createProjectServerZodSchema,
     setBaselineServerZodSchema,
+    updateMilestoneServerZodSchema,
+    updateProjectLinkServerZodSchema,
     updateProjectServerZodSchema,
 } from "./project.validation"
 
@@ -96,6 +98,28 @@ describe("createProjectLinkServerZodSchema", () => {
 
     it("requires the project it belongs to", () => {
         expect(createProjectLinkServerZodSchema.safeParse({ ...validLink, project_id: "" }).success).toBe(false)
+    })
+})
+
+describe("updateMilestoneServerZodSchema", () => {
+    it("sends the new title and day, and never a project", () => {
+        expect(
+            updateMilestoneServerZodSchema.parse({ title: " Final handover ", due_date: "2026-11-09", project_id: "p2" }),
+        ).toEqual({ title: "Final handover", due_date: "2026-11-09" })
+    })
+
+    it("still needs a due day", () => {
+        expect(updateMilestoneServerZodSchema.safeParse({ title: "Handover", due_date: "" }).success).toBe(false)
+    })
+})
+
+describe("updateProjectLinkServerZodSchema", () => {
+    it("trims a renamed link and refuses a blank one", () => {
+        expect(updateProjectLinkServerZodSchema.parse({ label: " Staging ", url: " https://staging.test " })).toEqual({
+            label: "Staging",
+            url: "https://staging.test",
+        })
+        expect(updateProjectLinkServerZodSchema.safeParse({ label: "", url: "https://staging.test" }).success).toBe(false)
     })
 })
 

@@ -92,6 +92,10 @@ export const createMilestoneServerZodSchema = milestoneFormZodSchema
         due_date: values.due_date,
     }))
 
+// Retitling or moving a milestone's date. It stays on its project: the API
+// refuses to carry an on-time record to another one.
+export const updateMilestoneServerZodSchema = milestoneFormZodSchema
+
 // A blank value lets the server take the contract value as it stands, which at
 // kickoff is what was sold.
 export const baselineFormZodSchema = z.object({
