@@ -1,22 +1,25 @@
 "use client"
 
+import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import type { IDepartment } from "@/types/people.types"
 import { Network, Power, Trash2 } from "lucide-react"
 import Link from "next/link"
+import type { ComponentProps } from "react"
 
 // The departments, each with how many people are in it and its row actions.
 const DepartmentList = ({
   departments,
-  isLoading,
+  query,
   onEdit,
   onToggle,
   onDelete,
 }: {
   departments: IDepartment[]
-  isLoading: boolean
+  query: ComponentProps<typeof PanelState>["query"]
   onEdit: (department: IDepartment) => void
   onToggle: (department: IDepartment) => void
   onDelete: (department: IDepartment) => void
@@ -36,15 +39,17 @@ const DepartmentList = ({
       </p>
     </CardHeader>
 
-    {isLoading && departments.length === 0 ? (
-      <div className="h-40 animate-pulse bg-muted/40" />
-    ) : departments.length === 0 ? (
-      <p className="flex flex-col items-center gap-2 px-6 py-12 text-center text-sm text-muted-foreground">
-        <Network className="size-7" aria-hidden="true" />
-        No departments yet. Everyone shows up as &quot;No department&quot; until there
-        are some.
-      </p>
-    ) : (
+    <PanelState
+      query={query}
+      errorMessage="Departments did not load."
+      isEmpty={departments.length === 0}
+      empty={
+        <EmptyState icon={Network}>
+          No departments yet. Everyone shows up as &quot;No department&quot; until there
+          are some.
+        </EmptyState>
+      }
+    >
       <ul className="divide-y">
         {departments.map((department) => {
           const members = department._count?.members ?? 0
@@ -101,7 +106,7 @@ const DepartmentList = ({
           )
         })}
       </ul>
-    )}
+    </PanelState>
   </Card>
 )
 

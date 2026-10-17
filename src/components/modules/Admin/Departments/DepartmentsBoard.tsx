@@ -41,9 +41,9 @@ const DepartmentsBoard = () => {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<IDepartment | null>(null)
 
-  const { data, isLoading } = useQuery(departmentsQuery())
+  const departmentList = useQuery(departmentsQuery())
 
-  const departments = data?.data ?? []
+  const departments = departmentList.data?.data ?? []
 
   const { run: saveDepartment, isPending } = useActionMutation({
     action: (values: IDepartmentFormValues) =>
@@ -169,7 +169,7 @@ const DepartmentsBoard = () => {
 
       <DepartmentList
         departments={departments}
-        isLoading={isLoading}
+        query={departmentList}
         onEdit={startEditing}
         onToggle={(department) => void toggleActive(department)}
         onDelete={setDeleting}
