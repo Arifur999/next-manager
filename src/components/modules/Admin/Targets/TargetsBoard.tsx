@@ -35,10 +35,10 @@ const TARGET_KEYS = [queryKeys.kpiTargets.all, queryKeys.kpi.all]
 const TargetsBoard = () => {
   const [targetToDelete, setTargetToDelete] = useState<IKpiTarget | null>(null)
 
-  const { data: targetsData, isLoading } = useQuery(kpiTargetsListQuery())
+  const targetsQuery = useQuery(kpiTargetsListQuery())
   const { data: usersData } = useQuery(usersListQuery())
 
-  const targets = targetsData?.data ?? []
+  const targets = targetsQuery.data?.data ?? []
   const users = usersData?.data ?? []
 
   const { run: saveTarget, isPending: isSaving } = useActionMutation({
@@ -71,7 +71,7 @@ const TargetsBoard = () => {
 
       <TargetList
         targets={targets}
-        isLoading={isLoading}
+        query={targetsQuery}
         onDelete={setTargetToDelete}
         isRemoving={isRemoving}
       />
