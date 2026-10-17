@@ -19,7 +19,9 @@ import { useForm } from "@tanstack/react-form"
 import { UserPlus } from "lucide-react"
 import { useState } from "react"
 import { queryKeys } from "@/lib/queryKeys"
-import { duePersonFormZodSchema } from "@/zod/spending.validation"
+import { duePersonFormZodSchema, type IDuePersonFormValues } from "@/zod/spending.validation"
+
+const defaultValues: IDuePersonFormValues = { name: "", phone: "" }
 
 const AddPersonModal = () => {
   const [open, setOpen] = useState(false)
@@ -32,7 +34,7 @@ const AddPersonModal = () => {
   })
 
   const form = useForm({
-    defaultValues: { name: "", phone: "" },
+    defaultValues,
     onSubmit: async ({ value }) => {
       if (await addPerson(value)) {
         setOpen(false)
