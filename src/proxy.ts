@@ -5,6 +5,7 @@ import {
     getAreaRule,
     getDefaultDashboardRoute,
     isAuthRoute,
+    safeRedirect,
     type UserRole,
 } from "./lib/authUtils";
 import { AUTH_COOKIE_NAMES } from "./lib/authCookies";
@@ -96,9 +97,12 @@ export async function proxy(request: NextRequest) {
             ? toUserRole(verified.decoded.role)
             : null;
 
-        // Rule 1 - a signed-in user has no business on the auth pages.
+        // Rule 1 - a signed-in user has no business on the auth pages. A
+        // ?redirect= is honoured as login would honour it, through safeRedirect,
+        // so only a same-site path this role may open is ever followed.
         if (isAuth && isValidAccessToken && userRole) {
-            return NextResponse.redirect(new URL(getDefaultDashboardRoute(userRole), request.url));
+            const destination = safeRedirect(request.nextUrl.searchParams.get("redirect"), userRole);
+            return NextResponse.redirect(new URL(destination, request.url));
         }
 
         // Rule 2 - public route, nothing to check.
