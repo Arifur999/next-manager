@@ -7,6 +7,7 @@ import {
     platformAccessServerZodSchema,
     platformExpenseServerZodSchema,
     platformInviteServerZodSchema,
+    planMovesServerZodSchema,
     platformSettingsServerZodSchema,
     setSubscriptionServerZodSchema,
     updatePlanServerZodSchema,
@@ -41,27 +42,48 @@ describe("createPlanServerZodSchema", () => {
 })
 
 describe("updatePlanServerZodSchema", () => {
+    const row = { features: [], is_public: true }
+
     it("turns empty limits into unlimited", () => {
-        expect(updatePlanServerZodSchema.parse({ price_usd: "29.5", max_seats: "", max_projects: " " })).toEqual({
+        expect(updatePlanServerZodSchema.parse({ ...row, price_usd: "29.5", max_seats: "", max_projects: " " })).toEqual({
             price_usd: 29.5,
             max_seats: null,
             max_projects: null,
+            features: [],
+            is_public: true,
         })
     })
 
-    it("keeps whole-number limits", () => {
-        expect(updatePlanServerZodSchema.parse({ price_usd: "0", max_seats: "5", max_projects: "12" })).toEqual({
-            price_usd: 0,
-            max_seats: 5,
-            max_projects: 12,
-        })
+    it("keeps whole-number limits, the features and whether the pricing page shows it", () => {
+        expect(
+            updatePlanServerZodSchema.parse({
+                price_usd: "0",
+                max_seats: "5",
+                max_projects: "12",
+                features: ["kpi", "vault"],
+                is_public: false,
+            }),
+        ).toEqual({ price_usd: 0, max_seats: 5, max_projects: 12, features: ["kpi", "vault"], is_public: false })
     })
 
     it("rejects a zero or fractional limit", () => {
-        expect(updatePlanServerZodSchema.safeParse({ price_usd: "1", max_seats: "0", max_projects: "" }).success).toBe(false)
-        expect(updatePlanServerZodSchema.safeParse({ price_usd: "1", max_seats: "", max_projects: "1.5" }).success).toBe(
+        expect(updatePlanServerZodSchema.safeParse({ ...row, price_usd: "1", max_seats: "0", max_projects: "" }).success).toBe(
             false,
         )
+        expect(
+            updatePlanServerZodSchema.safeParse({ ...row, price_usd: "1", max_seats: "", max_projects: "1.5" }).success,
+        ).toBe(false)
+    })
+})
+
+describe("planMovesServerZodSchema", () => {
+    it("accepts positions from zero", () => {
+        expect(planMovesServerZodSchema.parse([{ id: "p1", sort_order: 0 }])).toEqual([{ id: "p1", sort_order: 0 }])
+    })
+
+    it("refuses an empty move or a negative position", () => {
+        expect(planMovesServerZodSchema.safeParse([]).success).toBe(false)
+        expect(planMovesServerZodSchema.safeParse([{ id: "p1", sort_order: -1 }]).success).toBe(false)
     })
 })
 

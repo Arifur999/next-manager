@@ -1,10 +1,11 @@
 "use server"
 
 import { requireId, runValidatedAction } from "@/lib/runAction"
-import { createCompany, createPlan, setSubscription, updatePlan } from "@/services/platform.services"
+import { createCompany, createPlan, reorderPlans, setSubscription, updatePlan } from "@/services/platform.services"
 import {
     createCompanyServerZodSchema,
     createPlanServerZodSchema,
+    planMovesServerZodSchema,
     setSubscriptionServerZodSchema,
     updatePlanServerZodSchema,
 } from "@/zod/platform.validation"
@@ -24,6 +25,9 @@ export const updatePlanAction = async (id: string, values: unknown) =>
     runValidatedAction(updatePlanServerZodSchema, values, "Could not update the plan", (payload) =>
         updatePlan(id, payload),
     )
+
+export const reorderPlansAction = async (moves: unknown) =>
+    runValidatedAction(planMovesServerZodSchema, moves, "Could not reorder the plans", reorderPlans)
 
 // "One address cannot admin two companies" is the server's wording and says what to change.
 export const createCompanyAction = async (values: unknown) =>

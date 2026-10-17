@@ -35,6 +35,8 @@ export interface IPlan {
     max_projects: number | null;
     features: string[];
     is_active: boolean;
+    /** Listed on the public pricing page. An active plan can be sold without being advertised. */
+    is_public: boolean;
     sort_order: number;
 }
 

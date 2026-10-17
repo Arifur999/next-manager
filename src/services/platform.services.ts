@@ -2,6 +2,7 @@
 
 import { httpClient } from "@/lib/axios/httpClient"
 import { toParams } from "@/lib/queryString"
+import type { ApiResponse } from "@/types/api.types"
 import type { IInviteMail } from "@/types/common.types"
 import type {
     IAgencyInvite,
@@ -32,6 +33,16 @@ export const createPlan = async (payload: Record<string, unknown>) =>
 
 export const updatePlan = async (id: string, payload: Record<string, unknown>) =>
     httpClient.patch<IPlan>(`/platform/plans/${id}`, payload)
+
+// The API moves one plan at a time, so a reorder is a short run of patches in order.
+export const reorderPlans = async (moves: Array<{ id: string; sort_order: number }>): Promise<ApiResponse<IPlan[]>> => {
+    const moved: IPlan[] = []
+    for (const move of moves) {
+        const response = await updatePlan(move.id, { sort_order: move.sort_order })
+        moved.push(response.data)
+    }
+    return { success: true, message: "Order saved", data: moved }
+}
 
 export const getCompanies = async (queryString?: string) =>
     httpClient.get<ICompanyRow[]>("/platform/companies", { params: toParams(queryString) })

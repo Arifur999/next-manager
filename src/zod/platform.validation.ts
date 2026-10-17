@@ -39,13 +39,21 @@ export const planFormZodSchema = z.object({
 
 export type IPlanFormValues = z.infer<typeof planFormZodSchema>
 
-export const planLimitsFormZodSchema = z.object({
+// One plan row on the plans screen: its price, limits, what the pricing page
+// shows, and the features listed against it.
+export const planRowFormZodSchema = z.object({
     price_usd: optionalNonNegative("Price"),
     max_seats: planLimit("Seats"),
     max_projects: planLimit("Projects"),
+    features: z.array(z.string().trim().min(1)),
+    is_public: z.boolean(),
 })
 
-export type IPlanLimitsFormValues = z.infer<typeof planLimitsFormZodSchema>
+export type IPlanRowFormValues = z.infer<typeof planRowFormZodSchema>
+
+export const planMovesServerZodSchema = z
+    .array(z.object({ id: z.string().min(1), sort_order: z.number().int().min(0) }))
+    .min(1, "Nothing to move")
 
 export const subscriptionFormZodSchema = z.object({
     plan_id: z.string().min(1, "Choose a plan"),
@@ -159,10 +167,12 @@ export const createPlanServerZodSchema = planFormZodSchema.transform((values) =>
     price_usd: toNumber(values.price_usd) ?? 0,
 }))
 
-export const updatePlanServerZodSchema = planLimitsFormZodSchema.transform((values) => ({
+export const updatePlanServerZodSchema = planRowFormZodSchema.transform((values) => ({
     price_usd: toNumber(values.price_usd) ?? 0,
     max_seats: toPlanLimit(values.max_seats),
     max_projects: toPlanLimit(values.max_projects),
+    features: values.features,
+    is_public: values.is_public,
 }))
 
 // The form already holds the API's payload.
