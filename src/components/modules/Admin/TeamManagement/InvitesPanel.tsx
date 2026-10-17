@@ -4,6 +4,7 @@ import {
   createInviteAction,
   revokeInviteAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/team-management/_inviteAction"
+import InviteLinkPanel from "@/components/shared/InviteLinkPanel"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import EmptyState from "@/components/shared/state/EmptyState"
 import PanelState from "@/components/shared/state/PanelState"
@@ -13,12 +14,12 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useActionMutation } from "@/hooks/useActionMutation"
+import type { IInviteMail } from "@/types/common.types"
 import type { ITeamInvite } from "@/types/people.types"
 import { useQuery } from "@tanstack/react-query"
 import { format, isPast, parseISO } from "date-fns"
-import { Check, Copy, MailPlus, Trash2 } from "lucide-react"
+import { MailPlus, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { invitesQuery } from "@/queries/people.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -35,7 +36,7 @@ const statusOf = (invite: ITeamInvite) => {
 const InvitesPanel = () => {
   const [email, setEmail] = useState("")
   const [freshLink, setFreshLink] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
+  const [mailed, setMailed] = useState<IInviteMail | null>(null)
   const [revoking, setRevoking] = useState<ITeamInvite | null>(null)
 
   const inviteList = useQuery(invitesQuery())
@@ -51,7 +52,7 @@ const InvitesPanel = () => {
     onSuccess: (result) => {
       if (!result.success) return
       setFreshLink(result.data.join_url)
-      setCopied(false)
+      setMailed(result.data.email)
       setEmail("")
     },
   })
@@ -65,18 +66,6 @@ const InvitesPanel = () => {
 
   const confirmRevoke = async () => {
     if (revoking && (await revokeInvite(revoking.id))) setRevoking(null)
-  }
-
-  const copy = async () => {
-    if (!freshLink) return
-
-    try {
-      await navigator.clipboard.writeText(freshLink)
-      setCopied(true)
-    } catch {
-      // Clipboard access is often refused; the link is on screen to copy by hand.
-      toast.message("Copy it from the box above")
-    }
   }
 
   return (
@@ -118,24 +107,15 @@ const InvitesPanel = () => {
         </form>
 
         {freshLink && (
-          <div className="border-t bg-muted/40 px-5 py-4">
-            <p className="text-sm font-medium">Send them this link</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              This is the only time it can be read. If you lose it, revoke the invite and
-              create another.
-            </p>
-
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Input readOnly value={freshLink} className="min-w-64 flex-1 font-mono text-xs" />
-              <Button type="button" variant="outline" onClick={copy}>
-                {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-                {copied ? "Copied" : "Copy"}
-              </Button>
-              <Button type="button" variant="ghost" onClick={() => setFreshLink(null)}>
-                Done
-              </Button>
-            </div>
-          </div>
+          <InviteLinkPanel
+            key={freshLink}
+            link={freshLink}
+            mail={mailed}
+            onDone={() => {
+              setFreshLink(null)
+              setMailed(null)
+            }}
+          />
         )}
       </Card>
 

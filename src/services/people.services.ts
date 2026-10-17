@@ -2,6 +2,7 @@
 
 import { httpClient } from "@/lib/axios/httpClient"
 import { toParams } from "@/lib/queryString"
+import type { IInviteMail } from "@/types/common.types"
 import type {
     IAttendance,
     IDepartment,
@@ -76,7 +77,7 @@ export const deleteDepartment = async (id: string) =>
 
 /** Returns `join_url` — the only time the token is ever readable. */
 export const createInvite = async (payload: Record<string, unknown>) =>
-    httpClient.post<{ invite: ITeamInvite; join_url: string }>("/team-invites", payload)
+    httpClient.post<{ invite: ITeamInvite; join_url: string; email: IInviteMail }>("/team-invites", payload)
 
 export const getInvites = async () =>
     httpClient.get<ITeamInvite[]>("/team-invites")
