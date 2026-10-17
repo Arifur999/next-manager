@@ -1,5 +1,6 @@
 "use client"
 
+import EditTargetValueForm from "@/components/modules/Admin/Targets/EditTargetValueForm"
 import { specOf } from "@/components/modules/Admin/Targets/targetMetrics"
 import EmptyState from "@/components/shared/state/EmptyState"
 import PanelState from "@/components/shared/state/PanelState"
@@ -7,21 +8,24 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatUsd } from "@/lib/currency"
+import { formatDay } from "@/lib/dates"
 import type { IKpiTarget } from "@/types/insights.types"
+import type { IKpiTargetValueFormValues } from "@/zod/insights.validation"
 import type { UseQueryResult } from "@tanstack/react-query"
-import { Target as TargetIcon, Trash2 } from "lucide-react"
+import { Pencil, Target as TargetIcon, Trash2 } from "lucide-react"
+import { useState } from "react"
 
-const TargetList = ({
-  targets,
-  query,
-  onDelete,
-  isRemoving,
-}: {
+type TargetListProps = {
   targets: IKpiTarget[]
   query: Pick<UseQueryResult, "isError" | "isLoading" | "isFetching" | "refetch">
   onDelete: (target: IKpiTarget) => void
-  isRemoving: boolean
-}) => {
+  onSave: (target: IKpiTarget, values: IKpiTargetValueFormValues) => Promise<boolean>
+  isBusy: boolean
+}
+
+const TargetList = ({ targets, query, onDelete, onSave, isBusy }: TargetListProps) => {
+  const [editingId, setEditingId] = useState<string | null>(null)
+
   const formatValue = (target: IKpiTarget) => {
     const { unit } = specOf(target.metric)
     if (unit === "$") return formatUsd(target.target_value)
@@ -63,19 +67,41 @@ const TargetList = ({
                   </span>
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
-                  {target.period} from {target.period_start.slice(0, 10)}
+                  {target.period} from {formatDay(target.period_start.slice(0, 10))}
                 </p>
               </div>
 
               <div className="flex shrink-0 items-center gap-3">
-                <Badge variant="outline" className="tabular-nums">
-                  {formatValue(target)}
-                </Badge>
+                {editingId === target.id ? (
+                  <EditTargetValueForm
+                    target={target}
+                    label={`New target for ${specOf(target.metric).label}`}
+                    isPending={isBusy}
+                    onSave={(values) => onSave(target, values)}
+                    onDone={() => setEditingId(null)}
+                  />
+                ) : (
+                  <>
+                    <Badge variant="outline" className="tabular-nums">
+                      {formatValue(target)}
+                    </Badge>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={isBusy}
+                      onClick={() => setEditingId(target.id)}
+                    >
+                      <Pencil className="size-3.5" />
+                      <span className="sr-only">Change the target</span>
+                    </Button>
+                  </>
+                )}
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
-                  disabled={isRemoving}
+                  disabled={isBusy}
                   onClick={() => onDelete(target)}
                 >
                   <Trash2 className="size-3.5" />

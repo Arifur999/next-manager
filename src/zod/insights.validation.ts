@@ -33,3 +33,13 @@ export const setKpiTargetServerZodSchema = kpiTargetFormZodSchema
         target_value: Number(values.target_value),
         user_id: values.owner === AGENCY_WIDE_TARGET ? null : values.owner,
     }))
+
+// Only the figure moves: metric, period and its start identify the target, and
+// the API refuses to re-point one at another period.
+export const kpiTargetValueFormZodSchema = kpiTargetFormZodSchema.pick({ target_value: true })
+
+export type IKpiTargetValueFormValues = z.infer<typeof kpiTargetValueFormZodSchema>
+
+export const updateKpiTargetServerZodSchema = kpiTargetValueFormZodSchema.transform((values) => ({
+    target_value: Number(values.target_value),
+}))

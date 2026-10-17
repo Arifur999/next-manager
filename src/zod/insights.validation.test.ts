@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { AGENCY_WIDE_TARGET, setKpiTargetServerZodSchema } from "./insights.validation"
+import { AGENCY_WIDE_TARGET, setKpiTargetServerZodSchema, updateKpiTargetServerZodSchema } from "./insights.validation"
 
 describe("setKpiTargetServerZodSchema", () => {
     const target = {
@@ -43,5 +43,18 @@ describe("setKpiTargetServerZodSchema", () => {
 
     it("requires the period start the browser worked out", () => {
         expect(setKpiTargetServerZodSchema.safeParse({ ...target, period_start: "" }).success).toBe(false)
+    })
+})
+
+describe("updateKpiTargetServerZodSchema", () => {
+    it("sends the new figure and nothing that identifies the target", () => {
+        expect(updateKpiTargetServerZodSchema.parse({ target_value: " 75 ", metric: "revenue_usd" })).toEqual({
+            target_value: 75,
+        })
+    })
+
+    it("refuses a blank or negative figure", () => {
+        expect(updateKpiTargetServerZodSchema.safeParse({ target_value: "" }).success).toBe(false)
+        expect(updateKpiTargetServerZodSchema.safeParse({ target_value: "-5" }).success).toBe(false)
     })
 })

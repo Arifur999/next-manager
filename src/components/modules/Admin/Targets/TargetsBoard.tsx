@@ -3,6 +3,7 @@
 import {
   deleteTargetAction,
   setTargetAction,
+  updateTargetAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/targets/_action"
 import TargetForm from "@/components/modules/Admin/Targets/TargetForm"
 import TargetList from "@/components/modules/Admin/Targets/TargetList"
@@ -15,7 +16,7 @@ import { useState } from "react"
 import { usersListQuery } from "@/queries/people.queries"
 import { kpiTargetsListQuery } from "@/queries/insights.queries"
 import { queryKeys } from "@/lib/queryKeys"
-import type { IKpiTargetFormValues } from "@/zod/insights.validation"
+import type { IKpiTargetFormValues, IKpiTargetValueFormValues } from "@/zod/insights.validation"
 
 // Every dashboard scores against the targets, so they go stale with them.
 const TARGET_KEYS = [queryKeys.kpiTargets.all, queryKeys.kpi.all]
@@ -35,6 +36,13 @@ const TargetsBoard = () => {
   const { run: saveTarget, isPending: isSaving } = useActionMutation({
     action: setTargetAction,
     successMessage: "Target set",
+    invalidateKeys: TARGET_KEYS,
+    refresh: false,
+  })
+
+  const { run: updateTarget, isPending: isUpdating } = useActionMutation({
+    action: ({ id, values }: { id: string; values: IKpiTargetValueFormValues }) => updateTargetAction(id, values),
+    successMessage: "Target changed",
     invalidateKeys: TARGET_KEYS,
     refresh: false,
   })
@@ -64,7 +72,8 @@ const TargetsBoard = () => {
         targets={targets}
         query={targetsQuery}
         onDelete={setTargetToDelete}
-        isRemoving={isRemoving}
+        onSave={(target, values) => updateTarget({ id: target.id, values })}
+        isBusy={isRemoving || isUpdating}
       />
 
       <ConfirmDialog
