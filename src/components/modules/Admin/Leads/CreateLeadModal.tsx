@@ -16,34 +16,14 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { LEAD_STAGES, type LeadStage } from "@/types/crm.types"
+import { leadFormZodSchema, type ILeadFormValues } from "@/zod/crm.validation"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
-import { z } from "zod"
 import { leadSourcesQuery } from "@/queries/crm.queries"
 import { queryKeys } from "@/lib/queryKeys"
-
-const leadFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  company: z.string().optional(),
-  email: z.string().email("Enter a valid email address").optional().or(z.literal("")),
-  phone: z.string().optional(),
-  // An id now, not typed text - see LeadSource on the server for why. Empty
-  // string means nobody said, which is a real answer.
-  source_id: z.string().optional(),
-  stage: z.enum(LEAD_STAGES),
-  estimated_value_usd: z
-    .string()
-    .optional()
-    .refine(
-      (value) => !value || (Number.isFinite(Number(value)) && Number(value) >= 0),
-      "Estimated value must be a number that is not negative",
-    ),
-})
-
-type LeadFormValues = z.infer<typeof leadFormSchema>
 
 // Only the open stages get a column. Won and lost are outcomes, not places work
 // sits, and giving them columns would make the board grow forever.
@@ -60,7 +40,7 @@ const CreateLeadModal = () => {
   )
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: LeadFormValues) =>
+    mutationFn: (values: ILeadFormValues) =>
       createLeadAction({
         ...values,
         estimated_value_usd: values.estimated_value_usd ? Number(values.estimated_value_usd) : 0,
@@ -70,7 +50,7 @@ const CreateLeadModal = () => {
       }),
   })
 
-  const defaultValues: LeadFormValues = {
+  const defaultValues: ILeadFormValues = {
     name: "",
     company: "",
     email: "",
@@ -135,7 +115,7 @@ const CreateLeadModal = () => {
           }}
           className="space-y-5"
         >
-          <form.Field name="name" validators={{ onChange: leadFormSchema.shape.name }}>
+          <form.Field name="name" validators={{ onChange: leadFormZodSchema.shape.name }}>
             {(field) => <AppField field={field} label="Name" disabled={isPending} />}
           </form.Field>
 
@@ -164,7 +144,7 @@ const CreateLeadModal = () => {
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
-            <form.Field name="email" validators={{ onChange: leadFormSchema.shape.email }}>
+            <form.Field name="email" validators={{ onChange: leadFormZodSchema.shape.email }}>
               {(field) => <AppField field={field} label="Email" type="email" disabled={isPending} />}
             </form.Field>
 

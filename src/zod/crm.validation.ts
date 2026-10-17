@@ -1,4 +1,6 @@
+import { LEAD_STAGES } from "@/types/crm.types"
 import { z } from "zod"
+import { optionalNonNegative } from "./formFields"
 
 export const clientFormZodSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -20,6 +22,20 @@ export const clientLinkFormZodSchema = z.object({
 })
 
 export type IClientLinkFormValues = z.infer<typeof clientLinkFormZodSchema>
+
+export const leadFormZodSchema = z.object({
+    name: z.string().min(1, "Name is required"),
+    company: z.string().optional(),
+    email: z.string().email("Enter a valid email address").optional().or(z.literal("")),
+    phone: z.string().optional(),
+    // An id, not typed text: see LeadSource on the server. Blank means nobody
+    // said where it came from, which is a real answer.
+    source_id: z.string().optional(),
+    stage: z.enum(LEAD_STAGES),
+    estimated_value_usd: optionalNonNegative("Estimated value"),
+})
+
+export type ILeadFormValues = z.infer<typeof leadFormZodSchema>
 
 // Server schemas: the form's values checked again on the server and keyed as
 // the API's request schema expects. The API drops unknown keys without a word,
