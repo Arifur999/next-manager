@@ -264,6 +264,9 @@ export const safeRedirect = (raw: string | null | undefined, role: UserRole): st
     }
 
     if (url.origin !== origin) return fallback;
+    // Dot segments are resolved after the checks above: "/.//evil.example"
+    // normalises to "//evil.example", which a browser reads as another host.
+    if (url.pathname.startsWith("//")) return fallback;
     if (isAuthRoute(url.pathname)) return fallback;
     if (!canRoleReach(url.pathname, role)) return fallback;
     return `${url.pathname}${url.search}${url.hash}`;

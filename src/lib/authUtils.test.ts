@@ -9,6 +9,13 @@ describe("safeRedirect", () => {
         },
     );
 
+    it.each(["/.//evil.example", "/..//evil.example", "/%2e//evil.example", "/a/..//evil.example/admin"])(
+        "rejects %s, which normalises to a protocol-relative URL",
+        (raw) => {
+            expect(safeRedirect(raw, "admin")).toBe("/admin/dashboard");
+        },
+    );
+
     it("rejects auth routes", () => {
         expect(safeRedirect("/login", "admin")).toBe("/admin/dashboard");
     });
@@ -21,6 +28,10 @@ describe("safeRedirect", () => {
         expect(safeRedirect("/admin/dashboard/clients?status=active", "sales")).toBe(
             "/admin/dashboard/clients?status=active",
         );
+    });
+
+    it("sends the platform owner to the console page they asked for", () => {
+        expect(safeRedirect("/platform/plans", "super_admin")).toBe("/platform/plans");
     });
 
     it("falls back on a missing redirect", () => {
