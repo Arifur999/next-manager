@@ -4,6 +4,7 @@ import {
   createTemplateAction,
   deleteTemplateAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/services/_action"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import EmptyState from "@/components/shared/state/EmptyState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Badge } from "@/components/ui/badge"
@@ -14,11 +15,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { formatUsd } from "@/lib/currency"
 import { useActionMutation } from "@/hooks/useActionMutation"
+import type { IServiceTemplate } from "@/types/catalog.types"
 import { serviceTemplateFormZodSchema, type IServiceTemplateFormValues } from "@/zod/catalog.validation"
 import { useForm, useStore } from "@tanstack/react-form"
 import { useQuery } from "@tanstack/react-query"
 import { Boxes, Trash2 } from "lucide-react"
 import Link from "next/link"
+import { useState } from "react"
 import { serviceTemplatesQuery, servicesListQuery } from "@/queries/catalog.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -41,6 +44,8 @@ const withPick = (quantities: Record<string, number>, serviceId: string, isPicke
  * two answers to what the client owes.
  */
 const TemplatesBoard = () => {
+  const [removing, setRemoving] = useState<IServiceTemplate | null>(null)
+
   const { data, isLoading } = useQuery(serviceTemplatesQuery())
   const { data: serviceData } = useQuery(servicesListQuery())
 
@@ -54,7 +59,7 @@ const TemplatesBoard = () => {
     refresh: false,
   })
 
-  const { run: removePackage } = useActionMutation({
+  const { run: removePackage, isPending: isRemoving } = useActionMutation({
     action: deleteTemplateAction,
     successMessage: "Package removed",
     invalidateKeys: [queryKeys.serviceTemplates.all],
@@ -73,6 +78,10 @@ const TemplatesBoard = () => {
     form.store,
     (state) => state.values.name.trim() === "" || Object.keys(state.values.quantities).length === 0,
   )
+
+  const confirmRemove = async () => {
+    if (removing && (await removePackage(removing.id))) setRemoving(null)
+  }
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)]">
@@ -214,7 +223,7 @@ const TemplatesBoard = () => {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => void removePackage(template.id)}
+                      onClick={() => setRemoving(template)}
                       aria-label={`Delete ${template.name}`}
                     >
                       <Trash2 className="size-4" />
@@ -236,6 +245,25 @@ const TemplatesBoard = () => {
           </ul>
         )}
       </Card>
+
+      <ConfirmDialog
+        open={removing !== null}
+        onOpenChange={(open) => {
+          if (!open) setRemoving(null)
+        }}
+        title="Remove this package?"
+        description={
+          <>
+            This removes the <span className="font-medium text-foreground">{removing?.name}</span>{" "}
+            package. Invoices already raised from it keep their own lines, so nothing else changes.
+          </>
+        }
+        variant="destructive"
+        confirmLabel="Remove"
+        pendingLabel="Removing..."
+        isPending={isRemoving}
+        onConfirm={() => void confirmRemove()}
+      />
     </div>
   )
 }
