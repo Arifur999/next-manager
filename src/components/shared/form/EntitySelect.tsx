@@ -21,7 +21,7 @@ type EntitySelectProps<TValue extends string> = {
   label: string
   value: string
   onChange: (value: TValue) => void
-  options: SelectOption<TValue>[]
+  options: readonly SelectOption<TValue>[]
   placeholder?: string
   disabled?: boolean
   /** Shown under the field — used to explain a currency restriction. */
