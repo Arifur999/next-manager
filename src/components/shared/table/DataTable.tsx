@@ -1,6 +1,5 @@
 "use client";
 
-import { pageCountOf } from "@/types/api.types";
 import DataTableContent from "./DataTableContent";
 import DataTablePagination from "./DataTablePagination";
 import DataTableToolbar from "./DataTableToolbar";
@@ -23,7 +22,6 @@ const DataTable = <TData,>(props: DataTableProps<TData>) => {
   const isRefreshing = isFetching && !isLoading;
 
   const totalRows = pagination ? (meta?.total ?? 0) : table.getPrePaginationRowModel().rows.length;
-  const totalPages = pagination ? pageCountOf(meta) : table.getPageCount();
   // Lists that fit on one page at the smallest size never show the pager.
   const showPagination = !isLoading && !isError && totalRows > DEFAULT_PAGE_SIZE;
 
@@ -56,7 +54,7 @@ const DataTable = <TData,>(props: DataTableProps<TData>) => {
         />
 
         {showPagination && (
-          <DataTablePagination table={table} totalPages={totalPages} totalRows={totalRows} isLoading={isFetching} />
+          <DataTablePagination table={table} totalRows={totalRows} />
         )}
       </div>
     </div>
