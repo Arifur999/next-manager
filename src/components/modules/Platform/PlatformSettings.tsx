@@ -14,13 +14,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IPlatformSettings } from "@/types/platform.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { formatDistanceToNow, parseISO } from "date-fns"
 import { CircleAlert, CircleCheck, Mail } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
-import { toast } from "sonner"
 import { platformSettingsQuery } from "@/queries/platform.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -57,8 +57,6 @@ const PlatformSettings = () => {
 }
 
 const SettingsForm = ({ settings }: { settings: IPlatformSettings }) => {
-  const queryClient = useQueryClient()
-
   const [form, setForm] = useState({
     product_name: settings.product_name,
     support_email: settings.support_email,
@@ -66,16 +64,11 @@ const SettingsForm = ({ settings }: { settings: IPlatformSettings }) => {
     default_trial_days: String(settings.default_trial_days),
   })
 
-  const { mutate: save, isPending } = useMutation({
-    mutationFn: () => updateSettingsAction(form),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not save the settings")
-        return
-      }
-      toast.success("Settings saved")
-      void queryClient.invalidateQueries({ queryKey: queryKeys.platformSettings.all })
-    },
+  const { run: saveSettings, isPending } = useActionMutation({
+    action: updateSettingsAction,
+    successMessage: "Settings saved",
+    invalidateKeys: [queryKeys.platformSettings.all],
+    refresh: false,
   })
 
   const smtp = settings.smtp
@@ -255,7 +248,7 @@ const SettingsForm = ({ settings }: { settings: IPlatformSettings }) => {
       </Card>
 
       <div className="flex flex-wrap items-center gap-3 lg:col-span-2">
-        <Button onClick={() => save()} disabled={isPending}>
+        <Button onClick={() => void saveSettings(form)} disabled={isPending}>
           Save settings
         </Button>
         <span className="text-xs text-muted-foreground">
