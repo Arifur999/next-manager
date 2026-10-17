@@ -33,6 +33,7 @@ const PayoutsTable = () => {
         data={payouts}
         columns={payoutsColumns}
         tableId="payouts"
+        exportFileName="payouts"
         {...toTableQueryProps(payoutsQuery)}
         emptyMessage="No payouts recorded yet."
         toolbarAction={<RecordPayoutModal />}

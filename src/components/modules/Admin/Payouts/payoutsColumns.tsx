@@ -14,6 +14,7 @@ export const payoutsColumns: ColumnDef<ITeamPayout>[] = [
   {
     id: "member",
     header: "Member",
+    meta: { exportValue: (payout) => payout.user?.full_name },
     enableSorting: false,
     cell: ({ row }) => (
       <div className="min-w-0">
@@ -28,6 +29,7 @@ export const payoutsColumns: ColumnDef<ITeamPayout>[] = [
     id: "type",
     accessorKey: "type",
     header: "Type",
+    meta: { exportValue: (payout) => payout.type.replace(/_/g, " ") },
     cell: ({ row }) => (
       <Badge variant="outline" className="capitalize">
         {row.original.type.replace(/_/g, " ")}
@@ -45,6 +47,7 @@ export const payoutsColumns: ColumnDef<ITeamPayout>[] = [
   {
     id: "account",
     header: "Paid from",
+    meta: { exportValue: (payout) => payout.account?.name },
     enableSorting: false,
     cell: ({ row }) => (
       <span className="text-sm text-muted-foreground">{row.original.account?.name ?? "N/A"}</span>
