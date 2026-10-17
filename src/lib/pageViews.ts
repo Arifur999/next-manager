@@ -30,8 +30,14 @@ const TASK_VIEWS: ViewTab[] = [
 // question a seller actually has, and only theirs to ask.
 const SALES_TASK_VIEW: ViewTab = { label: "My clients", href: "/admin/dashboard/tasks?client_owner=me" }
 
-export const taskViewsFor = (role: UserRole): ViewTab[] =>
-  role === "sales" ? [...TASK_VIEWS, SALES_TASK_VIEW] : TASK_VIEWS
+// Work nobody holds yet: triage for the two roles that hand work out.
+const UNASSIGNED_TASK_VIEW: ViewTab = { label: "Unassigned", href: "/admin/dashboard/tasks?unassigned=true" }
+
+export const taskViewsFor = (role: UserRole): ViewTab[] => {
+  if (role === "sales") return [...TASK_VIEWS, SALES_TASK_VIEW]
+  if (role === "admin" || role === "project_manager") return [...TASK_VIEWS, UNASSIGNED_TASK_VIEW]
+  return TASK_VIEWS
+}
 
 // Somebody's own tasks. "Upcoming" is a seven-day window decided by the server.
 export const MY_TASK_VIEWS: ViewTab[] = [

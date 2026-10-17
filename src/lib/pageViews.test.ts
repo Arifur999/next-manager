@@ -24,6 +24,13 @@ describe("taskViewsFor", () => {
     expect(taskViewsFor("sales").map((tab) => tab.label)).toContain("My clients")
     expect(taskViewsFor("admin").map((tab) => tab.label)).not.toContain("My clients")
   })
+
+  it("offers unassigned work only to the roles that hand it out", () => {
+    expect(taskViewsFor("admin").map((tab) => tab.label)).toContain("Unassigned")
+    expect(taskViewsFor("project_manager").map((tab) => tab.label)).toContain("Unassigned")
+    expect(taskViewsFor("operations").map((tab) => tab.label)).not.toContain("Unassigned")
+    expect(taskViewsFor("sales").map((tab) => tab.label)).not.toContain("Unassigned")
+  })
 })
 
 describe("projectViews", () => {

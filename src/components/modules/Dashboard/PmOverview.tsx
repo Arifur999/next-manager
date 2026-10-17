@@ -6,11 +6,12 @@ import EmptyState from "@/components/shared/state/EmptyState"
 import PanelState from "@/components/shared/state/PanelState"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { useQuery } from "@tanstack/react-query"
-import { format, isBefore, parseISO, startOfToday } from "date-fns"
+import { formatDay, toDate } from "@/lib/dates"
+import { isBefore, startOfToday } from "date-fns"
 import { AlertTriangle, CalendarDays, CheckCircle2, FolderKanban, ListChecks, UserCheck, UsersRound } from "lucide-react"
 import Link from "next/link"
 import { projectsListQuery } from "@/queries/project.queries"
-import { taskReportQuery, workloadQuery } from "@/queries/work.queries"
+import { taskReportQuery, tasksListQuery, workloadQuery } from "@/queries/work.queries"
 
 /**
  * What a project manager opens the morning with.
@@ -30,6 +31,8 @@ const PmOverview = () => {
   const active = useCount(projectsListQuery("status=Active&limit=1"))
   const review = useCount(projectsListQuery("status=Review&limit=1"))
   const completed = useCount(projectsListQuery("status=Completed&limit=1"))
+  // Counted from the list the tile opens, so the two cannot disagree.
+  const tasksInReview = useCount(tasksListQuery("status=In+review&limit=1"))
 
   const reportQuery = useQuery(taskReportQuery())
   const reportData = reportQuery.data
@@ -53,9 +56,9 @@ const PmOverview = () => {
   const dueQuery = useQuery(projectsListQuery("status=Active&limit=50"))
   const dueData = dueQuery.data
   const today = startOfToday()
-  const deadlines = ((dueData?.data ?? []))
-    .filter((project) => project.end_date)
-    .sort((a, b) => parseISO(a.end_date!).getTime() - parseISO(b.end_date!).getTime())
+  const deadlines = (dueData?.data ?? [])
+    .flatMap((project) => (project.end_date ? [{ project, due: toDate(project.end_date) }] : []))
+    .sort((a, b) => a.due.getTime() - b.due.getTime())
     .slice(0, 5)
 
   return (
@@ -107,7 +110,7 @@ const PmOverview = () => {
           },
           {
             label: "In review",
-            ...queryFields(reportQuery, report?.by_status.find((row) => row.status?.name === "In review")?.count),
+            ...countFields(tasksInReview),
             href: "/admin/dashboard/tasks?status=In review",
             icon: <UserCheck className="size-5" />,
             tone: 2,
@@ -159,7 +162,7 @@ const PmOverview = () => {
           {
             label: "Unassigned tasks",
             ...queryFields(reportQuery, report?.unassigned_count),
-            href: "/admin/dashboard/tasks",
+            href: "/admin/dashboard/tasks?unassigned=true",
             hint: "Nobody is doing these",
             icon: <ListChecks className="size-5" />,
             tone: 4,
@@ -186,8 +189,7 @@ const PmOverview = () => {
           }
         >
           <ul className="divide-y">
-            {deadlines.map((project) => {
-              const due = parseISO(project.end_date!)
+            {deadlines.map(({ project, due }) => {
               const late = isBefore(due, today)
 
               return (
@@ -207,7 +209,7 @@ const PmOverview = () => {
                         late ? "text-destructive" : "text-muted-foreground"
                       }`}
                     >
-                      {format(due, "d MMM yyyy")}
+                      {formatDay(due)}
                       {late ? " · late" : ""}
                     </span>
                   </Link>

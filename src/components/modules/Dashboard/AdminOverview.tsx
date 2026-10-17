@@ -154,7 +154,7 @@ const AdminOverview = () => {
           {
             label: "Unassigned tasks",
             ...queryFields(reportQuery, report?.unassigned_count),
-            href: "/admin/dashboard/tasks",
+            href: "/admin/dashboard/tasks?unassigned=true",
             hint: "Nobody is doing these",
             icon: <ListChecks className="size-5" />,
             tone: 2,
