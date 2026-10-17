@@ -3,6 +3,7 @@
 import { updateOrganizationAction } from "@/app/(dashboardLayout)/admin/dashboard/business/_action"
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
+import ErrorState from "@/components/shared/state/ErrorState"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import type { IOrganization } from "@/types/workspace.types"
 import { useActionMutation } from "@/hooks/useActionMutation"
@@ -102,9 +103,27 @@ const OrganizationForm = ({ organization }: { organization: IOrganization }) => 
 }
 
 const BusinessProfile = () => {
-  const { data } = useQuery(organizationQuery())
+  const { data, isLoading, isFetching, refetch } = useQuery(organizationQuery())
 
   const organization = data?.data
+
+  const renderDetails = () => {
+    if (isLoading) return <div className="h-64 animate-pulse bg-muted/40" />
+
+    if (!organization) {
+      return (
+        <ErrorState
+          message="The business details did not load."
+          onRetry={() => void refetch()}
+          isRetrying={isFetching}
+        />
+      )
+    }
+
+    // Keyed on the id so the form seeds once the fetch lands rather than
+    // rendering empty and never picking the values up.
+    return <OrganizationForm key={organization.id} organization={organization} />
+  }
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
@@ -116,13 +135,7 @@ const BusinessProfile = () => {
         </p>
       </CardHeader>
 
-      {organization ? (
-        // Keyed on the id so the form seeds once the fetch lands rather than
-        // rendering empty and never picking the values up.
-        <OrganizationForm key={organization.id} organization={organization} />
-      ) : (
-        <div className="h-64 animate-pulse bg-muted/40" />
-      )}
+      {renderDetails()}
     </Card>
   )
 }
