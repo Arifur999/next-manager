@@ -5,6 +5,7 @@ import {
   markAllNotificationsReadAction,
   markNotificationReadAction,
 } from "@/app/(dashboardLayout)/_notificationAction"
+import RelativeTime from "@/components/shared/RelativeTime"
 import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -12,7 +13,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { useQuery } from "@tanstack/react-query"
-import { formatDistanceToNow, parseISO } from "date-fns"
 import { Bell } from "lucide-react"
 import { useState } from "react"
 import { notificationsQuery, unreadCountQuery } from "@/queries/workspace.queries"
@@ -142,9 +142,7 @@ const NotificationBell = () => {
 
                   <div className="mt-2 flex items-center justify-between gap-2">
                     <span className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(parseISO(notification.published_at), {
-                        addSuffix: true,
-                      })}
+                      <RelativeTime value={notification.published_at} />
                     </span>
                     {!notification.read_at && (
                       <Button
