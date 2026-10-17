@@ -1,28 +1,11 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
+import { requireId, runAction, runValidatedAction } from "@/lib/runAction"
 import { createPayment, deletePayment } from "@/services/billing.services"
-import type { IPayment } from "@/types/billing.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+import { createPaymentServerZodSchema } from "@/zod/billing.validation"
 
-export const createPaymentAction = async (
-    payload: Record<string, unknown>,
-): Promise<ApiResponse<IPayment> | ApiErrorResponse> => {
-    try {
-        return await createPayment(payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to record payment") }
-    }
-}
+export const createPaymentAction = async (values: unknown) =>
+    runValidatedAction(createPaymentServerZodSchema, values, "Failed to record payment", createPayment)
 
-export const deletePaymentAction = async (
-    id: string,
-): Promise<ApiResponse<{ message: string }> | ApiErrorResponse> => {
-    if (!id) return { success: false, message: "Invalid payment id" }
-
-    try {
-        return await deletePayment(id)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Failed to delete payment") }
-    }
-}
+export const deletePaymentAction = async (id: string) =>
+    requireId(id, "payment") ?? runAction("Failed to delete payment", () => deletePayment(id))

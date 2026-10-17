@@ -59,3 +59,15 @@ export const paymentFormZodSchema = z.object({
 })
 
 export type IPaymentFormValues = z.infer<typeof paymentFormZodSchema>
+
+export const createPaymentServerZodSchema = paymentFormZodSchema.transform((values) => ({
+    client_id: values.client_id,
+    project_id: values.project_id || null,
+    invoice_id: values.invoice_id || null,
+    date: values.date,
+    amount_usd: Number(values.amount_usd),
+    reporting_rate: toNumber(values.reporting_rate),
+    account_id: values.account_id,
+    reference: values.reference,
+    notes: values.notes,
+}))

@@ -18,7 +18,6 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatBdt, formatRate } from "@/lib/currency"
 import { paymentFormZodSchema, type IPaymentFormValues } from "@/zod/billing.validation"
-import { toNumber } from "@/zod/formFields"
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
@@ -65,13 +64,7 @@ const RecordPaymentModal = () => {
   const usdAccounts = accounts.filter((account) => account.currency === "USD" && account.is_active)
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IPaymentFormValues) =>
-      createPaymentAction({
-        ...values,
-        project_id: values.project_id || null,
-        amount_usd: toNumber(values.amount_usd),
-        reporting_rate: toNumber(values.reporting_rate),
-      }),
+    mutationFn: (values: IPaymentFormValues) => createPaymentAction(values),
   })
 
   const form = useForm({
