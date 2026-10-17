@@ -1,15 +1,5 @@
 import { z } from "zod"
-
-// The API's rule for any password somebody chooses: sign-up, a change, a reset,
-// an invite accepted.
-export const newPassword = z
-  .string()
-  .min(8, "Password must be at least 8 characters")
-  .regex(/[A-Za-z]/, "Password must contain a letter")
-  .regex(/[0-9]/, "Password must contain a number")
-
-// "Email is required" when empty, then "Enter a valid email address".
-export const requiredEmail = z.string().min(1, "Email is required").pipe(z.email("Enter a valid email address"))
+import { newPassword, requiredEmail } from "./formFields"
 
 export const loginFormZodSchema = z.object({
   email: requiredEmail,
