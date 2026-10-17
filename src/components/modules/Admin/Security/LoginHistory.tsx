@@ -1,14 +1,12 @@
 "use client"
 
-import RelativeTime from "@/components/shared/RelativeTime"
-import EmptyState from "@/components/shared/state/EmptyState"
-import PanelState from "@/components/shared/state/PanelState"
-import { Badge } from "@/components/ui/badge"
+import { loginHistoryColumns } from "@/components/modules/Admin/Security/loginHistoryColumns"
+import DataTable from "@/components/shared/table/DataTable"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
+import { toTableQueryProps } from "@/lib/table/queryProps"
 import { useQuery } from "@tanstack/react-query"
-import { format, parseISO } from "date-fns"
-import { ShieldAlert, ShieldCheck } from "lucide-react"
+import { ShieldAlert } from "lucide-react"
 import { useState } from "react"
 import { loginEventsListQuery } from "@/queries/workspace.queries"
 
@@ -90,68 +88,15 @@ const LoginHistory = () => {
           </div>
         </CardHeader>
 
-        <PanelState
-          query={loginEvents}
-          errorMessage="The sign-in history did not load."
-          isEmpty={events.length === 0}
-          empty={
-            <EmptyState icon={ShieldCheck}>
-              {filter === ALL ? "Nothing recorded yet." : "Nothing matches that."}
-            </EmptyState>
-          }
-        >
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[46rem] text-sm">
-              <thead>
-                <tr className="border-b text-left text-xs text-muted-foreground">
-                  <th className="px-5 py-2.5 font-medium">When</th>
-                  <th className="px-5 py-2.5 font-medium">Who</th>
-                  <th className="px-5 py-2.5 font-medium">From</th>
-                  <th className="px-5 py-2.5 font-medium">Result</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {events.map((event) => (
-                  <tr key={event.id}>
-                    <td className="whitespace-nowrap px-5 py-3">
-                      <p>
-                        <RelativeTime value={event.created_at} />
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(parseISO(event.created_at), "d MMM, HH:mm")}
-                      </p>
-                    </td>
-
-                    <td className="px-5 py-3">
-                      {/* The name when we know it, the address always. A failure
-                          on an account that was since removed still has to say
-                          which address was tried. */}
-                      <p>{event.user?.full_name ?? event.email}</p>
-                      {event.user && (
-                        <p className="text-xs text-muted-foreground">{event.email}</p>
-                      )}
-                    </td>
-
-                    <td className="px-5 py-3">
-                      <p className="font-mono text-xs">{event.ip || "unknown"}</p>
-                      {event.user_agent && (
-                        <p className="max-w-64 truncate text-xs text-muted-foreground">
-                          {event.user_agent}
-                        </p>
-                      )}
-                    </td>
-
-                    <td className="px-5 py-3">
-                      <Badge variant={event.success ? "secondary" : "destructive"}>
-                        {event.success ? "signed in" : "refused"}
-                      </Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </PanelState>
+        <div className="p-4">
+          <DataTable
+            data={events}
+            columns={loginHistoryColumns}
+            tableId="sign-ins"
+            {...toTableQueryProps(loginEvents)}
+            emptyMessage={filter === ALL ? "Nothing recorded yet." : "Nothing matches that."}
+          />
+        </div>
 
         <div className="border-t px-5 py-3 text-xs text-muted-foreground">
           {/* Said plainly rather than buried: this page stores addresses. */}
