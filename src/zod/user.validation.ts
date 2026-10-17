@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { newPassword, requiredEmail } from "./formFields"
 
 // Mirrors the backend's assignableRoles: super_admin is a platform role and
 // cannot be granted from inside a company. admin CAN be granted - a company
@@ -27,13 +28,9 @@ export const toDepartmentId = (value: string | undefined) =>
 
 export const createUserFormZodSchema = z.object({
   full_name: z.string().min(1, "Full name is required"),
-  email: z.string().min(1, "Email is required").pipe(z.email("Enter a valid email address")),
+  email: requiredEmail,
   phone: z.string().optional(),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/[A-Za-z]/, "Password must contain a letter")
-    .regex(/[0-9]/, "Password must contain a number"),
+  password: newPassword,
   role: z.enum(ASSIGNABLE_ROLES, { message: "Choose a role" }),
   department_id: z.string().optional(),
 })
