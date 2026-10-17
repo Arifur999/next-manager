@@ -7,25 +7,13 @@ import {
   deleteShareholderAction,
   updateShareholderAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/shareholders/_action"
+import DistributionFormCard from "@/components/modules/Admin/Loans/DistributionFormCard"
 import DistributionList from "@/components/modules/Admin/Loans/DistributionList"
 import ShareholderFormCard from "@/components/modules/Admin/Loans/ShareholderFormCard"
 import ShareholderList from "@/components/modules/Admin/Loans/ShareholderList"
-import { Button } from "@/components/ui/button"
-import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import type { IShareholder } from "@/types/finance.types"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { useQuery } from "@tanstack/react-query"
-import { format } from "date-fns"
-import { useState } from "react"
 import { accountsQuery, distributionsListQuery, shareholdersQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -40,17 +28,12 @@ const SHAREHOLDER_KEYS = [
 /**
  * Who owns the agency, and what has been paid to them.
  *
- * The two lists are their own components; this holds the forms and the wiring.
+ * The two forms and the two lists are their own components; this holds the wiring.
  * Share percentages are checked on the server against 100 across everybody
  * still active — the refusal names how much the others already hold, so the
  * message says what to do about it rather than only that it failed.
  */
 const ShareholdersBoard = () => {
-  const [shareholderId, setShareholderId] = useState("")
-  const [amount, setAmount] = useState("")
-  const [accountId, setAccountId] = useState("")
-  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"))
-
   const { data, isLoading } = useQuery(shareholdersQuery())
   const { data: distributionData, isLoading: loadingDistributions } = useQuery(distributionsListQuery())
   const { data: accountData } = useQuery(accountsQuery())
@@ -99,110 +82,17 @@ const ShareholdersBoard = () => {
     refresh: false,
   })
 
-  const handlePayOut = async () => {
-    const isPaid = await payDistribution({
-      shareholder_id: shareholderId,
-      date,
-      amount_bdt: amount,
-      account_id: accountId,
-    })
-    if (isPaid) setAmount("")
-  }
-
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
       <div className="space-y-4">
         <ShareholderFormCard onSubmit={addShareholder} isPending={isPending} />
 
-        <Card className="h-fit">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Pay a distribution</CardTitle>
-          </CardHeader>
-
-          <form
-            className="space-y-4 px-6 pb-6"
-            onSubmit={(event) => {
-              event.preventDefault()
-              if (!shareholderId || !accountId || !Number(amount)) return
-              void handlePayOut()
-            }}
-          >
-            <div className="space-y-1.5">
-              <Label htmlFor="distribution-who">Who</Label>
-              <Select
-                value={shareholderId}
-                onValueChange={setShareholderId}
-                disabled={paying}
-              >
-                <SelectTrigger id="distribution-who" className="w-full">
-                  <SelectValue placeholder="Choose" />
-                </SelectTrigger>
-                <SelectContent>
-                  {shareholders
-                    .filter((shareholder) => shareholder.is_active)
-                    .map((shareholder) => (
-                      <SelectItem key={shareholder.id} value={shareholder.id}>
-                        {shareholder.name} ({shareholder.share_pct}%)
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="distribution-amount">Amount</Label>
-              <Input
-                id="distribution-amount"
-                type="number"
-                min={1}
-                step="1"
-                value={amount}
-                onChange={(event) => setAmount(event.target.value)}
-                disabled={paying}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="distribution-date">Date</Label>
-              <Input
-                id="distribution-date"
-                type="date"
-                value={date}
-                onChange={(event) => setDate(event.target.value)}
-                disabled={paying}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="distribution-account">Paid from</Label>
-              <Select value={accountId} onValueChange={setAccountId} disabled={paying}>
-                <SelectTrigger id="distribution-account" className="w-full">
-                  <SelectValue placeholder="Choose" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts.map((account) => (
-                    <SelectItem key={account.id} value={account.id}>
-                      {account.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button
-              type="submit"
-              disabled={paying || !shareholderId || !accountId || !Number(amount)}
-              className="w-full"
-            >
-              Pay it
-            </Button>
-
-            <p className="text-xs text-muted-foreground">
-              This moves money out of that account, but it is not a cost — your profit for
-              the month does not change because you paid yourself.
-            </p>
-          </form>
-        </Card>
+        <DistributionFormCard
+          shareholders={shareholders}
+          accounts={accounts}
+          onSubmit={payDistribution}
+          isPending={paying}
+        />
       </div>
 
       <div className="space-y-4">
