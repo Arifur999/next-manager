@@ -3,6 +3,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { kpiQuery } from "@/queries/insights.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Team report",
@@ -16,12 +17,9 @@ const TeamReportPage = async () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Team</h1>
-        <p className="text-sm text-muted-foreground">
-          What each team spent its time on, and what it cost. Role cannot answer this — your designers and developers are all operations.
-        </p>
-      </div>
+      <PageHeader title="Team">
+        What each team spent its time on, and what it cost. Role cannot answer this — your designers and developers are all operations.
+      </PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
         <TeamReport />

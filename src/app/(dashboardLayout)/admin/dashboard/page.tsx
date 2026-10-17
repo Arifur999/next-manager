@@ -10,6 +10,7 @@ import { projectsListQuery } from "@/queries/project.queries";
 import { taskReportQuery, workloadQuery } from "@/queries/work.queries";
 import { usersListQuery } from "@/queries/people.queries";
 import { dashboardQuery } from "@/queries/insights.queries";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -40,14 +41,9 @@ const AdminDashboardPage = async () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Welcome back, {user?.full_name?.split(" ")[0] ?? "there"}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Where the agency stands today — money held, money owed, and what is due.
-        </p>
-      </div>
+      <PageHeader title={<>Welcome back, {user?.full_name?.split(" ")[0] ?? "there"}</>}>
+        Where the agency stands today — money held, money owed, and what is due.
+      </PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
         {/* Counts first: what is there, before how it is going. The analytical

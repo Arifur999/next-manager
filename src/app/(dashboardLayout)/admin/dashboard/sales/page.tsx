@@ -1,6 +1,7 @@
 import KpiScreen from "@/components/modules/Dashboard/KpiScreen";
 import SalesOverview from "@/components/modules/Dashboard/SalesOverview";
 import type { Metadata } from "next";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Sales",
@@ -11,13 +12,10 @@ export const metadata: Metadata = {
 const SalesDashboardPage = () => {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Sales</h1>
-        <p className="text-sm text-muted-foreground">
-          Coverage first. Win rate and cycle length are verdicts on work already done —
-          by the time they move, the quarter is decided.
-        </p>
-      </div>
+      <PageHeader title="Sales">
+        Coverage first. Win rate and cycle length are verdicts on work already done —
+        by the time they move, the quarter is decided.
+      </PageHeader>
 
       <SalesOverview />
 

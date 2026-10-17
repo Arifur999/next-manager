@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { expensesListQuery } from "@/queries/spending.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
 import { cashFlowQuery } from "@/queries/insights.queries";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Finance report",
@@ -19,12 +20,9 @@ const FinanceReportPage = async () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Finance</h1>
-        <p className="text-sm text-muted-foreground">
-          Where the money went. Cash flow read straight off the ledger, so it cannot fall out of step with the modules that write it.
-        </p>
-      </div>
+      <PageHeader title="Finance">
+        Where the money went. Cash flow read straight off the ledger, so it cannot fall out of step with the modules that write it.
+      </PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
         <FinanceReport />
