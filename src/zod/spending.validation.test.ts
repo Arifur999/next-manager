@@ -6,6 +6,7 @@ import {
     createExpenseServerZodSchema,
     createOwnerWithdrawalServerZodSchema,
     createTeamPayoutServerZodSchema,
+    updateExpenseCategoryServerZodSchema,
 } from "./spending.validation"
 
 const valid = {
@@ -72,6 +73,29 @@ describe("createExpenseCategoryServerZodSchema", () => {
             type: "general",
             monthly_budget: undefined,
         })
+    })
+})
+
+describe("updateExpenseCategoryServerZodSchema", () => {
+    it("sends the edits and whether the category is still offered", () => {
+        expect(
+            updateExpenseCategoryServerZodSchema.parse({
+                name: " Software ",
+                type: "general",
+                monthly_budget: "15000",
+                is_active: false,
+            }),
+        ).toEqual({ name: "Software", type: "general", monthly_budget: 15000, is_active: false })
+    })
+
+    it("leaves a blank budget out rather than zeroing it", () => {
+        const payload = updateExpenseCategoryServerZodSchema.parse({
+            name: "Rent",
+            type: "general",
+            monthly_budget: "",
+            is_active: true,
+        })
+        expect(payload.monthly_budget).toBeUndefined()
     })
 })
 

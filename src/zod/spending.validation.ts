@@ -28,6 +28,14 @@ export const expenseCategoryFormZodSchema = z.object({
 
 export type IExpenseCategoryFormValues = z.infer<typeof expenseCategoryFormZodSchema>
 
+// Editing a category can also retire it: one that expenses use cannot be
+// deleted, so switching it off is how it leaves the expense form.
+export const expenseCategoryEditFormZodSchema = expenseCategoryFormZodSchema.extend({
+    is_active: z.boolean(),
+})
+
+export type IExpenseCategoryEditFormValues = z.infer<typeof expenseCategoryEditFormZodSchema>
+
 export const teamPayoutFormZodSchema = z.object({
     user_id: z.string().min(1, "Choose a team member"),
     project_id: z.string().optional(),
@@ -86,6 +94,14 @@ export const createExpenseCategoryServerZodSchema = expenseCategoryFormZodSchema
     name: values.name,
     type: values.type,
     monthly_budget: toNumber(values.monthly_budget),
+}))
+
+// A blank budget is left as it was: the API takes a number or nothing here.
+export const updateExpenseCategoryServerZodSchema = expenseCategoryEditFormZodSchema.transform((values) => ({
+    name: values.name,
+    type: values.type,
+    monthly_budget: toNumber(values.monthly_budget),
+    is_active: values.is_active,
 }))
 
 export const createTeamPayoutServerZodSchema = teamPayoutFormZodSchema.transform((values) => ({

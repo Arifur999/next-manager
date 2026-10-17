@@ -4,9 +4,11 @@ import {
   createCategoryAction,
   deleteCategoryAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/finance-config/_action"
+import EditExpenseCategoryDialog from "@/components/modules/Admin/Settings/EditExpenseCategoryDialog"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import EmptyState from "@/components/shared/state/EmptyState"
 import PanelState from "@/components/shared/state/PanelState"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -18,11 +20,12 @@ import {
 } from "@/components/ui/select"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { formatBdt } from "@/lib/currency"
+import { sentenceCase } from "@/lib/text"
 import { queryKeys } from "@/lib/queryKeys"
 import { expenseCategoriesQuery } from "@/queries/spending.queries"
 import { useQuery } from "@tanstack/react-query"
 import type { IExpenseCategory } from "@/types/spending.types"
-import { Tags, Trash2 } from "lucide-react"
+import { Pencil, Tags, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { expenseCategoryFormZodSchema, type IExpenseCategoryFormValues } from "@/zod/spending.validation"
 import { useForm } from "@tanstack/react-form"
@@ -36,6 +39,7 @@ const CATEGORY_TYPES = [
 
 const ExpenseCategorySettings = () => {
   const [categoryToDelete, setCategoryToDelete] = useState<IExpenseCategory | null>(null)
+  const [categoryToEdit, setCategoryToEdit] = useState<IExpenseCategory | null>(null)
 
   const categoriesQuery = useQuery(expenseCategoriesQuery())
 
@@ -150,26 +154,41 @@ const ExpenseCategorySettings = () => {
           {categories.map((category) => (
             <li key={category.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
               <div className="min-w-0">
-                <p className="truncate text-sm">{category.name}</p>
-                <p className="text-xs capitalize text-muted-foreground">
-                  {category.type}
+                <p className="flex min-w-0 items-center gap-2 text-sm">
+                  <span className="truncate">{category.name}</span>
+                  {!category.is_active && (
+                    <Badge variant="outline" className="text-xs">
+                      Retired
+                    </Badge>
+                  )}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {sentenceCase(category.type)}
                   {category.monthly_budget ? ` · ${formatBdt(category.monthly_budget)} budget` : ""}
                 </p>
               </div>
 
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => setCategoryToDelete(category)}
-              >
-                <Trash2 className="size-4" />
-                <span className="sr-only">Delete {category.name}</span>
-              </Button>
+              <div className="flex shrink-0 items-center">
+                <Button type="button" variant="ghost" size="icon" onClick={() => setCategoryToEdit(category)}>
+                  <Pencil className="size-4" aria-hidden="true" />
+                  <span className="sr-only">Edit {category.name}</span>
+                </Button>
+                <Button type="button" variant="ghost" size="icon" onClick={() => setCategoryToDelete(category)}>
+                  <Trash2 className="size-4" aria-hidden="true" />
+                  <span className="sr-only">Delete {category.name}</span>
+                </Button>
+              </div>
             </li>
           ))}
         </ul>
       </PanelState>
+
+      <EditExpenseCategoryDialog
+        category={categoryToEdit}
+        onOpenChange={(open) => {
+          if (!open) setCategoryToEdit(null)
+        }}
+      />
 
       <ConfirmDialog
         open={categoryToDelete !== null}
@@ -180,8 +199,8 @@ const ExpenseCategorySettings = () => {
         description={
           <>
             This removes <span className="font-medium text-foreground">{categoryToDelete?.name}</span>. A
-            category with expenses recorded against it cannot be deleted — deactivate it instead, so
-            those expenses keep their category.
+            category with expenses recorded against it cannot be deleted — edit it and switch it off
+            instead, so those expenses keep their category.
           </>
         }
         variant="destructive"
