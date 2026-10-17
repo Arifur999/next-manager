@@ -32,7 +32,7 @@ const ProfileForm = ({ user }: { user: IUser }) => {
   const [phone, setPhone] = useState(user.phone ?? "")
 
   const { mutate: save, isPending } = useMutation({
-    mutationFn: () => updateMeAction({ full_name: fullName.trim(), phone: phone.trim() }),
+    mutationFn: () => updateMeAction({ full_name: fullName, phone }),
     onSuccess: (result) => {
       if (!result.success) {
         toast.error(result.message || "Could not save your profile")

@@ -33,6 +33,15 @@ export const registerFormZodSchema = z.object({
 
 export type IRegisterFormValues = z.infer<typeof registerFormZodSchema>
 
+// The three fields a person may change about themselves, minus the avatar,
+// which has no field yet. Email is the login and role is an admin's call.
+export const profileFormZodSchema = z.object({
+  full_name: z.string().trim().min(1, "Full name is required"),
+  phone: z.string().trim(),
+})
+
+export type IProfileFormValues = z.infer<typeof profileFormZodSchema>
+
 export const changePasswordFormZodSchema = z.object({
   old_password: z.string().min(1, "Current password is required"),
   new_password: newPassword,
@@ -54,3 +63,7 @@ export const resetPasswordFormZodSchema = z.object({
 })
 
 export type IResetPasswordFormValues = z.infer<typeof resetPasswordFormZodSchema>
+
+// Server schemas: the form values checked again on the server. The API's
+// updateMe schema is strict, so a key outside it would be refused, not dropped.
+export const updateProfileServerZodSchema = profileFormZodSchema
