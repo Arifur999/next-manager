@@ -7,18 +7,15 @@ import {
   payLoanInstalmentAction,
   reverseLoanInstalmentAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/loans/_action"
-import LoanCard from "@/components/modules/Admin/Loans/LoanCard"
 import LoanFormCard from "@/components/modules/Admin/Loans/LoanFormCard"
+import LoanList from "@/components/modules/Admin/Loans/LoanList"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
-import EmptyState from "@/components/shared/state/EmptyState"
-import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Card } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
 import type { ILoan, ILoanInstalment } from "@/types/finance.types"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
-import { Landmark } from "lucide-react"
 import { useState } from "react"
 import { accountsQuery, loanSummaryQuery, loansListQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
@@ -145,27 +142,15 @@ const LoansBoard = () => {
           </Card>
         )}
 
-        {isLoading && loans.length === 0 ? (
-          <Card>
-            <LoadingBlock rounded />
-          </Card>
-        ) : loans.length === 0 ? (
-          <Card>
-            <EmptyState icon={Landmark}>Nothing borrowed.</EmptyState>
-          </Card>
-        ) : (
-          loans.map((loan) => (
-            <LoanCard
-              key={loan.id}
-              loan={loan}
-              accounts={accounts}
-              onPay={(instalmentId, accountId) => void payInstalment({ id: instalmentId, accountId })}
-              onReverse={setInstalmentToReverse}
-              onClose={() => void closeLoan(loan.id)}
-              onDelete={() => setLoanToDelete(loan)}
-            />
-          ))
-        )}
+        <LoanList
+          loans={loans}
+          isLoading={isLoading}
+          accounts={accounts}
+          onPay={(instalmentId, accountId) => void payInstalment({ id: instalmentId, accountId })}
+          onReverse={setInstalmentToReverse}
+          onClose={(loan) => void closeLoan(loan.id)}
+          onDelete={setLoanToDelete}
+        />
       </div>
 
       <ConfirmDialog
