@@ -4,13 +4,16 @@ import {
   approveMemberAction,
   rejectMemberAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/team-management/_inviteAction"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { useActionMutation } from "@/hooks/useActionMutation"
+import type { IUser } from "@/types/user.types"
 import { ROLE_LABELS } from "@/zod/user.validation"
 import { useQuery } from "@tanstack/react-query"
 import { formatDistanceToNow, parseISO } from "date-fns"
 import { UserCheck } from "lucide-react"
+import { useState } from "react"
 import { usersListQuery } from "@/queries/people.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -30,6 +33,8 @@ const DECISION_KEYS = [queryKeys.users.all, queryKeys.activity.all]
  */
 
 const PendingApprovals = () => {
+  const [rejecting, setRejecting] = useState<IUser | null>(null)
+
   const { data } = useQuery(usersListQuery("status=pending"))
 
   const pending = data?.data ?? []
@@ -49,62 +54,87 @@ const PendingApprovals = () => {
     refresh: false,
   })
 
+  const confirmReject = async () => {
+    if (rejecting && (await reject(rejecting.id))) setRejecting(null)
+  }
+
   if (pending.length === 0) return null
 
   const isBusy = isApproving || isRejecting
 
   return (
-    <Card className="gap-0 overflow-hidden border-primary/40 p-0">
-      <CardHeader className="border-b px-5 py-4">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <UserCheck className="size-4" aria-hidden="true" />
-          {pending.length} waiting to join
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          They have an account and a password already, and cannot sign in until you
-          approve. Approving uses a seat on your plan.
-        </p>
-      </CardHeader>
+    <>
+      <Card className="gap-0 overflow-hidden border-primary/40 p-0">
+        <CardHeader className="border-b px-5 py-4">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <UserCheck className="size-4" aria-hidden="true" />
+            {pending.length} waiting to join
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            They have an account and a password already, and cannot sign in until you
+            approve. Approving uses a seat on your plan.
+          </p>
+        </CardHeader>
 
-      <ul className="divide-y">
-        {pending.map((person) => (
-          <li
-            key={person.id}
-            className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5"
-          >
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium">{person.full_name}</p>
-              <p className="truncate text-xs text-muted-foreground">
-                {person.email} · {ROLE_LABELS[person.role as keyof typeof ROLE_LABELS] ?? person.role}
-                {person.created_at
-                  ? ` · asked ${formatDistanceToNow(parseISO(person.created_at), { addSuffix: true })}`
-                  : ""}
-              </p>
-            </div>
+        <ul className="divide-y">
+          {pending.map((person) => (
+            <li
+              key={person.id}
+              className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{person.full_name}</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {person.email} · {ROLE_LABELS[person.role as keyof typeof ROLE_LABELS] ?? person.role}
+                  {person.created_at
+                    ? ` · asked ${formatDistanceToNow(parseISO(person.created_at), { addSuffix: true })}`
+                    : ""}
+                </p>
+              </div>
 
-            <div className="flex shrink-0 items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={isBusy}
-                onClick={() => void reject(person.id)}
-              >
-                Turn down
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                disabled={isBusy}
-                onClick={() => void approve(person.id)}
-              >
-                Approve
-              </Button>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </Card>
+              <div className="flex shrink-0 items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isBusy}
+                  onClick={() => setRejecting(person)}
+                >
+                  Turn down
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={isBusy}
+                  onClick={() => void approve(person.id)}
+                >
+                  Approve
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </Card>
+
+      <ConfirmDialog
+        open={rejecting !== null}
+        onOpenChange={(open) => {
+          if (!open) setRejecting(null)
+        }}
+        title="Turn down this request?"
+        description={
+          <>
+            <span className="font-medium text-foreground">{rejecting?.full_name}</span> will not be
+            able to sign in, and the request is recorded as turned down.
+          </>
+        }
+        variant="destructive"
+        confirmLabel="Turn down"
+        pendingLabel="Turning down..."
+        isPending={isRejecting}
+        onConfirm={() => void confirmReject()}
+      />
+    </>
   )
 }
 
