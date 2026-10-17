@@ -65,17 +65,19 @@ const ServicesBoard = ({ canManage = true }: { canManage?: boolean }) => {
   })
 
   const { run: removeService } = useActionMutation({
-    action: (service: IService) => deleteServiceAction(service.id),
+    action: deleteServiceAction,
     successMessage: "Removed from the catalogue",
     invalidateKeys: [queryKeys.services.all],
     refresh: false,
-    onSuccess: () => {
-      if (editingId) reset()
-    },
   })
 
   const handleSave = async () => {
     if (await saveService(draft)) reset()
+  }
+
+  // Only the service being edited takes the form with it.
+  const handleDelete = async (service: IService) => {
+    if ((await removeService(service.id)) && editingId === service.id) reset()
   }
 
   return (
@@ -114,7 +116,7 @@ const ServicesBoard = ({ canManage = true }: { canManage?: boolean }) => {
         }}
         onEditable={canManage}
         onToggle={(service) => void toggleSold(service)}
-        onDelete={(service) => void removeService(service)}
+        onDelete={(service) => void handleDelete(service)}
       />
     </div>
   )
