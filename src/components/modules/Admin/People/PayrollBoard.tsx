@@ -7,6 +7,7 @@ import {
   setPayrollItemsAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/payroll/_action"
 import PayrollRunCard from "@/components/modules/Admin/People/PayrollRunCard"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import EmptyState from "@/components/shared/state/EmptyState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Button } from "@/components/ui/button"
@@ -14,8 +15,9 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useActionMutation } from "@/hooks/useActionMutation"
+import type { IPayrollRun } from "@/types/people.types"
 import { useQuery } from "@tanstack/react-query"
-import { format } from "date-fns"
+import { format, parseISO } from "date-fns"
 import { Wallet } from "lucide-react"
 import { useState } from "react"
 import { accountsQuery } from "@/queries/finance.queries"
@@ -42,6 +44,7 @@ const PAYROLL_KEYS = [
  */
 const PayrollBoard = () => {
   const [month, setMonth] = useState(format(new Date(), "yyyy-MM"))
+  const [discarding, setDiscarding] = useState<IPayrollRun | null>(null)
 
   const { data, isLoading } = useQuery(payrollRunsQuery())
   const { data: accountData } = useQuery(accountsQuery())
@@ -75,12 +78,16 @@ const PayrollBoard = () => {
     refresh: false,
   })
 
-  const { run: discardDraft } = useActionMutation({
+  const { run: discardDraft, isPending: isDiscarding } = useActionMutation({
     action: deletePayrollRunAction,
     successMessage: "Draft discarded",
     invalidateKeys: PAYROLL_KEYS,
     refresh: false,
   })
+
+  const confirmDiscard = async () => {
+    if (discarding && (await discardDraft(discarding.id))) setDiscarding(null)
+  }
 
   return (
     <div className="space-y-4">
@@ -134,10 +141,32 @@ const PayrollBoard = () => {
             accounts={accounts}
             onSave={(items) => void savePayrollItems({ id: run.id, items })}
             onPay={(accountId) => void payPayroll({ id: run.id, accountId })}
-            onDiscard={() => void discardDraft(run.id)}
+            onDiscard={() => setDiscarding(run)}
           />
         ))
       )}
+
+      <ConfirmDialog
+        open={discarding !== null}
+        onOpenChange={(open) => {
+          if (!open) setDiscarding(null)
+        }}
+        title="Discard this draft?"
+        description={
+          <>
+            This throws away the{" "}
+            <span className="font-medium text-foreground">
+              {discarding ? format(parseISO(discarding.period_start), "MMMM yyyy") : ""}
+            </span>{" "}
+            draft and the figures typed into it. Nothing has been paid from it, so no money moves.
+          </>
+        }
+        variant="destructive"
+        confirmLabel="Discard"
+        pendingLabel="Discarding..."
+        isPending={isDiscarding}
+        onConfirm={() => void confirmDiscard()}
+      />
     </div>
   )
 }
