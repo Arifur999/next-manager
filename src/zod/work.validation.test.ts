@@ -30,6 +30,12 @@ describe("createTaskServerZodSchema", () => {
         expect(payload.status_id).toBeUndefined()
     })
 
+    it("sends a description when one was written, trimmed", () => {
+        const payload = createTaskServerZodSchema.parse({ ...validTask, description: "  Copy is final\t" })
+        expect(payload.description).toBe("Copy is final")
+        expect(createTaskServerZodSchema.parse({ ...validTask, description: "   " }).description).toBeUndefined()
+    })
+
     it("requires a project and a title", () => {
         const result = createTaskServerZodSchema.safeParse({ ...validTask, project_id: "", title: "" })
         expect(result.error?.issues.map((issue) => issue.message)).toEqual(["Choose a project", "Title is required"])

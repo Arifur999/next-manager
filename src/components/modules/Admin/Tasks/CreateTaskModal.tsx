@@ -15,7 +15,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Textarea } from "@/components/ui/textarea"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { taskFormZodSchema, type ITaskFormValues } from "@/zod/work.validation"
 import { useForm } from "@tanstack/react-form"
@@ -34,6 +36,7 @@ const emptyTask: ITaskFormValues = {
   status_id: "",
   priority: "medium",
   due_date: "",
+  description: "",
 }
 
 const CreateTaskModal = () => {
@@ -160,23 +163,23 @@ const CreateTaskModal = () => {
 
               <div className="grid gap-5 sm:grid-cols-2">
                 <form.Field name="status_id">
-                {(field) => (
-                  <EntitySelect
-                    id={field.name}
-                    label="Status"
-                    value={field.state.value ?? ""}
-                    onChange={(value) => field.handleChange(value)}
-                    disabled={isPending}
-                    // Only the columns that are switched on. A retired one is
-                    // somewhere work can sit, not somewhere it can be put.
-                    options={statuses
-                      .filter((status) => status.is_active)
-                      .map((status) => ({ value: status.id, label: status.name }))}
-                  />
-                )}
-              </form.Field>
+                  {(field) => (
+                    <EntitySelect
+                      id={field.name}
+                      label="Status"
+                      value={field.state.value ?? ""}
+                      onChange={(value) => field.handleChange(value)}
+                      disabled={isPending}
+                      // Only the columns that are switched on. A retired one is
+                      // somewhere work can sit, not somewhere it can be put.
+                      options={statuses
+                        .filter((status) => status.is_active)
+                        .map((status) => ({ value: status.id, label: status.name }))}
+                    />
+                  )}
+                </form.Field>
 
-              <form.Field name="priority">
+                <form.Field name="priority">
                   {(field) => (
                     <EntitySelect
                       id={field.name}
@@ -200,6 +203,24 @@ const CreateTaskModal = () => {
                   )}
                 </form.Field>
               </div>
+
+              <form.Field name="description">
+                {(field) => (
+                  <div className="space-y-1.5">
+                    <Label htmlFor={field.name}>Description (optional)</Label>
+                    <Textarea
+                      id={field.name}
+                      name={field.name}
+                      rows={4}
+                      placeholder="What done looks like, links, anything the next person needs"
+                      value={field.state.value ?? ""}
+                      onBlur={field.handleBlur}
+                      onChange={(event) => field.handleChange(event.target.value)}
+                      disabled={isPending}
+                    />
+                  </div>
+                )}
+              </form.Field>
 
               <DialogFooter>
                 <DialogClose asChild>

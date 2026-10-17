@@ -14,6 +14,7 @@ export const taskFormZodSchema = z.object({
     status_id: z.string().optional(),
     priority: z.enum(["low", "medium", "high", "urgent"]),
     due_date: z.string().optional(),
+    description: z.string().optional(),
 })
 
 export type ITaskFormValues = z.infer<typeof taskFormZodSchema>
@@ -28,6 +29,8 @@ export const createTaskServerZodSchema = taskFormZodSchema.transform((values) =>
     status_id: values.status_id || undefined,
     priority: values.priority,
     due_date: values.due_date || null,
+    // Left out when blank: the API stores an empty description by default.
+    description: values.description?.trim() || undefined,
 }))
 
 // Editing a task in its sheet. The project stays put: time already logged
