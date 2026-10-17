@@ -31,11 +31,11 @@ export const readPaging = (source: ParamsSource, defaultLimit: number) => ({
 // and the browser both build it here, so they land on the same query key.
 export const buildTableQueryString = (
   source: ParamsSource,
-  config: { queryKeys: readonly string[]; defaultLimit: number },
+  config: { paramKeys: readonly string[]; defaultLimit: number },
 ): string => {
   const { page, limit } = readPaging(source, config.defaultLimit)
   const params = new URLSearchParams({ page: String(page), limit: String(limit) })
-  for (const key of config.queryKeys) {
+  for (const key of config.paramKeys) {
     for (const value of readAll(source, key)) {
       if (value !== "") params.append(key, value)
     }

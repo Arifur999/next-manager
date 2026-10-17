@@ -4,7 +4,7 @@ import type { ServerDataTableConfig } from "@/hooks/useServerDataTable"
 // string. `status` is a workflow status NAME, which is what the sidebar's
 // static links can carry (ids differ per agency); `mine` is "My Projects".
 export const PROJECTS_TABLE: ServerDataTableConfig = {
-  queryKeys: ["search", "status", "mine"],
+  paramKeys: ["search", "status", "mine"],
   search: { placeholder: "Search name, code or client..." },
   defaultLimit: 20,
 }

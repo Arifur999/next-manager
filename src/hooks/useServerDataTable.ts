@@ -13,10 +13,11 @@ import { useCallback, useMemo } from "react"
 // Declared once per list at module scope (stable), and shared by the page's
 // prefetch and the client table so both fetch the same query string.
 export interface ServerDataTableConfig {
-  // Every query parameter the endpoint accepts besides page and limit.
-  queryKeys: readonly string[]
+  // The URL parameters the endpoint accepts besides page and limit.
+  paramKeys: readonly string[]
   filters?: DataTableFilterConfig[]
-  search?: { placeholder: string; queryKey?: string }
+  // Searches through the "search" parameter.
+  search?: { placeholder: string }
   defaultLimit: number
 }
 
@@ -62,7 +63,7 @@ export const useServerDataTable = <TData,>(config: ServerDataTableConfig) => {
       { replace },
     )
 
-  const searchKey = search?.queryKey ?? "search"
+  const searchKey = "search"
   const searchTerm = searchParams.get(searchKey) ?? ""
 
   // Every new search or filter starts again from page 1.

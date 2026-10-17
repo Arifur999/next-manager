@@ -2,7 +2,7 @@ import type { DataTableFilterConfig } from "@/components/shared/table/dataTable.
 import { describe, expect, it } from "vitest"
 import { buildTableQueryString, filterParamKeys, readFilterValues, readPaging, writeFilterValue } from "./urlState"
 
-const CONFIG = { queryKeys: ["search", "kind", "from", "to"], defaultLimit: 20 }
+const CONFIG = { paramKeys: ["search", "kind", "from", "to"], defaultLimit: 20 }
 
 const FILTERS: DataTableFilterConfig[] = [
   { id: "kind", type: "single-select", label: "Kind", options: [] },
