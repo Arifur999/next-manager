@@ -1,10 +1,11 @@
 "use client"
 
 import { acceptPlatformInviteAction } from "@/app/(commonLayout)/(auth)/platform-join/[token]/_action"
-import AppField from "@/components/shared/form/AppField"
-import InvalidInviteCard from "@/components/modules/Auth/InvalidInviteCard"
+import AuthNoticeCard from "@/components/modules/Auth/AuthNoticeCard"
 import PasswordField from "@/components/modules/Auth/PasswordField"
+import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
+import ReadOnlyField from "@/components/shared/form/ReadOnlyField"
 import {
   Card,
   CardContent,
@@ -12,10 +13,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { useActionMutation } from "@/hooks/useActionMutation"
-import { useForm } from "@tanstack/react-form"
+import { revalidateLogic, useForm } from "@tanstack/react-form"
 import { Clock } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
@@ -35,7 +34,7 @@ const PlatformJoinForm = ({
   invite,
 }: {
   token: string
-  invite: { email: string } | null
+  invite: { email: string }
 }) => {
   const [submitted, setSubmitted] = useState(false)
 
@@ -48,40 +47,27 @@ const PlatformJoinForm = ({
 
   const form = useForm({
     defaultValues: { full_name: "", password: "" } satisfies IJoinFormValues,
+    validationLogic: revalidateLogic(),
     onSubmit: async ({ value }) => {
       if (await requestAccess(value)) setSubmitted(true)
     },
   })
 
-  if (!invite) return <InvalidInviteCard />
-
-
   if (submitted) {
     return (
-      <div className="w-full">
-        <Card>
-          <CardHeader className="items-center text-center">
-            <Clock className="size-8 text-muted-foreground" aria-hidden="true" />
-            <CardTitle>
-              <h1 className="text-2xl font-semibold tracking-tight">Waiting for approval</h1>
-            </CardTitle>
-            <CardDescription>
-              Your account is set up. An existing operator has to approve it before you can
-              sign in — a platform account can reach every customer, so it is not granted
-              by a link alone.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center text-sm text-muted-foreground">
-            <p>
-              Once approved, sign in at{" "}
-              <Link href="/login" className="text-primary-strong underline underline-offset-4 hover:decoration-2">
-                the login page
-              </Link>{" "}
-              with the password you just chose.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <AuthNoticeCard
+        icon={Clock}
+        title="Waiting for approval"
+        description="Your account is set up. An existing operator has to approve it before you can sign in — a platform account can reach every customer, so it is not granted by a link alone."
+      >
+        <p>
+          Once approved, sign in at{" "}
+          <Link href="/login" className="text-primary-strong underline underline-offset-4 hover:decoration-2">
+            the login page
+          </Link>{" "}
+          with the password you just chose.
+        </p>
+      </AuthNoticeCard>
     )
   }
 
@@ -110,26 +96,17 @@ const PlatformJoinForm = ({
             }}
             className="space-y-5"
           >
-            <div className="space-y-1.5">
-              <Label htmlFor="platform-join-email">Email</Label>
-              <Input id="platform-join-email" value={invite.email} readOnly disabled />
-              <p className="text-xs text-muted-foreground">
-                This is the address the invite was sent to and cannot be changed.
-              </p>
-            </div>
+            <ReadOnlyField
+              label="Email"
+              value={invite.email}
+              reason="This is the address the invite was sent to and cannot be changed."
+            />
 
-            <form.Field name="full_name" validators={{ onChange: joinFormZodSchema.shape.full_name }}>
-              {(field) => (
-                <AppField
-                  field={field}
-                  label="Your name"
-                  placeholder="Alex Morgan"
-                  disabled={isPending}
-                />
-              )}
+            <form.Field name="full_name" validators={{ onDynamic: joinFormZodSchema.shape.full_name }}>
+              {(field) => <AppField field={field} label="Your name" autoComplete="name" disabled={isPending} />}
             </form.Field>
 
-            <form.Field name="password" validators={{ onChange: joinFormZodSchema.shape.password }}>
+            <form.Field name="password" validators={{ onDynamic: joinFormZodSchema.shape.password }}>
               {(field) => (
                 <PasswordField field={field} label="Choose a password" disabled={isPending} />
               )}

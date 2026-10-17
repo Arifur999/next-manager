@@ -1,11 +1,11 @@
 "use client"
 
 import { acceptAgencyInviteAction } from "@/app/(commonLayout)/(auth)/agency-join/[token]/_action"
-import type { AgencyInvite } from "@/app/(commonLayout)/(auth)/agency-join/[token]/page"
-import AppField from "@/components/shared/form/AppField"
-import InvalidInviteCard from "@/components/modules/Auth/InvalidInviteCard"
+import AuthNoticeCard from "@/components/modules/Auth/AuthNoticeCard"
 import PasswordField from "@/components/modules/Auth/PasswordField"
+import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
+import ReadOnlyField from "@/components/shared/form/ReadOnlyField"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -14,14 +14,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { useActionMutation } from "@/hooks/useActionMutation"
-import { useForm } from "@tanstack/react-form"
+import { formatUsd } from "@/lib/currency"
+import { revalidateLogic, useForm } from "@tanstack/react-form"
 import { CircleCheck } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
-import { agencyJoinFormZodSchema, type IAgencyJoinFormValues } from "@/zod/auth.validation"
+import {
+  agencyJoinFormZodSchema,
+  type IAgencyInvitePreview,
+  type IAgencyJoinFormValues,
+} from "@/zod/auth.validation"
 
 /**
  * Opening your own agency from an invite.
@@ -35,18 +38,27 @@ import { agencyJoinFormZodSchema, type IAgencyJoinFormValues } from "@/zod/auth.
  * else: the invite is bound to one address server-side.
  */
 
+// Said before the password, not after: somebody about to open an account is
+// entitled to know what it costs.
+const planTerms = ({ plan, trial_days }: IAgencyInvitePreview) => {
+  if (!plan) return "Your workspace will be set up for you before there is anything to pay."
+  const price = formatUsd(plan.price_usd, { compact: Number.isInteger(plan.price_usd) })
+  if (trial_days > 0) return `${trial_days} days on ${plan.name} to try everything, then ${price} a month.`
+  return `On ${plan.name}, ${price} a month from the day you open it.`
+}
+
 const AgencyJoinForm = ({
   token,
   invite,
 }: {
   token: string
-  invite: AgencyInvite | null
+  invite: IAgencyInvitePreview
 }) => {
   const [opened, setOpened] = useState<string | null>(null)
 
   // Fixed when the deal was agreed with a named agency: that is the name on the
   // record, and it should not change on the way in.
-  const nameIsFixed = Boolean(invite?.company_name)
+  const nameIsFixed = Boolean(invite.company_name)
 
   // The "is open" screen that follows is the confirmation.
   const { run: openAgency, isPending } = useActionMutation({
@@ -58,39 +70,26 @@ const AgencyJoinForm = ({
   const form = useForm({
     defaultValues: {
       full_name: "",
-      company_name: invite?.company_name ?? "",
+      company_name: invite.company_name,
       password: "",
     } satisfies IAgencyJoinFormValues,
+    validationLogic: revalidateLogic(),
     onSubmit: async ({ value }) => {
       if (await openAgency(value)) setOpened(value.company_name)
     },
   })
 
-  if (!invite) return <InvalidInviteCard />
-
-
   if (opened) {
     return (
-      <div className="w-full">
-        <Card>
-          <CardHeader className="items-center text-center">
-            <CircleCheck className="size-8 text-muted-foreground" aria-hidden="true" />
-            <CardTitle>
-              <h1 className="text-2xl font-semibold tracking-tight">{opened} is open</h1>
-            </CardTitle>
-            <CardDescription>
-              You own it. Sign in and add your team — sales people, project managers and
-              your operations crew all get their own accounts, and you decide who sees
-              what.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <Button asChild>
-              <Link href="/login">Sign in</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <AuthNoticeCard
+        icon={CircleCheck}
+        title={`${opened} is open`}
+        description="You own it. Sign in and add your team — sales people, project managers and your operations crew all get their own accounts, and you decide who sees what."
+      >
+        <Button asChild>
+          <Link href="/login">Sign in</Link>
+        </Button>
+      </AuthNoticeCard>
     )
   }
 
@@ -101,15 +100,7 @@ const AgencyJoinForm = ({
           <CardTitle>
             <h1 className="text-2xl font-semibold tracking-tight">{nameIsFixed ? `Open ${invite.company_name}` : "Open your agency"}</h1>
           </CardTitle>
-          <CardDescription>
-            {/* Said before the password, not after: somebody about to open an
-                account is entitled to know what it costs. */}
-            {invite.plan
-              ? invite.trial_days > 0
-                ? `${invite.trial_days} days on ${invite.plan.name} to try everything, then $${invite.plan.price_usd} a month.`
-                : `On ${invite.plan.name}, $${invite.plan.price_usd} a month from the day you open it.`
-              : "Your workspace will be set up for you before there is anything to pay."}
-          </CardDescription>
+          <CardDescription>{planTerms(invite)}</CardDescription>
         </CardHeader>
 
         <CardContent>
@@ -124,51 +115,40 @@ const AgencyJoinForm = ({
             }}
             className="space-y-5"
           >
-            <div className="space-y-1.5">
-              <Label htmlFor="agency-join-email">Email</Label>
-              <Input id="agency-join-email" value={invite.email} readOnly disabled />
-              <p className="text-xs text-muted-foreground">
-                This is the address the invite was sent to and cannot be changed.
-              </p>
-            </div>
+            <ReadOnlyField
+              label="Email"
+              value={invite.email}
+              reason="This is the address the invite was sent to and cannot be changed."
+            />
 
             {nameIsFixed ? (
-              <div className="space-y-1.5">
-                <Label htmlFor="agency-join-company">Agency</Label>
-                <Input id="agency-join-company" value={invite.company_name} readOnly disabled />
-                <p className="text-xs text-muted-foreground">
-                  Agreed when you were invited. You can rename it from your settings once
-                  you are in.
-                </p>
-              </div>
+              <ReadOnlyField
+                label="Agency"
+                value={invite.company_name}
+                reason="Agreed when you were invited. You can rename it from your settings once you are in."
+              />
             ) : (
               <form.Field
                 name="company_name"
-                validators={{ onChange: agencyJoinFormZodSchema.shape.company_name }}
+                validators={{ onDynamic: agencyJoinFormZodSchema.shape.company_name }}
               >
                 {(field) => (
                   <AppField
                     field={field}
                     label="Your agency's name"
-                    placeholder="Northwind Studio"
+                    autoComplete="organization"
+                    placeholder="e.g. Northwind Studio"
                     disabled={isPending}
                   />
                 )}
               </form.Field>
             )}
 
-            <form.Field name="full_name" validators={{ onChange: agencyJoinFormZodSchema.shape.full_name }}>
-              {(field) => (
-                <AppField
-                  field={field}
-                  label="Your name"
-                  placeholder="Alex Morgan"
-                  disabled={isPending}
-                />
-              )}
+            <form.Field name="full_name" validators={{ onDynamic: agencyJoinFormZodSchema.shape.full_name }}>
+              {(field) => <AppField field={field} label="Your name" autoComplete="name" disabled={isPending} />}
             </form.Field>
 
-            <form.Field name="password" validators={{ onChange: agencyJoinFormZodSchema.shape.password }}>
+            <form.Field name="password" validators={{ onDynamic: agencyJoinFormZodSchema.shape.password }}>
               {(field) => (
                 <PasswordField field={field} label="Choose a password" disabled={isPending} />
               )}

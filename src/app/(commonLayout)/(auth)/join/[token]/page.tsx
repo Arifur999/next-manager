@@ -1,7 +1,9 @@
+import InvalidInviteCard from "@/components/modules/Auth/InvalidInviteCard";
 import JoinForm from "@/components/modules/Auth/JoinForm";
-import type { IInvitePreview } from "@/types/people.types";
+import LinkCheckFailedCard from "@/components/modules/Auth/LinkCheckFailedCard";
+import { lookupLinkToken } from "@/services/auth.services";
+import { invitePreviewZodSchema } from "@/zod/auth.validation";
 import type { Metadata } from "next";
-import { getApiBaseUrl } from "@/env"
 
 export const metadata: Metadata = {
   title: "Join a team",
@@ -12,36 +14,16 @@ export const metadata: Metadata = {
 // show one person's invite to the next visitor.
 export const dynamic = "force-dynamic";
 
-
-/**
- * Validated on the server before anything renders.
- *
- * A dead link should say so immediately rather than after somebody has chosen
- * a password, and the company name has to come from the API anyway — the token
- * is the only thing the browser has.
- */
-const loadInvite = async (token: string): Promise<IInvitePreview | null> => {
-  try {
-    const res = await fetch(`${getApiBaseUrl()}/join/${encodeURIComponent(token)}`, {
-      cache: "no-store",
-    });
-
-    if (!res.ok) return null;
-
-    const body = await res.json();
-    return (body?.data as IInvitePreview) ?? null;
-  } catch {
-    // A backend that is down and an invite that is dead look the same from
-    // here. Treating both as "no longer valid" is the safer of the two lies.
-    return null;
-  }
-};
-
+// Checked on the server before anything renders: a dead link says so before
+// somebody chooses a password, and the company name has to come from the API
+// anyway, since the token is the only thing the browser has.
 const JoinPage = async ({ params }: { params: Promise<{ token: string }> }) => {
   const { token } = await params;
-  const invite = await loadInvite(token);
+  const lookup = await lookupLinkToken(`/join/${encodeURIComponent(token)}`, invitePreviewZodSchema);
 
-  return <JoinForm token={token} invite={invite} />;
+  if (lookup.status === "gone") return <InvalidInviteCard />;
+  if (lookup.status === "unavailable") return <LinkCheckFailedCard subject="invite" />;
+  return <JoinForm token={token} invite={lookup.data} />;
 };
 
 export default JoinPage;

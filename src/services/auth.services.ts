@@ -8,7 +8,8 @@ import "server-only"
 import { logApiFailure } from "@/lib/apiFailure"
 import { forwardAuthCookies } from "@/lib/authCookies"
 import { httpClient } from "@/lib/axios/httpClient"
-import { logger } from "@/lib/logger"
+import { classifyLinkLookup, type LinkLookup } from "@/lib/linkLookup"
+import { errorFields, logger } from "@/lib/logger"
 import { classifyMeResponse } from "@/lib/session"
 import { logout } from "@/services/logout"
 import type { ApiResponse } from "@/types/api.types"
@@ -24,6 +25,7 @@ import type {
 } from "@/zod/auth.validation"
 import { cookies } from "next/headers"
 import { cache } from "react"
+import type { z } from "zod"
 import { getApiBaseUrl } from "@/env"
 
 
@@ -129,6 +131,27 @@ const postPublic = async <TData>(path: string, payload: unknown) => {
     })
 
     return (await res.json()) as ApiResponse<TData>
+}
+
+/**
+ * Check the token in an emailed link (an invite, a password reset) before its
+ * page renders, so a dead link says so before anybody fills in a form. The path
+ * carries the token, so it is never logged.
+ */
+export const lookupLinkToken = async <TData>(path: string, schema: z.ZodType<TData>): Promise<LinkLookup<TData>> => {
+    let res: Response
+    try {
+        res = await fetch(`${getApiBaseUrl()}${path}`, { cache: "no-store", signal: AbortSignal.timeout(5000) })
+    } catch (error) {
+        logger.warn("Link check did not reach the API", errorFields(error))
+        return { status: "unavailable" }
+    }
+
+    // nginx answers a dead upstream with an HTML 502, which is not JSON.
+    const isJson = res.headers.get("content-type")?.includes("application/json")
+    const lookup = classifyLinkLookup(res.status, isJson ? await res.json() : null, schema)
+    if (lookup.status === "unavailable") logger.warn("Link check failed", { status: res.status })
+    return lookup
 }
 
 /** Creates a company and its first admin. Returns the user, not tokens: the register action signs them in next. */

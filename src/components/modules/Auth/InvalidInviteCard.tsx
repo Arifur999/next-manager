@@ -1,11 +1,5 @@
+import AuthNoticeCard from "@/components/modules/Auth/AuthNoticeCard"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import { LinkIcon } from "lucide-react"
 import Link from "next/link"
 
@@ -15,25 +9,20 @@ import Link from "next/link"
  * server does not tell them apart and neither should this.
  */
 const InvalidInviteCard = () => (
-  <div className="w-full">
-    <Card>
-      <CardHeader className="items-center text-center">
-        <LinkIcon className="size-8 text-muted-foreground" aria-hidden="true" />
-        <CardTitle>
-          <h1 className="text-2xl font-semibold tracking-tight">This invite is no longer valid</h1>
-        </CardTitle>
-        <CardDescription>
-          It may have expired, been used already, or been withdrawn. Ask whoever
-          invited you for a fresh link.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="text-center">
-        <Button asChild variant="outline">
-          <Link href="/login">Go to sign in</Link>
-        </Button>
-      </CardContent>
-    </Card>
-  </div>
+  <AuthNoticeCard
+    icon={LinkIcon}
+    title="This invite is no longer valid"
+    description="It may have expired, been used already, or been withdrawn. Ask whoever invited you for a fresh link."
+  >
+    <div className="flex flex-wrap justify-center gap-3">
+      <Button asChild variant="outline">
+        <Link href="/login">Go to sign in</Link>
+      </Button>
+      <Button asChild variant="ghost">
+        <Link href="/">Home</Link>
+      </Button>
+    </div>
+  </AuthNoticeCard>
 )
 
 export default InvalidInviteCard

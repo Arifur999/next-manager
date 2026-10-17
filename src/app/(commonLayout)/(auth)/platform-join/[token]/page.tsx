@@ -1,6 +1,9 @@
+import InvalidInviteCard from "@/components/modules/Auth/InvalidInviteCard";
+import LinkCheckFailedCard from "@/components/modules/Auth/LinkCheckFailedCard";
 import PlatformJoinForm from "@/components/modules/Auth/PlatformJoinForm";
+import { lookupLinkToken } from "@/services/auth.services";
+import { platformInvitePreviewZodSchema } from "@/zod/auth.validation";
 import type { Metadata } from "next";
-import { getApiBaseUrl } from "@/env"
 
 export const metadata: Metadata = {
   title: "Join the platform team",
@@ -10,33 +13,15 @@ export const metadata: Metadata = {
 // Reads a token from the URL, so it must never be cached.
 export const dynamic = "force-dynamic";
 
-
-/**
- * Validated server-side before anything renders, so a dead link says so
- * immediately rather than after somebody has chosen a password.
- */
-const loadInvite = async (token: string): Promise<{ email: string } | null> => {
-  try {
-    const res = await fetch(`${getApiBaseUrl()}/platform-join/${encodeURIComponent(token)}`, {
-      cache: "no-store",
-    });
-
-    if (!res.ok) return null;
-
-    const body = await res.json();
-    return (body?.data as { email: string }) ?? null;
-  } catch {
-    // A backend that is down and an invite that is dead look identical from
-    // here. "No longer valid" is the safer of the two things to say.
-    return null;
-  }
-};
-
+// Checked on the server before anything renders, so a dead link says so before
+// somebody chooses a password.
 const PlatformJoinPage = async ({ params }: { params: Promise<{ token: string }> }) => {
   const { token } = await params;
-  const invite = await loadInvite(token);
+  const lookup = await lookupLinkToken(`/platform-join/${encodeURIComponent(token)}`, platformInvitePreviewZodSchema);
 
-  return <PlatformJoinForm token={token} invite={invite} />;
+  if (lookup.status === "gone") return <InvalidInviteCard />;
+  if (lookup.status === "unavailable") return <LinkCheckFailedCard subject="invite" />;
+  return <PlatformJoinForm token={token} invite={lookup.data} />;
 };
 
 export default PlatformJoinPage;

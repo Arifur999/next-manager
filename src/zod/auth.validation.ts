@@ -1,3 +1,4 @@
+import type { IInvitePreview } from "@/types/people.types"
 import { z } from "zod"
 import { newPassword } from "./formFields"
 
@@ -105,3 +106,24 @@ export const agencyJoinServerZodSchema = agencyJoinFormZodSchema
 // The form already holds the API's payload.
 export const loginServerZodSchema = loginFormZodSchema
 
+// What the API says about an invite before anybody fills in its form. Read
+// from the response at the edge, so a changed contract shows as "could not
+// check" rather than a form built on missing fields.
+export const invitePreviewZodSchema = z.object({
+  email: z.string(),
+  organization_name: z.string(),
+}) satisfies z.ZodType<IInvitePreview>
+
+export const platformInvitePreviewZodSchema = z.object({ email: z.string() })
+
+export const agencyInvitePreviewZodSchema = z.object({
+  email: z.string(),
+  // Empty when the owner names their own agency on the way in.
+  company_name: z.string(),
+  trial_days: z.number().int().nonnegative(),
+  // Null when they arrive unprovisioned and somebody sets them up by hand. The
+  // price is a Decimal on the API, which serialises as a string.
+  plan: z.object({ name: z.string(), price_usd: z.coerce.number().nonnegative() }).nullable(),
+})
+
+export type IAgencyInvitePreview = z.infer<typeof agencyInvitePreviewZodSchema>
