@@ -16,6 +16,12 @@ export interface IPermissionCatalogue {
     modules: Array<{ module: string; actions: string[] }>
     actions: string[]
     scopes: PermissionScope[]
+    /**
+     * Every square, with whether any route or service reads it. A moot one
+     * (admin-only deletes, team management) is decided by the role gate alone.
+     * Optional so an older API without it reads as every square enforced.
+     */
+    squares?: Array<{ module: string; action: string; enforced: boolean }>
 }
 
 export interface IRolePermissionRow {
@@ -90,3 +96,18 @@ export const titleise = (value: string) =>
 
 /** A role as a title, such as "Project Manager". */
 export const roleTitle = (role: string) => ROLE_LABEL[role] ?? titleise(role)
+
+/** Whether a square changes anything. A square the catalogue does not mention counts as enforced. */
+export const isSquareEnforced = (catalogue: IPermissionCatalogue, module: string, action: string) =>
+    catalogue.squares?.find((square) => square.module === module && square.action === action)?.enforced ?? true
+
+/** Why a moot square is locked, in words an admin can act on. */
+export const lockedSquareReason = (module: string, action: string) => {
+    if (module === "team") {
+        return "Only an admin adds, changes or removes colleagues. The role decides this, so there is nothing to set here."
+    }
+    if (action === "delete") {
+        return "Only an admin can delete, whatever is set here. The role decides this, so there is nothing to set here."
+    }
+    return "The role decides this on its own, so there is nothing to set here."
+}

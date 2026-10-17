@@ -104,7 +104,8 @@ const PermissionsBoard = () => {
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">
                     Everybody in this role, unless they have been given an exception on
-                    the next tab. Each square saves as you change it.
+                    the next tab. Each square saves as you change it; a locked one is
+                    decided by the role itself.
                   </p>
                 </CardHeader>
 
