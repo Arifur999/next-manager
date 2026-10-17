@@ -9,11 +9,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { useQuery } from "@tanstack/react-query"
 import { endOfMonth, format, parseISO, startOfMonth } from "date-fns"
 import { Receipt, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { platformExpensesListQuery, platformFinanceQuery } from "@/queries/platform.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -30,8 +30,10 @@ import { queryKeys } from "@/lib/queryKeys"
 
 const iso = (date: Date) => format(date, "yyyy-MM-dd")
 
+// The report's totals are built from the expenses, so both refetch together.
+const FINANCE_KEYS = [queryKeys.platformFinance.all, queryKeys.platformExpenses.all]
+
 const PlatformFinance = () => {
-  const queryClient = useQueryClient()
   const today = new Date()
 
   const [from, setFrom] = useState(iso(startOfMonth(today)))
@@ -51,37 +53,28 @@ const PlatformFinance = () => {
   const finance = financeData?.data
   const expenses = expensesData?.data ?? []
 
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.platformFinance.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.platformExpenses.all })
+  const { run: recordExpense, isPending } = useActionMutation({
+    action: addPlatformExpenseAction,
+    successMessage: "Recorded",
+    invalidateKeys: FINANCE_KEYS,
+    refresh: false,
+  })
+
+  const { run: removeExpense, isPending: isRemoving } = useActionMutation({
+    action: removePlatformExpenseAction,
+    // The row leaving the list says it.
+    successMessage: false,
+    invalidateKeys: FINANCE_KEYS,
+    refresh: false,
+  })
+
+  const handleRecord = async () => {
+    if (!(await recordExpense({ date, description, category, amount_usd: amount }))) return
+
+    setDescription("")
+    setCategory("")
+    setAmount("")
   }
-
-  const { mutate: add, isPending } = useMutation({
-    mutationFn: () =>
-      addPlatformExpenseAction({ date, description, category, amount_usd: amount }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not record the expense")
-        return
-      }
-      toast.success("Recorded")
-      setDescription("")
-      setCategory("")
-      setAmount("")
-      refresh()
-    },
-  })
-
-  const { mutate: remove, isPending: isRemoving } = useMutation({
-    mutationFn: (id: string) => removePlatformExpenseAction(id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not remove it")
-        return
-      }
-      refresh()
-    },
-  })
 
   if (isLoading && !finance) {
     return <div className="h-64 animate-pulse rounded-xl bg-muted/40" />
@@ -194,7 +187,7 @@ const PlatformFinance = () => {
           onSubmit={(event) => {
             event.preventDefault()
             if (!description.trim() || !amount.trim()) return
-            add()
+            void handleRecord()
           }}
         >
           <div className="space-y-1.5">
@@ -278,7 +271,7 @@ const PlatformFinance = () => {
                     variant="outline"
                     size="sm"
                     disabled={isRemoving}
-                    onClick={() => remove(expense.id)}
+                    onClick={() => void removeExpense(expense.id)}
                   >
                     <Trash2 className="size-3.5" />
                     <span className="sr-only">Remove {expense.description}</span>
