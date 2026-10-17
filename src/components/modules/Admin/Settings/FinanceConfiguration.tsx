@@ -16,11 +16,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { formatBdt } from "@/lib/currency"
-import type { IExpenseCategory } from "@/types/spending.types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { useQuery } from "@tanstack/react-query"
 import { Trash2 } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { expenseCategoriesQuery } from "@/queries/spending.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
@@ -33,7 +32,6 @@ import { queryKeys } from "@/lib/queryKeys"
  */
 
 const CategorySettings = () => {
-  const queryClient = useQueryClient()
   const [name, setName] = useState("")
   const [type, setType] = useState<"general" | "employee">("general")
 
@@ -41,41 +39,25 @@ const CategorySettings = () => {
 
   const categories = data?.data ?? []
 
-  const { mutateAsync: create, isPending: isCreating } = useMutation({
-    mutationFn: () => createCategoryAction({ name, type }),
+  const { run: addCategory, isPending: isCreating } = useActionMutation({
+    action: createCategoryAction,
+    successMessage: "Category added",
+    invalidateKeys: [queryKeys.expenseCategories.all],
+    refresh: false,
   })
 
-  const { mutateAsync: remove } = useMutation({
-    mutationFn: (id: string) => deleteCategoryAction(id),
+  // The server refuses a category that expenses still use, and its message
+  // ("deactivate it instead") is the failure toast.
+  const { run: deleteCategory } = useActionMutation({
+    action: deleteCategoryAction,
+    successMessage: "Category deleted",
+    invalidateKeys: [queryKeys.expenseCategories.all],
+    refresh: false,
   })
 
   const handleCreate = async () => {
     if (!name.trim()) return
-
-    const result = await create()
-
-    if (!result.success) {
-      toast.error(result.message || "Failed to create the category")
-      return
-    }
-
-    toast.success("Category added")
-    setName("")
-    void queryClient.invalidateQueries({ queryKey: queryKeys.expenseCategories.all })
-  }
-
-  const handleDelete = async (category: IExpenseCategory) => {
-    const result = await remove(category.id)
-
-    if (!result.success) {
-      // The server refuses when expenses reference it, and explains why —
-      // "deactivate it instead" is actionable, "delete failed" is not.
-      toast.error(result.message || "Failed to delete the category")
-      return
-    }
-
-    toast.success("Category deleted")
-    void queryClient.invalidateQueries({ queryKey: queryKeys.expenseCategories.all })
+    if (await addCategory({ name, type })) setName("")
   }
 
   return (
@@ -136,7 +118,7 @@ const CategorySettings = () => {
                 type="button"
                 variant="ghost"
                 size="icon"
-                onClick={() => void handleDelete(category)}
+                onClick={() => void deleteCategory(category.id)}
               >
                 <Trash2 className="size-4" />
                 <span className="sr-only">Delete {category.name}</span>
