@@ -5,6 +5,7 @@ import {
   invitePlatformAdminAction,
   revokePlatformInviteAction,
 } from "@/app/(dashboardLayout)/platform/_teamAction"
+import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -51,6 +52,7 @@ const PlatformInvites = () => {
   const [freshLink, setFreshLink] = useState<string | null>(null)
   const [mailed, setMailed] = useState<{ delivered: boolean; reason: string | null } | null>(null)
   const [copied, setCopied] = useState(false)
+  const [revoking, setRevoking] = useState<IPlatformInvite | null>(null)
 
   const { data, isLoading } = useQuery(platformInvitesQuery())
 
@@ -81,6 +83,10 @@ const PlatformInvites = () => {
     invalidateKeys: [queryKeys.platformInvites.all],
     refresh: false,
   })
+
+  const handleRevoke = async () => {
+    if (revoking && (await revokeInvite(revoking.id))) setRevoking(null)
+  }
 
   const handleInvite = async () => {
     if (!(await sendInvite({ email, permissions }))) return
@@ -269,7 +275,7 @@ const PlatformInvites = () => {
                         variant="outline"
                         size="sm"
                         disabled={isRevoking}
-                        onClick={() => void revokeInvite(invite.id)}
+                        onClick={() => setRevoking(invite)}
                       >
                         <Trash2 className="size-3.5" />
                         <span className="sr-only">Revoke</span>
@@ -282,6 +288,27 @@ const PlatformInvites = () => {
           </ul>
         )}
       </Card>
+
+      <ConfirmDialog
+        open={Boolean(revoking)}
+        onOpenChange={(open) => {
+          if (!open) setRevoking(null)
+        }}
+        title="Revoke this invite?"
+        description={
+          revoking && (
+            <>
+              The link sent to <span className="font-medium text-foreground">{revoking.email}</span>{" "}
+              stops working immediately. Nothing was created from it, so nothing else changes.
+            </>
+          )
+        }
+        variant="destructive"
+        confirmLabel="Revoke"
+        pendingLabel="Revoking..."
+        isPending={isRevoking}
+        onConfirm={() => void handleRevoke()}
+      />
     </div>
   )
 }
