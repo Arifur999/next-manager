@@ -1,7 +1,7 @@
 "use client"
 
 import EmptyState from "@/components/shared/state/EmptyState"
-import LoadingBlock from "@/components/shared/state/LoadingBlock"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -26,8 +26,8 @@ import { usersListQuery } from "@/queries/people.queries"
 const TeamDirectory = () => {
   const [term, setTerm] = useState("")
 
-  const { data, isLoading } = useQuery(usersListQuery())
-  const people = data?.data ?? []
+  const peopleList = useQuery(usersListQuery())
+  const people = peopleList.data?.data ?? []
 
   const needle = term.trim().toLowerCase()
   const shown = needle
@@ -58,13 +58,16 @@ const TeamDirectory = () => {
         />
       </CardHeader>
 
-      {isLoading && people.length === 0 ? (
-        <LoadingBlock />
-      ) : shown.length === 0 ? (
-        <EmptyState icon={UsersRound}>
-          {needle ? "Nobody by that name." : "Nobody here yet."}
-        </EmptyState>
-      ) : (
+      <PanelState
+        query={peopleList}
+        errorMessage="The team directory did not load."
+        isEmpty={shown.length === 0}
+        empty={
+          <EmptyState icon={UsersRound}>
+            {needle ? "Nobody by that name." : "Nobody here yet."}
+          </EmptyState>
+        }
+      >
         <ul className="divide-y">
           {shown.map((person) => (
             <li
@@ -89,7 +92,7 @@ const TeamDirectory = () => {
             </li>
           ))}
         </ul>
-      )}
+      </PanelState>
     </Card>
   )
 }
