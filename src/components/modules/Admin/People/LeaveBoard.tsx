@@ -22,13 +22,17 @@ import {
 } from "@/components/ui/select"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import type { LeaveStatus } from "@/types/people.types"
+import {
+  leaveRequestFormZodSchema,
+  suggestedLeaveDays,
+  type ILeaveRequestFormValues,
+} from "@/zod/people.validation"
+import { useForm, useStore } from "@tanstack/react-form"
 import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { CalendarOff } from "lucide-react"
-import { useState } from "react"
 import { leaveRequestsListQuery, leaveTypesQuery } from "@/queries/people.queries"
 import { queryKeys } from "@/lib/queryKeys"
-import { suggestedLeaveDays } from "@/zod/people.validation"
 
 /**
  * Asking to be away, and deciding.
@@ -50,21 +54,20 @@ const STATUS_TONE: Record<LeaveStatus, "secondary" | "outline" | "destructive"> 
 // Every change to a request moves the requester's balance too.
 const LEAVE_KEYS = [queryKeys.leaveRequests.all, queryKeys.leaveBalance.all]
 
-const LeaveBoard = ({ canDecide }: { canDecide: boolean }) => {
-  const [typeId, setTypeId] = useState("")
-  const [from, setFrom] = useState("")
-  const [to, setTo] = useState("")
-  const [reason, setReason] = useState("")
+const newLeaveRequest: ILeaveRequestFormValues = {
+  leave_type_id: "",
+  from_date: "",
+  to_date: "",
+  days: "",
+  reason: "",
+}
 
+const LeaveBoard = ({ canDecide }: { canDecide: boolean }) => {
   const { data, isLoading } = useQuery(leaveRequestsListQuery())
   const { data: typeData } = useQuery(leaveTypesQuery())
 
   const requests = data?.data ?? []
   const types = ((typeData?.data ?? [])).filter((type) => type.is_active)
-
-  const suggestedDays = suggestedLeaveDays(from, to)
-
-  const [days, setDays] = useState("")
 
   const { run: requestLeave, isPending } = useActionMutation({
     action: requestLeaveAction,
@@ -87,14 +90,24 @@ const LeaveBoard = ({ canDecide }: { canDecide: boolean }) => {
     refresh: false,
   })
 
-  const handleRequest = async () => {
-    if (await requestLeave({ leave_type_id: typeId, from_date: from, to_date: to, days, reason })) {
-      setFrom("")
-      setTo("")
-      setDays("")
-      setReason("")
-    }
-  }
+  const form = useForm({
+    defaultValues: newLeaveRequest,
+    validators: { onSubmit: leaveRequestFormZodSchema },
+    onSubmit: async ({ value, formApi }) => {
+      // Everything but the kind clears once the request is sent.
+      if (await requestLeave(value)) {
+        formApi.reset({ ...newLeaveRequest, leave_type_id: value.leave_type_id }, { keepDefaultValues: true })
+      }
+    },
+  })
+
+  const suggestedDays = useStore(form.store, (state) =>
+    suggestedLeaveDays(state.values.from_date, state.values.to_date),
+  )
+  const isIncomplete = useStore(
+    form.store,
+    (state) => !state.values.leave_type_id || !state.values.from_date || !state.values.to_date,
+  )
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
@@ -108,87 +121,106 @@ const LeaveBoard = ({ canDecide }: { canDecide: boolean }) => {
             className="space-y-4 px-6 pb-6"
             onSubmit={(event) => {
               event.preventDefault()
-              if (!typeId || !from || !to) return
-              void handleRequest()
+              void form.handleSubmit()
             }}
           >
-            <div className="space-y-1.5">
-              <Label htmlFor="leave-type">Kind</Label>
-              <Select value={typeId} onValueChange={setTypeId} disabled={isPending}>
-                <SelectTrigger id="leave-type" className="w-full">
-                  <SelectValue placeholder="Choose" />
-                </SelectTrigger>
-                <SelectContent>
-                  {types.map((type) => (
-                    <SelectItem key={type.id} value={type.id}>
-                      {type.name}
-                      {type.is_paid ? "" : " (unpaid)"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <form.Field name="leave_type_id">
+              {(field) => (
+                <div className="space-y-1.5">
+                  <Label htmlFor="leave-type">Kind</Label>
+                  <Select value={field.state.value} onValueChange={field.handleChange} disabled={isPending}>
+                    <SelectTrigger id="leave-type" className="w-full">
+                      <SelectValue placeholder="Choose" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {types.map((type) => (
+                        <SelectItem key={type.id} value={type.id}>
+                          {type.name}
+                          {type.is_paid ? "" : " (unpaid)"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </form.Field>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="leave-from">First day</Label>
-                <Input
-                  id="leave-from"
-                  type="date"
-                  value={from}
-                  onChange={(event) => setFrom(event.target.value)}
-                  disabled={isPending}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="leave-to">Last day</Label>
-                <Input
-                  id="leave-to"
-                  type="date"
-                  value={to}
-                  onChange={(event) => setTo(event.target.value)}
-                  disabled={isPending}
-                />
-              </div>
+              <form.Field name="from_date">
+                {(field) => (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="leave-from">First day</Label>
+                    <Input
+                      id="leave-from"
+                      type="date"
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(event) => field.handleChange(event.target.value)}
+                      disabled={isPending}
+                    />
+                  </div>
+                )}
+              </form.Field>
+              <form.Field name="to_date">
+                {(field) => (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="leave-to">Last day</Label>
+                    <Input
+                      id="leave-to"
+                      type="date"
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(event) => field.handleChange(event.target.value)}
+                      disabled={isPending}
+                    />
+                  </div>
+                )}
+              </form.Field>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="leave-days">Days it costs</Label>
-              <Input
-                id="leave-days"
-                type="number"
-                min={0.5}
-                step="0.5"
-                value={days}
-                placeholder={String(suggestedDays)}
-                onChange={(event) => setDays(event.target.value)}
-                disabled={isPending}
-              />
-              <p className="text-xs text-muted-foreground">
-                {/* The dates cannot know about weekends or half days, so the
-                    number is editable and it is the one that is stored. */}
-                Counted from the dates, but yours to change — weekends and half days are
-                your agency&apos;s business, not ours.
-              </p>
-            </div>
+            <form.Field name="days">
+              {(field) => (
+                <div className="space-y-1.5">
+                  <Label htmlFor="leave-days">Days it costs</Label>
+                  <Input
+                    id="leave-days"
+                    type="number"
+                    min={0.5}
+                    step="0.5"
+                    value={field.state.value}
+                    placeholder={String(suggestedDays)}
+                    onBlur={field.handleBlur}
+                    onChange={(event) => field.handleChange(event.target.value)}
+                    disabled={isPending}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {/* The dates cannot know about weekends or half days, so the
+                        number is editable and it is the one that is stored. */}
+                    Counted from the dates, but yours to change — weekends and half days are
+                    your agency&apos;s business, not ours.
+                  </p>
+                </div>
+              )}
+            </form.Field>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="leave-reason">Reason</Label>
-              <Input
-                id="leave-reason"
-                value={reason}
-                maxLength={300}
-                onChange={(event) => setReason(event.target.value)}
-                placeholder="Optional"
-                disabled={isPending}
-              />
-            </div>
+            <form.Field name="reason">
+              {(field) => (
+                <div className="space-y-1.5">
+                  <Label htmlFor="leave-reason">Reason</Label>
+                  <Input
+                    id="leave-reason"
+                    value={field.state.value}
+                    maxLength={300}
+                    onBlur={field.handleBlur}
+                    onChange={(event) => field.handleChange(event.target.value)}
+                    placeholder="Optional"
+                    disabled={isPending}
+                  />
+                </div>
+              )}
+            </form.Field>
 
-            <Button
-              type="submit"
-              disabled={isPending || !typeId || !from || !to}
-              className="w-full"
-            >
+            <Button type="submit" disabled={isPending || isIncomplete} className="w-full">
               Send for approval
             </Button>
           </form>
