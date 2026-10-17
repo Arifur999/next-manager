@@ -5,6 +5,8 @@ import {
   removePlatformExpenseAction,
 } from "@/app/(dashboardLayout)/platform/_financeAction"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
+import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { usd } from "@/components/shared/kpi/MetricTile"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -30,12 +32,12 @@ const PlatformExpenses = ({ range }: { range: string }) => {
   const [amount, setAmount] = useState("")
   const [removing, setRemoving] = useState<IPlatformExpense | null>(null)
 
-  const { data: expensesData } = useQuery({
+  const expensesQuery = useQuery({
     ...platformExpensesListQuery(range),
     placeholderData: keepPreviousData,
   })
 
-  const expenses = expensesData?.data ?? []
+  const expenses = expensesQuery.data?.data ?? []
 
   const { run: recordExpense, isPending } = useActionMutation({
     action: addPlatformExpenseAction,
@@ -135,12 +137,12 @@ const PlatformExpenses = ({ range }: { range: string }) => {
           </Button>
         </form>
 
-        {expenses.length === 0 ? (
-          <p className="flex flex-col items-center gap-2 px-6 py-10 text-center text-sm text-muted-foreground">
-            <Receipt className="size-7" aria-hidden="true" />
-            Nothing recorded in this window.
-          </p>
-        ) : (
+        <PanelState
+          query={expensesQuery}
+          errorMessage="The expenses did not load."
+          isEmpty={expenses.length === 0}
+          empty={<EmptyState icon={Receipt}>Nothing recorded in this window.</EmptyState>}
+        >
           <ul className="divide-y">
             {expenses.map((expense) => (
               <li
@@ -173,7 +175,7 @@ const PlatformExpenses = ({ range }: { range: string }) => {
               </li>
             ))}
           </ul>
-        )}
+        </PanelState>
       </Card>
 
       <ConfirmDialog
