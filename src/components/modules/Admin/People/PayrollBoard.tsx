@@ -9,6 +9,7 @@ import {
 import PayrollRunCard from "@/components/modules/Admin/People/PayrollRunCard"
 import ConfirmDialog from "@/components/shared/dialog/ConfirmDialog"
 import EmptyState from "@/components/shared/state/EmptyState"
+import ErrorState from "@/components/shared/state/ErrorState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -46,10 +47,10 @@ const PayrollBoard = () => {
   const [month, setMonth] = useState(format(new Date(), "yyyy-MM"))
   const [discarding, setDiscarding] = useState<IPayrollRun | null>(null)
 
-  const { data, isLoading } = useQuery(payrollRunsQuery())
+  const runList = useQuery(payrollRunsQuery())
   const { data: accountData } = useQuery(accountsQuery())
 
-  const runs = data?.data ?? []
+  const runs = runList.data?.data ?? []
   // Salaries are BDT, like every other team payout.
   const accounts = ((accountData?.data ?? [])).filter(
     (account) => account.currency === "BDT" && account.is_active
@@ -125,26 +126,40 @@ const PayrollBoard = () => {
         </form>
       </Card>
 
-      {isLoading && runs.length === 0 ? (
+      {/* The error shows only when nothing loaded: a run card holds figures
+          being typed, and a failed refetch must not take them away. */}
+      {runList.isError && runs.length === 0 && (
+        <Card>
+          <ErrorState
+            message="Payroll did not load."
+            onRetry={() => void runList.refetch()}
+            isRetrying={runList.isFetching}
+          />
+        </Card>
+      )}
+
+      {runList.isLoading && (
         <Card>
           <LoadingBlock rounded />
         </Card>
-      ) : runs.length === 0 ? (
+      )}
+
+      {runList.isSuccess && runs.length === 0 && (
         <Card>
           <EmptyState icon={Wallet}>No payroll yet.</EmptyState>
         </Card>
-      ) : (
-        runs.map((run) => (
-          <PayrollRunCard
-            key={run.id}
-            run={run}
-            accounts={accounts}
-            onSave={(items) => void savePayrollItems({ id: run.id, items })}
-            onPay={(accountId) => void payPayroll({ id: run.id, accountId })}
-            onDiscard={() => setDiscarding(run)}
-          />
-        ))
       )}
+
+      {runs.map((run) => (
+        <PayrollRunCard
+          key={run.id}
+          run={run}
+          accounts={accounts}
+          onSave={(items) => void savePayrollItems({ id: run.id, items })}
+          onPay={(accountId) => void payPayroll({ id: run.id, accountId })}
+          onDiscard={() => setDiscarding(run)}
+        />
+      ))}
 
       <ConfirmDialog
         open={discarding !== null}
