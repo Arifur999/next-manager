@@ -12,14 +12,9 @@ import { useState } from "react"
 import { platformFinanceQuery } from "@/queries/platform.queries"
 
 /**
- * AGENCIO's own money: what comes in from subscriptions, what goes out to run
- * it, and what is left.
- *
- * No customer's books are on this screen and none can be — the API does not
- * return those columns, and the smoke suite greps the response to prove it.
- *
- * The window defaults to this month, so "net" compares a monthly recurring
- * figure against a month of costs rather than against everything ever spent.
+ * The platform's own money: subscription revenue in, running costs out. No
+ * customer's books are here; the API does not return them. The window
+ * defaults to this month, so costs are set against one month of revenue.
  */
 
 const iso = (date: Date) => format(date, "yyyy-MM-dd")
@@ -82,7 +77,7 @@ const PlatformFinance = () => {
         </div>
         <p className="pb-2 text-xs text-muted-foreground">
           {/* Which figures move with the dates and which do not, said plainly. */}
-          Costs and churn use this window. Revenue is what is recurring right now.
+          Costs and churn use these dates. Revenue is what recurs today.
         </p>
       </div>
 

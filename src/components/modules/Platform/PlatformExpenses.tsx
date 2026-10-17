@@ -12,6 +12,7 @@ import { usd } from "@/components/shared/kpi/MetricTile"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { useActionMutation } from "@/hooks/useActionMutation"
+import { todayIsoDate } from "@/lib/dates"
 import { queryKeys } from "@/lib/queryKeys"
 import { platformExpensesListQuery } from "@/queries/platform.queries"
 import type { IPlatformExpense } from "@/types/platform.types"
@@ -26,7 +27,7 @@ import { useState } from "react"
 const FINANCE_KEYS = [queryKeys.platformFinance.all, queryKeys.platformExpenses.all]
 
 const newExpenseDefaults = (): IPlatformExpenseFormValues => ({
-  date: format(new Date(), "yyyy-MM-dd"),
+  date: todayIsoDate(),
   description: "",
   category: "",
   amount_usd: "",
@@ -78,13 +79,12 @@ const PlatformExpenses = ({ range }: { range: string }) => {
         <CardHeader className="border-b px-5 py-4">
           <CardTitle className="text-base">What it costs to run</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Servers, domains, the mail plan, what the team is paid. USD, so it subtracts
-            from subscription revenue without a conversion in between.
+            Servers, domains, the mail plan and what the team is paid, in USD like the revenue.
           </p>
         </CardHeader>
 
         <form
-          className="flex flex-wrap items-end gap-3 border-b px-5 py-4"
+          className="flex flex-wrap items-start gap-3 border-b px-5 py-4"
           noValidate
           onSubmit={(event) => {
             event.preventDefault()
@@ -104,7 +104,7 @@ const PlatformExpenses = ({ range }: { range: string }) => {
               <AppField
                 field={field}
                 label="What for"
-                placeholder="Database hosting"
+                placeholder="e.g. Database hosting"
                 className="min-w-44 flex-1"
                 disabled={isPending}
               />
@@ -116,7 +116,7 @@ const PlatformExpenses = ({ range }: { range: string }) => {
               <AppField
                 field={field}
                 label="Category"
-                placeholder="Infrastructure"
+                placeholder="e.g. Infrastructure"
                 className="w-36"
                 disabled={isPending}
               />
@@ -138,15 +138,10 @@ const PlatformExpenses = ({ range }: { range: string }) => {
             )}
           </form.Field>
 
-          <form.Subscribe
-            selector={({ values }) => values.description.trim() !== "" && values.amount_usd.trim() !== ""}
-          >
-            {(isFilledIn) => (
-              <Button type="submit" disabled={isPending || !isFilledIn}>
-                Record
-              </Button>
-            )}
-          </form.Subscribe>
+          {/* Lined up with the inputs, under the labels, rather than with any error below them. */}
+          <Button type="submit" className="mt-6" disabled={isPending}>
+            {isPending ? "Recording..." : "Record"}
+          </Button>
         </form>
 
         <PanelState
