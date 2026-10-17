@@ -1,4 +1,5 @@
 import ProfileForm from "@/components/modules/Account/ProfileForm";
+import { getProfileCopy } from "@/components/modules/Account/profileCopy";
 import { getUserInfo } from "@/services/auth.services";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
@@ -19,9 +20,7 @@ const MyProfilePage = async () => {
 
   return (
     <div className="max-w-3xl space-y-6">
-      <PageHeader title="My profile">
-        What the rest of the agency sees when your name appears on their screen.
-      </PageHeader>
+      <PageHeader title="My profile">{getProfileCopy(user.role).pageIntro}</PageHeader>
 
       <ProfileForm user={user} />
     </div>

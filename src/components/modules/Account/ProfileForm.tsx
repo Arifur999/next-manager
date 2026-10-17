@@ -1,15 +1,14 @@
 "use client"
 
 import { updateMeAction } from "@/app/(dashboardLayout)/my-profile/_action"
+import { EMAIL_REASON, getProfileCopy } from "@/components/modules/Account/profileCopy"
 import AppField from "@/components/shared/form/AppField"
+import ReadOnlyField from "@/components/shared/form/ReadOnlyField"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { profileFormZodSchema, type IProfileFormValues } from "@/zod/auth.validation"
-import { ROLE_LABELS } from "@/zod/user.validation"
 import type { IUser } from "@/types/user.types"
 import { useForm } from "@tanstack/react-form"
 
@@ -47,21 +46,13 @@ const ProfileForm = ({ user }: { user: IUser }) => {
   const isChanged = (values: IProfileFormValues) =>
     values.full_name.trim() !== user.full_name || values.phone.trim() !== (user.phone ?? "")
 
-  // ROLE_LABELS covers the roles an admin can assign. super_admin is not one
-  // of them but does own an account, so it falls back to its own value rather
-  // than being indexed for and coming back undefined.
-  const roleLabel =
-    user.role in ROLE_LABELS
-      ? ROLE_LABELS[user.role as keyof typeof ROLE_LABELS]
-      : user.role.replace(/_/g, " ")
+  const copy = getProfileCopy(user.role)
 
   return (
     <Card className="gap-0 p-0">
       <CardHeader className="border-b px-5 py-4">
         <CardTitle className="text-base">Your details</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Your name is what colleagues see on approvals, timesheets and assignments.
-        </p>
+        <p className="text-sm text-muted-foreground">{copy.detailsIntro}</p>
       </CardHeader>
 
       <form
@@ -82,36 +73,18 @@ const ProfileForm = ({ user }: { user: IUser }) => {
 
           <form.Field name="phone">
             {(field) => (
-              <AppField
-                field={field}
-                label="Phone"
-                type="tel"
-                autoComplete="tel"
-                placeholder="Optional"
-                disabled={isPending}
-              />
+              <AppField field={field} label="Phone (optional)" type="tel" autoComplete="tel" disabled={isPending} />
             )}
           </form.Field>
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="profile-email">Email</Label>
-            <Input id="profile-email" value={user.email} readOnly disabled />
-            <p className="text-xs text-muted-foreground">
-              This is how you sign in. An admin has to change it.
-            </p>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Role</Label>
-            <div className="flex h-9 items-center">
-              <Badge variant="secondary">{roleLabel}</Badge>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              What you can reach. Only an admin can change it.
-            </p>
-          </div>
+          <ReadOnlyField label="Email" value={user.email} reason={EMAIL_REASON} />
+          <ReadOnlyField
+            label="Role"
+            value={<Badge variant="secondary">{copy.roleLabel}</Badge>}
+            reason={copy.roleReason}
+          />
         </div>
 
         <form.Subscribe selector={({ values }) => isChanged(values) && values.full_name.trim() !== ""}>
