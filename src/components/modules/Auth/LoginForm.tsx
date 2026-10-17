@@ -14,14 +14,14 @@ import {
 import { safeRedirect } from "@/lib/authUtils"
 import { toUserRole } from "@/types/user.types"
 import { loginFormZodSchema, type ILoginFormValues } from "@/zod/auth.validation"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQueryClient } from "@tanstack/react-query"
 import { Eye, EyeOff, Info } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { focusFirstInvalid } from "@/lib/focusFirstInvalid"
 import { useRef, useState } from "react"
-import { toast } from "sonner"
 
 const LoginForm = () => {
   const router = useRouter()
@@ -41,31 +41,27 @@ const LoginForm = () => {
     password: "",
   }
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: ILoginFormValues) => loginAction(values),
+  // The hook's router refresh runs after onSuccess, so the push lands first.
+  const { run: signIn, isPending } = useActionMutation({
+    action: loginAction,
+    successMessage: "Logged in successfully",
+    onSuccess: (result) => {
+      if (!result.success) return
+
+      const role = toUserRole(result.data?.user?.role)
+      const destination = role ? safeRedirect(searchParams.get("redirect"), role) : "/"
+
+      // Whatever a previous session left in this browser's cache is not theirs.
+      queryClient.clear()
+      router.push(destination)
+    },
   })
 
   const form = useForm({
     defaultValues,
     onSubmitInvalid: () => focusFirstInvalid(formRef.current),
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
-
-      // The action never throws, so success is a value to branch on.
-      if (!result.success) {
-        toast.error(result.message || "Failed to sign in")
-        return
-      }
-
-      toast.success(result.message || "Signed in successfully")
-
-      const role = toUserRole("data" in result ? result.data?.user?.role : undefined)
-      const destination = role ? safeRedirect(searchParams.get("redirect"), role) : "/"
-
-      // Whatever a previous session left in this browser's cache is not theirs.
-      queryClient.clear()
-      router.push(destination)
-      router.refresh()
+      await signIn(value)
     },
   })
 
