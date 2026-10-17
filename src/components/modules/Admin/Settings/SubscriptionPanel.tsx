@@ -1,6 +1,7 @@
 "use client"
 
 import ErrorState from "@/components/shared/state/ErrorState"
+import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import type { SubscriptionStatus } from "@/types/platform.types"
@@ -82,7 +83,7 @@ const SubscriptionPanel = () => {
   const standing = data?.data
 
   if (isLoading && !standing) {
-    return <div className="h-40 animate-pulse rounded-xl bg-muted/40" />
+    return <LoadingBlock rounded />
   }
 
   if (isError || !standing) {

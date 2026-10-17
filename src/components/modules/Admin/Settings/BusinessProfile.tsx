@@ -4,6 +4,7 @@ import { updateOrganizationAction } from "@/app/(dashboardLayout)/admin/dashboar
 import AppField from "@/components/shared/form/AppField"
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
 import ErrorState from "@/components/shared/state/ErrorState"
+import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import type { IOrganization } from "@/types/workspace.types"
 import { useActionMutation } from "@/hooks/useActionMutation"
@@ -108,7 +109,7 @@ const BusinessProfile = () => {
   const organization = data?.data
 
   const renderDetails = () => {
-    if (isLoading) return <div className="h-64 animate-pulse bg-muted/40" />
+    if (isLoading) return <LoadingBlock height="h-64" />
 
     if (!organization) {
       return (

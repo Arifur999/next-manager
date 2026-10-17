@@ -3,6 +3,7 @@
 import { site } from "@/data/site"
 import { setNotificationRuleAction } from "@/app/(dashboardLayout)/admin/dashboard/notifications/_action"
 import ErrorState from "@/components/shared/state/ErrorState"
+import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -49,7 +50,7 @@ const NotificationRules = () => {
   })
 
   if (isLoading) {
-    return <div className="h-64 animate-pulse rounded-xl bg-muted/40" />
+    return <LoadingBlock height="h-64" rounded />
   }
 
   // Only when nothing ever arrived: a failed refetch after a toggle keeps the switches.
