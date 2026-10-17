@@ -19,8 +19,7 @@ const UsageCell = ({ used, limit }: { used: number; limit: number | null }) => (
 
 const usageText = (used: number, limit: number | null) => `${used} of ${limit ?? "unlimited"}`
 
-const planName = (company: ICompanyRow, plans: IPlan[]) =>
-  plans.find((plan) => plan.id === company.subscription?.plan_id)?.name ?? ""
+const planName = (company: ICompanyRow) => company.subscription?.plan.name ?? ""
 
 // `onChange` opens the company in a sheet; on a phone that is the only editor shown.
 export const companiesColumns = (
@@ -75,7 +74,7 @@ export const companiesColumns = (
   },
   {
     id: "plan",
-    accessorFn: (company) => planName(company, plans),
+    accessorFn: planName,
     header: "Plan",
     enableSorting: false,
     // Keyed by company: rows are matched by position, and an editor holding

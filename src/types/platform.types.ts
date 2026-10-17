@@ -52,6 +52,9 @@ export interface ISubscription {
     plan: IPlan;
 }
 
+/** A subscription as the companies list selects it: the plan comes whole, with no separate ids. */
+export type ICompanySubscription = Omit<ISubscription, "plan_id" | "organization_id">;
+
 export interface IUsage {
     seats_used: number;
     projects_used: number;
@@ -64,7 +67,7 @@ export interface ICompanyRow {
     name: string;
     email: string;
     created_at: string;
-    subscription: ISubscription | null;
+    subscription: ICompanySubscription | null;
     /**
      * The person this was sold to. Name and email only — not the customer's
      * whole staff list, which is not something running a platform needs.

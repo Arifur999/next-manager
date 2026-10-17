@@ -20,7 +20,7 @@ type RepricePlanDialogProps = {
 const RepricePlanDialog = ({ plan, newPrice, open, onOpenChange, isPending, onConfirm }: RepricePlanDialogProps) => {
   // Every company, read only while the dialog is open: the plans list carries no count of its own.
   const companiesList = useQuery({ ...companiesListQuery(), enabled: open })
-  const onPlan = companiesList.data?.data.filter((company) => company.subscription?.plan_id === plan.id).length
+  const onPlan = companiesList.data?.data.filter((company) => company.subscription?.plan.id === plan.id).length
 
   const change = `${plan.name} to ${monthlyPrice(newPrice)}`
   const title = onPlan === undefined ? `Change ${change}?` : `Change ${change} for ${companiesText(onPlan)}?`

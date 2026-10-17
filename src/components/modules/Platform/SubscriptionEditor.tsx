@@ -36,7 +36,8 @@ type SubscriptionEditorProps = {
 // One company's plan and standing, saved together after a confirm step that
 // names the effect. A company with no subscription starts with nothing picked.
 const SubscriptionEditor = ({ company, plans, layout = "inline", initialStatus, onSaved }: SubscriptionEditorProps) => {
-  const savedPlanId = company.subscription?.plan_id ?? ""
+  // The companies list sends the plan whole, so its id is read from it.
+  const savedPlanId = company.subscription?.plan.id ?? ""
   const savedStatus = company.subscription?.status ?? ""
 
   const [planId, setPlanId] = useState(savedPlanId)
