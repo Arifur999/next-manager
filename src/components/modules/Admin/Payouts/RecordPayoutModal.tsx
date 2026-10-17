@@ -57,7 +57,7 @@ const RecordPayoutModal = () => {
   const { data: accountsData } = useQuery({ ...accountsQuery(), enabled: open })
   const { data: projectsData } = useQuery({ ...projectsListQuery(), enabled: open })
 
-  const users = ((usersData?.data ?? [])).filter((user) => user.status === "active")
+  const activeUsers = (usersData?.data ?? []).filter((user) => user.status === "active")
   const accounts = accountsData?.data ?? []
   const projects = projectsData?.data ?? []
   const bdtAccounts = accounts.filter((account) => account.currency === "BDT" && account.is_active)
@@ -130,7 +130,7 @@ const RecordPayoutModal = () => {
                     onChange={field.handleChange}
                     disabled={isPending}
                     emptyMessage="Invite a team member first"
-                    options={users.map((user) => ({
+                    options={activeUsers.map((user) => ({
                       value: user.id,
                       label: user.full_name,
                       hint: user.role.replace(/_/g, " "),
