@@ -6,6 +6,8 @@ import {
 } from "@/app/(dashboardLayout)/dashboard/timesheet/_action"
 import { groupByPerson } from "@/components/modules/Admin/Time/groupByPerson"
 import StatTile from "@/components/shared/StatTile"
+import EmptyState from "@/components/shared/state/EmptyState"
+import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
@@ -44,9 +46,11 @@ const ApprovalQueue = ({ viewerId }: { viewerId: string }) => {
   const end = addDays(start, 6)
   const query = `from=${iso(start)}&to=${iso(end)}&approved=${tab === "approved"}`
 
-  const { data, isLoading } = useQuery(timeEntriesListQuery(query))
+  const entriesQuery = useQuery(timeEntriesListQuery(query))
 
-  const entries = data?.data ?? []
+  const entries = entriesQuery.data?.data ?? []
+  // Zero hours waiting is a claim; without an answer the tiles stay off.
+  const hasFailed = !entriesQuery.data && entriesQuery.isError
   const groups = groupByPerson(entries)
   const totalHours = entries.reduce((running, entry) => running + entry.hours, 0)
   const billableHours = entries
@@ -71,22 +75,24 @@ const ApprovalQueue = ({ viewerId }: { viewerId: string }) => {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <StatTile
-          label={tab === "pending" ? "Awaiting approval" : "Approved this week"}
-          value={`${totalHours.toFixed(2)} h`}
-          secondary={`${billableHours.toFixed(2)} h billable`}
-          icon={<Clock className="size-5" />}
-          tone={1}
-        />
-        <StatTile
-          label="People"
-          value={String(groups.length)}
-          hint={tab === "pending" ? "With time still to clear" : "With cleared time"}
-          icon={<UserCheck className="size-5" />}
-          tone={3}
-        />
-      </div>
+      {!hasFailed && (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <StatTile
+            label={tab === "pending" ? "Awaiting approval" : "Approved this week"}
+            value={`${totalHours.toFixed(2)} h`}
+            secondary={`${billableHours.toFixed(2)} h billable`}
+            icon={<Clock className="size-5" />}
+            tone={1}
+          />
+          <StatTile
+            label="People"
+            value={String(groups.length)}
+            hint={tab === "pending" ? "With time still to clear" : "With cleared time"}
+            icon={<UserCheck className="size-5" />}
+            tone={3}
+          />
+        </div>
+      )}
 
       <Card className="gap-0 overflow-hidden p-0">
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
@@ -133,15 +139,18 @@ const ApprovalQueue = ({ viewerId }: { viewerId: string }) => {
           </div>
         </CardHeader>
 
-        {isLoading && entries.length === 0 ? (
-          <div className="h-40 animate-pulse bg-muted/40" />
-        ) : groups.length === 0 ? (
-          <p className="px-5 py-12 text-center text-sm text-muted-foreground">
-            {tab === "pending"
-              ? "Nothing waiting. Every hour logged this week has been approved."
-              : "Nothing approved for this week yet."}
-          </p>
-        ) : (
+        <PanelState
+          query={entriesQuery}
+          errorMessage="This week's time did not load."
+          isEmpty={groups.length === 0}
+          empty={
+            <EmptyState icon={UserCheck}>
+              {tab === "pending"
+                ? "Nothing waiting. Every hour logged this week has been approved."
+                : "Nothing approved for this week yet."}
+            </EmptyState>
+          }
+        >
           <div className="divide-y">
             {groups.map((group) => (
               <section key={group.userId}>
@@ -211,7 +220,7 @@ const ApprovalQueue = ({ viewerId }: { viewerId: string }) => {
               </section>
             ))}
           </div>
-        )}
+        </PanelState>
       </Card>
     </div>
   )
