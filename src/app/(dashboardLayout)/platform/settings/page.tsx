@@ -1,19 +1,25 @@
 import PlatformSettings from "@/components/modules/Platform/PlatformSettings";
-import type { Metadata } from "next";
 import PageHeader from "@/components/shared/PageHeader";
+import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import { platformSettingsQuery } from "@/queries/platform.queries";
+import type { QueryClient } from "@tanstack/react-query";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Settings",
 };
 
+const prefetch = (queryClient: QueryClient) => queryClient.prefetchQuery(platformSettingsQuery());
+
 const SettingsPage = () => (
   <div className="space-y-6">
     <PageHeader title="Settings">
-      How this installation is set up: what it calls itself in the mail it sends, who
-      customers write to, and what a company that signs itself up is put on.
+      The name on outgoing mail, the support address, and what new sign-ups are put on.
     </PageHeader>
 
-    <PlatformSettings />
+    <QueryPrefetch prefetch={prefetch}>
+      <PlatformSettings />
+    </QueryPrefetch>
   </div>
 );
 
