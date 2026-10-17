@@ -3,6 +3,7 @@
 import { site } from "@/data/site"
 import { updateSettingsAction } from "@/app/(dashboardLayout)/platform/_settingsAction"
 import { planOptionLabel } from "@/components/modules/Platform/planLabel"
+import RelativeTime from "@/components/shared/RelativeTime"
 import ErrorState from "@/components/shared/state/ErrorState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Badge } from "@/components/ui/badge"
@@ -20,7 +21,6 @@ import {
 import { useActionMutation } from "@/hooks/useActionMutation"
 import type { IPlatformSettings } from "@/types/platform.types"
 import { useQuery } from "@tanstack/react-query"
-import { formatDistanceToNow, parseISO } from "date-fns"
 import { CircleAlert, CircleCheck, Mail } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
@@ -42,6 +42,12 @@ import { queryKeys } from "@/lib/queryKeys"
 
 /** The sentinel for "leave new sign-ups unprovisioned" — Select cannot hold "". */
 const NO_PLAN = "__none__"
+
+const trialHint = (provisions: boolean, trialDays: string) => {
+  if (!provisions) return "Nothing to time until there is a starting plan."
+  if (Number(trialDays) === 0) return "No trial — they start as a paying customer straight away."
+  return `They can use everything for ${trialDays} days before the plan has to be paid for.`
+}
 
 const PlatformSettings = () => {
   const { data, isLoading, isFetching, refetch } = useQuery(platformSettingsQuery())
@@ -252,11 +258,7 @@ const SettingsForm = ({ settings }: { settings: IPlatformSettings }) => {
               <span className="text-sm text-muted-foreground">days</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              {!provisions
-                ? "Nothing to time until there is a starting plan."
-                : Number(form.default_trial_days) === 0
-                  ? "No trial — they start as a paying customer straight away."
-                  : `They can use everything for ${form.default_trial_days} days before the plan has to be paid for.`}
+              {trialHint(provisions, form.default_trial_days)}
             </p>
           </div>
         </CardContent>
@@ -267,7 +269,7 @@ const SettingsForm = ({ settings }: { settings: IPlatformSettings }) => {
           Save settings
         </Button>
         <span className="text-xs text-muted-foreground">
-          Last changed {formatDistanceToNow(parseISO(settings.updated_at), { addSuffix: true })}.
+          Last changed <RelativeTime value={settings.updated_at} />.
           Every change is recorded on{" "}
           <Link
             href="/platform/activity"

@@ -10,15 +10,39 @@ export const metadata: Metadata = {
   title: "Tasks",
 };
 
+type TasksSearchParams = {
+  mine?: string;
+  overdue?: string;
+  view?: string;
+  client_owner?: string;
+};
+
+const HEADINGS = {
+  overdue: {
+    title: "Overdue tasks",
+    blurb: "Past their date and still unfinished. Finishing one takes it off this list.",
+  },
+  sales: {
+    title: "Sales tasks",
+    blurb:
+      "Everything happening inside the clients you brought in — whoever is doing it. Watching, not running: the work belongs to whoever the project manager gave it to.",
+  },
+  mine: { title: "My tasks", blurb: "Assigned to you." },
+  all: { title: "Tasks", blurb: "Everything in flight, in the order work moves through." },
+};
+
+// The sidebar's links can combine; the first match names the page.
+const headingFor = (params: TasksSearchParams) => {
+  if (params.overdue === "true") return HEADINGS.overdue;
+  if (params.client_owner === "me") return HEADINGS.sales;
+  if (params.mine === "true") return HEADINGS.mine;
+  return HEADINGS.all;
+};
+
 const TasksPage = async ({
   searchParams,
 }: {
-  searchParams: Promise<{
-    mine?: string;
-    overdue?: string;
-    view?: string;
-    client_owner?: string;
-  }>;
+  searchParams: Promise<TasksSearchParams>;
 }) => {
   const params = await searchParams;
 
@@ -48,19 +72,11 @@ const TasksPage = async ({
   // button that fails.
   const canManage = user?.role === "admin" || user?.role === "project_manager";
 
-  const salesView = params.client_owner === "me";
+  const heading = headingFor(params);
 
   return (
     <div className="space-y-6">
-      <PageHeader title={params.overdue === "true" ? "Overdue tasks" : salesView ? "Sales tasks" : params.mine === "true" ? "My tasks" : "Tasks"}>
-        {params.overdue === "true"
-          ? "Past their date and still unfinished. Finishing one takes it off this list."
-          : salesView
-            ? "Everything happening inside the clients you brought in — whoever is doing it. Watching, not running: the work belongs to whoever the project manager gave it to."
-            : params.mine === "true"
-              ? "Assigned to you."
-              : "Everything in flight, in the order work moves through."}
-      </PageHeader>
+      <PageHeader title={heading.title}>{heading.blurb}</PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
         <TaskBoard canManage={canManage} />

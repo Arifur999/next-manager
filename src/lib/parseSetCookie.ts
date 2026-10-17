@@ -78,13 +78,10 @@ export const parseSetCookie = (header: string): ParsedSetCookie | null => {
     const rawExpires = attribute("expires")
     const expiresAt = rawExpires ? new Date(rawExpires).getTime() : Number.NaN
 
+    // An empty value clears. Otherwise Max-Age wins outright when it is there
+    // and well formed, and Expires decides only without it.
     const clearing =
-        value === ""
-            ? true
-            : maxAge !== undefined
-              ? // Max-Age wins outright when it is there and well formed.
-                maxAge <= 0
-              : Number.isFinite(expiresAt) && expiresAt <= Date.now()
+        value === "" || (maxAge !== undefined ? maxAge <= 0 : Number.isFinite(expiresAt) && expiresAt <= Date.now())
 
     return { name, value, maxAge, clearing }
 }

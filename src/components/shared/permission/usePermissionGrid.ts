@@ -23,10 +23,10 @@ import { queryKeys } from "@/lib/queryKeys"
 export const usePermissionGrid = (userId?: string) => {
     const queryClient = useQueryClient()
 
-    const { data, isLoading, isFetching } = useQuery(permissionGridQuery(userId))
+    const query = useQuery(permissionGridQuery(userId))
 
-    const grid = data?.data
-
+    // Not useActionMutation: a refused change refetches too, so every square
+    // shows what the server holds rather than the value somebody tried.
     const { mutate, isPending } = useMutation({
         mutationFn: ({ run }: { run: () => Promise<{ success: boolean; message?: string }>; note: string }) =>
             run(),
@@ -48,8 +48,11 @@ export const usePermissionGrid = (userId?: string) => {
         },
     })
 
-    return { grid, isLoading, isBusy: isPending || isFetching, save: mutate }
+    // The query goes back whole, for its error and retry.
+    return { query, grid: query.data?.data, isBusy: isPending || query.isFetching, save: mutate }
 }
+
+export type PermissionGrid = ReturnType<typeof usePermissionGrid>
 
 /** Look one square up in a list of rows. */
 export const scopeAt = (

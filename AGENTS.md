@@ -34,7 +34,7 @@ Next.js 16.3 (App Router, `src/proxy.ts` instead of middleware), React 19.2, Typ
 - `src/queries/<domain>.queries.ts`: one `queryOptions` (or `infiniteQueryOptions`) per read; keys from `src/lib/queryKeys.ts`.
 - `src/lib`: `authUtils.ts` (route table), `logger.ts`, `apiFailure.ts`, `queryString.ts`, `currency.ts`, `dates.ts`, `runAction.ts`, `paging.ts`. `src/env.ts` is the only reader of server env.
 - Tables: one `DataTable` (`src/components/shared/table`) on TanStack Table. In memory by default (sort, column filters, search, paging, CSV export, column visibility remembered per `tableId`); lists that grow are server-paged with `useServerDataTable(CONFIG)`, which keeps page, size, search and filters in the URL. The CONFIG lives at module scope beside the table and the page prefetches with `buildTableQueryString(searchParams, CONFIG)`, so both build the same query key. Pure helpers in `src/lib/table` (`csv`, `filterFns`, `filterOptions`, `pageWindow`, `urlState`, `queryProps`), all tested.
-- Shared UI: `PageHeader` for every page heading, `ConfirmDialog` for anything destructive, `PanelState` / `ErrorState` for non-table lists.
+- Shared UI: `PageHeader` for every page heading, `ConfirmDialog` for anything destructive or that moves money, `PanelState` / `ErrorState` for non-table lists, `AppField` for every text, number and date input (label, error, `description`, limits), `RelativeTime` for "3 minutes ago", `InviteLinkPanel` for a link shown once after an invite.
 - Landing page: `src/app/(commonLayout)/(marketing)`, sections in `src/components/modules/Home/<Section>/`, copy in `src/data/home/*.ts`, site facts in `src/data/site.ts`. Design records in `design/` (brief, direction, content, motion, qa).
 - Tokens: `src/app/globals.css` (primitives, then semantic light and dark, then `@theme inline`).
 
@@ -47,7 +47,8 @@ Next.js 16.3 (App Router, `src/proxy.ts` instead of middleware), React 19.2, Typ
 - Redirects after sign-in go through `safeRedirect`. Why: `?redirect=//evil.example` used to leave the site.
 - Query keys come only from `queryKeys` through `src/queries`; an inline `queryKey: [` is a lint error.
 - USD and BDT are never added together; format money with `lib/currency.ts` (negative amounts get a typographic minus so the sign never wraps away from the figure).
-- Calendar days from the API (`"2026-09-01"`) are parsed with `toDate` from `lib/dates.ts`, never `new Date()`, which reads them as midnight UTC and shows the previous day west of Greenwich.
+- Calendar days from the API (`"2026-09-01"`) are parsed with `toDate` from `lib/dates.ts`, never `new Date()`, which reads them as midnight UTC and shows the previous day west of Greenwich. Today's day for a form default is `todayIsoDate()`, never `toISOString()`, which is still yesterday in Dhaka until 6am.
+- Relative times render through `RelativeTime`, never `formatDistanceToNow` during render: the server and the browser read the clock moments apart, and across a boundary React discards the server HTML.
 - Colours, radius, type and motion come from tokens in `globals.css`; no hex in `src` outside it (the OG image uses rgb values mirrored from tokens). Every new colour pair gets a line in `scripts/check-contrast.ts`.
 - The landing page shows only real proof: no logos, ratings, testimonials or invented numbers. Prices come only from `GET /api/v1/public/plans`; when it fails, the pricing section, its nav link and any trial promise disappear.
 - One primary CTA label everywhere, from `getPrimaryCta(trialDays)`. Guarded by `src/data/home/content.test.ts`.
@@ -77,11 +78,10 @@ Next.js 16.3 (App Router, `src/proxy.ts` instead of middleware), React 19.2, Typ
 
 ## Known gaps
 
-- About 180 inline `useMutation` blocks still to move to `useActionMutation`.
-- `_action.ts` files take `Record<string, unknown>` and have no server schemas yet.
-- Several components exceed 300 lines (`CampaignBoard`, `CreateInvoiceModal`, `TargetsBoard`).
-- Non-table boards (vault, payroll, leave, chat) and `WithdrawalsBoard` have no error state yet.
-- Logout does not revoke the refresh token on the backend.
+- Three plain `useMutation` calls stay on purpose: the permission grid (a refused change refetches too), the vault access log (read fresh on every open) and forgot-password (must never toast).
+- Logout clears the cookies but does not revoke the refresh token on the backend.
+- `test:nav` and `test:routing` cover the platform owner only with the backend `.env` loaded; `scripts/role-routing.mjs` says how.
+- Invite flows send real email through the configured SMTP, so they are not clicked through against a local API that has one.
 
 ## Deploy
 

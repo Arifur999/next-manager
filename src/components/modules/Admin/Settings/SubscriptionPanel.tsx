@@ -98,6 +98,8 @@ const SubscriptionPanel = () => {
   }
 
   const { subscription, usage } = standing
+  // The trial's end while there is one, then the paid period's.
+  const periodEnd = subscription?.trial_ends_at || subscription?.current_period_end
 
   return (
     <Card className="gap-0 p-0">
@@ -131,11 +133,7 @@ const SubscriptionPanel = () => {
             {subscription?.trial_ends_at ? "Trial ends" : "Paid up to"}
           </p>
           <p className="mt-1 text-lg font-semibold tabular-nums">
-            {subscription?.trial_ends_at
-              ? format(parseISO(subscription.trial_ends_at), "dd MMM yyyy")
-              : subscription?.current_period_end
-                ? format(parseISO(subscription.current_period_end), "dd MMM yyyy")
-                : "—"}
+            {periodEnd ? format(parseISO(periodEnd), "dd MMM yyyy") : "—"}
           </p>
         </div>
       </div>

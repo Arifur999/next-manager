@@ -1,5 +1,6 @@
 "use client"
 
+import RelativeTime from "@/components/shared/RelativeTime"
 import EmptyState from "@/components/shared/state/EmptyState"
 import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
@@ -14,7 +15,7 @@ import {
 } from "@/components/ui/select"
 import type { IActivityEntry } from "@/types/workspace.types"
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
-import { format, formatDistanceToNow, isToday, isYesterday, parseISO } from "date-fns"
+import { format, isToday, isYesterday, parseISO } from "date-fns"
 import { History } from "lucide-react"
 import { useState } from "react"
 import { activityFeedQuery, activityFiltersQuery } from "@/queries/workspace.queries"
@@ -164,7 +165,7 @@ const ActivityFeed = () => {
                       dateTime={entry.created_at}
                       title={format(parseISO(entry.created_at), "d MMM yyyy, HH:mm:ss")}
                     >
-                      {formatDistanceToNow(parseISO(entry.created_at), { addSuffix: true })}
+                      <RelativeTime value={entry.created_at} />
                     </time>
                   </li>
                 ))}

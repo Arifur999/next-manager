@@ -1,13 +1,14 @@
 "use client"
 
 import CreateCompanyModal from "@/components/modules/Platform/CreateCompanyModal"
+import RelativeTime from "@/components/shared/RelativeTime"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import type { SubscriptionStatus } from "@/types/platform.types"
 import { useQuery } from "@tanstack/react-query"
-import { differenceInCalendarDays, format, formatDistanceToNow, parseISO } from "date-fns"
+import { differenceInCalendarDays, format, parseISO } from "date-fns"
 import { Building2, Search } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
@@ -54,21 +55,13 @@ const FILTERS: Array<{ value: string; label: string }> = [
 ]
 
 /**
- * How long since they did anything.
+ * Quiet for a month, or never used at all.
  *
  * Silence is the earliest churn signal there is — it arrives weeks before a
  * cancellation does — so a company quiet for a month is marked rather than
  * left for somebody to notice by reading dates.
  */
-const activityOf = (iso: string | null) => {
-  if (!iso) return { text: "never used", stale: true }
-
-  const days = differenceInCalendarDays(new Date(), parseISO(iso))
-  return {
-    text: formatDistanceToNow(parseISO(iso), { addSuffix: true }),
-    stale: days >= 30,
-  }
-}
+const isQuietSince = (iso: string | null) => !iso || differenceInCalendarDays(new Date(), parseISO(iso)) >= 30
 
 const CustomersBoard = ({ defaultFilter = ALL }: { defaultFilter?: string }) => {
   const [filter, setFilter] = useState(defaultFilter)
@@ -84,7 +77,7 @@ const CustomersBoard = ({ defaultFilter = ALL }: { defaultFilter?: string }) => 
   const { data, isLoading } = useQuery(companiesListQuery(query))
 
   const companies = data?.data ?? []
-  const quiet = companies.filter((row) => activityOf(row.last_active_at).stale).length
+  const quiet = companies.filter((row) => isQuietSince(row.last_active_at)).length
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
@@ -162,7 +155,7 @@ const CustomersBoard = ({ defaultFilter = ALL }: { defaultFilter?: string }) => 
             </thead>
             <tbody className="divide-y">
               {companies.map((company) => {
-                const activity = activityOf(company.last_active_at)
+                const isQuiet = isQuietSince(company.last_active_at)
                 const seatsFull =
                   company.usage.seats_limit !== null &&
                   company.usage.seats_used >= company.usage.seats_limit
@@ -223,12 +216,10 @@ const CustomersBoard = ({ defaultFilter = ALL }: { defaultFilter?: string }) => 
                     </td>
 
                     <td className="px-5 py-3">
-                      <span
-                        className={activity.stale ? "text-foreground" : "text-muted-foreground"}
-                      >
-                        {activity.text}
+                      <span className={isQuiet ? "text-foreground" : "text-muted-foreground"}>
+                        {company.last_active_at ? <RelativeTime value={company.last_active_at} /> : "never used"}
                       </span>
-                      {activity.stale && (
+                      {isQuiet && (
                         <span className="ml-2 text-[10px] uppercase tracking-wide text-muted-foreground">
                           quiet
                         </span>

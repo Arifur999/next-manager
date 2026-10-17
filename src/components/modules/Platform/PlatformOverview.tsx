@@ -23,6 +23,12 @@ const daysLeft = (iso: string | null) =>
 const urgency = (days: number | null): "destructive" | "outline" =>
   days !== null && days <= 2 ? "destructive" : "outline"
 
+const daysLeftLabel = (days: number | null) => {
+  if (days === null) return "no date"
+  if (days <= 0) return "today"
+  return `${days} ${days === 1 ? "day" : "days"}`
+}
+
 const PlatformOverview = () => {
   const { data, isLoading, isError, isFetching, refetch } = useQuery(platformOverviewQuery())
 
@@ -113,11 +119,7 @@ const PlatformOverview = () => {
                   </div>
 
                   <Badge variant={urgency(days)} className="shrink-0 tabular-nums">
-                    {days === null
-                      ? "no date"
-                      : days <= 0
-                        ? "today"
-                        : `${days} ${days === 1 ? "day" : "days"}`}
+                    {daysLeftLabel(days)}
                   </Badge>
                 </li>
               )

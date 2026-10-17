@@ -1,5 +1,11 @@
 export type Currency = "USD" | "BDT";
 
+/** What happened to the email an invite was sent with; the link works either way. */
+export interface IInviteMail {
+    delivered: boolean;
+    reason: string | null;
+}
+
 /**
  * What a status MEANS, as opposed to what an agency calls it.
  *

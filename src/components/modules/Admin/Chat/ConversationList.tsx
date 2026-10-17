@@ -1,11 +1,11 @@
 "use client"
 
+import RelativeTime from "@/components/shared/RelativeTime"
 import EmptyState from "@/components/shared/state/EmptyState"
 import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import type { IConversation } from "@/types/workspace.types"
-import { formatDistanceToNowStrict, parseISO } from "date-fns"
 import { MessagesSquare } from "lucide-react"
 import type { ComponentProps } from "react"
 
@@ -16,6 +16,13 @@ import type { ComponentProps } from "react"
  * has read — not from anything counted here, so two tabs cannot disagree about
  * it.
  */
+// What comes before the time: the project's code, or how many are in a group.
+const contextOf = (conversation: IConversation) => {
+  if (conversation.type === "project" && conversation.project) return `${conversation.project.code} · `
+  if (conversation.type === "group") return `${conversation.members.length} people · `
+  return ""
+}
+
 const ConversationList = ({
   conversations,
   query,
@@ -66,14 +73,8 @@ const ConversationList = ({
             </p>
 
             <p className="text-[11px] text-muted-foreground">
-              {conversation.type === "project" && conversation.project
-                ? `${conversation.project.code} · `
-                : conversation.type === "group"
-                  ? `${conversation.members.length} people · `
-                  : ""}
-              {formatDistanceToNowStrict(parseISO(conversation.last_message_at), {
-                addSuffix: true,
-              })}
+              {contextOf(conversation)}
+              <RelativeTime value={conversation.last_message_at} strict />
             </p>
           </button>
         </li>

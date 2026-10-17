@@ -1,5 +1,6 @@
 "use client"
 
+import RelativeTime from "@/components/shared/RelativeTime"
 import CountSection from "@/components/shared/dashboard/CountSection"
 import { countFields, queryFields, useCount } from "@/components/shared/dashboard/useCount"
 import EmptyState from "@/components/shared/state/EmptyState"
@@ -7,7 +8,6 @@ import PanelState from "@/components/shared/state/PanelState"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { useQuery } from "@tanstack/react-query"
-import { formatDistanceToNow, parseISO } from "date-fns"
 import { FolderKanban, ListChecks, Package, UserCheck, UserPlus, Users } from "lucide-react"
 import Link from "next/link"
 import { clientsListQuery } from "@/queries/crm.queries"
@@ -27,7 +27,9 @@ const SalesOverview = () => {
   const clients = useCount(clientsListQuery("limit=1"))
   const active = useCount(clientsListQuery("status=active&limit=1"))
   const inactive = useCount(clientsListQuery("status=inactive&limit=1"))
-  const services = useCount(servicesListQuery("limit=1"))
+  // /services is not paged and sends no meta.total, so its count is its rows;
+  // a catalogue runs to a few dozen. The same read as the services page.
+  const serviceList = useQuery(servicesListQuery())
 
   const planning = useCount(projectsListQuery("status=Planning&limit=1"))
   const activeProjects = useCount(projectsListQuery("status=Active&limit=1"))
@@ -71,7 +73,7 @@ const SalesOverview = () => {
           },
           {
             label: "Services",
-            ...countFields(services),
+            ...queryFields(serviceList, serviceList.data?.data.length),
             href: "/admin/dashboard/services",
             hint: "What there is to sell",
             icon: <Package className="size-5" />,
@@ -157,7 +159,7 @@ const SalesOverview = () => {
                     </p>
                   </div>
                   <span className="shrink-0 text-xs text-muted-foreground">
-                    {formatDistanceToNow(parseISO(client.created_at), { addSuffix: true })}
+                    <RelativeTime value={client.created_at} />
                   </span>
                 </Link>
               </li>

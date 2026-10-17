@@ -44,6 +44,13 @@ type Props = {
 const isAttainment = (metric: Attainment | Metric): metric is Attainment =>
     "on_track" in metric
 
+// The word carries the state; the icon only repeats it. Colour is doing no work here.
+const trackState = (onTrack: boolean | null, lowerIsBetter: boolean) => {
+    if (onTrack === null) return { Icon: CircleHelp, word: "unknown" }
+    if (onTrack) return { Icon: TrendingUp, word: lowerIsBetter ? "within" : "on track" }
+    return { Icon: TrendingDown, word: lowerIsBetter ? "over" : "short" }
+}
+
 const MetricTile = ({
     label,
     metric,
@@ -54,6 +61,7 @@ const MetricTile = ({
     lowerIsBetter = false,
 }: Props) => {
     const attainment = isAttainment(metric) ? metric : null
+    const track = attainment ? trackState(attainment.on_track, lowerIsBetter) : null
 
     return (
         <Card className={cn("gap-0 p-5", size === "lead" && "sm:p-6")}>
@@ -83,28 +91,11 @@ const MetricTile = ({
                         {format(metric.value)}
                     </p>
 
-                    {attainment && attainment.target !== null && (
+                    {attainment && track && attainment.target !== null && (
                         <p className="mt-1.5 flex items-center gap-1.5 text-sm text-muted-foreground tabular-nums">
-                            {attainment.on_track === null ? (
-                                <CircleHelp className="size-3.5" aria-hidden="true" />
-                            ) : attainment.on_track ? (
-                                <TrendingUp className="size-3.5" aria-hidden="true" />
-                            ) : (
-                                <TrendingDown className="size-3.5" aria-hidden="true" />
-                            )}
+                            <track.Icon className="size-3.5" aria-hidden="true" />
                             <span>
-                                {/* The word carries the state; the icon only
-                                    repeats it. Colour is doing no work here. */}
-                                {attainment.on_track === null
-                                    ? "unknown"
-                                    : attainment.on_track
-                                      ? lowerIsBetter
-                                          ? "within"
-                                          : "on track"
-                                      : lowerIsBetter
-                                        ? "over"
-                                        : "short"}{" "}
-                                · target {format(attainment.target)}
+                                {track.word} · target {format(attainment.target)}
                             </span>
                         </p>
                     )}

@@ -26,6 +26,17 @@ export const optionalNonNegative = (label: string) =>
 
 export const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date")
 
+// The API's rule for any password somebody chooses: sign-up, a change, a reset,
+// an invite accepted.
+export const newPassword = z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Za-z]/, "Password must contain a letter")
+    .regex(/[0-9]/, "Password must contain a number")
+
+// "Email is required" when empty, then "Enter a valid email address".
+export const requiredEmail = z.string().min(1, "Email is required").pipe(z.email("Enter a valid email address"))
+
 /** "" and undefined both become undefined; anything else becomes a number. */
 export const toNumber = (value: string | undefined): number | undefined =>
     value === undefined || value === "" ? undefined : Number(value)

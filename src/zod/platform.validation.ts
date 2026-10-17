@@ -1,6 +1,6 @@
 import { z } from "zod"
 import { ANNOUNCEMENT_AUDIENCES, PLATFORM_PERMISSIONS, SUBSCRIPTION_STATUSES } from "@/types/platform.types"
-import { newPassword } from "./auth.validation"
+import { newPassword } from "./formFields"
 import { isoDate, optionalNonNegative, positiveAmount, toNumber } from "./formFields"
 
 // Number fields are strings here, as in formFields.ts: the form schema models

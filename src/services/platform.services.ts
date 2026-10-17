@@ -2,6 +2,7 @@
 
 import { httpClient } from "@/lib/axios/httpClient"
 import { toParams } from "@/lib/queryString"
+import type { IInviteMail } from "@/types/common.types"
 import type {
     IAgencyInvite,
     IAnnouncement,
@@ -64,7 +65,7 @@ export const createPlatformInvite = async (payload: Record<string, unknown>) =>
     httpClient.post<{
         invite: IPlatformInvite
         join_url: string
-        email: { delivered: boolean; reason: string | null }
+        email: IInviteMail
     }>("/platform/invites", payload)
 
 export const getPlatformInvites = async () =>
@@ -119,7 +120,7 @@ export const createAgencyInvite = async (payload: Record<string, unknown>) =>
     httpClient.post<{
         invite: IAgencyInvite
         join_url: string
-        email: { delivered: boolean; reason: string | null }
+        email: IInviteMail
     }>("/platform/agency-invites", payload)
 
 export const revokeAgencyInvite = async (id: string) =>

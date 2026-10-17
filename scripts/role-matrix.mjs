@@ -13,8 +13,7 @@
 // Dynamic routes are skipped: a [id] page needs a real id, and inventing one
 // would test the 404 path rather than the permission.
 
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { execSync } from "node:child_process";
+import { readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
 
 const API = "http://localhost:5000/api/v1";
 const WEB = "http://localhost:3000";
@@ -39,14 +38,14 @@ const api = async (method, path, body, cookie = "") => {
 //
 // Read from the filesystem, not from a list in this file. A list would drift
 // the first time somebody adds a page and forgets to add it here — which is
-// exactly the gap this sweep exists to close.
-const routes = execSync('find "src/app/(dashboardLayout)" -name page.tsx', { encoding: "utf8" })
-  .split("\n")
-  .filter(Boolean)
+// exactly the gap this sweep exists to close. readdirSync rather than `find`,
+// which in PowerShell is Windows' own find.exe.
+const routes = readdirSync("src/app/(dashboardLayout)", { recursive: true, encoding: "utf8" })
+  .map((file) => `/${file.replaceAll("\\", "/")}`)
+  .filter((file) => file.endsWith("/page.tsx"))
   .map((file) =>
     file
-      .replace("src/app/(dashboardLayout)", "")
-      .replace("/page.tsx", "")
+      .replace(/\/page\.tsx$/, "")
       // Route groups are organisational, not part of the URL.
       .replace(/\/\([^)]+\)/g, "")
   )

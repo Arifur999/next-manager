@@ -187,16 +187,6 @@ for (const [role, expected] of [
   console.log(`${ok ? "OK  " : "FAIL"}  ${role.padEnd(16)} activity -> ${res.status} (want ${expected})`);
 }
 
-// No company role may reach the console, whatever the path under it.
-for (const role of Object.keys(EXPECT)) {
-  for (const path of ["/platform", "/platform/customers", "/platform/finance", "/platform/campaigns", "/platform/settings", "/platform/invite-agency"]) {
-    const res = await fetch(WEB + path, { headers: { Cookie: cookies[role] }, redirect: "manual" });
-    const ok = res.status === 307 || res.status === 308;
-    if (!ok) bad += 1;
-    console.log();
-  }
-}
-
 // No company role may reach the console, whatever the path under it. The
 // platform rule was a prefix without a boundary once; this checks the whole
 // area rather than only its root.
@@ -399,9 +389,10 @@ for (const path of [
 // bounce — including the personal area, whose numbers would otherwise be
 // computed against an empty organization and render as a wall of zeros.
 // These live in the BACKEND .env, since that is what seeds the account. To
-// include these checks:
+// include these checks, point dotenv at it:
 //
-//   export $(grep -E "^SUPER_ADMIN_(EMAIL|PASSWORD)=" ../naxified_backend/.env | xargs)
+//   PowerShell: $env:DOTENV_CONFIG_PATH = "../next-manager-backend/.env"; npm run test:routing
+//   bash:       DOTENV_CONFIG_PATH=../next-manager-backend/.env npm run test:routing
 //
 // Skipped rather than failed when absent - a missing local credential is not a
 // broken build.
@@ -453,3 +444,6 @@ if (!superEmail || !superPassword) {
 }
 
 console.log(`\n${bad === 0 ? "ROLE ROUTING CORRECT" : `${bad} ROUTING PROBLEM(S)`}`);
+
+// exitCode rather than exit(), for the reason given in login-flow.mjs.
+process.exitCode = bad ? 1 : 0;

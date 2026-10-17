@@ -73,7 +73,11 @@ for (const role of ["sales", "project_manager", "operations"]) {
     .cookie;
 }
 
-if (process.env.SUPER_ADMIN_EMAIL) {
+// The platform owner lives in the backend .env; see role-routing.mjs for how
+// to load it. Said out loud when absent, so 144 links is not mistaken for all.
+if (!process.env.SUPER_ADMIN_EMAIL) {
+  console.log("SKIP  super admin sidebar (no SUPER_ADMIN_EMAIL/PASSWORD in env)");
+} else {
   cookies.super_admin = (
     await api("POST", "/auth/login", {
       email: process.env.SUPER_ADMIN_EMAIL,
@@ -105,3 +109,6 @@ for (const [role, cookie] of Object.entries(cookies)) {
 console.log(
   `\n${checked} nav links checked. ${broken === 0 ? "Every link opens for the role that is offered it." : `${broken} BROKEN`}`
 );
+
+// exitCode rather than exit(), for the reason given in login-flow.mjs.
+process.exitCode = broken ? 1 : 0;

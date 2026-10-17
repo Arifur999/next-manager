@@ -2,7 +2,7 @@
 
 import RolePermissionGrid from "@/components/modules/Admin/Permissions/RolePermissionGrid"
 import UserPermissionGrid from "@/components/modules/Admin/Permissions/UserPermissionGrid"
-import { usePermissionGrid } from "@/components/shared/permission/usePermissionGrid"
+import { usePermissionGrid, type PermissionGrid } from "@/components/shared/permission/usePermissionGrid"
 import ErrorState from "@/components/shared/state/ErrorState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,18 +18,41 @@ import { roleTitle } from "@/types/permission.types"
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { usersListQuery } from "@/queries/people.queries"
-import { permissionGridQuery } from "@/queries/workspace.queries"
 
 // Role templates and per-person exceptions. Nothing here can widen access: the role
 // gate runs first and these only narrow inside it, and no scope reaches another company.
+
+// The person tab's body. A failed read says so and offers a retry, rather than
+// sitting there looking as if it were still loading.
+const PersonGridBody = ({ personId, personGrid }: { personId: string; personGrid: PermissionGrid }) => {
+  if (!personId) {
+    return (
+      <p className="px-5 py-10 text-center text-sm text-muted-foreground">
+        Choose somebody to see where they differ from their role.
+      </p>
+    )
+  }
+
+  if (personGrid.query.isError) {
+    return (
+      <ErrorState
+        message="Their permissions did not load."
+        onRetry={() => void personGrid.query.refetch()}
+        isRetrying={personGrid.query.isFetching}
+      />
+    )
+  }
+
+  if (!personGrid.grid?.user) return <div className="h-64 animate-pulse bg-muted/40" />
+
+  return <UserPermissionGrid grid={personGrid.grid} disabled={personGrid.isBusy} save={personGrid.save} />
+}
 
 const PermissionsBoard = () => {
   const [personId, setPersonId] = useState<string>("")
 
   const roleGrid = usePermissionGrid()
   const personGrid = usePermissionGrid(personId || undefined)
-  // The same cached read as roleGrid, observed for the error and refetch the hook does not return.
-  const gridRead = useQuery(permissionGridQuery())
 
   const userList = useQuery(usersListQuery())
 
@@ -37,13 +60,13 @@ const PermissionsBoard = () => {
   // would look like a restriction and enforce nothing.
   const people = (userList.data?.data ?? []).filter((user) => user.role !== "admin")
 
-  if (gridRead.isError && !roleGrid.grid) {
+  if (roleGrid.query.isError && !roleGrid.grid) {
     return (
       <Card>
         <ErrorState
           message="The permission grid did not load."
-          onRetry={() => void gridRead.refetch()}
-          isRetrying={gridRead.isFetching}
+          onRetry={() => void roleGrid.query.refetch()}
+          isRetrying={roleGrid.query.isFetching}
         />
       </Card>
     )
@@ -130,19 +153,7 @@ const PermissionsBoard = () => {
           </CardHeader>
 
           <CardContent className="p-0">
-            {!personId ? (
-              <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-                Choose somebody to see where they differ from their role.
-              </p>
-            ) : personGrid.grid?.user ? (
-              <UserPermissionGrid
-                grid={personGrid.grid}
-                disabled={personGrid.isBusy}
-                save={personGrid.save}
-              />
-            ) : (
-              <div className="h-64 animate-pulse bg-muted/40" />
-            )}
+            <PersonGridBody personId={personId} personGrid={personGrid} />
           </CardContent>
         </Card>
 
