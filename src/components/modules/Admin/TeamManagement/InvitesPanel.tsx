@@ -22,19 +22,8 @@ import { toast } from "sonner"
 import { invitesQuery } from "@/queries/people.queries"
 import { queryKeys } from "@/lib/queryKeys"
 
-/**
- * Inviting operations members.
- *
- * Every invite is for `operations`, so there is no role picker. Sales and
- * project managers are created directly on the Members tab — handing out that
- * authority is a decision an admin makes deliberately rather than something
- * emailed to whoever opens a link first.
- *
- * The link is shown exactly once, on the response that creates it. Nothing can
- * read it back afterwards because only its hash is stored, so this screen
- * keeps it on screen until dismissed rather than tucking it into a toast that
- * vanishes in four seconds.
- */
+// Inviting operations members only; other roles are added on the Members tab. The
+// link can be read just once (only its hash is stored), so it stays until dismissed.
 
 const statusOf = (invite: ITeamInvite) => {
   if (invite.used_at) return { label: "used", tone: "secondary" as const }
@@ -85,9 +74,7 @@ const InvitesPanel = () => {
       await navigator.clipboard.writeText(freshLink)
       setCopied(true)
     } catch {
-      // Clipboard access is refused in plenty of ordinary situations. The link
-      // is on screen and selectable, so this is a missing convenience rather
-      // than a failure worth an error toast.
+      // Clipboard access is often refused; the link is on screen to copy by hand.
       toast.message("Copy it from the box above")
     }
   }
@@ -133,7 +120,6 @@ const InvitesPanel = () => {
           <div className="border-t bg-muted/40 px-5 py-4">
             <p className="text-sm font-medium">Send them this link</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {/* The honest warning: it genuinely cannot be recovered. */}
               This is the only time it can be read. If you lose it, revoke the invite and
               create another.
             </p>

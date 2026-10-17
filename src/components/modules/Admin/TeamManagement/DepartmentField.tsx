@@ -13,17 +13,8 @@ import Link from "next/link"
 import { departmentsQuery } from "@/queries/people.queries"
 import { NO_DEPARTMENT } from "@/zod/user.validation"
 
-/**
- * The department picker, shared by the create and edit forms.
- *
- * One component because the two forms would otherwise drift: the sentinel for
- * "no department" has to mean the same thing in both, and a Select cannot hold
- * an empty string.
- *
- * Only active departments are offered. A retired one still shows on people who
- * are already in it — that is the point of retiring rather than deleting — but
- * nobody new should be put into a team the agency has stopped using.
- */
+// The department picker shared by the create and edit forms, so "no department"
+// means the same in both. Nobody new is put into a retired department.
 
 const DepartmentField = ({
   value,

@@ -50,10 +50,8 @@ const EditUserForm = ({ user, onOpenChange }: { user: IUser; onOpenChange: (open
       // rather than rendering a Select with a value that is not an option.
       role: isAssignableRole(user.role) ? user.role : "operations",
       department_id: user.department?.id ?? NO_DEPARTMENT,
-      // A checkbox again rather than a three-way picker: `pending` is not
-      // something an admin assigns, it is what the invite flow sets and what
-      // approval clears. Offering it here would let an active person be pushed
-      // back into limbo with nothing recording why.
+      // Active or suspended only: `pending` is set by the invite flow and cleared
+      // by approval, never assigned by hand.
       status: user.status === "suspended" ? "suspended" : "active",
     } satisfies IEditUserFormValues,
     onSubmit: async ({ value }) => {

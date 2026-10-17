@@ -21,17 +21,8 @@ import { queryKeys } from "@/lib/queryKeys"
 // Each decision changes the member list and lands in the activity feed.
 const DECISION_KEYS = [queryKeys.users.all, queryKeys.activity.all]
 
-/**
- * People who joined through an invite and are waiting to be let in.
- *
- * Renders nothing at all when the queue is empty. It sits above the team table
- * and an empty card there would be a permanent piece of furniture teaching
- * everyone to look past that spot — which is the one place something needing
- * action will appear.
- *
- * Approving is what charges a seat, so the refusal an admin may hit here is
- * the plan limit, and the server names the plan in it.
- */
+// People who joined through an invite, waiting to be let in. Renders nothing when
+// nobody waits, so the spot above the team table only appears when it needs action.
 
 const PendingApprovals = () => {
   const [rejecting, setRejecting] = useState<IUser | null>(null)
