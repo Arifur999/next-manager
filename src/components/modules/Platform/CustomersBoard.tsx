@@ -1,15 +1,14 @@
 "use client"
 
 import CreateCompanyModal from "@/components/modules/Platform/CreateCompanyModal"
-import RelativeTime from "@/components/shared/RelativeTime"
-import { Badge } from "@/components/ui/badge"
+import { isQuietSince } from "@/components/modules/Platform/customerActivity"
+import { customersColumns } from "@/components/modules/Platform/customersColumns"
+import DataTable from "@/components/shared/table/DataTable"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import type { SubscriptionStatus } from "@/types/platform.types"
 import { useQuery } from "@tanstack/react-query"
-import { differenceInCalendarDays, format, parseISO } from "date-fns"
-import { Building2, Search } from "lucide-react"
+import { Search } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 import { companiesListQuery } from "@/queries/platform.queries"
@@ -28,23 +27,6 @@ import { companiesListQuery } from "@/queries/platform.queries"
 
 const ALL = "__all__"
 
-const STATUS_LABEL: Record<SubscriptionStatus, string> = {
-  trialing: "trial",
-  active: "active",
-  past_due: "past due",
-  suspended: "suspended",
-  cancelled: "cancelled",
-}
-
-const STATUS_TONE: Record<SubscriptionStatus, "secondary" | "outline" | "destructive"> = {
-  trialing: "outline",
-  active: "secondary",
-  // The grace window — still writing, so not a failure yet.
-  past_due: "outline",
-  suspended: "destructive",
-  cancelled: "destructive",
-}
-
 const FILTERS: Array<{ value: string; label: string }> = [
   { value: ALL, label: "Everyone" },
   { value: "trialing", label: "On trial" },
@@ -53,15 +35,6 @@ const FILTERS: Array<{ value: string; label: string }> = [
   { value: "suspended", label: "Suspended" },
   { value: "cancelled", label: "Left" },
 ]
-
-/**
- * Quiet for a month, or never used at all.
- *
- * Silence is the earliest churn signal there is — it arrives weeks before a
- * cancellation does — so a company quiet for a month is marked rather than
- * left for somebody to notice by reading dates.
- */
-const isQuietSince = (iso: string | null) => !iso || differenceInCalendarDays(new Date(), parseISO(iso)) >= 30
 
 const CustomersBoard = ({ defaultFilter = ALL }: { defaultFilter?: string }) => {
   const [filter, setFilter] = useState(defaultFilter)
@@ -74,9 +47,9 @@ const CustomersBoard = ({ defaultFilter = ALL }: { defaultFilter?: string }) => 
     .filter(Boolean)
     .join("&")
 
-  const { data, isLoading } = useQuery(companiesListQuery(query))
+  const companiesQuery = useQuery(companiesListQuery(query))
 
-  const companies = data?.data ?? []
+  const companies = companiesQuery.data?.data ?? []
   const quiet = companies.filter((row) => isQuietSince(row.last_active_at)).length
 
   return (
@@ -131,117 +104,16 @@ const CustomersBoard = ({ defaultFilter = ALL }: { defaultFilter?: string }) => 
         </div>
       </CardHeader>
 
-      {isLoading && companies.length === 0 ? (
-        <div className="h-40 animate-pulse bg-muted/40" />
-      ) : companies.length === 0 ? (
-        <p className="flex flex-col items-center gap-2 px-6 py-12 text-center text-sm text-muted-foreground">
-          <Building2 className="size-7" aria-hidden="true" />
-          {search.trim() || filter !== ALL
-            ? "Nothing matches that."
-            : "Nobody has signed up yet."}
-        </p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[58rem] text-sm">
-            <thead>
-              <tr className="border-b text-left text-xs text-muted-foreground">
-                <th className="px-5 py-2.5 font-medium">Company</th>
-                <th className="px-5 py-2.5 font-medium">Who you sold to</th>
-                <th className="px-5 py-2.5 font-medium">Plan</th>
-                <th className="px-5 py-2.5 text-right font-medium">Seats</th>
-                <th className="px-5 py-2.5 font-medium">Last used</th>
-                <th className="px-5 py-2.5 font-medium">Standing</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {companies.map((company) => {
-                const isQuiet = isQuietSince(company.last_active_at)
-                const seatsFull =
-                  company.usage.seats_limit !== null &&
-                  company.usage.seats_used >= company.usage.seats_limit
-
-                return (
-                  <tr key={company.id}>
-                    <td className="px-5 py-3">
-                      <p className="font-medium">{company.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        signed up {format(parseISO(company.created_at), "d MMM yyyy")}
-                      </p>
-                    </td>
-
-                    <td className="px-5 py-3">
-                      {company.admin ? (
-                        <>
-                          <p>{company.admin.full_name}</p>
-                          <a
-                            href={`mailto:${company.admin.email}`}
-                            className="text-xs text-muted-foreground underline-offset-4 hover:underline"
-                          >
-                            {company.admin.email}
-                          </a>
-                        </>
-                      ) : (
-                        // Real, and worth seeing: a company whose admin was
-                        // removed has nobody who can let anyone back in.
-                        <span className="text-xs text-muted-foreground">no admin account</span>
-                      )}
-                    </td>
-
-                    <td className="px-5 py-3">
-                      {company.subscription ? (
-                        <>
-                          <p>{company.subscription.plan.name}</p>
-                          <p className="text-xs text-muted-foreground tabular-nums">
-                            ${company.subscription.plan.price_usd}/mo
-                          </p>
-                        </>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">not set up</span>
-                      )}
-                    </td>
-
-                    <td className="px-5 py-3 text-right">
-                      <span className="tabular-nums">
-                        {company.usage.seats_used}
-                        <span className="text-muted-foreground">
-                          {" / "}
-                          {company.usage.seats_limit === null ? "∞" : company.usage.seats_limit}
-                        </span>
-                      </span>
-                      {seatsFull && (
-                        <Badge variant="outline" className="ml-2 text-[10px]">
-                          full
-                        </Badge>
-                      )}
-                    </td>
-
-                    <td className="px-5 py-3">
-                      <span className={isQuiet ? "text-foreground" : "text-muted-foreground"}>
-                        {company.last_active_at ? <RelativeTime value={company.last_active_at} /> : "never used"}
-                      </span>
-                      {isQuiet && (
-                        <span className="ml-2 text-[10px] uppercase tracking-wide text-muted-foreground">
-                          quiet
-                        </span>
-                      )}
-                    </td>
-
-                    <td className="px-5 py-3">
-                      {company.subscription ? (
-                        <Badge variant={STATUS_TONE[company.subscription.status]}>
-                          {STATUS_LABEL[company.subscription.status]}
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline">unprovisioned</Badge>
-                      )}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <div className="p-4">
+        <DataTable
+          data={companies}
+          columns={customersColumns}
+          tableId="customers"
+          isLoading={companiesQuery.isPending}
+          isFetching={companiesQuery.isFetching}
+          emptyMessage={search.trim() || filter !== ALL ? "Nothing matches that." : "Nobody has signed up yet."}
+        />
+      </div>
 
       <div className="border-t px-5 py-3 text-xs text-muted-foreground">
         Changing a plan or suspending a customer happens on{" "}
