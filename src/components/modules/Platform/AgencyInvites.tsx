@@ -3,6 +3,7 @@
 import { inviteAgencyAction } from "@/app/(dashboardLayout)/platform/_agencyAction"
 import AgencyInviteList from "@/components/modules/Platform/AgencyInviteList"
 import InviteLinkPanel from "@/components/modules/Platform/InviteLinkPanel"
+import { planOptionLabel } from "@/components/modules/Platform/planLabel"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -144,7 +145,7 @@ const AgencyInvites = () => {
                   <SelectItem value={NO_PLAN}>Whatever new sign-ups get</SelectItem>
                   {plans.map((plan) => (
                     <SelectItem key={plan.id} value={plan.id}>
-                      {plan.name} — ${plan.price_usd}/mo
+                      {planOptionLabel(plan)}
                     </SelectItem>
                   ))}
                 </SelectContent>

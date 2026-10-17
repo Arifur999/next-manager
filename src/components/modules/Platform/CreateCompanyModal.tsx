@@ -1,6 +1,7 @@
 "use client"
 
 import { createCompanyAction } from "@/app/(dashboardLayout)/platform/_action"
+import { planOptionLabel } from "@/components/modules/Platform/planLabel"
 import AppField from "@/components/shared/form/AppField"
 import { Button } from "@/components/ui/button"
 import {
@@ -178,7 +179,7 @@ const CreateCompanyModal = () => {
                       <SelectItem value={DEFAULT_PLAN}>Cheapest active plan</SelectItem>
                       {plans.map((plan) => (
                         <SelectItem key={plan.id} value={plan.id}>
-                          {plan.name} (${plan.price_usd}/mo)
+                          {planOptionLabel(plan)}
                         </SelectItem>
                       ))}
                     </SelectContent>

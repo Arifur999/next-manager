@@ -2,6 +2,7 @@
 
 import { site } from "@/data/site"
 import { updateSettingsAction } from "@/app/(dashboardLayout)/platform/_settingsAction"
+import { planOptionLabel } from "@/components/modules/Platform/planLabel"
 import ErrorState from "@/components/shared/state/ErrorState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -222,7 +223,7 @@ const SettingsForm = ({ settings }: { settings: IPlatformSettings }) => {
                 <SelectItem value={NO_PLAN}>Nothing — set them up by hand</SelectItem>
                 {settings.plans.map((plan) => (
                   <SelectItem key={plan.id} value={plan.id}>
-                    {plan.name} — ${plan.price_usd}/mo
+                    {planOptionLabel(plan)}
                   </SelectItem>
                 ))}
               </SelectContent>
