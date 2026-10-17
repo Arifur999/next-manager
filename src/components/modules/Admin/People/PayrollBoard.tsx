@@ -13,15 +13,23 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { Wallet } from "lucide-react"
 import { useState } from "react"
-import { toast } from "sonner"
 import { accountsQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
 import { payrollRunsQuery } from "@/queries/people.queries"
 import type { IPayrollItemFormValues } from "@/zod/people.validation"
+
+// Completing a run writes team payouts and moves the ledger.
+const PAYROLL_KEYS = [
+  queryKeys.payroll.all,
+  queryKeys.payouts.all,
+  queryKeys.accounts.all,
+  queryKeys.transactions.all,
+]
 
 /**
  * A month's salaries.
@@ -33,7 +41,6 @@ import type { IPayrollItemFormValues } from "@/zod/people.validation"
  * to this page.
  */
 const PayrollBoard = () => {
-  const queryClient = useQueryClient()
   const [month, setMonth] = useState(format(new Date(), "yyyy-MM"))
 
   const { data, isLoading } = useQuery(payrollRunsQuery())
@@ -45,64 +52,34 @@ const PayrollBoard = () => {
     (account) => account.currency === "BDT" && account.is_active
   )
 
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.payroll.all })
-    // Completing a run writes team payouts and moves the ledger.
-    void queryClient.invalidateQueries({ queryKey: queryKeys.payouts.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all })
-  }
-
-  const { mutate: open, isPending } = useMutation({
-    mutationFn: () => createPayrollRunAction({ month }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not open it")
-        return
-      }
-      toast.success("Payroll opened with a line per person")
-      refresh()
-    },
+  const { run: openPayroll, isPending } = useActionMutation({
+    action: createPayrollRunAction,
+    successMessage: "Payroll opened with a line per person",
+    invalidateKeys: PAYROLL_KEYS,
+    refresh: false,
   })
 
-  const { mutate: save } = useMutation({
-    mutationFn: ({ id, items }: { id: string; items: IPayrollItemFormValues[] }) =>
+  const { run: savePayrollItems } = useActionMutation({
+    action: ({ id, items }: { id: string; items: IPayrollItemFormValues[] }) =>
       setPayrollItemsAction(id, { items }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not save it")
-        return
-      }
-      toast.success("Saved")
-      refresh()
-    },
+    successMessage: "Saved",
+    invalidateKeys: PAYROLL_KEYS,
+    refresh: false,
   })
 
-  const { mutate: pay } = useMutation({
-    mutationFn: ({ id, accountId }: { id: string; accountId: string }) =>
+  // No successMessage: the server counts what it actually paid.
+  const { run: payPayroll } = useActionMutation({
+    action: ({ id, accountId }: { id: string; accountId: string }) =>
       completePayrollAction(id, { account_id: accountId }),
-    onSuccess: (result) => {
-      if (!result.success) {
-        toast.error(result.message || "Could not pay it")
-        return
-      }
-      // The server counts what it actually paid.
-      toast.success(result.message)
-      refresh()
-    },
+    invalidateKeys: PAYROLL_KEYS,
+    refresh: false,
   })
 
-  const { mutate: discard } = useMutation({
-    mutationFn: (id: string) => deletePayrollRunAction(id),
-    onSuccess: (result) => {
-      if (!result.success) {
-        // "That run has been paid. Reverse the payouts it created instead…"
-        toast.error(result.message || "Could not discard it")
-        return
-      }
-      toast.success("Draft discarded")
-      refresh()
-    },
+  const { run: discardDraft } = useActionMutation({
+    action: deletePayrollRunAction,
+    successMessage: "Draft discarded",
+    invalidateKeys: PAYROLL_KEYS,
+    refresh: false,
   })
 
   return (
@@ -116,7 +93,7 @@ const PayrollBoard = () => {
           className="flex flex-wrap items-end gap-3 px-6 pb-6"
           onSubmit={(event) => {
             event.preventDefault()
-            open()
+            void openPayroll({ month })
           }}
         >
           <div className="space-y-1.5">
@@ -155,9 +132,9 @@ const PayrollBoard = () => {
             key={run.id}
             run={run}
             accounts={accounts}
-            onSave={(items) => save({ id: run.id, items })}
-            onPay={(accountId) => pay({ id: run.id, accountId })}
-            onDiscard={() => discard(run.id)}
+            onSave={(items) => void savePayrollItems({ id: run.id, items })}
+            onPay={(accountId) => void payPayroll({ id: run.id, accountId })}
+            onDiscard={() => void discardDraft(run.id)}
           />
         ))
       )}
