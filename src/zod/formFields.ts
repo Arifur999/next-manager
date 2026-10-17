@@ -27,7 +27,9 @@ export const optionalNonNegative = (label: string) =>
 export const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date")
 
 // The API's rule for any password somebody chooses: sign-up, a change, a reset,
-// an invite accepted.
+// an invite accepted. The forms show NEW_PASSWORD_RULES before anyone types.
+export const NEW_PASSWORD_RULES = "At least 8 characters, with a letter and a number."
+
 export const newPassword = z
     .string()
     .min(8, "Password must be at least 8 characters")
