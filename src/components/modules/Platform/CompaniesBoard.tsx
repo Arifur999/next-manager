@@ -128,7 +128,13 @@ const CompanyRow = ({ company, plans }: { company: ICompanyRow; plans: IPlan[] }
             </SelectContent>
           </Select>
 
-          <Select value={status} onValueChange={(next) => setStatus(next as SubscriptionStatus)}>
+          <Select
+            value={status}
+            onValueChange={(next) => {
+              const picked = STATUSES.find((option) => option === next)
+              if (picked) setStatus(picked)
+            }}
+          >
             <SelectTrigger className="w-32" aria-label={`Status for ${company.name}`}>
               <SelectValue />
             </SelectTrigger>
