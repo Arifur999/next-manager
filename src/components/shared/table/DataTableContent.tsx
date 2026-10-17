@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { flexRender, type Header, type Table as TanStackTable } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import DataTableSkeleton from "./DataTableSkeleton";
 
 interface DataTableContentProps<TData> {
   table: TanStackTable<TData>;
   emptyMessage?: string;
+  isLoading: boolean;
   isError: boolean;
   isRetrying: boolean;
   onRetry?: () => void;
@@ -36,12 +38,51 @@ const renderHeader = <TData,>(header: Header<TData, unknown>) => {
   );
 };
 
-const DataTableContent = <TData,>({ table, emptyMessage, isError, isRetrying, onRetry }: DataTableContentProps<TData>) => {
+const DataTableContent = <TData,>({
+  table,
+  emptyMessage,
+  isLoading,
+  isError,
+  isRetrying,
+  onRetry,
+}: DataTableContentProps<TData>) => {
   const rows = table.getRowModel().rows;
   const columnCount = table.getVisibleLeafColumns().length;
 
+  const renderBody = () => {
+    if (isLoading) return <DataTableSkeleton columnCount={columnCount} />;
+
+    if (isError) {
+      return (
+        <TableRow>
+          <TableCell colSpan={columnCount} className="p-0">
+            <ErrorState onRetry={onRetry} isRetrying={isRetrying} />
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    if (rows.length === 0) {
+      return (
+        <TableRow>
+          <TableCell colSpan={columnCount} className="h-24 text-center">
+            {emptyMessage || "No data available."}
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    return rows.map((row) => (
+      <TableRow key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+        ))}
+      </TableRow>
+    ));
+  };
+
   return (
-    <Table>
+    <Table aria-busy={isLoading || isRetrying}>
       <TableHeader>
         {table.getHeaderGroups().map((headerGroup) => (
           <TableRow key={headerGroup.id}>
@@ -52,29 +93,7 @@ const DataTableContent = <TData,>({ table, emptyMessage, isError, isRetrying, on
         ))}
       </TableHeader>
 
-      <TableBody>
-        {isError ? (
-          <TableRow>
-            <TableCell colSpan={columnCount} className="p-0">
-              <ErrorState onRetry={onRetry} isRetrying={isRetrying} />
-            </TableCell>
-          </TableRow>
-        ) : rows.length > 0 ? (
-          rows.map((row) => (
-            <TableRow key={row.id}>
-              {row.getVisibleCells().map((cell) => (
-                <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
-              ))}
-            </TableRow>
-          ))
-        ) : (
-          <TableRow>
-            <TableCell colSpan={columnCount} className="h-24 text-center">
-              {emptyMessage || "No data available."}
-            </TableCell>
-          </TableRow>
-        )}
-      </TableBody>
+      <TableBody>{renderBody()}</TableBody>
     </Table>
   );
 };

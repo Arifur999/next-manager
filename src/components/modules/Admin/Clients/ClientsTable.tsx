@@ -6,6 +6,7 @@ import { clientsColumns } from "@/components/modules/Admin/Clients/clientsColumn
 import DataTable from "@/components/shared/table/DataTable"
 import { useRowActionModalState } from "@/hooks/useRowActionModalState"
 import { buildQueryString, pickAllowed } from "@/lib/queryString"
+import { toTableQueryProps } from "@/lib/table/queryProps"
 import { CLIENT_STATUSES, type IClient } from "@/types/crm.types"
 import { useQuery } from "@tanstack/react-query"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -55,20 +56,18 @@ const ClientsTable = ({
   } = useRowActionModalState<IClient>({ enableView: true })
 
   // Same builder and key order as the page's prefetch, so the keys match.
-  const query = buildQueryString({ search, status })
+  const queryString = buildQueryString({ search, status })
 
-  const { data, isLoading, isFetching, isError, refetch } = useQuery(clientsListQuery(query))
+  const clientsQuery = useQuery(clientsListQuery(queryString))
 
-  const clients = data?.data ?? []
+  const clients = clientsQuery.data?.data ?? []
 
   return (
     <>
       <DataTable
         data={clients}
         columns={clientsColumns}
-        isLoading={isLoading || isFetching}
-        isError={isError}
-        onRetry={() => refetch()}
+        {...toTableQueryProps(clientsQuery)}
         emptyMessage={
           status
             ? // Says which list is empty. "No clients yet" on a filtered view is a

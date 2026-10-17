@@ -5,14 +5,15 @@ import { payoutsColumns } from "@/components/modules/Admin/Payouts/payoutsColumn
 import StatTile from "@/components/shared/StatTile"
 import DataTable from "@/components/shared/table/DataTable"
 import { formatBdt } from "@/lib/currency"
+import { toTableQueryProps } from "@/lib/table/queryProps"
 import { useQuery } from "@tanstack/react-query"
 import { HandCoins } from "lucide-react"
 import { teamPayoutsListQuery } from "@/queries/spending.queries"
 
 const PayoutsTable = () => {
-  const { data, isLoading, isFetching, isError, refetch } = useQuery(teamPayoutsListQuery())
+  const payoutsQuery = useQuery(teamPayoutsListQuery())
 
-  const payouts = data?.data ?? []
+  const payouts = payoutsQuery.data?.data ?? []
   const total = payouts.reduce((running, row) => running + row.amount_bdt, 0)
   const people = new Set(payouts.map((row) => row.user_id)).size
 
@@ -31,9 +32,7 @@ const PayoutsTable = () => {
       <DataTable
         data={payouts}
         columns={payoutsColumns}
-        isLoading={isLoading || isFetching}
-        isError={isError}
-        onRetry={() => refetch()}
+        {...toTableQueryProps(payoutsQuery)}
         emptyMessage="No payouts recorded yet."
         toolbarAction={<RecordPayoutModal />}
       />

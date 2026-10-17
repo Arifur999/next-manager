@@ -5,6 +5,7 @@ import { invoicesColumns } from "@/components/modules/Admin/Invoices/invoicesCol
 import StatTile from "@/components/shared/StatTile"
 import DataTable from "@/components/shared/table/DataTable"
 import { formatUsd } from "@/lib/currency"
+import { toTableQueryProps } from "@/lib/table/queryProps"
 import { useQuery } from "@tanstack/react-query"
 import { AlertTriangle, FileText } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -15,9 +16,9 @@ const InvoicesTable = () => {
   const router = useRouter()
   const [search, setSearch] = useState("")
 
-  const { data, isLoading, isFetching, isError, refetch } = useQuery(invoicesListQuery(search ? `search=${encodeURIComponent(search)}` : undefined))
+  const invoicesQuery = useQuery(invoicesListQuery(search ? `search=${encodeURIComponent(search)}` : undefined))
 
-  const invoices = data?.data ?? []
+  const invoices = invoicesQuery.data?.data ?? []
 
   // Only what is actually owing counts as outstanding — a draft is not a claim
   // on anyone, and a cancelled one never was.
@@ -50,9 +51,7 @@ const InvoicesTable = () => {
       <DataTable
         data={invoices}
         columns={invoicesColumns}
-        isLoading={isLoading || isFetching}
-        isError={isError}
-        onRetry={() => refetch()}
+        {...toTableQueryProps(invoicesQuery)}
         emptyMessage="No invoices yet."
         toolbarAction={<CreateInvoiceModal />}
         search={{

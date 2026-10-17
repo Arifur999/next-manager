@@ -6,6 +6,7 @@ import StatTile from "@/components/shared/StatTile"
 import DataTable from "@/components/shared/table/DataTable"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
+import { toTableQueryProps } from "@/lib/table/queryProps"
 import type { IExpense } from "@/types/spending.types"
 import { useQuery } from "@tanstack/react-query"
 import { Receipt, Users } from "lucide-react"
@@ -15,9 +16,9 @@ import { expensesListQuery } from "@/queries/spending.queries"
 const ExpensesTable = () => {
   const [search, setSearch] = useState("")
 
-  const { data, isLoading, isFetching, isError, refetch } = useQuery(expensesListQuery(search ? `search=${encodeURIComponent(search)}` : undefined))
+  const expensesQuery = useQuery(expensesListQuery(search ? `search=${encodeURIComponent(search)}` : undefined))
 
-  const expenses = data?.data ?? []
+  const expenses = expensesQuery.data?.data ?? []
 
   // Split the way the reports do: employee-type costs sit alongside team
   // payouts, and folding them into operating expenses would double-count.
@@ -88,9 +89,7 @@ const ExpensesTable = () => {
       <DataTable
         data={expenses}
         columns={expensesColumns}
-        isLoading={isLoading || isFetching}
-        isError={isError}
-        onRetry={() => refetch()}
+        {...toTableQueryProps(expensesQuery)}
         emptyMessage="No expenses recorded yet."
         toolbarAction={<RecordExpenseModal />}
         search={{

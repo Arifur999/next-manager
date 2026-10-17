@@ -5,6 +5,7 @@ import { paymentsColumns } from "@/components/modules/Admin/Payments/paymentsCol
 import DataTable from "@/components/shared/table/DataTable"
 import StatTile from "@/components/shared/StatTile"
 import { formatBdt, formatUsd } from "@/lib/currency"
+import { toTableQueryProps } from "@/lib/table/queryProps"
 import { useQuery } from "@tanstack/react-query"
 import { ArrowDownLeft } from "lucide-react"
 import { useState } from "react"
@@ -13,9 +14,9 @@ import { paymentsListQuery } from "@/queries/billing.queries"
 const PaymentsTable = () => {
   const [search, setSearch] = useState("")
 
-  const { data, isLoading, isFetching, isError, refetch } = useQuery(paymentsListQuery(search ? `search=${encodeURIComponent(search)}` : undefined))
+  const paymentsQuery = useQuery(paymentsListQuery(search ? `search=${encodeURIComponent(search)}` : undefined))
 
-  const payments = data?.data ?? []
+  const payments = paymentsQuery.data?.data ?? []
 
   const totalUsd = payments.reduce((running, payment) => running + payment.amount_usd, 0)
   const totalBdt = payments.reduce((running, payment) => running + payment.amount_bdt_reporting, 0)
@@ -38,9 +39,7 @@ const PaymentsTable = () => {
       <DataTable
         data={payments}
         columns={paymentsColumns}
-        isLoading={isLoading || isFetching}
-        isError={isError}
-        onRetry={() => refetch()}
+        {...toTableQueryProps(paymentsQuery)}
         emptyMessage="No payments recorded yet."
         toolbarAction={<RecordPaymentModal />}
         search={{

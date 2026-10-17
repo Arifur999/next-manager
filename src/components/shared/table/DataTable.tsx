@@ -1,48 +1,43 @@
 "use client";
 
-import Loader from "@/components/shared/Loader";
 import { pageCountOf } from "@/types/api.types";
-import { useSyncExternalStore } from "react";
 import DataTableContent from "./DataTableContent";
 import DataTablePagination from "./DataTablePagination";
 import DataTableToolbar from "./DataTableToolbar";
 import type { DataTableProps } from "./dataTable.types";
 import { useDataTable } from "./useDataTable";
 
-const subscribeToNothing = () => () => {};
-
 const DataTable = <TData,>(props: DataTableProps<TData>) => {
-  const { toolbarAction, emptyMessage, isLoading, isError = false, onRetry, pagination, search, meta } = props;
+  const {
+    toolbarAction,
+    emptyMessage,
+    isLoading = false,
+    isFetching = false,
+    isError = false,
+    onRetry,
+    pagination,
+    search,
+    meta,
+  } = props;
   const table = useDataTable(props);
-  // False for the server render and hydration, true afterwards.
-  const hasHydrated = useSyncExternalStore(subscribeToNothing, () => true, () => false);
-
-  // The server render must not include the overlay, or the markup it produces
-  // and the markup React expects on the client disagree.
-  // A retry in flight is shown on the Retry button, not as an overlay on the error.
-  const showLoadingOverlay = Boolean(isLoading) && hasHydrated && !isError;
+  const isRefreshing = isFetching && !isLoading;
 
   return (
-    <div className="relative">
-      {showLoadingOverlay && (
-        // Sits over the rows instead of replacing them, so the table doesn't
-        // collapse to a spinner and jump the page around on every refetch.
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 backdrop-blur-sm">
-          <div className="flex items-center gap-2">
-            <Loader size={32} />
-            <span className="text-sm text-muted-foreground">Loading...</span>
-          </div>
-        </div>
-      )}
-
+    <div>
       <DataTableToolbar search={search} toolbarAction={toolbarAction} isLoading={isLoading} />
 
-      <div className="font-condensed rounded-lg border">
+      <div className="font-condensed relative overflow-hidden rounded-lg border">
+        {/* Rows stay on screen during a refetch; only this bar says it is running. */}
+        {isRefreshing && !isError && (
+          <div className="absolute inset-x-0 top-0 z-10 h-0.5 animate-pulse bg-primary" role="progressbar" aria-label="Refreshing" />
+        )}
+
         <DataTableContent
           table={table}
           emptyMessage={emptyMessage}
+          isLoading={isLoading}
           isError={isError}
-          isRetrying={Boolean(isLoading)}
+          isRetrying={isFetching}
           onRetry={onRetry}
         />
 
@@ -51,7 +46,7 @@ const DataTable = <TData,>(props: DataTableProps<TData>) => {
             table={table}
             totalPages={pageCountOf(meta)}
             totalRows={meta?.total}
-            isLoading={isLoading}
+            isLoading={isFetching}
           />
         )}
       </div>

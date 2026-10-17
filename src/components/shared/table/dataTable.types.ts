@@ -21,7 +21,10 @@ export interface DataTableProps<TData> {
   actions?: DataTableActions<TData>;
   toolbarAction?: React.ReactNode;
   emptyMessage?: string;
+  // First load (skeleton rows) vs background refetch (a progress bar, rows stay).
+  // toTableQueryProps(query) fills these four from a useQuery result.
   isLoading?: boolean;
+  isFetching?: boolean;
   /** The list request failed: show the error and Retry instead of the empty message. */
   isError?: boolean;
   onRetry?: () => void;

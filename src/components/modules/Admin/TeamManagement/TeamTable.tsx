@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import DataTable from "@/components/shared/table/DataTable"
 import { useRowActionModalState } from "@/hooks/useRowActionModalState"
+import { toTableQueryProps } from "@/lib/table/queryProps"
 import { type IUser } from "@/types/user.types"
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
@@ -31,11 +32,11 @@ const TeamTable = () => {
   // filtering the page that arrived would hide people rather than find them.
   const query = department === ALL ? "" : `department_id=${department}`
 
-  const { data: usersResponse, isLoading, isFetching, isError, refetch } = useQuery(usersListQuery(query))
+  const usersQuery = useQuery(usersListQuery(query))
 
   const { data: departmentResponse } = useQuery(departmentsQuery())
 
-  const users = usersResponse?.data ?? []
+  const users = usersQuery.data?.data ?? []
   const departments = ((departmentResponse?.data ?? [])).filter(
     (row) => row.is_active
   )
@@ -73,11 +74,7 @@ const TeamTable = () => {
       <DataTable
         data={users}
         columns={teamColumns}
-        // isFetching too, so a background refetch also shows the overlay -
-        // otherwise a stale list looks settled while it is still updating.
-        isLoading={isLoading || isFetching}
-        isError={isError}
-        onRetry={() => refetch()}
+        {...toTableQueryProps(usersQuery)}
         emptyMessage="No team members yet."
         toolbarAction={<CreateUserFormModal />}
         actions={tableActions}
