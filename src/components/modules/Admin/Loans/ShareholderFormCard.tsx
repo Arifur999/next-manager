@@ -1,11 +1,12 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
+import AppField from "@/components/shared/form/AppField"
+import AppSubmitButton from "@/components/shared/form/AppSubmitButton"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import type { IShareholderFormValues } from "@/zod/finance.validation"
-import { useState } from "react"
+import { shareholderFormZodSchema, type IShareholderFormValues } from "@/zod/finance.validation"
+import { useForm } from "@tanstack/react-form"
+
+const defaultValues: IShareholderFormValues = { name: "", share_pct: "" }
 
 const ShareholderFormCard = ({
   onSubmit,
@@ -15,15 +16,13 @@ const ShareholderFormCard = ({
   onSubmit: (values: IShareholderFormValues) => Promise<boolean>
   isPending: boolean
 }) => {
-  const [name, setName] = useState("")
-  const [pct, setPct] = useState("")
-
-  const handleAdd = async () => {
-    if (await onSubmit({ name, share_pct: pct })) {
-      setName("")
-      setPct("")
-    }
-  }
+  const form = useForm({
+    defaultValues,
+    validators: { onSubmit: shareholderFormZodSchema },
+    onSubmit: async ({ value, formApi }) => {
+      if (await onSubmit(value)) formApi.reset()
+    },
+  })
 
   return (
     <Card className="h-fit">
@@ -32,46 +31,39 @@ const ShareholderFormCard = ({
       </CardHeader>
 
       <form
+        method="POST"
+        action="#"
+        noValidate
         className="space-y-4 px-6 pb-6"
         onSubmit={(event) => {
           event.preventDefault()
-          if (!name.trim()) return
-          void handleAdd()
+          event.stopPropagation()
+          form.handleSubmit()
         }}
       >
-        <div className="space-y-1.5">
-          <Label htmlFor="shareholder-name">Name</Label>
-          <Input
-            id="shareholder-name"
-            value={name}
-            maxLength={120}
-            onChange={(event) => setName(event.target.value)}
-            disabled={isPending}
-          />
-        </div>
+        <form.Field name="name">
+          {(field) => <AppField field={field} label="Name" disabled={isPending} />}
+        </form.Field>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="shareholder-pct">Share (%)</Label>
-          <Input
-            id="shareholder-pct"
-            type="number"
-            min={0}
-            max={100}
-            step="0.01"
-            value={pct}
-            placeholder="0"
-            onChange={(event) => setPct(event.target.value)}
-            disabled={isPending}
-          />
-          <p className="text-xs text-muted-foreground">
-            Everybody still active has to add up to 100% or less. Retiring somebody
-            frees their share for whoever takes it on.
-          </p>
-        </div>
+        <form.Field name="share_pct">
+          {(field) => (
+            <div className="space-y-1.5">
+              <AppField field={field} label="Share (%)" type="number" placeholder="0" disabled={isPending} />
+              <p className="text-xs text-muted-foreground">
+                Everybody still active has to add up to 100% or less. Retiring somebody
+                frees their share for whoever takes it on.
+              </p>
+            </div>
+          )}
+        </form.Field>
 
-        <Button type="submit" disabled={isPending || !name.trim()} className="w-full">
-          Add
-        </Button>
+        <form.Subscribe selector={(state) => !state.values.name.trim()}>
+          {(isNameMissing) => (
+            <AppSubmitButton isPending={isPending} pendingLabel="Adding..." disabled={isNameMissing}>
+              Add
+            </AppSubmitButton>
+          )}
+        </form.Subscribe>
       </form>
     </Card>
   )
