@@ -16,16 +16,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { METRICS, PERIODS, periodStart, type MetricSpec } from "@/components/modules/Admin/Targets/targetMetrics"
 import type { IKpiTarget, KpiMetric, KpiPeriod } from "@/types/insights.types"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import { useQuery } from "@tanstack/react-query"
-import { format, startOfMonth, startOfQuarter, startOfYear } from "date-fns"
 import { Target as TargetIcon, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { usersListQuery } from "@/queries/people.queries"
 import { kpiTargetsListQuery } from "@/queries/insights.queries"
 import { queryKeys } from "@/lib/queryKeys"
 import { AGENCY_WIDE_TARGET } from "@/zod/insights.validation"
+
+// Every dashboard scores against the targets, so they go stale with them.
+const TARGET_KEYS = [queryKeys.kpiTargets.all, queryKeys.kpi.all]
 
 /**
  * The numbers the company commits to.
@@ -39,102 +42,6 @@ import { AGENCY_WIDE_TARGET } from "@/zod/insights.validation"
  * where its type says it does, so the picker computes period_start rather than
  * letting one be typed.
  */
-
-type MetricSpec = {
-  metric: KpiMetric
-  label: string
-  unit: "%" | "$" | "h" | "×" | ""
-  hint: string
-}
-
-// The order is the order they matter in, not alphabetical.
-const METRICS: MetricSpec[] = [
-  {
-    metric: "utilization_pct",
-    label: "Utilization",
-    unit: "%",
-    hint: "Billable hours over available. 65–80% is the healthy band.",
-  },
-  {
-    metric: "realization_pct",
-    label: "Realization",
-    unit: "%",
-    hint: "Billable time that turns into collected money. Above 85%.",
-  },
-  {
-    metric: "revenue_usd",
-    label: "Revenue",
-    unit: "$",
-    hint: "Collected in the period. Also the denominator for pipeline coverage.",
-  },
-  {
-    metric: "gross_margin_pct",
-    label: "Gross margin",
-    unit: "%",
-    hint: "Revenue less direct cost, in BDT.",
-  },
-  {
-    metric: "on_time_delivery_pct",
-    label: "On-time delivery",
-    unit: "%",
-    hint: "Milestones submitted by their due date. Above 90%.",
-  },
-  {
-    metric: "win_rate_pct",
-    label: "Win rate",
-    unit: "%",
-    hint: "Of the deals actually decided.",
-  },
-  {
-    metric: "pipeline_coverage",
-    label: "Pipeline coverage",
-    unit: "×",
-    hint: "Open pipeline over the revenue target. 3–4× is healthy.",
-  },
-  { metric: "deals_won", label: "Deals won", unit: "", hint: "Count of deals landed." },
-  { metric: "deal_value_usd", label: "Won value", unit: "$", hint: "Value of the deals landed." },
-  {
-    metric: "billable_hours",
-    label: "Billable hours",
-    unit: "h",
-    hint: "Usually set per person rather than agency-wide.",
-  },
-  {
-    metric: "project_margin_pct",
-    label: "Project margin",
-    unit: "%",
-    hint: "60–70% of adjusted gross income.",
-  },
-]
-
-const PERIODS: { value: KpiPeriod; label: string }[] = [
-  { value: "month", label: "This month" },
-  { value: "quarter", label: "This quarter" },
-  { value: "year", label: "This year" },
-]
-
-/**
- * Where the period starts, computed rather than typed.
- *
- * The server refuses a quarter that starts in August, and rightly — two "Q3"s
- * beginning on different days cannot be told apart. Deriving it here means
- * that refusal is never reached by accident.
- */
-const periodStart = (period: KpiPeriod): string => {
-  const today = new Date()
-  const start =
-    period === "month"
-      ? startOfMonth(today)
-      : period === "quarter"
-        ? startOfQuarter(today)
-        : startOfYear(today)
-
-  return format(start, "yyyy-MM-dd")
-}
-
-// Every dashboard scores against the targets, so they go stale with them.
-const TARGET_KEYS = [queryKeys.kpiTargets.all, queryKeys.kpi.all]
-
 const TargetsBoard = () => {
   const [metric, setMetric] = useState<KpiMetric>("utilization_pct")
   const [period, setPeriod] = useState<KpiPeriod>("quarter")
