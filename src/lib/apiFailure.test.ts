@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { inspect } from "node:util";
-import { ApiRequestError, describeApiFailure, logApiFailure, reportApiFailure } from "./apiFailure";
+import { ApiRequestError, describeApiFailure, isMissingRecordError, logApiFailure, reportApiFailure } from "./apiFailure";
 
 const axiosError = (overrides: Record<string, unknown> = {}) => ({
   name: "AxiosError",
@@ -100,5 +100,20 @@ describe("reportApiFailure", () => {
     expect(reportApiFailure("GET /clients", axiosError({ code: "ECONNRESET", response: undefined })).message).toBe(
       "GET /clients failed",
     );
+  });
+});
+
+describe("isMissingRecordError", () => {
+  it("treats a 404 and a malformed id as a missing record", () => {
+    expect(isMissingRecordError(new ApiRequestError("GET /invoices/x", { status: 404 }))).toBe(true);
+    expect(isMissingRecordError(new ApiRequestError("GET /invoices/x", { status: 400 }))).toBe(true);
+  });
+
+  it("leaves an outage, a refusal and anything else to the error state", () => {
+    expect(isMissingRecordError(new ApiRequestError("GET /invoices/x", { status: 500 }))).toBe(false);
+    expect(isMissingRecordError(new ApiRequestError("GET /invoices/x", { status: 403 }))).toBe(false);
+    expect(isMissingRecordError(new ApiRequestError("GET /invoices/x", {}))).toBe(false);
+    expect(isMissingRecordError(new Error("boom"))).toBe(false);
+    expect(isMissingRecordError(null)).toBe(false);
   });
 });

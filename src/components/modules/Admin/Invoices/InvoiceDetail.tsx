@@ -1,218 +1,97 @@
 "use client"
 
+import InvoiceActions from "@/components/modules/Admin/Invoices/InvoiceActions"
+import InvoiceLinesCard from "@/components/modules/Admin/Invoices/InvoiceLinesCard"
+import { InvoicePaymentsCard, InvoiceSummaryCard } from "@/components/modules/Admin/Invoices/InvoiceSideCards"
+import InvoiceStatusBadge from "@/components/modules/Admin/Invoices/InvoiceStatusBadge"
+import PageHeader from "@/components/shared/PageHeader"
 import ErrorState from "@/components/shared/state/ErrorState"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { formatUsd } from "@/lib/currency"
-import { useQuery } from "@tanstack/react-query"
-import { format } from "date-fns"
-import { Printer } from "lucide-react"
-import Link from "next/link"
+import { Card } from "@/components/ui/card"
 import { invoiceDetailQuery } from "@/queries/billing.queries"
 import { organizationQuery } from "@/queries/workspace.queries"
+import type { IInvoice } from "@/types/billing.types"
+import type { IOrganization } from "@/types/workspace.types"
+import { useQuery } from "@tanstack/react-query"
 
-const InvoiceDetail = ({ invoiceId }: { invoiceId: string }) => {
+const INVOICES_CRUMB = [{ label: "Invoices", href: "/admin/dashboard/invoices" }]
+
+// Printed copy only: on screen the sidebar says whose agency this is, but a
+// page sent to a client has to carry it. It reads the organization as it is
+// now, so a renamed agency shows its new name on every invoice.
+const InvoiceLetterhead = ({ invoice, organization }: { invoice: IInvoice; organization?: IOrganization }) => (
+  <div className="hidden space-y-3 border-b pb-4 print:block">
+    {organization && (
+      <div>
+        <p className="text-lg font-semibold">{organization.legal_name || organization.name}</p>
+        <p className="text-sm text-muted-foreground">
+          {[organization.email, organization.phone, organization.website].filter(Boolean).join(" · ")}
+        </p>
+        {organization.address && <p className="text-sm text-muted-foreground">{organization.address}</p>}
+      </div>
+    )}
+    <div>
+      <p className="text-xl font-semibold">Invoice {invoice.invoice_number}</p>
+      <p className="text-sm">Billed to {invoice.client?.name}</p>
+    </div>
+  </div>
+)
+
+type InvoiceDetailProps = {
+  invoiceId: string
+  canRecordPayment: boolean
+}
+
+const InvoiceDetail = ({ invoiceId, canRecordPayment }: InvoiceDetailProps) => {
   const { data, isLoading, isFetching, refetch } = useQuery(invoiceDetailQuery(invoiceId))
-
   const { data: orgData } = useQuery(organizationQuery())
 
   const invoice = data?.data
-  const organization = orgData?.data
 
   if (isLoading && !invoice) {
     return <Card className="h-64 animate-pulse bg-muted/40" />
   }
 
-  // A failed read lands here, including the 404 for an invoice that is not
-  // this agency's: say so rather than render nothing.
+  // A missing invoice never gets here: the page answers it with not-found.
+  // What is left is a read that failed, which Retry may fix.
   if (!invoice) {
     return (
-      <Card>
-        <ErrorState
-          message="This invoice did not load."
-          onRetry={() => void refetch()}
-          isRetrying={isFetching}
-        />
-        <Link href="/admin/dashboard/invoices" className="mx-auto text-sm text-primary underline-offset-4 hover:underline">
-          Back to invoices
-        </Link>
-      </Card>
+      <div className="space-y-6">
+        <PageHeader title="Invoice" breadcrumb={INVOICES_CRUMB} />
+        <Card>
+          <ErrorState message="This invoice did not load." onRetry={() => void refetch()} isRetrying={isFetching} />
+        </Card>
+      </div>
     )
   }
 
-  const status = invoice.is_overdue ? "overdue" : invoice.status
-
   return (
     <div className="space-y-6" data-print="page">
-      {/* Letterhead on the printed copy only: on screen the sidebar says whose
-          agency this is, but a page sent to a client has to carry it. */}
-      {organization && (
-        <div className="hidden border-b pb-4 print:block">
-          <p className="text-lg font-semibold">{organization.legal_name || organization.name}</p>
-          <p className="text-sm text-muted-foreground">
-            {[organization.email, organization.phone, organization.website]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
-          {organization.address && (
-            <p className="text-sm text-muted-foreground">{organization.address}</p>
-          )}
-        </div>
-      )}
+      <InvoiceLetterhead invoice={invoice} organization={orgData?.data} />
 
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight">{invoice.invoice_number}</h1>
-            <Badge
-              variant="outline"
-              className={`capitalize ${invoice.is_overdue ? "border-destructive text-destructive" : ""}`}
-            >
-              {status.replace(/_/g, " ")}
-            </Badge>
-          </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {invoice.client?.name}
-            {invoice.project ? ` · ${invoice.project.code}` : ""}
-          </p>
-        </div>
-
-        <div className="text-right">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            data-print="hide"
-            className="mb-2"
-            onClick={() => window.print()}
-          >
-            <Printer className="size-3.5" />
-            Print / save as PDF
-          </Button>
-          <p className="text-2xl font-semibold tabular-nums">{formatUsd(invoice.total)}</p>
-          <p className="text-sm text-muted-foreground tabular-nums">
-            {formatUsd(invoice.due_usd ?? 0)} still due
-          </p>
-        </div>
+      <div data-print="hide">
+        <PageHeader
+          title={
+            <span className="inline-flex flex-wrap items-center gap-2">
+              {invoice.invoice_number}
+              <InvoiceStatusBadge invoice={invoice} />
+            </span>
+          }
+          breadcrumb={INVOICES_CRUMB}
+          actions={<InvoiceActions invoice={invoice} canRecordPayment={canRecordPayment} />}
+        >
+          {invoice.client?.name}
+          {invoice.project ? ` · ${invoice.project.code}` : ""}
+        </PageHeader>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="gap-0 overflow-hidden p-0 lg:col-span-2">
-          <CardHeader className="border-b px-5 py-4">
-            <CardTitle className="text-base">Lines</CardTitle>
-          </CardHeader>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="border-b text-left text-xs text-muted-foreground">
-                <tr>
-                  <th className="px-5 py-2 font-medium">Description</th>
-                  <th className="px-5 py-2 text-right font-medium">Qty</th>
-                  <th className="px-5 py-2 text-right font-medium">Unit</th>
-                  <th className="px-5 py-2 text-right font-medium">Amount</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {(invoice.items ?? []).map((item) => (
-                  <tr key={item.id}>
-                    <td className="px-5 py-2.5">{item.description}</td>
-                    <td className="px-5 py-2.5 text-right tabular-nums">{item.quantity}</td>
-                    <td className="px-5 py-2.5 text-right tabular-nums">
-                      {formatUsd(item.unit_price)}
-                    </td>
-                    <td className="px-5 py-2.5 text-right font-medium tabular-nums">
-                      {formatUsd(item.amount)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <dl className="space-y-1 border-t px-5 py-4 text-sm">
-            <div className="flex justify-between text-muted-foreground">
-              <dt>Subtotal</dt>
-              <dd className="tabular-nums">{formatUsd(invoice.subtotal)}</dd>
-            </div>
-            {invoice.discount > 0 && (
-              <div className="flex justify-between text-muted-foreground">
-                <dt>Discount</dt>
-                <dd className="tabular-nums">−{formatUsd(invoice.discount)}</dd>
-              </div>
-            )}
-            {invoice.tax > 0 && (
-              <div className="flex justify-between text-muted-foreground">
-                <dt>Tax</dt>
-                <dd className="tabular-nums">{formatUsd(invoice.tax)}</dd>
-              </div>
-            )}
-            <div className="flex justify-between border-t pt-2 font-medium">
-              <dt>Total</dt>
-              <dd className="tabular-nums">{formatUsd(invoice.total)}</dd>
-            </div>
-          </dl>
-        </Card>
+        <div className="lg:col-span-2">
+          <InvoiceLinesCard invoice={invoice} />
+        </div>
 
         <div className="space-y-4">
-          <Card className="p-5">
-            <dl className="space-y-3 text-sm">
-              <div>
-                <dt className="text-xs text-muted-foreground">Issued</dt>
-                <dd>{format(new Date(invoice.issue_date), "MMM dd, yyyy")}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted-foreground">Due</dt>
-                <dd className={invoice.is_overdue ? "text-destructive" : undefined}>
-                  {format(new Date(invoice.due_date), "MMM dd, yyyy")}
-                </dd>
-              </div>
-              {invoice.client?.email && (
-                <div>
-                  <dt className="text-xs text-muted-foreground">Billed to</dt>
-                  <dd className="truncate">{invoice.client.email}</dd>
-                </div>
-              )}
-            </dl>
-          </Card>
-
-          <Card className="gap-0 overflow-hidden p-0" data-print="hide">
-            <CardHeader className="border-b px-5 py-4">
-              <CardTitle className="text-base">Payments against it</CardTitle>
-            </CardHeader>
-
-            {(invoice.payments ?? []).length === 0 ? (
-              <p className="px-5 py-8 text-center text-sm text-muted-foreground">
-                Nothing paid yet.{" "}
-                <Link
-                  href="/admin/dashboard/payments"
-                  className="text-primary underline-offset-4 hover:underline"
-                >
-                  Record a payment
-                </Link>
-                .
-              </p>
-            ) : (
-              <ul className="divide-y">
-                {(invoice.payments ?? []).map((payment) => (
-                  <li key={payment.id} className="flex items-center justify-between gap-3 px-5 py-3">
-                    <div className="min-w-0">
-                      <p className="text-sm tabular-nums">{formatUsd(payment.amount_usd)}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(payment.date), "MMM dd, yyyy")}
-                        {payment.reference ? ` · ${payment.reference}` : ""}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            <p className="border-t px-5 py-3 text-xs text-muted-foreground">
-              Status follows these payments — it is never set by hand, so a paid invoice always has
-              the money behind it.
-            </p>
-          </Card>
+          <InvoiceSummaryCard invoice={invoice} />
+          <InvoicePaymentsCard invoice={invoice} />
         </div>
       </div>
     </div>

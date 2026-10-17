@@ -76,3 +76,9 @@ export const reportApiFailure = (context: string, error: unknown): ApiRequestErr
   logFailure(context, failure);
   return new ApiRequestError(context, failure);
 };
+
+// A record that is not there for this user: 404 for an unknown or another
+// tenant's id, 400 for an id that is not one. A detail page shows "not found"
+// for these and an error with Retry for anything else.
+export const isMissingRecordError = (error: unknown): boolean =>
+  error instanceof ApiRequestError && (error.failure.status === 404 || error.failure.status === 400);

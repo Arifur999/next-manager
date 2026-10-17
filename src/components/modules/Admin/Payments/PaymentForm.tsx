@@ -17,8 +17,9 @@ import type { IInvoice, IPayment } from "@/types/billing.types"
 import { paymentFormZodSchema } from "@/zod/billing.validation"
 import { useQuery } from "@tanstack/react-query"
 
-// Only what is still owed can be paid; the invoice an edited payment already
-// pays stays listed whatever its status now.
+// Only what is still owed can be paid; the invoice the form started from (the
+// one an edited payment pays, or the one being paid from its page) stays listed
+// whatever its status.
 const payableInvoices = (invoices: IInvoice[], clientId: string, currentId: string) =>
   invoices.filter(
     (invoice) =>
@@ -96,7 +97,7 @@ const PaymentForm = ({ payment, invoice, onDone }: PaymentFormProps) => {
                 placeholder="Not against an invoice"
                 emptyMessage={clientId ? "Nothing owed by this client" : "Choose the client first"}
                 description="The invoice's status follows the payments against it."
-                options={payableInvoices(invoices, clientId, payment?.invoice_id ?? "").map((option) => ({
+                options={payableInvoices(invoices, clientId, payment?.invoice_id ?? invoice?.id ?? "").map((option) => ({
                   value: option.id,
                   label: `${option.invoice_number} · ${formatUsd(option.total)}`,
                   hint: `due ${formatDay(option.due_date)}`,
