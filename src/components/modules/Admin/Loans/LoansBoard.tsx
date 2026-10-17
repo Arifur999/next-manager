@@ -13,13 +13,20 @@ import EmptyState from "@/components/shared/state/EmptyState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
 import { Card } from "@/components/ui/card"
 import { formatBdt } from "@/lib/currency"
-import type { ILoanFormValues } from "@/zod/finance.validation"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useActionMutation } from "@/hooks/useActionMutation"
+import { useQuery } from "@tanstack/react-query"
 import { format, parseISO } from "date-fns"
 import { Landmark } from "lucide-react"
-import { toast } from "sonner"
 import { accountsQuery, loanSummaryQuery, loansListQuery } from "@/queries/finance.queries"
 import { queryKeys } from "@/lib/queryKeys"
+
+// Every loan change moves an account and writes the ledger.
+const LOAN_KEYS = [
+  queryKeys.loans.all,
+  queryKeys.loanSummary.all,
+  queryKeys.accounts.all,
+  queryKeys.transactions.all,
+]
 
 /**
  * What the agency owes, and to whom.
@@ -30,8 +37,6 @@ import { queryKeys } from "@/lib/queryKeys"
  * summary strip cannot disagree with the card underneath it.
  */
 const LoansBoard = () => {
-  const queryClient = useQueryClient()
-
   const { data, isLoading } = useQuery(loansListQuery())
   const { data: summaryData } = useQuery(loanSummaryQuery())
   const { data: accountData } = useQuery(accountsQuery())
@@ -43,55 +48,43 @@ const LoansBoard = () => {
     (account) => account.currency === "BDT" && account.is_active
   )
 
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.loans.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.loanSummary.all })
-    // Every one of these moves an account and writes the ledger.
-    void queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
-    void queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all })
-  }
-
-  const settle = (fallback: string) => (result: { success: boolean; message?: string }) => {
-    if (!result.success) {
-      toast.error(result.message || fallback)
-      return
-    }
-    // The server says what is left owed; repeating it here would be a second
-    // place for that number to live.
-    toast.success(result.message)
-    refresh()
-  }
-
-  const { mutate: record, isPending } = useMutation({
-    mutationFn: (values: ILoanFormValues) => createLoanAction(values),
-    onSuccess: settle("Could not record it"),
+  // No successMessage: the server's own message is the toast, and after a
+  // payment it says what is left owed, a number that should live in one place.
+  const { run: recordLoan, isPending } = useActionMutation({
+    action: createLoanAction,
+    invalidateKeys: LOAN_KEYS,
+    refresh: false,
   })
 
-  const { mutate: pay } = useMutation({
-    mutationFn: ({ id, accountId }: { id: string; accountId: string }) =>
+  const { run: payInstalment } = useActionMutation({
+    action: ({ id, accountId }: { id: string; accountId: string }) =>
       payLoanInstalmentAction(id, { account_id: accountId }),
-    onSuccess: settle("Could not pay it"),
+    invalidateKeys: LOAN_KEYS,
+    refresh: false,
   })
 
-  const { mutate: reverse } = useMutation({
-    mutationFn: (id: string) => reverseLoanInstalmentAction(id),
-    onSuccess: settle("Could not reverse it"),
+  const { run: reverseInstalment } = useActionMutation({
+    action: reverseLoanInstalmentAction,
+    invalidateKeys: LOAN_KEYS,
+    refresh: false,
   })
 
-  const { mutate: close } = useMutation({
-    mutationFn: (id: string) => closeLoanAction(id),
-    onSuccess: settle("Could not close it"),
+  const { run: closeLoan } = useActionMutation({
+    action: closeLoanAction,
+    invalidateKeys: LOAN_KEYS,
+    refresh: false,
   })
 
-  const { mutate: remove } = useMutation({
-    mutationFn: (id: string) => deleteLoanAction(id),
-    // "This loan has repayments recorded. Close it instead" arrives here.
-    onSuccess: settle("Could not delete it"),
+  // "This loan has repayments recorded. Close it instead" is the failure toast.
+  const { run: deleteLoan } = useActionMutation({
+    action: deleteLoanAction,
+    invalidateKeys: LOAN_KEYS,
+    refresh: false,
   })
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-      <LoanFormCard accounts={accounts} onSubmit={record} isPending={isPending} />
+      <LoanFormCard accounts={accounts} onSubmit={recordLoan} isPending={isPending} />
 
       <div className="space-y-4">
         {summary && summary.loan_count > 0 && (
@@ -150,10 +143,10 @@ const LoansBoard = () => {
               key={loan.id}
               loan={loan}
               accounts={accounts}
-              onPay={(instalmentId, accountId) => pay({ id: instalmentId, accountId })}
-              onReverse={(instalmentId) => reverse(instalmentId)}
-              onClose={() => close(loan.id)}
-              onDelete={() => remove(loan.id)}
+              onPay={(instalmentId, accountId) => void payInstalment({ id: instalmentId, accountId })}
+              onReverse={(instalmentId) => void reverseInstalment(instalmentId)}
+              onClose={() => void closeLoan(loan.id)}
+              onDelete={() => void deleteLoan(loan.id)}
             />
           ))
         )}
