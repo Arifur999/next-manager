@@ -33,6 +33,8 @@ const KIND_OF: Partial<Record<LedgerSource, TransactionKind>> = {
 
 const KIND_TONE = { income: "secondary", expense: "outline", transfer: "outline" } as const
 
+const describe = (transaction: ITransaction) => transaction.description || SOURCE_LABEL[transaction.source_type]
+
 export const transactionsColumns: ColumnDef<ITransaction>[] = [
   {
     id: "date",
@@ -42,11 +44,11 @@ export const transactionsColumns: ColumnDef<ITransaction>[] = [
   },
   {
     id: "description",
-    accessorFn: (transaction) => transaction.description || SOURCE_LABEL[transaction.source_type],
+    accessorFn: describe,
     header: "What happened",
     cell: ({ row }) => (
       <div className="min-w-0">
-        <p className="truncate">{row.getValue<string>("description")}</p>
+        <p className="truncate">{describe(row.original)}</p>
         <p className="text-xs text-muted-foreground">
           {SOURCE_LABEL[row.original.source_type]}
           {KIND_OF[row.original.source_type] ? "" : " · counted in neither direction"}

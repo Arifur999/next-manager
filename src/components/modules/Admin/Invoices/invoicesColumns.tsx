@@ -18,6 +18,10 @@ const INVOICE_STATUSES: InvoiceStatus[] = ["draft", "sent", "partially_paid", "p
 
 export const INVOICE_STATUS_OPTIONS = INVOICE_STATUSES.map((status) => ({ label: status.replace(/_/g, " "), value: status }))
 
+// is_overdue is derived from today's date on the server, so it can be true
+// while status still reads "sent"; the derived state is the honest one.
+const shownStatus = (invoice: IInvoice): InvoiceStatus => (invoice.is_overdue ? "overdue" : invoice.status)
+
 export const invoicesColumns: ColumnDef<IInvoice>[] = [
   {
     id: "invoice_number",
@@ -50,12 +54,10 @@ export const invoicesColumns: ColumnDef<IInvoice>[] = [
   },
   {
     id: "status",
-    // is_overdue is derived from today's date on the server, so it can be true
-    // while status still reads "sent"; the derived state is the honest one.
-    accessorFn: (invoice): InvoiceStatus => (invoice.is_overdue ? "overdue" : invoice.status),
+    accessorFn: shownStatus,
     header: "Status",
     cell: ({ row }) => {
-      const status = row.getValue<InvoiceStatus>("status")
+      const status = shownStatus(row.original)
       return (
         <span className={`rounded-md px-2 py-0.5 text-xs font-medium capitalize ${STATUS_TONE[status]}`}>
           {status.replace(/_/g, " ")}
