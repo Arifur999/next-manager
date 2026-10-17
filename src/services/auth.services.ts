@@ -103,3 +103,7 @@ export const resetPassword = async (payload: IResetPasswordFormValues) =>
 /** The account is created pending, so no session is set: an admin approves it first. */
 export const acceptInvite = async (token: string, payload: IJoinFormValues) =>
     postPublic(`/join/${encodeURIComponent(token)}/accept`, payload)
+
+/** Joining the platform team: the account waits for an existing operator to approve it. */
+export const acceptPlatformInvite = async (token: string, payload: IJoinFormValues) =>
+    postPublic(`/platform-join/${encodeURIComponent(token)}/accept`, payload)
