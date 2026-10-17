@@ -229,7 +229,7 @@ const ProjectMilestonePanel = ({
                       title="Undo the submission so it can be corrected"
                     >
                       <Undo2 className="size-3.5" />
-                      <span className="sr-only">Reopen</span>
+                      <span className="sr-only">Reopen {milestone.title}</span>
                     </Button>
                   )}
 
@@ -242,7 +242,7 @@ const ProjectMilestonePanel = ({
                     onClick={() => setMilestoneToDelete(milestone)}
                   >
                     <Trash2 className="size-3.5" />
-                    <span className="sr-only">Delete</span>
+                    <span className="sr-only">Delete {milestone.title}</span>
                   </Button>
                   )}
                 </div>
