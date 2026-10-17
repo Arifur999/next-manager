@@ -2,11 +2,16 @@
 
 import type { UserRole } from "@/lib/authUtils";
 import { NAV_ICONS } from "@/lib/iconMapper";
-import { describeBadge, getNavSections, type NavItem } from "@/lib/navItem";
+import { navGroupId } from "@/lib/navGroups";
+import { describeBadge, getNavSections, type NavItem, type NavSection } from "@/lib/navItem";
 import { activeNavHref } from "@/lib/navMatch";
+import { plural } from "@/lib/text";
 import { cn } from "@/lib/utils";
+import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useId } from "react";
+import { useNavGroups } from "./NavGroupsProvider";
 import { useNavBadges, type NavBadgeCounts } from "./useNavBadges";
 
 const ROW = "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors";
@@ -57,6 +62,59 @@ const NavEntry = ({ item, isActive, badges, onNavigate }: EntryProps) => {
   );
 };
 
+type GroupProps = {
+  section: NavSection;
+  title: string;
+  active: string | null;
+  badges: NavBadgeCounts;
+  onNavigate?: () => void;
+};
+
+// A titled group folds away. Folded, it still shows the sum of its badges, so
+// an unread message inside a closed group is not hidden.
+const NavGroup = ({ section, title, active, badges, onNavigate }: GroupProps) => {
+  const listId = useId();
+  const groupId = navGroupId(title);
+  const { isOpen, toggle } = useNavGroups();
+  const open = isOpen(groupId);
+  const foldedCount = section.items.reduce((sum, item) => sum + (item.badge ? badges[item.badge] : 0), 0);
+
+  return (
+    <div>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={listId}
+        onClick={() => toggle(groupId)}
+        className="flex min-h-8 w-full items-center gap-2 rounded-md px-3 text-xs font-medium tracking-wide text-muted-foreground uppercase transition-colors hover:text-sidebar-foreground"
+      >
+        {title}
+        <span className="ml-auto flex items-center gap-2">
+          {!open && foldedCount > 0 && (
+            <>
+              <CountPill count={foldedCount} />
+              <span className="sr-only">, {plural(foldedCount, "update")}</span>
+            </>
+          )}
+          <ChevronDown aria-hidden="true" className={cn("size-4 shrink-0 transition-transform", !open && "-rotate-90")} />
+        </span>
+      </button>
+
+      <ul id={listId} hidden={!open} className="space-y-0.5">
+        {section.items.map((item) => (
+          <NavEntry
+            key={item.href}
+            item={item}
+            isActive={item.href === active}
+            badges={badges}
+            onNavigate={onNavigate}
+          />
+        ))}
+      </ul>
+    </div>
+  );
+};
+
 // The nav list itself, shared by the desktop sidebar and the mobile sheet.
 // onNavigate lets the sheet close when a link is followed.
 const SidebarNav = ({ role, onNavigate }: { role: UserRole; onNavigate?: () => void }) => {
@@ -72,16 +130,19 @@ const SidebarNav = ({ role, onNavigate }: { role: UserRole; onNavigate?: () => v
   );
 
   return (
-    <nav aria-label="Main" className="flex-1 space-y-6 overflow-y-auto p-4">
-      {sections.map((section, index) => (
-        <div key={section.title ?? `section-${index}`} className="space-y-1">
-          {section.title && (
-            <p className="px-3 pb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-              {section.title}
-            </p>
-          )}
-
-          <ul className="space-y-0.5">
+    <nav aria-label="Main" className="flex-1 space-y-3 overflow-y-auto p-4">
+      {sections.map((section, index) =>
+        section.title ? (
+          <NavGroup
+            key={section.title}
+            section={section}
+            title={section.title}
+            active={active}
+            badges={badges}
+            onNavigate={onNavigate}
+          />
+        ) : (
+          <ul key={`section-${index}`} className="space-y-0.5">
             {section.items.map((item) => (
               <NavEntry
                 key={item.href}
@@ -92,8 +153,8 @@ const SidebarNav = ({ role, onNavigate }: { role: UserRole; onNavigate?: () => v
               />
             ))}
           </ul>
-        </div>
-      ))}
+        ),
+      )}
     </nav>
   );
 };
