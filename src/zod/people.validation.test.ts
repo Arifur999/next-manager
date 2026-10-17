@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest"
-import { activeStateServerZodSchema, departmentServerZodSchema } from "./people.validation"
+import {
+    activeStateServerZodSchema,
+    departmentServerZodSchema,
+    leaveTypeServerZodSchema,
+} from "./people.validation"
 
 describe("departmentServerZodSchema", () => {
     it("trims the name and description into the API payload", () => {
@@ -30,5 +34,25 @@ describe("activeStateServerZodSchema", () => {
 
     it("rejects a string that only looks like one", () => {
         expect(activeStateServerZodSchema.safeParse({ is_active: "false" }).success).toBe(false)
+    })
+})
+
+describe("leaveTypeServerZodSchema", () => {
+    const valid = { name: " Study leave ", days_per_year: "10", is_paid: false }
+
+    it("builds the API payload with a whole number of days", () => {
+        expect(leaveTypeServerZodSchema.parse(valid)).toEqual({ name: "Study leave", days_per_year: 10, is_paid: false })
+    })
+
+    it("sends blank days as zero, which means uncapped", () => {
+        expect(leaveTypeServerZodSchema.parse({ ...valid, days_per_year: "" }).days_per_year).toBe(0)
+    })
+
+    it.each(["1.5", "-1", "366"])("rejects an allowance of %s days", (days_per_year) => {
+        expect(leaveTypeServerZodSchema.safeParse({ ...valid, days_per_year }).success).toBe(false)
+    })
+
+    it("rejects a blank name", () => {
+        expect(leaveTypeServerZodSchema.safeParse({ ...valid, name: " " }).success).toBe(false)
     })
 })

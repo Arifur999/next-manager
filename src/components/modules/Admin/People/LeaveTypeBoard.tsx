@@ -2,7 +2,7 @@
 
 import {
   createLeaveTypeAction,
-  updateLeaveTypeAction,
+  setLeaveTypeActiveAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/leave-settings/_action"
 import EmptyState from "@/components/shared/state/EmptyState"
 import LoadingBlock from "@/components/shared/state/LoadingBlock"
@@ -51,11 +51,7 @@ const LeaveTypeBoard = () => {
 
   const { mutate: add, isPending } = useMutation({
     mutationFn: () =>
-      createLeaveTypeAction({
-        name: name.trim(),
-        days_per_year: Number(days || 0),
-        is_paid: isPaid,
-      }),
+      createLeaveTypeAction({ name, days_per_year: days, is_paid: isPaid }),
     onSuccess: (result) => {
       if (!result.success) {
         toast.error(result.message || "Could not add it")
@@ -71,7 +67,7 @@ const LeaveTypeBoard = () => {
 
   const { mutate: toggle } = useMutation({
     mutationFn: (type: ILeaveType) =>
-      updateLeaveTypeAction(type.id, { is_active: !type.is_active }),
+      setLeaveTypeActiveAction(type.id, { is_active: !type.is_active }),
     onSuccess: (result) => {
       if (!result.success) {
         toast.error(result.message || "Could not update it")

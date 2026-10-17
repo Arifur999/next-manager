@@ -1,33 +1,16 @@
 "use server"
 
-import { getActionErrorMessage } from "@/lib/actionError"
+import { requireId, runValidatedAction } from "@/lib/runAction"
 import { createLeaveType, updateLeaveType } from "@/services/people.services"
-import type { ILeaveType } from "@/types/people.types"
-import { type ApiErrorResponse, type ApiResponse } from "@/types/api.types"
+import { activeStateServerZodSchema, leaveTypeServerZodSchema } from "@/zod/people.validation"
 
-type Result = ApiResponse<ILeaveType> | ApiErrorResponse
+// Names are unique case-insensitively, so "annual leave" is refused while
+// "Annual leave" exists, and the server's message says so.
+export const createLeaveTypeAction = async (values: unknown) =>
+    runValidatedAction(leaveTypeServerZodSchema, values, "Could not add it", createLeaveType)
 
-export const createLeaveTypeAction = async (
-    payload: Record<string, unknown>,
-): Promise<Result> => {
-    try {
-        return await createLeaveType(payload)
-    } catch (error: unknown) {
-        // "\"Annual leave\" already exists" arrives here — the server matches
-        // names case-insensitively, so Annual and annual are one kind, not two.
-        return { success: false, message: getActionErrorMessage(error, "Could not add it") }
-    }
-}
-
-export const updateLeaveTypeAction = async (
-    id: string,
-    payload: Record<string, unknown>,
-): Promise<Result> => {
-    if (!id) return { success: false, message: "Invalid leave type id" }
-
-    try {
-        return await updateLeaveType(id, payload)
-    } catch (error: unknown) {
-        return { success: false, message: getActionErrorMessage(error, "Could not update it") }
-    }
-}
+export const setLeaveTypeActiveAction = async (id: string, values: unknown) =>
+    requireId(id, "leave type") ??
+    runValidatedAction(activeStateServerZodSchema, values, "Could not update it", (payload) =>
+        updateLeaveType(id, payload),
+    )
