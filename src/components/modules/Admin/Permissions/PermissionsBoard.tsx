@@ -60,9 +60,11 @@ const PermissionsBoard = () => {
     )
   }
 
-  if (!roleGrid.grid) return <LoadingBlock height="h-96" rounded />
+  // A local, so the narrowing from the check above holds inside the closures below.
+  const grid = roleGrid.grid
+  if (!grid) return <LoadingBlock height="h-96" rounded />
 
-  const roles = roleGrid.grid.roles
+  const roles = grid.roles
 
   return (
     <Tabs defaultValue="roles" className="space-y-4">
@@ -96,7 +98,7 @@ const PermissionsBoard = () => {
 
                 <CardContent className="p-0">
                   <RolePermissionGrid
-                    grid={roleGrid.grid!}
+                    grid={grid}
                     role={role}
                     disabled={roleGrid.isBusy}
                     save={roleGrid.save}
