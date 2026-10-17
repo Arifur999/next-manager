@@ -53,7 +53,7 @@ const StatTile = ({
 }: StatTileProps) => {
   const card = (
     <Card
-      className={cn("gap-0 p-5", href && "transition-colors hover:bg-muted/40", className)}
+      className={cn("h-full gap-0 p-5", href && "transition-colors hover:bg-muted/40", className)}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -88,9 +88,10 @@ const StatTile = ({
   );
 
   // Wrapped rather than made into a link itself, so a tile without a
-  // destination stays exactly the plain card it has always been.
+  // destination stays exactly the plain card it has always been. h-full on
+  // both, so a linked tile in a grid row is as tall as its neighbours.
   return href ? (
-    <Link href={href} className="block">
+    <Link href={href} className="block h-full">
       {card}
     </Link>
   ) : (
