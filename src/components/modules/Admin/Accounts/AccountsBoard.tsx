@@ -2,6 +2,7 @@
 
 import AccountActions from "@/components/modules/Admin/Accounts/AccountActions"
 import CreateAccountModal from "@/components/modules/Admin/Accounts/CreateAccountModal"
+import { ACCOUNTS_UNAVAILABLE } from "@/components/modules/Admin/Money/accountOptions"
 import StatTile from "@/components/shared/StatTile"
 import ErrorState from "@/components/shared/state/ErrorState"
 import { Badge } from "@/components/ui/badge"
@@ -75,12 +76,13 @@ const AccountsBoard = () => {
   const usdAccounts = accounts.filter((account) => account.currency === "USD")
   const bdtAccounts = accounts.filter((account) => account.currency === "BDT")
 
-  // Two empty columns and a zero balance would read as "no money".
+  // Two empty columns and a zero balance would read as "no money". A co-admin
+  // without the accounts permission lands here too, so the message says who to ask.
   if (isError) {
     return (
       <Card>
         <ErrorState
-          message="Accounts did not load."
+          message={ACCOUNTS_UNAVAILABLE}
           onRetry={() => void refetch()}
           isRetrying={isFetching}
         />
