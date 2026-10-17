@@ -1,9 +1,9 @@
 "use client"
 
 import { requestLeaveAction } from "@/app/(dashboardLayout)/dashboard/leave/_action"
+import AppField from "@/components/shared/form/AppField"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -99,74 +99,36 @@ const LeaveRequestCard = () => {
 
         <div className="grid gap-3 sm:grid-cols-2">
           <form.Field name="from_date">
-            {(field) => (
-              <div className="space-y-1.5">
-                <Label htmlFor="leave-from">First day</Label>
-                <Input
-                  id="leave-from"
-                  type="date"
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(event) => field.handleChange(event.target.value)}
-                  disabled={isPending}
-                />
-              </div>
-            )}
+            {(field) => <AppField field={field} label="First day" type="date" disabled={isPending} />}
           </form.Field>
           <form.Field name="to_date">
-            {(field) => (
-              <div className="space-y-1.5">
-                <Label htmlFor="leave-to">Last day</Label>
-                <Input
-                  id="leave-to"
-                  type="date"
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(event) => field.handleChange(event.target.value)}
-                  disabled={isPending}
-                />
-              </div>
-            )}
+            {(field) => <AppField field={field} label="Last day" type="date" disabled={isPending} />}
           </form.Field>
         </div>
 
         <form.Field name="days">
           {(field) => (
-            <div className="space-y-1.5">
-              <Label htmlFor="leave-days">Days it costs</Label>
-              <Input
-                id="leave-days"
-                type="number"
-                min={0.5}
-                step="0.5"
-                value={field.state.value}
-                placeholder={String(suggestedDays)}
-                onBlur={field.handleBlur}
-                onChange={(event) => field.handleChange(event.target.value)}
-                disabled={isPending}
-              />
-              <p className="text-xs text-muted-foreground">
-                Counted from the dates, but yours to change — weekends and half days are
-                your agency&apos;s business, not ours.
-              </p>
-            </div>
+            <AppField
+              field={field}
+              label="Days it costs"
+              type="number"
+              min={0.5}
+              step="0.5"
+              placeholder={String(suggestedDays)}
+              disabled={isPending}
+              description={
+                <>
+                  Counted from the dates, but yours to change — weekends and half days are
+                  your agency&apos;s business, not ours.
+                </>
+              }
+            />
           )}
         </form.Field>
 
         <form.Field name="reason">
           {(field) => (
-            <div className="space-y-1.5">
-              <Label htmlFor="leave-reason">Reason</Label>
-              <Input
-                id="leave-reason"
-                value={field.state.value}
-                maxLength={300}
-                onBlur={field.handleBlur}
-                onChange={(event) => field.handleChange(event.target.value)}
-                placeholder="Optional"
-                disabled={isPending}
-              />
-            </div>
+            <AppField field={field} label="Reason" maxLength={300} placeholder="Optional" disabled={isPending} />
           )}
         </form.Field>
 

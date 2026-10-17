@@ -5,12 +5,12 @@ import {
   setLeaveTypeActiveAction,
 } from "@/app/(dashboardLayout)/admin/dashboard/leave-settings/_action"
 import EmptyState from "@/components/shared/state/EmptyState"
+import AppField from "@/components/shared/form/AppField"
 import PanelState from "@/components/shared/state/PanelState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import type { ILeaveType } from "@/types/people.types"
@@ -70,42 +70,28 @@ const LeaveTypeBoard = () => {
         >
           <form.Field name="name">
             {(field) => (
-              <div className="space-y-1.5">
-                <Label htmlFor="leave-type-name">Name</Label>
-                <Input
-                  id="leave-type-name"
-                  value={field.state.value}
-                  maxLength={60}
-                  onBlur={field.handleBlur}
-                  onChange={(event) => field.handleChange(event.target.value)}
-                  placeholder="Study leave"
-                  disabled={isPending}
-                />
-              </div>
+              <AppField field={field} label="Name" maxLength={60} placeholder="Study leave" disabled={isPending} />
             )}
           </form.Field>
 
           <form.Field name="days_per_year">
             {(field) => (
-              <div className="space-y-1.5">
-                <Label htmlFor="leave-type-days">Days a year</Label>
-                <Input
-                  id="leave-type-days"
-                  type="number"
-                  min={0}
-                  max={365}
-                  step="1"
-                  value={field.state.value}
-                  placeholder="0"
-                  onBlur={field.handleBlur}
-                  onChange={(event) => field.handleChange(event.target.value)}
-                  disabled={isPending}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Leave it at zero for a kind you want recorded but not capped — that reads as
-                  &ldquo;no limit&rdquo;, not as nothing left.
-                </p>
-              </div>
+              <AppField
+                field={field}
+                label="Days a year"
+                type="number"
+                min={0}
+                max={365}
+                step="1"
+                placeholder="0"
+                disabled={isPending}
+                description={
+                  <>
+                    Leave it at zero for a kind you want recorded but not capped — that reads as
+                    &ldquo;no limit&rdquo;, not as nothing left.
+                  </>
+                }
+              />
             )}
           </form.Field>
 
