@@ -4,6 +4,7 @@ import {
     announcementServerZodSchema,
     createCompanyServerZodSchema,
     createPlanServerZodSchema,
+    platformExpenseServerZodSchema,
     setSubscriptionServerZodSchema,
     updatePlanServerZodSchema,
 } from "./platform.validation"
@@ -170,3 +171,25 @@ describe("announcementServerZodSchema", () => {
     })
 })
 
+describe("platformExpenseServerZodSchema", () => {
+    const valid = { date: "2026-10-01", description: " Database hosting ", category: " Infrastructure ", amount_usd: "42.50" }
+
+    it("trims the text and turns the amount into a number", () => {
+        expect(platformExpenseServerZodSchema.parse(valid)).toEqual({
+            date: "2026-10-01",
+            description: "Database hosting",
+            category: "Infrastructure",
+            amount_usd: 42.5,
+        })
+    })
+
+    it("allows an empty category", () => {
+        expect(platformExpenseServerZodSchema.parse({ ...valid, category: "" }).category).toBe("")
+    })
+
+    it("rejects a zero amount, a missing description and a bad date", () => {
+        expect(platformExpenseServerZodSchema.safeParse({ ...valid, amount_usd: "0" }).success).toBe(false)
+        expect(platformExpenseServerZodSchema.safeParse({ ...valid, description: " " }).success).toBe(false)
+        expect(platformExpenseServerZodSchema.safeParse({ ...valid, date: "01/10/2026" }).success).toBe(false)
+    })
+})

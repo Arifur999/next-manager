@@ -1,7 +1,7 @@
 import { z } from "zod"
 import { ANNOUNCEMENT_AUDIENCES, SUBSCRIPTION_STATUSES } from "@/types/platform.types"
 import { newPassword } from "./auth.validation"
-import { optionalNonNegative, toNumber } from "./formFields"
+import { isoDate, optionalNonNegative, positiveAmount, toNumber } from "./formFields"
 
 // Number fields are strings here, as in formFields.ts: the form schema models
 // what the input holds and each server schema turns it into the API payload.
@@ -103,6 +103,16 @@ export const announcementFormZodSchema = z.object({
 
 export type IAnnouncementFormValues = z.infer<typeof announcementFormZodSchema>
 
+// USD, like subscription revenue, so net profit subtracts like for like.
+export const platformExpenseFormZodSchema = z.object({
+    date: isoDate,
+    description: z.string().trim().min(1, "Say what it was for"),
+    category: z.string().trim(),
+    amount_usd: positiveAmount("Amount"),
+})
+
+export type IPlatformExpenseFormValues = z.infer<typeof platformExpenseFormZodSchema>
+
 // Server schemas: the form values checked again on the server and turned into
 // the payloads platform.validation.ts on the API expects.
 
@@ -141,3 +151,10 @@ export const agencyInviteServerZodSchema = agencyInviteFormZodSchema.transform((
 
 // Saving a draft and editing one send the same fields.
 export const announcementServerZodSchema = announcementFormZodSchema
+
+export const platformExpenseServerZodSchema = platformExpenseFormZodSchema.transform((values) => ({
+    date: values.date,
+    description: values.description,
+    category: values.category,
+    amount_usd: Number(values.amount_usd),
+}))

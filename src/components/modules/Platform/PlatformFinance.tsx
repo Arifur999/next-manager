@@ -58,12 +58,7 @@ const PlatformFinance = () => {
 
   const { mutate: add, isPending } = useMutation({
     mutationFn: () =>
-      addPlatformExpenseAction({
-        date,
-        description: description.trim(),
-        category: category.trim(),
-        amount_usd: Number(amount),
-      }),
+      addPlatformExpenseAction({ date, description, category, amount_usd: amount }),
     onSuccess: (result) => {
       if (!result.success) {
         toast.error(result.message || "Could not record the expense")
