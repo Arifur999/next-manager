@@ -136,6 +136,11 @@ const RecordExchangeModal = () => {
                       label: account.name,
                       hint: formatUsd(account.balance),
                     }))}
+                    error={
+                      field.state.meta.isTouched && field.state.meta.errors.length > 0
+                        ? "Choose the USD account"
+                        : null
+                    }
                   />
                 )}
               </form.Field>
@@ -154,6 +159,11 @@ const RecordExchangeModal = () => {
                       label: account.name,
                       hint: formatBdt(account.balance),
                     }))}
+                    error={
+                      field.state.meta.isTouched && field.state.meta.errors.length > 0
+                        ? "Choose the BDT account"
+                        : null
+                    }
                   />
                 )}
               </form.Field>
