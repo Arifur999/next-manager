@@ -54,6 +54,7 @@ const ExchangeTable = () => {
         data={exchanges}
         columns={exchangeColumns}
         tableId="exchanges"
+        exportFileName="exchanges"
         {...toTableQueryProps(exchangesQuery)}
         emptyMessage="No exchanges recorded yet."
         toolbarAction={<RecordExchangeModal />}
