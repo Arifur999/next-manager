@@ -3,6 +3,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { exchangesListQuery } from "@/queries/finance.queries";
 import QueryPrefetch from "@/components/shared/QueryPrefetch";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Exchange",
@@ -14,12 +15,9 @@ const ExchangePage = async () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Currency exchange</h1>
-        <p className="text-sm text-muted-foreground">
-          USD out, BDT in. Every taka the agency spends starts here.
-        </p>
-      </div>
+      <PageHeader title="Currency exchange">
+        USD out, BDT in. Every taka the agency spends starts here.
+      </PageHeader>
 
       <QueryPrefetch prefetch={prefetch}>
         <ExchangeTable />

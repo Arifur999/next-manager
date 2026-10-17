@@ -1,5 +1,6 @@
 import WithdrawalsBoard from "@/components/modules/Admin/Withdrawals/WithdrawalsBoard";
 import type { Metadata } from "next";
+import PageHeader from "@/components/shared/PageHeader";
 
 export const metadata: Metadata = {
   title: "Owner Withdrawals",
@@ -11,12 +12,9 @@ export const metadata: Metadata = {
 const WithdrawalsPage = () => {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Owner withdrawals</h1>
-        <p className="text-sm text-muted-foreground">
-          Money you take out. Visible to the owner alone — not to admins or managers.
-        </p>
-      </div>
+      <PageHeader title="Owner withdrawals">
+        Money you take out. Visible to the owner alone — not to admins or managers.
+      </PageHeader>
 
       <WithdrawalsBoard />
     </div>
