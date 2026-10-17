@@ -12,14 +12,13 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { registerFormZodSchema, type IRegisterFormValues } from "@/zod/auth.validation"
+import { useActionMutation } from "@/hooks/useActionMutation"
 import { useForm } from "@tanstack/react-form"
-import { useMutation } from "@tanstack/react-query"
 import { Eye, EyeOff } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { focusFirstInvalid } from "@/lib/focusFirstInvalid"
 import { useRef, useState } from "react"
-import { toast } from "sonner"
 
 /**
  * Creating a company.
@@ -47,27 +46,19 @@ const RegisterForm = () => {
   const [showPassword, setShowPassword] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (values: IRegisterFormValues) => registerAction(values),
+  const { run: createWorkspace, isPending } = useActionMutation({
+    action: registerAction,
+    successMessage: "Workspace created. Sign in to get started.",
+    refresh: false,
   })
 
   const form = useForm({
     defaultValues,
     onSubmitInvalid: () => focusFirstInvalid(formRef.current),
     onSubmit: async ({ value }) => {
-      const result = await mutateAsync(value)
+      if (!(await createWorkspace(value))) return
 
-      if (!result.success) {
-        // "An account with this email already exists" is the server's own
-        // wording and the only useful thing to say.
-        toast.error(result.message || "Could not create your workspace")
-        return
-      }
-
-      toast.success("Workspace created. Sign in to get started.")
-
-      // Deliberately not signed in automatically. Register returns the user,
-      // not tokens, so the only honest next step is the sign-in form - and
+      // Not signed in automatically: register returns the user, not tokens, and
       // typing the password once more confirms it is the one they meant.
       router.replace(`/login?email=${encodeURIComponent(value.email)}`)
     },
