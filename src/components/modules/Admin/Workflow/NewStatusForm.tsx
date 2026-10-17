@@ -2,17 +2,13 @@
 
 import { createWorkflowStatusAction } from "@/app/(dashboardLayout)/admin/dashboard/workflow/_action"
 import { STATUS_CATEGORIES } from "@/components/modules/Admin/Workflow/statusCategories"
+import EntitySelect from "@/components/shared/form/EntitySelect"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  } from "@/components/ui/select"
 import { useActionMutation } from "@/hooks/useActionMutation"
 import type { StatusCategory } from "@/types/common.types"
 import { workflowStatusFormZodSchema, type IWorkflowStatusFormValues } from "@/zod/work.validation"
@@ -72,27 +68,14 @@ const NewStatusForm = ({ kind }: { kind: "task" | "project" }) => {
 
         <form.Field name="category">
           {(field) => (
-            <div className="space-y-1.5">
-              <Label htmlFor="status-category">What it means</Label>
-              <Select
-                value={field.state.value}
-                onValueChange={(value) => field.handleChange(value as StatusCategory)}
-              >
-                <SelectTrigger id="status-category" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_CATEGORIES.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                {STATUS_CATEGORIES.find((option) => option.value === field.state.value)?.blurb}
-              </p>
-            </div>
+            <EntitySelect
+              id="status-category"
+              label="What it means"
+              value={field.state.value}
+              onChange={field.handleChange}
+              options={STATUS_CATEGORIES}
+              description={STATUS_CATEGORIES.find((option) => option.value === field.state.value)?.blurb}
+            />
           )}
         </form.Field>
 
